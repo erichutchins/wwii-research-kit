@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>WWII research kit</title>
+<link rel="stylesheet" href="viz.css">
+<style>
+  .doc .pages { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin: 12px 0 8px; padding: 0; list-style: none; }
+  .pages li { max-width: none; }
+  .pages a { display: block; height: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px;
+             background: var(--surface-1); text-decoration: none; }
+  .pages a:hover { background: var(--wash); }
+  .pages b { display: block; margin-bottom: 4px; }
+  .pages span { color: var(--text-secondary); font-size: 13px; line-height: 1.45; }
+</style>
+</head>
+<body class="viz-root">
+<div class="doc">
+  <header>
+    <div>
+      <h1>WWII research kit</h1>
+      <p class="lede">Ship tracks, battles and map grids rebuilt from the original records: US submarine war patrol
+        reports and war diaries, Army morning reports and unit journals, and the Imperial Japanese Navy's own records
+        of the same days. Every mark on every page links to the page of the record it came from.</p>
+    </div>
+    <nav class="nav"><a href="index.html" aria-current="page">Home</a><a href="patrols.html">Map</a><a href="dives.html">Dive profile</a><a href="battle.html">Battles</a><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a></nav>
+  </header>
+
+  <h2>Pages</h2>
+  <ul class="pages">
+    <li><a href="patrols.html"><b>Ship tracks</b><span>Every position a boat or ship reported, patrol by patrol, with
+      torpedo attacks and contacts. Choose the vessel above the map.</span></a></li>
+    <li><a href="dives.html"><b>Dive profile</b><span>USS BANG's depth through every dive and depth-charge attack, with
+      the seafloor, the weather and the moon.</span></a></li>
+    <li><a href="battle.html"><b>Battles</b><span>One convoy engagement at a time on one map and one GMT clock, beside
+      the Japanese records of the same minutes.</span></a></li>
+    <li><a href="zones.html"><b>Time zones</b><span>What the letters after every time mean (<span class="mono">2256 K</span>,
+      <span class="mono">0330 Z</span>), and how to put two reports on one clock.</span></a></li>
+    <li><a href="jgrid.html"><b>Japanese position codes</b><span>The Imperial Navy's kana grid (<span class="mono">メキ三ツ</span>),
+      rebuilt key by key from positions known some other way.</span></a></li>
+    <li><a href="grids.html"><b>Army map grids</b><span>Reading a grid reference (<span class="mono">V-044572</span>) on the six
+      grids the Army used between Sicily and Bavaria.</span></a></li>
+    <li><a href="silhouettes.html"><b>Recognition silhouettes</b><span>Japanese and US aircraft traced from the 1943–45
+      recognition plates, and US warships drawn to their ONI 54 plates.</span></a></li>
+  </ul>
+
+  <h2>Doing this yourself</h2>
+  <p>The tools that fetched, transcribed and checked these records are in <span class="mono">tools/</span>, with a guide to
+    each archive and method in <span class="mono">guides/</span>. They are written to be run by a person or by an AI agent
+    such as Claude Code: <span class="mono">CLAUDE.md</span> holds the rules an agent follows, starting with the first one,
+    <b>cite every source</b>.</p>
+  <p>The records themselves (positions, attacks, depth logs, unit stations, Japanese-side entries) are in
+    <span class="mono">records/</span>, where <span class="mono">inventory.yml</span> lists what has been transcribed and
+    <span class="mono">SOURCES.yml</span> cites every archive, collection and book they come from.</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Recognition silhouettes</title>
+<link rel="stylesheet" href="viz.css">
+<style>
+  .plates { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin: 12px 0; }
+  .plate { border: 1px solid var(--border); border-radius: 10px; background: var(--surface-1); padding: 12px 14px; }
+  .plate svg { width: 100%; height: auto; display: block; margin-bottom: 8px; }
+  .plate .sil { fill: var(--text-primary); }
+  .plate .wl { stroke: var(--text-muted); stroke-width: 1; }
+  .plate .nm { font-weight: 600; }
+  .plate .kd { color: var(--text-secondary); font-size: 13px; line-height: 1.45; margin-top: 2px; }
+  .plates.small { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+</style>
+</head>
+<body class="viz-root">
+<div class="doc">
+  <header>
+    <div>
+      <h1>Recognition silhouettes</h1>
+      <p class="lede">The aircraft and ships the pages draw, in the manner of the wartime recognition plates. Aircraft are
+        traced from the plates themselves; ships are drawn to the heights and length printed on their ONI 54 plates. Each
+        names its plate. The shapes are data, in <span class="mono">records/silhouettes/silhouettes.yml</span>.</p>
+    </div>
+    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html">Map</a><a href="dives.html">Dive profile</a><a href="battle.html">Battles</a><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a></nav>
+  </header>
+
+  <h2>Aircraft</h2>
+  <p>Plan view, profile and head-on, each traced by pixel from the plate's solid black silhouette and shown at one scale
+    (span to span). No Hellcat: none of the recognition material read had an F6F plate, and it isn't drawn from memory.</p>
+  <div class="plates" id="aircraft"></div>
+
+  <h2>Ships</h2>
+  <p>Profiles, bow to the right, all at one scale, from the lengths and heights printed on the plates. Details smaller than
+    about 4 feet are left out.</p>
+  <div class="plates" id="ships"></div>
+
+  <h2>Kinds of ship, for the battle pages</h2>
+  <p id="cat-note"></p>
+  <div class="plates small" id="categories"></div>
+</div>
+<script src="config.js"></script>
+<script src="silhouettes.js"></script>
+<script>
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
+const NS = "http://www.w3.org/2000/svg";
+function svg(viewBox, label, paths) {
+  const s = document.createElementNS(NS, "svg");
+  s.setAttribute("viewBox", viewBox); s.setAttribute("role", "img"); s.setAttribute("aria-label", label);
+  for (const [d, transform, cls = "sil"] of paths) {
+    const p = document.createElementNS(NS, "path");
+    p.setAttribute("d", d); p.setAttribute("class", cls); if (transform) p.setAttribute("transform", transform);
+    s.append(p);
+  }
+  return s;
+}
+function plate(host, drawing, name, ...lines) {
+  const p = el("div", "plate");
+  p.append(drawing, el("div", "nm", name), ...lines.filter(Boolean).map(t => el("div", "kd", t)));
+  host.append(p);
+}
+
+Promise.all([SILHOUETTES, fetch(RECORDS + "ships.json").then(r => r.json())]).then(([s, vessels]) => {
+  // which vessels each ship profile draws (each ship.yml names its class's silhouette)
+  const usedBy = k => vessels.filter(v => v.silhouette === k).map(v => `USS ${v.name} (${v.hull})`);
+  // aircraft: plan view left, profile and head-on right, all scaled by real span (largest = 100 units wide)
+  const maxSpan = Math.max(...Object.values(s.aircraft).map(a => a.span));
+  for (const a of Object.values(s.aircraft)) {
+    // plan and head-on views are 100 units to the span, the profile 100 units to the length
+    const k = 0.85 * a.span / maxSpan, paths = [[a.plan.d, `translate(${45 - 50 * k},4) scale(${k})`]];
+    if (a.profile) paths.push([a.profile.d, `translate(105,18) scale(${k * a.length / a.span})`]);
+    if (a.front) paths.push([a.front.d, `translate(105,62) scale(${k})`]);
+    plate(document.getElementById("aircraft"), svg("0 0 200 95", a.name, paths), `${a.name} · ${a.type}`,
+          `${a.dims}, as printed on the plate.`, `Traced from: ${a.source}.`);
+  }
+  // ships: one scale, the longest fills the width; waterline drawn
+  const maxL = Math.max(...Object.values(s.ships).map(x => x.length)), W = 300, k = (W - 10) / maxL, top = 150 * k;
+  for (const [key, x] of Object.entries(s.ships)) {
+    const d = svg(`0 ${-top - 4} ${W} ${top + 8}`, x.name, [[x.d, `translate(5,0) scale(${k})`], [`M0,0L${W},0`, null, "wl"]]);
+    const used = usedBy(key);
+    plate(document.getElementById("ships"), d, x.name, `${x.length} ft long.`, `Drawn to: ${x.plate}.`,
+          used.length && `Draws: ${used.join(", ")}.`);
+  }
+  // generic shapes
+  document.getElementById("cat-note").textContent = s.categories.note + " Drawn by hand.";
+  for (const [kind, d] of Object.entries(s.categories.shapes)) {
+    plate(document.getElementById("categories"), svg(s.categories.viewBox.join(" "), kind, [[d]]), kind[0].toUpperCase() + kind.slice(1));
+  }
+});
+</script>
+</body>
+</html>

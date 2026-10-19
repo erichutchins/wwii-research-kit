@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Map grids: reading the Army's grid references</title>
+<link rel="stylesheet" href="viz.css">
+<style>
+  .land { fill: var(--land); stroke: var(--coast); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
+  .border { fill: none; stroke: var(--coast); stroke-width: 0.6; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
+  #map { cursor: grab; }
+  #map:active { cursor: grabbing; }
+  .sq { fill: none; stroke: var(--c); stroke-opacity: 0.8; }
+  .sql { fill: var(--c); font-weight: 700; text-anchor: middle; pointer-events: none;
+         paint-order: stroke; stroke: var(--surface-1); stroke-width: 0.25em; stroke-linejoin: round; }
+  .ref { fill: var(--c); stroke: var(--surface-1); cursor: pointer; }
+  .ref.inferred { fill: var(--surface-1); stroke: var(--c); }
+  .ref:hover { stroke: var(--text-primary); }
+  .town { fill: var(--text-primary); pointer-events: none; }
+  .miss { stroke: var(--text-primary); stroke-opacity: 0.5; pointer-events: none; }
+  .probe path { fill: var(--c); stroke: var(--text-primary); }
+  .probe text { font-size: 12px; font-weight: 600; fill: var(--text-primary); paint-order: stroke;
+                stroke: var(--surface-1); stroke-width: 3px; pointer-events: none; }
+  .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .zoom-btns button { font: 16px system-ui; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+                      background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
+  .hint { position: absolute; left: 12px; bottom: 8px; color: var(--text-muted); font-size: 12px; pointer-events: none; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  .decoder input { font: 15px ui-monospace, "SF Mono", Menlo, monospace; padding: 6px 10px; width: 14ch;
+                   border: 1px solid var(--border); border-radius: 6px; background: var(--page); color: var(--text-primary); }
+  .decoder .try { font: inherit; font-size: 12.5px; background: none; border: 1px solid var(--border); border-radius: 6px;
+                  color: var(--text-secondary); padding: 3px 8px; cursor: pointer; margin-left: 4px; }
+  .anatomy { font: 22px ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.04em; margin: 6px 0 2px; }
+  .anatomy .a { color: var(--series-track); font-weight: 700; }
+  .anatomy .b { color: var(--series-attack); }
+  .anatomy .c { color: var(--series-air); }
+  .check { margin-top: 18px; }
+  .check h3 { font-size: 14px; margin: 0 0 2px; }
+  .grids td:first-child { white-space: nowrap; }
+</style>
+</head>
+<body class="viz-root">
+<div class="doc">
+  <header>
+    <div>
+      <h1>Map grids: reading the Army's grid references</h1>
+      <p class="lede">The morning reports and the battalion journals place a battery with a grid reference:
+        <span class="mono">V-044572</span>, <span class="mono">RN 25</span>, <span class="mono">Q9435</span>.
+        Between Sicily in 1943 and Bavaria in 1945, the family's Army units used six different grids.
+        Their square letters overlap, so a reference only means a place once you know which grid it is on.</p>
+    </div>
+    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html">Map</a><a href="dives.html">Dive profile</a><a href="battle.html">Battles</a><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html" aria-current="page">Map grids</a></nav>
+  </header>
+
+  <h2>How to read one</h2>
+  <div class="callout">
+    <div class="anatomy"><span class="a">V</span>-<span class="b">044</span><span class="c">572</span></div>
+    <p style="margin:0">Battery D, 26 September 1944: "1 9/10 mi No of Epinal, France (V-044572)".
+      <span class="a" style="color:var(--series-track);font-weight:700">V</span> is a 100 km square.
+      <span style="color:var(--series-attack)">044</span> is the easting: 04.4 km east of the square's west edge.
+      <span style="color:var(--series-air)">572</span> is the northing: 57.2 km north of its south edge.
+      Six digits give a 100 m square, four give 1 km (<span class="mono">Q-8623</span>), two give 10 km
+      (<span class="mono">RN 25</span>). The easting always comes first.</p>
+  </div>
+  <p>A grid is a flat map's own coordinate system, in metres, drawn over the sheet. All six used here are
+    Lambert conformal conic projections, each centred on its own region. Each is cut into 100 km squares lettered
+    A to Z without I, five to a row from the north-west, so the same letters come round again in every grid
+    and in every 500 km block. Battery D's <span class="mono">J</span> in August 1944 is near Grenoble. Its
+    <span class="mono">J</span> in November is 300 km north, in the Haute-Saône. <span class="mono">N</span> is
+    Naples, Montélimar or the Spessart, depending on the grid. The map sheet named its grid in the margin. The
+    typist didn't, so the grid has to be worked out from the date and the towns.</p>
+
+  <div class="filters"><div class="seg" id="grid-seg" role="group" aria-label="Grid"></div></div>
+  <div class="card map-card">
+    <div class="legend">
+      <span><svg width="14" height="14"><circle cx="7" cy="7" r="4.5" fill="var(--series-track)"/></svg>Reference, decoded on its grid</span>
+      <span><svg width="14" height="14"><circle cx="7" cy="7" r="4" fill="var(--surface-1)" stroke="var(--series-attack)" stroke-width="1.5"/></svg>No square letter typed: square assumed from the town</span>
+      <span><svg width="30" height="12"><circle cx="4" cy="6" r="2" fill="var(--text-primary)"/><line x1="4" y1="6" x2="26" y2="6" stroke="var(--text-primary)" stroke-opacity="0.5"/></svg>Line to the place the same entry names</span>
+      <span><svg width="14" height="14"><rect x="1" y="1" width="12" height="12" fill="none" stroke="var(--series-track)"/></svg>Nord de Guerre squares</span>
+      <span><svg width="14" height="14"><rect x="1" y="1" width="12" height="12" fill="none" stroke="var(--series-attack)"/></svg>Lambert I and II (solid), III (dashed)</span>
+      <span><svg width="14" height="14"><rect x="1" y="1" width="12" height="12" fill="none" stroke="var(--series-air)"/></svg>South Italy (solid), North Italy (dashed)</span>
+    </div>
+    <div class="map-wrap">
+      <svg id="map" role="img" aria-label="Map of the six grids' 100 km squares, with every grid reference in the Army records"></svg>
+      <div class="zoom-btns">
+        <button id="zin" aria-label="Zoom in">+</button>
+        <button id="zout" aria-label="Zoom out">−</button>
+        <button id="zreset" aria-label="Reset view">⟲</button>
+      </div>
+      <div class="hint">Scroll or pinch to zoom · drag to pan · squares drawn only where these records use each grid</div>
+    </div>
+    <div class="caption">Each dot is a reference as typed, put where its grid says. The line runs to the town the same entry names, moved by any offset it gives ("2 mi E").
+      Short lines mean the grid has been identified correctly.</div>
+  </div>
+
+  <h2>The six grids</h2>
+  <table class="grids">
+    <thead><tr><th>Grid</th><th>Where and when, in these records</th><th>As typed</th></tr></thead>
+    <tbody>
+      <tr><td><span class="swatch" style="background:var(--series-air)"></span><b>South Italy Zone</b></td>
+        <td>Sicily, July 1943 (Battery C, 62nd CA). Italy south of Rome, 1944 (Battery D, 106th AAA, and the 894th AAA's medical detachment).
+          A British wartime grid. Its 500 km squares are lettered too, normally written in lower case:
+          <span class="mono">rN</span> is 100 km square N of 500 km square r.</td>
+        <td class="mono">591564 Sheet 271-IV<br>F-2684<br>RN 25</td></tr>
+      <tr><td><span class="swatch" style="background:var(--series-air)"></span><b>North Italy Zone</b></td>
+        <td>Its companion to the north, on the sheets from Tuscany up. Only the medical detachment's two references at
+          Frontignano and Siena, July 1944, use it here. Same lettering style; its block is lettered
+          <span class="mono">w</span>.</td>
+        <td class="mono">WQ 71<br>WQ 81</td></tr>
+      <tr><td><span class="swatch" style="background:var(--series-attack)"></span><b>Lambert Zone III (Sud)</b></td>
+        <td>Southern France, August 1944: the Dragoon landings, Provence, up the Rhône to Grenoble and Lyon. France's own
+          pre-war grids, one for each band of latitude.</td>
+        <td class="mono">518247<br>U 41<br>J-546416</td></tr>
+      <tr><td><span class="swatch" style="background:var(--series-attack)"></span><b>Lambert Zone II (Centre)</b></td>
+        <td>Ain, Doubs, Saône valley and Haute-Saône, September to November 1944.</td>
+        <td class="mono">P-074766<br>Y 27<br>J-762365</td></tr>
+      <tr><td><span class="swatch" style="background:var(--series-attack)"></span><b>Lambert Zone I (Nord)</b></td>
+        <td>Normandy, June–July 1944: Company B, 313th Infantry, in the Cotentin, from Cherbourg south to La Haye-du-Puits.
+          The company typed the 500 km block letter, <span class="mono">V</span>, before the square. HQ Battery, 128th AAA
+          wrote the square alone, from Cherbourg to Romazy, Rennes and Le Mans (June–August 1944).</td>
+        <td class="mono">VO 1819<br>VT 1099<br>Z-374373</td></tr>
+      <tr><td><span class="swatch" style="background:var(--series-track)"></span><b>Nord de Guerre</b></td>
+        <td>From the Vosges (Battery D at Xertigny, 20 September 1944) through Alsace, the Saar, across the Rhine and
+          into Bavaria, May 1945. A French grid of the First World War covering the northern front and the Rhineland,
+          which the Allies used for the 1944–45 campaign. HQ Battery, 128th AAA was on it from Étampes (24 August 1944) to Nancy.</td>
+        <td class="mono">V-044572<br>VZ-6457<br>Y-888629</td></tr>
+    </tbody>
+  </table>
+  <p>The grids changed with the map sheets, not on any one date. In mid-September 1944 Battery D was writing
+    Lambert II references in the Doubs (<span class="mono">P-074873</span>, 14 Sep). Six days later, in the Vosges, it
+    wrote Nord de Guerre (<span class="mono">V-032425</span>, 20 Sep). In November it was back on a Lambert II sheet
+    for one move (<span class="mono">J-762365</span>, Passavant-la-Rochère), then on Nord de Guerre again in Alsace.
+    The 894th's medical detachment wrote the 500 km block letter as well (<span class="mono">VZ-6457</span>, Contrexéville).
+    Battery D never did.</p>
+
+  <h2>Try one</h2>
+  <div class="callout decoder">
+    <label>Grid reference <input id="probe" value="V-044572" spellcheck="false" autocomplete="off"></label>
+    <button class="try" data-v="V-044572">V-044572</button><button class="try" data-v="J-762365">J-762365</button>
+    <button class="try" data-v="N-550079">N-550079</button><button class="try" data-v="RN 25">RN 25</button>
+    <div id="probe-out" style="margin-top:8px"></div>
+  </div>
+  <p class="muted">A reference without a 500 km letter is read in the block these records use: South Italy's
+    <span class="mono">r</span>, the Lambert zones' only block, Nord de Guerre's eastern block (type
+    <span class="mono">VZ…</span> for the western one).</p>
+
+  <h2>How each grid was identified</h2>
+  <p>None of the entries says which grid it uses, except the 62nd's Sicilian ones ("1:25,000 South Italy Grid").
+    Each reference was decoded on every grid and checked against the town the same entry names. The right grid
+    puts it within a few kilometres of the town. A wrong one puts it hundreds of kilometres away. The
+    tables below give every reference and how far it falls from the named town, worked out as the page loads.
+    The towns are taken at their centres, so a kilometre or two is as close as the check can get.
+    The grid each reference was found to be on is recorded in the data, in the <span class="mono">grid_on</span> column of
+    <span class="mono">records/army/stations.csv</span> and <span class="mono">actions.csv</span>.</p>
+  <p>A map of these stations should use whichever position is more exact. A reference to 1 km or better that falls
+    within 8 km of its named town belongs at the grid point: it is the record's own position, finer than a town centre.
+    A two-digit reference, good only to 10 km, leaves the station at the town. So does a reference that misses its
+    town, which is a typing slip.</p>
+  <ul>
+    <li><b>Nord de Guerre</b>: parameters as in <span class="mono">tools/ndg_grid.py</span>, used
+      for the 1945 references. West of 400 km east, the squares belong to the western 500 km block, lettered
+      <span class="mono">V</span>. The medical detachment's clerk typed that letter; the 128th AAA's HQ Battery didn't, crossing the block from
+      Étampes (<span class="mono">W-882948</span>) to Nancy (<span class="mono">U-854103</span>) in August–September 1944.</li>
+    <li><b>Lambert I</b>: origin 49.5°N (55 grad) on the Paris meridian, scale 0.99987734, the same false origin as II and III.
+      Its letters sit in a block from 0 km east and 0 km north, lettered <span class="mono">V</span>: Co. B, 313th Infantry's
+      <span class="mono">VT 1099</span> (Le Valdécie), <span class="mono">VT 0395</span> (Barneville) and <span class="mono">VT 1286</span>
+      (Baudreville) each fall within about a kilometre of their villages. HQ Battery, 128th AAA typed the square
+      alone, and its references bear out the layout two rows further south and east: <span class="mono">O-145180</span>
+      (Cherbourg), <span class="mono">Y-163828</span> (Romazy, 0.7 km) and <span class="mono">Z-374373</span> (Le Mans, 3 km).</li>
+    <li><b>Lambert II and III</b>: the standard parameters of the French zones, with their original false northing of 200 km
+      (today's "Lambert II étendu" and "Lambert III" add 2,000 or 3,000 km). The wartime square letters were not found
+      written down. These letters, for the 500 km block from 500 to 1,000 km east and 0 to 500 km north, fit every
+      lettered reference here: <span class="mono">U</span>, <span class="mono">N</span> and <span class="mono">J</span> in Zone III;
+      <span class="mono">P</span>, <span class="mono">Y</span>, <span class="mono">O</span> and <span class="mono">J</span> in Zone II.</li>
+    <li><b>South Italy Zone</b>: projection and 500 km letters from
+      <a href="https://glaikit.org/2015/01/09/some-notes-on-the-wartime-modified-british-map-coordinate-systems/" target="_blank" rel="noopener">notes on the wartime "Modified British" grids</a>.
+      The 100 km letters follow the British pattern, which every reference here fits.</li>
+    <li><b>Assumed</b>: Battery D's August 1944 references have no letter. They fit the Lambert zones, not Nord de Guerre,
+      but they can't show which square or which zone. Each is put in the square nearest the named town, on the zone the town is in
+      (hollow dots). The Sicilian references give a sheet number instead of a letter and are placed the same way.</li>
+    <li><b>North Italy Zone</b>: projection from
+      <a href="https://www.sigterritoires.fr/index.php/en/perry-castaneda-library-southern-europe-1943-maps-how-to-georeference/" target="_blank" rel="noopener">sigterritoires.fr</a>
+      (origin 45.9°N 14°E, scale 0.9989, false easting 800 km, false northing 601 km). It reproduces a worked reference on a
+      1944 Ancona sheet (Camerata Picena, <span class="mono">477434</span>) to 100 m. Its letters are not laid out like South Italy's.
+      The <a href="https://custermen.com/Maps/ArmyMaps.htm" target="_blank" rel="noopener">index printed on a Bologna–Ravenna sheet</a>
+      puts square <span class="mono">M</span> at 600–700 km east and 400–500 km north, so the 500 km block runs from 500 km east and
+      200 km north. Laid out the South Italy way, the letters come out 200 km off: Siena would be <span class="mono">F</span>,
+      not the <span class="mono">Q</span> the detachment's clerk typed. Laid out from the sheet's index, both references
+      fall in <span class="mono">Q</span>. Siena's <span class="mono">WQ 81</span> lands on the city, digits and all.
+      Frontignano's <span class="mono">WQ 71</span> is the 10 km square just north of the hamlet of that name (Murlo), the only
+      Frontignano near Siena. The hamlet is 4 km beyond the square's southern edge. The layout has been checked only against that sheet index and these two references,
+      which share one square.</li>
+  </ul>
+  <p>Two-digit references are only good to 10 km, so they miss their towns by up to about 8 km. Of the finer ones, ten
+    miss by 10 km or more. Five are in the 1945 journal, and the notes in <span class="mono">records/army/stations.csv</span>
+    explain them: a slipped digit (Eisenberg, Osthofen, Ober-Sailauf, Weißenburg), or a typist who kept the old square
+    letter after the battalion crossed into the next square (Gersfeld, <span class="mono">N-550079</span> for
+    <span class="mono">H-550079</span>). The sixth, Battery D's <span class="mono">N823076</span> of July 1944, falls 13 km from
+    "10 Mi. SE Battipaglia" and is unexplained. The other three are Co. B, 313th Infantry's in Normandy, 5–11 July 1944:
+    its clerk kept typing square <span class="mono">O</span>, the Cherbourg square, after the company moved south into
+    <span class="mono">T</span>. Read as <span class="mono">VT</span>, all three fall beside the hamlets they name.
+    The tenth is the same slip a month later: the 128th AAA's HQ Battery typed Romazy's square <span class="mono">Y</span> for
+    "near Rennes" (<span class="mono">Y-977547</span>); in <span class="mono">X</span>, the square to the west, it falls 3.4 km from the city.
+    Hover a dot to read its note.</p>
+
+  <h2>Times have letters too</h2>
+  <p>The journals time their entries the way the Navy did, with a zone letter: <span class="mono">1600A</span> is GMT+1,
+    <span class="mono">1200B</span> GMT+2. The 106th's records change from B to A in mid-September 1944 and back to B in
+    April 1945. See <a href="zones.html">the Pacific page on zone letters</a> for the system.</p>
+
+  <h2>Every reference</h2>
+  <div id="checks"></div>
+</div>
+
+<div id="tip" role="tooltip"></div>
+
+<script src="config.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="grids.js"></script>
+<script>
+  document.querySelectorAll(".try").forEach(b => b.addEventListener("click", () => {
+    const i = document.getElementById("probe"); i.value = b.dataset.v; i.dispatchEvent(new Event("input"));
+  }));
+</script>
+</body>
+</html>

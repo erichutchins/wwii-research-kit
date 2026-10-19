@@ -1,0 +1,9 @@
+# Downloaded scans and API caches (tools/nara.py, jacar.py, fetch_*.py ...): always re-downloadable
+sources
+
+# API keys (tools/gbooks.py)
+.env
+
+__pycache__/
+*.pyc
+.DS_Store

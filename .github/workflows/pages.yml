@@ -1,0 +1,54 @@
+# Publish the kit to GitHub Pages: the site at /site/, with the records submodule beside it,
+# after checking that every citation resolves and every track passes the speed check.
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: astral-sh/setup-uv@v6
+      - name: Every citation resolves; inventory matches the folders
+        run: uv run tools/check_sources.py
+      - name: Every track passes the speed check
+        run: |
+          uv run tools/check_track.py all -q | tee /tmp/tracks.txt
+          ! grep -v ": 0 too-fast legs" /tmp/tracks.txt
+
+  deploy:
+    needs: check
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Assemble the site (no tools, no git metadata)
+        run: |
+          mkdir _site
+          cp -r site reference records _site/
+          rm -rf _site/records/.git
+          printf '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=site/"><title>WWII research kit</title><a href="site/">WWII research kit</a>\n' > _site/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

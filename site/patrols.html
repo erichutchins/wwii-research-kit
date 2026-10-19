@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>War patrol tracks</title>
+<link rel="stylesheet" href="viz.css">
+<style>
+
+  /* Map card */
+  .map-card { display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 14px 6px; color: var(--text-secondary); font-size: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend svg { overflow: visible; }
+  .map-wrap { position: relative; min-height: 300px; }
+  #map { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+  #map:active { cursor: grabbing; }
+  .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .zoom-btns button { font: 16px system-ui; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+                      background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
+  .hint { position: absolute; left: 12px; bottom: 8px; color: var(--text-muted); font-size: 12px; pointer-events: none; }
+
+  .land { fill: var(--land); stroke: var(--coast); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
+  .graticule { fill: none; stroke: var(--grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .place { fill: var(--text-muted); font-size: 11px; letter-spacing: 0.06em; pointer-events: none; }
+  .port-label { fill: var(--text-secondary); font-size: 11px; pointer-events: none; }
+  .port-dot { fill: var(--surface-1); stroke: var(--text-secondary); stroke-width: 1.5; }
+  .track { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+  .track.other { stroke: var(--track-other); }
+  .track.hot { stroke: var(--series-track); stroke-width: 3; }
+  .track.ahead { stroke: var(--series-track); stroke-opacity: 0.28; }
+  .track.past { stroke: var(--series-track); }
+  .track-hit { fill: none; stroke: transparent; stroke-width: 18; vector-effect: non-scaling-stroke; cursor: pointer; }
+  .track-label { font-size: 12px; font-weight: 600; fill: var(--text-primary); paint-order: stroke;
+                 stroke: var(--surface-1); stroke-width: 3px; pointer-events: none; }
+  .mk { transition: opacity 120ms; }
+  .mk.future { opacity: 0.3; }
+  .mk .ring { fill: none; stroke: var(--surface-1); stroke-width: 2; }
+  .mk.fix .shape { fill: var(--text-secondary); }
+  .mk.air .shape { fill: var(--series-air); }
+  .mk.attack .shape { fill: var(--series-attack); }
+  .mk.event .shape { fill: var(--text-primary); }
+  .mk.ship .shape { fill: none; stroke: var(--text-secondary); stroke-width: 1.6; }
+  .mk.off .shape { fill: none; stroke: var(--text-muted); stroke-width: 1.4; stroke-dasharray: 2 2; }
+  .mk.hover .shape { stroke: var(--text-primary); stroke-width: 2; }
+  .sub-marker .core { fill: var(--text-primary); stroke: var(--surface-1); stroke-width: 1.5; stroke-linejoin: round; }
+  .sub-marker circle.halo { fill: var(--series-track); opacity: 0.25; }
+
+  /* Timeline */
+  .timeline { border-top: 1px solid var(--border); padding: 6px 14px 10px; display: grid;
+              grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; }
+  .timeline[hidden] { display: none; }
+  #play { font: inherit; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border);
+          background: var(--surface-1); color: var(--text-primary); cursor: pointer; grid-row: span 2; }
+  #strip { width: 100%; height: 40px; display: block; }
+  #strip .axis text { fill: var(--text-muted); font-size: 11px; }
+  #strip .axis line, #strip .axis path { stroke: var(--coast); }
+  #scrub { width: 100%; margin: 0; accent-color: var(--series-track); }
+  .now { grid-column: 2; display: flex; justify-content: space-between; color: var(--text-secondary); font-size: 12px; }
+  .now b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .follow { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; }
+
+  /* Course & speed gauge */
+  .gauge { position: absolute; left: 10px; top: 10px; display: flex; gap: 10px; align-items: center;
+           background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+           padding: 8px 12px 8px 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.10); max-width: 300px; pointer-events: none; }
+  #compass .dial { fill: none; stroke: var(--coast); stroke-width: 1.5; }
+  #compass .tick { stroke: var(--text-muted); stroke-width: 1; }
+  #compass .tick.major { stroke: var(--text-secondary); stroke-width: 1.5; }
+  #compass .card { fill: var(--text-muted); font-size: 8px; font-weight: 600; }
+  #compass .needle { fill: var(--series-track); transition: transform 150ms linear; }
+  #compass .hub { fill: var(--text-primary); }
+  .g-label { color: var(--text-muted); font-size: 11px; }
+  .g-value { font-size: 18px; font-weight: 600; line-height: 1.15; margin-bottom: 2px; font-variant-numeric: tabular-nums; }
+  .g-leg { color: var(--text-secondary); font-size: 11px; margin-top: 2px; }
+
+
+  @media (max-width: 900px) {
+    .app { height: auto; }
+    .main { grid-template-columns: 1fr; }
+    .map-wrap { height: 60vh; }
+    .side { max-height: 60vh; }
+  }
+</style>
+</head>
+<body class="viz-root">
+<div class="app">
+  <header>
+    <div>
+      <h1>War patrol tracks</h1>
+      <p></p>
+    </div>
+    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html" aria-current="page">Map</a><a href="dives.html" id="to-dives">Dive profile</a><a href="battle.html">Battles</a><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a></nav>
+  </header>
+
+  <div class="filters">
+    <label class="pick">Ship <select id="ship-pick"></select></label>
+    <div class="seg" id="patrol-seg" role="group" aria-label="Patrol"></div>
+    <label class="check"><input type="checkbox" id="show-off" checked> Show fixes left off the track</label>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="main">
+    <div class="card map-card">
+      <div class="legend" id="legend"></div>
+      <div class="map-wrap">
+        <svg id="map" role="img" aria-label="Map of BANG's patrol tracks"></svg>
+        <div class="zoom-btns">
+          <button id="zin" aria-label="Zoom in">+</button>
+          <button id="zout" aria-label="Zoom out">−</button>
+          <button id="zreset" aria-label="Reset view">⟲</button>
+        </div>
+        <div class="hint" id="hint">Scroll or pinch to zoom · drag to pan</div>
+        <div class="gauge" id="gauge" hidden aria-live="off">
+          <svg id="compass" width="76" height="76" aria-hidden="true"></svg>
+          <div class="g-read">
+            <div class="g-label">Course made good</div><div class="g-value" id="g-course">—</div>
+            <div class="g-label">Speed made good</div><div class="g-value" id="g-speed">—</div>
+            <div class="g-leg" id="g-leg"></div>
+          </div>
+        </div>
+      </div>
+      <div class="timeline" id="timeline" hidden>
+        <button id="play" aria-label="Play">▶</button>
+        <svg id="strip"></svg>
+        <input type="range" id="scrub" min="0" max="1000" value="1000" aria-label="Patrol time">
+        <div class="now"><span id="now-local"></span>
+          <label class="follow"><input type="checkbox" id="follow" checked> Follow the boat while playing</label>
+          <span id="now-utc"></span></div>
+      </div>
+    </div>
+
+    <div class="card side">
+      <div class="side-head">
+        <h2 id="side-title">Patrols</h2>
+        <div class="seg" id="log-filter" role="group" aria-label="Log filter" hidden>
+          <button data-f="events" aria-pressed="true">Contacts &amp; events</button>
+          <button data-f="all" aria-pressed="false">All fixes</button>
+        </div>
+      </div>
+      <div class="list" id="list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="tip" role="tooltip"></div>
+
+<dialog id="scan">
+  <div class="dlg-head">
+    <div><b id="scan-title"></b> <a id="scan-link" target="_blank" rel="noopener">Open in National Archives catalog ↗</a></div>
+    <button id="scan-close">Close</button>
+  </div>
+  <div class="dlg-body"><img id="scan-img" alt=""></div>
+</dialog>
+
+<script src="config.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="patrols.js"></script>
+</body>
+</html>

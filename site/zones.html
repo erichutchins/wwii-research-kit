@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Zone letters: how the patrol reports kept time</title>
+<link rel="stylesheet" href="viz.css">
+<style>
+  .land { fill: var(--land); stroke: var(--coast); stroke-width: 0.6; }
+  .graticule { fill: none; stroke: var(--grid); stroke-width: 1; }
+  .band { fill: none; stroke: var(--coast); stroke-width: 0.8; stroke-dasharray: 2 3; }
+  .band.alt { fill: var(--wash); }
+  .band.on { fill: var(--series-track); fill-opacity: 0.10; stroke: var(--series-track); stroke-dasharray: none; stroke-width: 1.5; }
+  .band-hit { fill: transparent; cursor: pointer; }
+  .zl { font-size: 15px; font-weight: 700; fill: var(--text-secondary); text-anchor: middle; pointer-events: none; }
+  .zl.on { fill: var(--series-track); }
+  .zo { font-size: 11px; fill: var(--text-muted); text-anchor: middle; pointer-events: none; }
+  .dateline { fill: none; stroke: var(--text-secondary); stroke-width: 1.2; stroke-dasharray: 6 3; }
+  .dl-label { font-size: 11px; fill: var(--text-secondary); pointer-events: none; }
+  .track { fill: none; stroke: var(--track-other); stroke-width: 1; stroke-opacity: 0.6; }
+  .pt { fill: var(--track-other); fill-opacity: 0.55; cursor: pointer; }
+  .pt.on { fill: var(--series-track); fill-opacity: 1; stroke: var(--surface-1); stroke-width: 1; }
+  .port { fill: var(--surface-1); stroke: var(--text-secondary); stroke-width: 1.2; }
+  .port-label, .place { font-size: 11px; fill: var(--text-secondary); pointer-events: none;
+                        paint-order: stroke; stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round; }
+  .place { fill: var(--text-muted); letter-spacing: 0.06em; }
+  .clocks td.big { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .clocks tr.boat td { background: var(--wash); }
+  .seg.small button { padding: 4px 10px; font-size: 13px; }
+  .key { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+</style>
+</head>
+<body class="viz-root">
+<div class="doc">
+  <header>
+    <div>
+      <h1>Zone letters: how the patrol reports kept time</h1>
+      <p class="lede">Every time in a patrol report ends in a letter: <span class="mono">2256 K</span>,
+        <span class="mono">0330 Z</span>, <span class="mono">1600 VW</span>. The letter is the time zone the clock was
+        set to. Read without it, two times in the same report can be hours apart for the same moment.</p>
+    </div>
+    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html">Map</a><a href="dives.html">Dive profile</a><a href="battle.html">Battles</a><a href="zones.html" aria-current="page">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a></nav>
+  </header>
+
+  <h2>The letters</h2>
+  <p>The Navy split the world into 24 zones, each 15° of longitude wide and one hour apart, centred on
+    Greenwich (0°), 15°, 30° and so on. Each zone has a letter. <b>Z</b> is Greenwich. Going east, where clocks are
+    <i>ahead</i> of Greenwich, the letters run <b>A</b> to <b>M</b> (there is no J): K is 10 hours ahead, I is 9.
+    Going west, where clocks are <i>behind</i>, they run <b>N</b> to <b>Y</b>: W is 10 hours behind, Y is 12.
+    M and Y share the 180th meridian. They show the same clock time, a day apart.</p>
+  <p>The reports also give zones as numbers, with the sign the other way round. A zone's number, its
+    <i>zone description</i>, is what you add to local time to get Greenwich time. So K, ten hours ahead, is
+    zone <span class="mono">−10</span>: <span class="mono">2256 K</span> minus 10 hours is <span class="mono">1256 Z</span>.
+    Greenwich time was called <b>GCT</b>, Greenwich Civil Time (today's UTC).</p>
+
+  <div class="filters">
+    <div class="seg" id="ship-seg" role="group" aria-label="Ships"></div>
+    <div class="seg small" id="zone-seg" role="group" aria-label="Zone letter" style="margin-left:12px"></div>
+  </div>
+  <div class="card map-card">
+    <div class="legend">
+      <span><svg width="12" height="12"><circle cx="6" cy="6" r="4" fill="var(--series-track)"/></svg>Position logged in the chosen zone</span>
+      <span><svg width="12" height="12"><circle cx="6" cy="6" r="3" fill="var(--track-other)"/></svg>Logged in another zone</span>
+      <span><svg width="30" height="12"><rect x="1" y="1" width="28" height="10" fill="var(--series-track)" fill-opacity="0.1" stroke="var(--series-track)"/></svg>Where that zone's clock matches the sun</span>
+      <span><svg width="24" height="12"><line x1="0" y1="6" x2="24" y2="6" stroke="var(--text-secondary)" stroke-width="1.2" stroke-dasharray="6 3"/></svg>Date line (drawn on the 180th meridian)</span>
+    </div>
+    <div class="map-wrap"><svg id="map" role="img" aria-label="Map of the Pacific time zones, with the ships' positions coloured by the zone they were logged in"></svg></div>
+    <div class="caption" id="caption"></div>
+  </div>
+
+  <h2>A clock is not where the boat is</h2>
+  <p>The bands on the map are where each zone's clock agrees with the sun. A ship's clock didn't have to.
+    The captain chose the zone, and changed it when it suited him, usually on the way out and back.
+    Click <b>K</b> above. On her first patrol BANG kept K, the zone of Guam and Saipan, all the way to the
+    Luzon Strait, two bands to the west, where a K clock read about 2 p.m. at local noon. She kept K again on
+    Patrols 3 and 4. On Patrol 2 she changed to <b>I</b> on 22 June 1944 as she went west, and on Patrols 5 and 6
+    she kept I on station. The three boats of her first wolf pack, in the same waters in April and May 1944,
+    kept three different zones: BANG K, PARCHE <b>I</b>, TINOSA <b>H</b> (choose "Other submarines").</p>
+  <p>So the letter has to be read off each page, even each table. The narrative is in the zone the boat
+    was keeping. Tables are often in <b>Z</b>, Greenwich time. BANG's bathythermograph (density-layer) tables are,
+    so her Greenwich-time positions are spread over every band (click <b>Z</b>). Japanese records are all in
+    <b>Tokyo time (I)</b>, which the Imperial Navy kept across its whole area. So do the FRUPAC
+    radio-intelligence notes, as far as the matches show.</p>
+
+  <h2>One moment, six clocks</h2>
+  <p>Pick a moment from the reports to see what every clock in the story read at that instant.</p>
+  <div class="seg small" id="moment-seg" role="group" aria-label="Moment"></div>
+  <div class="callout">
+    <div id="moment-note"></div>
+    <table class="clocks"><thead><tr><th>Clock</th><th>Zone</th><th>Read</th><th></th></tr></thead><tbody id="clocks"></tbody></table>
+  </div>
+
+  <h2>The worked example</h2>
+  <p>BANG's first attack, on convoy TAMA-17 in the Luzon Strait: her attack sheet times the first torpedo at
+    <span class="mono">2256 K</span> on 29 April 1944. The Japanese report of Takegawa Maru's sinking puts the hit at
+    <span class="mono">2201</span> on the 29th, in Tokyo time (I). Taken at face value the two are 55 minutes apart.
+    Converted, they are 5 minutes apart:</p>
+  <table>
+    <thead><tr><th>Record</th><th>As written</th><th>Zone description</th><th>Greenwich (GCT)</th></tr></thead>
+    <tbody>
+      <tr><td>BANG, attack sheet</td><td class="mono">29 Apr 2256 K</td><td class="mono">−10</td><td class="mono">29 Apr 1256 Z</td></tr>
+      <tr><td>Japanese report, Takegawa Maru</td><td class="mono">29 Apr 2201 I</td><td class="mono">−9</td><td class="mono">29 Apr 1301 Z</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">Every time on the map, dive-profile and battle pages is converted this way
+    (<span class="mono">tools/check_track.py</span>, its <span class="mono">ZONES</span> table) and shown
+    with its letter as typed. The raw time is never changed in the CSVs.</p>
+
+  <h2>Odd letters you'll meet</h2>
+  <ul>
+    <li><b>VW</b>, Hawaii. A half-hour zone, written with the two letters it falls between. Hawaii kept
+      GMT−10½ before the war. From February 1942 it kept "war time", an hour ahead: GMT−9½, zone +9½. Every
+      departure from Pearl Harbor is in VW.</li>
+    <li><b>KL</b> and <b>IK</b>: half-hour zones again, GMT+10½ and GMT+9½, used by GROWLER on her Patrol 9. USS Haynsworth's
+      April 1945 war diary steps through <b>WX</b> and <b>UV</b> on its way to Hawaii.</li>
+    <li><b>Y</b> and <b>M</b>: the same clock time on opposite sides of the date line. Midway's departures are in Y.
+      Crossing westward, the date jumps a day ahead. Haynsworth, sailing east, wrote 23 April 1945 twice: once in M, once in Y.</li>
+    <li><b>Z</b> in the middle of the ocean: a table kept in Greenwich time, not a position near Greenwich.</li>
+  </ul>
+  <p>The same letters reach Europe. The Army records date their entries in <b>A</b> (GMT+1) and, in summer,
+    <b>B</b> (GMT+2). See <a href="grids.html">the Europe page on map grids</a>.</p>
+
+  <h2>Counts</h2>
+  <p>Positions in the transcribed CSVs, by the zone letter typed with them.</p>
+  <table id="counts"></table>
+</div>
+
+<div id="tip" role="tooltip"></div>
+
+<script src="config.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="zones.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+id,key,code,date,time,source,page,stated,lat,lon,note
+L1,leyte-1944,ヤキ1カ,1944-10-25,0945,sosho:056,p397,スルアン灯台5度113浬 (Suluan light 005° 113 nm),12.63,126.14,Plotted on fig. 34; position from the bearing and distance
+L2,leyte-1944,ウキ5ソ,1944-10-25,0940,sosho:056,p397,ヤキ1カの東40浬 (40 nm east of ヤキ1カ),12.63,126.82,Offset as the war history states it
+L3,leyte-1944,ノキ5ソ,1944-10-25,0900,sosho:056,p397,ウキ5ソの西20浬 (20 nm west of ウキ5ソ),12.63,126.48,"ヤンメ55 in the original signal, converted by the war history"
+L4,leyte-1944,ヤソ3ス,1944-10-25,0140,jacar:C13120398700,p21,マニラの90度290浬 (Manila 090° 290 nm),14.58,125.96,"KEA76 telegram, 0140: 大型四隻其他約二〇隻 (p21). Bearing and distance from ja.wikipedia レイテ沖海戦; fits column ヤ; row ソ placed from this anchor alone"
+L5,leyte-1944,フラ一ア,1944-10-24,0600,sosho:056,p122,マニラの73度124浬,15.19,123.02,"Conversion good to ~15'. Row ラ: M1 on the 901st chart puts ラ at 14-20N, 49' further south; unresolved. Column フ not placed"
+L6,leyte-1944,ヘウ三ウ,1944-10-24,0600,sosho:056,p122,マニラの80度180浬,15.10,124.03,Same code as F1 (23-09N in the Formosa key). Row ウ not placed: it would share 15-00N with ヲ
+L7,leyte-1944,キヲ一ア,1944-10-24,0800,sosho:056,p122,マニラの60度90浬,15.33,122.31,"Would put row ヲ at 15-00N to 15-20N, like L8 and L9; the 901st chart puts ヲ at 14-40N (M6), so ヲ is left out of the key. Column キ not placed"
+L8,leyte-1944,ホヲ0ヲ,1944-10-24,0853,sosho:056,p122,マニラの73度162浬付近,15.37,123.64,Row ヲ: see L7. Column ホ not placed
+L9,leyte-1944,ニヲ一カ,1944-10-24,0940,sosho:056,p122,マニラの80度150浬付近,15.01,123.52,Row ヲ: see L7. Column ニ not placed
+L10,leyte-1944,ニカ一カ,1944-10-24,0900,sosho:056,p122,マニラの70度180浬付近,15.61,123.90,"Column ニ: L9 and L10 put it 23' apart, so not placed; row カ not placed"
+O1,okinawa-1945,メキ四テ,1945-04-21,1400,jacar:C13120384900,p15 p19,"第一群 (B×6 C×2), drawn on the track chart",27.52,129.94,"Position read off a hand-drawn chart against Tokunoshima, Okinoerabu and Kikai; ±10'"
+O2,okinawa-1945,メツ二キ,1945-04-21,1400,jacar:C13120384900,p15 p19,"第二群 (A×4), drawn on the track chart",27.18,129.83,"Second kana reads ソ or ツ; the chart puts it in the same row as O3, so ツ. ±10'"
+O3,okinawa-1945,サツ二イ,1945-04-21,1410,jacar:C13120384900,p15 p19,"第三群 (A×4), drawn on the track chart",27.28,130.09,±10'
+O4,okinawa-1945,サテ一ア,1945-04-11,1400,jacar:C13120532400,p01,喜界島南方ノ敵空母群 (carriers south of Kikai-jima),,,"No coordinates; consistent with サテ = 27-40N to 28-00N, 130-00E to 130-20E, 20-30 nm south of Kikai"
+O5,okinawa-1945,スホ二レ or スニ三ス,1945-04-06,1130-1420,jacar:C13120384700,p38,二群/三群 of four carrier groups,26.92,129.52,Haynsworth's own 1200 fix (TG 58.3 picket); TG 58.3 should be one of these two groups
+O6,okinawa-1945,ケツ一ア,1945-04-07,0155,jacar:C13120385000,p11 p08 p17,"3コース: 我捜索先端ニ致ルモ敵ヲ見ズ 地点「ケツ一ア」 (own position at the end of the search line, no enemy seen)",27.28,131.60,"Recon 703 night search for 7 Apr dawn (G4M, 250 nm lines 130°, 171°, 186°). Own position, not a contact. Dead reckoning: Kanoya 171° 250 nm, taking 3コース to be the 171° plane (narrative p8: tip 0200; the 130° plane's dog-leg ends near 28-15N 134-45E). Puts column ケ at 131-20E; tentative"
+O7,okinawa-1945,サキ三ツ,1945-04-07,0225,jacar:C13120385000,p11 p07 p17,"?コース: 我電探故障 予定航路ヲ続行 地点「サキ三ツ」 (radar failed, continuing on the planned route; course number unclear)",27.30,130.04,"Own position. Fits only the 186° plane: tip 0218 at Kanoya 186° 250 nm, then 7 min west on its 278° side leg (narrative p7, chart p17). 2' south of row キ. With Cape Toi as the base point instead of Kanoya it would fall 30' east, outside column サ"
+O8,okinawa-1945,ケワ四セ,1945-04-07,0527,jacar:C13120385000,p12,"3コース: 我〇五二〇ノ位置 地点「ケワ四セ」 (own 0520 position, returning to Kanoya; second kana ワ or ク)",,,"No position: the 171° plane turned for home at 0210 and landed at 0600, too slowly for a straight return, so where it was at 0520 is unknown. Probably 90-110 nm short of Kanoya, which would put the row at 29-30N, where the shared-rows idea predicts ラ (29-20N) and ヲ (29-40N); neither matches"
+S1,formosa-1944,ヘリ4セ,1944-10-14,,sosho:036,p225,石垣島の203度152浬 (Ishigaki 203° 152 nm),22.01,123.08,"Converted in the war history, independent of the 901st chart; lands in column ヘ and row リ as the chart has them"
+F1,formosa-1944,ヘウ三ウ,1944-10-10,2108,jacar:C13120398700,p37 p04,"(ヘウ三ウへ) 10, boxed on the 1° chart; F13 telegram",23.157,123.115,"F13 line 064°; the sortie's track chart puts the 2108 contact about 140 nm out, 22-55N 123-07E"
+F2,formosa-1944,コヌ四エ,1944-10-11,2230,jacar:C13120398700,p37 p06,"(コヌ四エへ) 11, boxed; F19 telegrams 2230 and 2345",24.454,128.879,"F19 flew 093°; its own 0100 report gives N22-06 E125-30, ~230 nm from the box (see docs)"
+F3,formosa-1944,ホク三テ,1944-10-12,0210,jacar:C13120398700,p37 p06,"(ホク三テへ) 12, boxed; F23 telegram",21.538,123.938,Chart label could be read ホタ; the telegram has ホク
+F4,formosa-1944,ヘメ一サ,1944-10-12,0240,jacar:C13120398700,p37 p06,"(ヘメ一サへ) 12, boxed; F23 telegram",20.230,123.084,Last kana looks like ザ/ゲ on the chart; サ in the telegram
+F5,formosa-1944,キユ二イ,1944-10-12,0255,jacar:C13120398700,p37 p06,"(キユ二イへ) 12, boxed; F27 telegram",20.649,122.575,1' below the 20-40N line
+F6,formosa-1944,テコ一カ,1944-10-12,0310,jacar:C13120398700,p37 p06,"(テコ一カへ) 12, boxed; F27 telegram",21.244,122.146,
+F7,formosa-1944,ツク四セ,1944-10-12,0320,jacar:C13120398700,p37 p06,"(ツク四セへ) 12, boxed; F27 telegram",21.326,122.814,"Box centre 0.4' south of 21-20N; ク is the row above コ (F6, F10)"
+F8,formosa-1944,ホリ三ク,1944-10-16,0045,jacar:C13120398700,p37 p10,"(ホリ三クへ) 16, boxed; F18 telegram",22.090,123.718,F18 line 085°; agrees with its dead reckoning
+F9,formosa-1944,レリ五ソ,1944-10-16,0200,jacar:C13120398700,p37 p10,"(レリ?ソへ), boxed on the fold; F18 telegram レリ五ソ",22.075,125.088,
+F10,formosa-1944,ソコ四ラ,1944-10-16,0230,jacar:C13120398700,p37 p10,"(ソコ四ラへ) 16, boxed; F18 telegram partly legible",21.315,126.290,
+F11,formosa-1944,レス四セ,1944-10-17,0235,jacar:C13120398700,p37 p13,"(レス四セへ) 17, label half hidden by the fold; KEA95 telegram and 戦闘速報",20.757,125.182,"KEA95 flew 129° 290 nm and had a radar contact 50 km ahead at 0230, which dead-reckons to ~18-35N 125-13E, 2° south of the box"
+F12,formosa-1944,ネメ一タ,1944-10-17,0250,jacar:C13120398700,p37 p13,"(ネメ一タへ) 17, boxed; KEA95 telegram",20.171,124.444,
+F13,formosa-1944,リマ四エ,1944-10-18,0248,jacar:C13120398700,p37 p14,"(リマ四エへ) 18, boxed",19.376,127.705,F24's 0248 telegram on p14 seems to read differently (only ト.セ四 legible); unresolved
+F14,formosa-1944,ナセ四テ,1944-10-18,0400,jacar:C13120398700,p37 p14,"(ナセ四テへ), boxed; F24 telegram",18.995,128.208,"Box centre on the 19-00N line, so セ is 18-40N or 19-00N"
+F15,formosa-1944,ホタ三ク,1944-10-26,0045,jacar:C13120398700,p37 p38 p23,"(ホタ三クへ) 26, boxed on both charts; F30 telegram",17.122,123.762,"p38 copy measures 17-07.0N 123-45.3E; the box bears 150° from Garanbi, F30's line was 146° or 155°"
+F16,formosa-1944,レヨ四セ,1944-10-26,0050,jacar:C13120398700,p38 p23,"(レヨ四セへ) 26, boxed; F28 telegram",15.077,125.177,"Second kana unclear on both; 5' north of 15-00N, so ヨ may be 14-40N"
+F17,formosa-1944,ツシ二ケ,1944-10-27,,jacar:C13120398700,p38,"(ツシ二ケへ) 27, boxed",15.246,122.889,"Sortie page not found; shares row 15-00N with F16, so one of the two rows is off by one"
+M1,leyte-1944,?ラ二シ,1944-10-24,,jacar:C13120398700,p38,"(?ラ二シヤ) 24, boxed; first kana hidden by the fold",14.455,125.320,Same row as L4 (ソ); either this kana or L4's position is wrong
+M2,leyte-1944,ヤイ四ケ,1944-10-25,0350,jacar:C13120398700,p38 p21,"(ヤイ四ケヤ) 25, boxed; KEA95 telegram",14.079,126.288,KEA95 flew 100° 360 nm from Manila
+M3,leyte-1944,ムエ二イ,1944-10-25,0210,jacar:C13120398700,p38 p21,"(ムエ二イヤ) 25, boxed; KEA95 telegram",13.299,124.749,Chart label could be read ハエ; the telegram has ム
+M4,leyte-1944,モエ一カ,1944-10-25,0220,jacar:C13120398700,p38 p21,"(モエ一カヤ) 25, boxed; KEA95 telegram",13.237,125.738,Chart label could be read キエ; the telegram has モ
+M5,leyte-1944,ノエ三ス,1944-10-25,0320,jacar:C13120398700,p38 p21,"(ノエ三スヤ) 25, boxed; KEA95 telegram",13.036,126.456,"The track chart marks the 0325 force at E127° N13°10', 20' east of column ノ"
+M6,leyte-1944,ツヲ二ケ,1944-10-28,2328,jacar:C13120398700,p38 p26,"(ツヲ二ケヤ) 28, boxed; KEA95 telegram and 戦闘速報 (精度良好)",14.882,125.309,"Chart label looked like トリ under the fold; the telegram has ツヲ. Puts ヲ at 14-40N, 20' south of where L7-L9 put it"

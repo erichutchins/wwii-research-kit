@@ -1,0 +1,3 @@
+[submodule "records"]
+	path = records
+	url = https://github.com/erichutchins/wwii-unit-records.git

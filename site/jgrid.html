@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Position codes: the Japanese Navy's kana grid</title>
+<link rel="stylesheet" href="viz.css">
+<style>
+  .land { fill: var(--land); stroke: var(--coast); }
+  .graticule { fill: none; stroke: var(--coast); stroke-opacity: 0.45; }
+  #map { cursor: grab; }
+  #map:active { cursor: grabbing; }
+  .deg text { fill: var(--text-muted); pointer-events: none; }
+  .strip { fill: var(--c); fill-opacity: 0.07; stroke: var(--c); stroke-opacity: 0.7; }
+  .sl { fill: var(--c); font-weight: 700; text-anchor: middle; cursor: default;
+        paint-order: stroke; stroke: var(--surface-1); stroke-linejoin: round; }
+  .cl { fill: var(--c); fill-opacity: 0.8; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .base { fill: var(--surface-1); stroke: var(--text-primary); }
+  .base-label { fill: var(--text-secondary); pointer-events: none; paint-order: stroke; stroke: var(--surface-1); stroke-linejoin: round; }
+  .anchor { fill: var(--c); stroke: var(--surface-1); cursor: pointer; }
+  .anchor.open { fill: var(--surface-1); stroke: var(--c); }
+  .anchor:hover { stroke: var(--text-primary); }
+  .flight { fill: var(--surface-1); stroke: var(--text-primary); cursor: default; }
+  .miss { stroke: var(--text-primary); stroke-opacity: 0.55; stroke-dasharray: 4 3; pointer-events: none; }
+  .hotsq path, .probe path { fill: var(--c); fill-opacity: 0.18; stroke: var(--c); pointer-events: none; }
+  .probe path.partial { fill-opacity: 0.12; stroke-dasharray: 6 3; }
+  .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .zoom-btns button { font: 16px system-ui; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+                      background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
+  .hint { position: absolute; left: 12px; bottom: 8px; color: var(--text-muted); font-size: 12px; pointer-events: none; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  .anatomy { font-size: 26px; letter-spacing: 0.08em; margin: 4px 0 6px; }
+  .anatomy .a { color: var(--series-track); font-weight: 700; }
+  .anatomy .b { color: var(--series-attack); font-weight: 700; }
+  .anatomy .c { color: var(--series-air); }
+  .decoder input { font: 18px system-ui; padding: 5px 10px; width: 9em; border: 1px solid var(--border);
+                   border-radius: 6px; background: var(--page); color: var(--text-primary); }
+  .decoder select { font: inherit; padding: 5px 6px; border: 1px solid var(--border); border-radius: 6px;
+                    background: var(--page); color: var(--text-primary); margin-left: 6px; }
+  .decoder .try { font: inherit; font-size: 13px; background: none; border: 1px solid var(--border); border-radius: 6px;
+                  color: var(--text-secondary); padding: 3px 8px; cursor: pointer; margin-left: 4px; }
+  .keytab { margin: 14px 0 18px; }
+  .keytab h3 { font-size: 14px; margin: 0 0 6px; }
+  .letters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 3px; margin: 4px 0; }
+  .letters > .muted { width: 150px; font-size: 12px; align-self: center; }
+  .lt { display: inline-flex; flex-direction: column; align-items: center; min-width: 46px; padding: 3px 4px;
+        border: 1.5px solid var(--c); border-radius: 6px; background: var(--surface-1); }
+  .lt b { font-size: 17px; color: var(--c); }
+  .lt small { font-size: 10.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .lt.probable { border-style: dashed; }
+  .lt.tentative { border-style: dotted; }
+  .gap { color: var(--text-muted); width: 10px; text-align: center; align-self: center; }
+</style>
+</head>
+<body class="viz-root">
+<div class="doc">
+  <header>
+    <div>
+      <h1>Position codes: the Japanese Navy's kana grid</h1>
+      <p class="lede">Japanese search planes reported an enemy's position as four characters:
+        「<span class="mono">メキ四テ</span>」, 「<span class="mono">ヤソ3ス</span>」. The two kana name a 20′ square of
+        ocean, but the letters are scrambled and change with the base the search flew from. The code tables
+        don't survive, so each key is being rebuilt letter by letter from reports whose position is known some other way.</p>
+    </div>
+    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html">Map</a><a href="dives.html">Dive profile</a><a href="battle.html">Battles</a><a href="zones.html">Time zones</a><a href="jgrid.html" aria-current="page">Position codes</a><a href="grids.html">Map grids</a></nav>
+  </header>
+
+  <h2>How to read one</h2>
+  <div class="callout">
+    <div class="anatomy"><span class="a">ホ</span><span class="b">ク</span><span class="c">三テ</span><span class="muted">へ</span></div>
+    <p style="margin:0">A 901st Air Group flying boat, 12 October 1944, 0210: "enemy task force, apparently, detected, ホク三テへ".
+      <span style="color:var(--series-track);font-weight:700">ホ</span> is the column: 123°40′–124°00′E.
+      <span style="color:var(--series-attack);font-weight:700">ク</span> is the row: 21°20′–21°40′N.
+      <span style="color:var(--series-air)">三テ</span> places the point inside that square; how is not yet worked out.
+      <span class="muted">へ</span> names the base point, here 鵝鑾鼻 (Garanbi), Formosa's south cape. Read with it, the code
+      means a square about 20 nautical miles a side, some 170 nm east of the cape.</p>
+  </div>
+  <p>The squares sit on whole degrees, three columns and three rows to a degree, like a chessboard laid on the chart.
+    The letters along each edge aren't in any alphabetical order, so neighbouring columns can be ホ, ネ, ヘ. A key is the
+    set of letters for one base point. The 901st's flights from Formosa signed their codes with へ and its flights from
+    Manila with ヤ, and the same square has different letters in the two. The searches from Kanoya in April 1945,
+    the ones that hunted TF 58 off Okinawa, add no suffix and use a third key.</p>
+
+  <div class="filters"><div class="seg" id="key-seg" role="group" aria-label="Key"></div></div>
+  <div class="card map-card">
+    <div class="legend">
+      <span><svg width="26" height="14"><rect x="1" y="1" width="24" height="12" fill="var(--series-track)" fill-opacity="0.12" stroke="var(--series-track)"/></svg>A column or row whose letter is placed: solid good, dashed probable, dotted tentative</span>
+      <span><svg width="14" height="14"><circle cx="7" cy="7" r="4.5" fill="var(--series-track)"/></svg>Anchor: a code whose position is known</span>
+      <span><svg width="14" height="14"><circle cx="7" cy="7" r="4" fill="var(--surface-1)" stroke="var(--series-track)" stroke-width="1.5"/></svg>Anchor with a letter not yet placed</span>
+      <span><svg width="34" height="12"><circle cx="5" cy="6" r="3" fill="var(--surface-1)" stroke="var(--text-primary)"/><line x1="8" y1="6" x2="30" y2="6" stroke="var(--text-primary)" stroke-opacity="0.55" stroke-dasharray="4 3"/></svg>Where the flight itself put the contact</span>
+      <span><svg width="14" height="14"><path transform="translate(7,8)" d="M0,-5L4.5,3.5L-4.5,3.5Z" fill="var(--surface-1)" stroke="var(--text-primary)"/></svg>Base point</span>
+    </div>
+    <div class="map-wrap">
+      <svg id="map" role="img" aria-label="Map of the 20-minute squares placed so far in three Japanese position-code keys, with the anchors that placed them"></svg>
+      <div class="zoom-btns">
+        <button id="zin" aria-label="Zoom in">+</button>
+        <button id="zout" aria-label="Zoom out">−</button>
+        <button id="zreset" aria-label="Reset view">⟲</button>
+      </div>
+      <div class="hint">Scroll or pinch to zoom · drag to pan · zoom in to see each square's two kana</div>
+    </div>
+    <div class="caption">Each strip is one placed letter: a column runs north–south, a row east–west, and a code can be read
+      wherever a column and a row of the same colour cross. Hover an anchor to light up the square its code names; click it
+      to open its source. The white gaps are letters nobody has found yet.</div>
+  </div>
+
+  <h2>Try one</h2>
+  <div class="callout decoder">
+    <label>Code <input id="probe" value="ホク三テへ" spellcheck="false" autocomplete="off" lang="ja"></label>
+    <select id="probe-key" aria-label="Key, if the code has no suffix">
+      <option value="okinawa-1945">Okinawa 1945 (no suffix)</option>
+      <option value="formosa-1944">Formosa 1944 (へ)</option>
+      <option value="leyte-1944">Manila 1944 (ヤ)</option>
+    </select>
+    <button class="try" data-v="ホク三テへ">ホク三テへ</button><button class="try" data-v="ヤキ1カヤ">ヤキ1カヤ</button>
+    <button class="try" data-v="メキ四テ">メキ四テ</button><button class="try" data-v="スホ二レ">スホ二レ</button>
+    <button class="try" data-v="コヌ四エへ">コヌ四エへ</button>
+    <div id="probe-out" style="margin-top:8px"></div>
+  </div>
+  <p class="muted">A code ending in へ or ヤ is read on that key. Without a suffix, pick the key. A letter not yet placed
+    leaves only a strip lit on the map: that much of the position is known.</p>
+
+  <h2>The keys so far</h2>
+  <p>Each box is one placed letter, with the edge of its strip. A dot stands for a 20′ strip whose letter isn't known yet.</p>
+  <div id="keys"></div>
+
+  <h2>Where the letters come from</h2>
+  <ul>
+    <li><b>Manila 1944</b> began with a figure in the official war history (戦史叢書 vol. 56, fig. 34), which draws three
+      columns and three rows off Samar on 25 October 1944, the morning of the Battle off Samar. The 901st's charts and signals add six more.</li>
+    <li><b>Formosa 1944</b> comes from the 901st Air Group's night-search report for 10–28 October 1944
+      (<a href="https://www.jacar.archives.go.jp/das/image/C13120398700" target="_blank" rel="noopener">JACAR C13120398700</a>).
+      It ends with two charts on a printed 1° graticule where the staff plotted every contact as a boxed ☒ with its code.
+      Each box was measured against the graticule, to about ±5′, and each code checked against the signal on the sortie's
+      own page. The war history's "Ishigaki 203° 152 nm" for ヘリ4セ, 14 October, lands in the same column and row.</li>
+    <li><b>Okinawa 1945</b> rests on a pencil track chart from 21 April 1945 with three contacts sketched beside the islands, and on
+      the 6 April reports that must include Haynsworth's task group (see <a href="patrols.html?ship=haynsworth">her track</a>).
+      Two night scouts on 7 April coded their own positions (<a href="https://www.jacar.archives.go.jp/das/image/C13120385000">JACAR
+      C13120385000</a>), dead-reckoned from Kanoya along their search lines. They agree with サ and キ and suggest ケ.</li>
+  </ul>
+
+  <h2>What isn't known</h2>
+  <ul>
+    <li><b>The last two characters.</b> A digit and a kana place the point within the square. The plotted boxes are only good to
+      a quarter of a square, and they show no more than hints: every 一 sits in the north-west of its square,
+      イ near the top, セ near the bottom.</li>
+    <li><b>Whether the chart is right.</b> The 901st's chart is its staff's reading of the signals. For five contacts the
+      flight's own track gives a second position (the dashed lines on the map). Three agree. Two don't: コヌ四エへ (11 Oct) is plotted about 230 nm
+      from where the flight reported itself an hour later, and レス四セへ (17 Oct) 2° north of the flight's dead reckoning.</li>
+    <li><b>Whether rows repeat.</b> Rows ツ, キ, テ start at 12°N in the Manila key of 1944 and at 27°N in the Okinawa key
+      of 1945, 15° (45 rows) apart. The へ and ヤ keys share no row letters but do share a column letter, ツ, at different
+      longitudes. So the base point may change only the columns, with one row alphabet repeating every 15°. If so,
+      row エ in April 1945 would be 28°00′N and イ 29°00′N. Nothing has tested that yet.</li>
+  </ul>
+  <p class="muted">Method, every anchor and the open questions: <span class="mono">guides/JAPANESE-GRID.md</span>. The letters are
+    <span class="mono">reference/jgrid/keys.csv</span>, the anchors <span class="mono">reference/jgrid/anchors.csv</span>, and
+    <span class="mono">tools/jgrid.py</span> decodes and checks them.</p>
+</div>
+
+<div id="tip" role="tooltip"></div>
+
+<script src="config.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="jgrid.js"></script>
+<script>
+  document.querySelectorAll(".try").forEach(b => b.addEventListener("click", () => {
+    const i = document.getElementById("probe"); i.value = b.dataset.v; i.dispatchEvent(new Event("input"));
+  }));
+</script>
+</body>
+</html>

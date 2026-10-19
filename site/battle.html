@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Submarine Battles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap">
+<style>
+/* One page for every engagement in records/battles/ (battle.html?e=<id>; built by tools/build_battle.py).
+   Layout: chart-room working sheet. Map left and the pack's log right, the same height so playback never moves the page
+   (the log scrolls inside its own panel). A timeline lane per boat under the map; the order of battle, with category
+   silhouettes in the manner of the wartime recognition plates, below.
+   Colours are the project's validated chart palette (viz.css): boats take categorical slots 1-3 in the engagement's
+   order (--c1..--c3); the Japanese side is ink. */
+:root {
+  --page: #f9f9f7; --surface: #fcfcfb; --land: #e6e5df; --coast: #b7b6ab; --sea-grid: #ecebe6;
+  --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #6f6e69; --rule: rgba(11,11,11,0.10); --wash: rgba(11,11,11,0.05);
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --fire: #d42a3c; --japan: #0b0b0b;
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-type: "Courier Prime", "Courier New", Courier, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #0d0d0d; --surface: #1a1a19; --land: #33332f; --coast: #5f5f57; --sea-grid: #242422;
+    --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #9d9c95; --rule: rgba(255,255,255,0.10); --wash: rgba(255,255,255,0.06);
+    --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --japan: #ffffff; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #0d0d0d; --surface: #1a1a19; --land: #33332f; --coast: #5f5f57; --sea-grid: #242422;
+  --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #9d9c95; --rule: rgba(255,255,255,0.10); --wash: rgba(255,255,255,0.06);
+  --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --japan: #ffffff; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--page); color: var(--ink); font: 14px/1.45 var(--font-ui); }
+.wrap { max-width: 1440px; margin: 0 auto; padding-inline: 20px; padding-block: 18px 28px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+
+header { display: grid; gap: 4px; }
+.nav { display: flex; gap: 4px; justify-self: end; grid-row: 1; }
+.nav a { white-space: nowrap; color: var(--ink-2); text-decoration: none; padding: 5px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 13px; }
+.nav a:hover { background: var(--wash); }
+.nav a[aria-current="page"] { color: var(--ink); font-weight: 600; border-color: var(--rule); background: var(--surface); }
+.nav a.theater { margin-left: 8px; position: relative; }
+.nav a.theater::before { content: ""; position: absolute; left: -7px; top: 20%; bottom: 20%; border-left: 1px solid var(--ink-3); opacity: .5; }
+.eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+h1 { font-size: 24px; line-height: 1.2; margin: 0; text-wrap: balance; font-weight: 650; }
+.lede { margin: 0; color: var(--ink-2); max-width: 75ch; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.pick { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 13px; }
+.pick select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 7px 10px; max-width: 100%; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { font: inherit; background: none; color: var(--ink-2); border: 0; border-right: 1px solid var(--rule); padding: 7px 14px; cursor: pointer; text-align: left; }
+.seg button:last-child { border-right: 0; }
+.seg button:hover { background: var(--wash); }
+.seg button[aria-pressed="true"] { color: var(--ink); background: var(--wash); }
+.seg button b { display: block; font-weight: 650; }
+.seg button span { font-size: 12px; color: var(--ink-3); }
+button:focus-visible, input:focus-visible, a:focus-visible, .row:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 400px); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; min-width: 0; }
+
+.map-card { display: grid; grid-template-rows: auto auto auto; overflow: hidden; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 14px 8px; color: var(--ink-2); font-size: 12px; border-bottom: 1px solid var(--rule); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend svg { overflow: visible; flex: none; }
+.legend .boat { color: var(--ink); font-weight: 600; }
+.map-box { position: relative; height: clamp(340px, calc(100vh - 250px), 660px); }
+#map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#inset { position: absolute; right: 10px; top: 10px; width: 132px; height: 132px; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; }
+
+.land { fill: var(--land); stroke: var(--coast); stroke-width: 0.8; }
+.grat { stroke: var(--sea-grid); stroke-width: 1; fill: none; }
+.grat-label { fill: var(--ink-3); font: 11px var(--font-type); }
+.place { fill: var(--ink-3); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
+.scale line { stroke: var(--ink-2); stroke-width: 1.5; }
+.scale text { fill: var(--ink-2); font: 11px var(--font-type); }
+.trk { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.trk.ahead { stroke-opacity: 0.25; stroke-dasharray: 3 4; }
+.mk { cursor: pointer; transition: opacity 120ms; }
+.mk.future { opacity: 0.22; }
+/* an attack's diamond appears when she fires (with a red pulse), not before */
+.mk.attack.future { opacity: 0; pointer-events: none; }
+.fire { fill: none; stroke: var(--fire); pointer-events: none; }
+.fire-core { fill: var(--fire); pointer-events: none; }
+.mk .ring { fill: var(--surface); }
+.mk-label { font: 700 11px var(--font-ui); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
+.mk-label.jp { font-weight: 600; fill: var(--ink-2); }
+/* moving boat names sit under the marks layer, so attack and ship labels stay readable as the boats pass */
+.now-name { font: 600 11px var(--font-ui); fill: var(--ink-2); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
+.mk.hot path, .mk.hot circle.shape { stroke: var(--ink); stroke-width: 2; }
+
+.time { border-top: 1px solid var(--rule); padding: 8px 14px 12px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; align-items: center; }
+#play { font: inherit; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); cursor: pointer; grid-row: span 3; }
+.readout { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; color: var(--ink-2); font-size: 12px; }
+.readout b { color: var(--ink); font: 700 15px var(--font-type); font-variant-numeric: tabular-nums; }
+#lanes { width: 100%; height: 92px; display: block; cursor: pointer; }
+#lanes .lane-label { fill: var(--ink-2); font-size: 11px; font-weight: 600; }
+#lanes .lane-line { stroke: var(--rule); }
+#lanes .axis text { fill: var(--ink-3); font: 10px var(--font-type); }
+#lanes .axis line { stroke: var(--rule); }
+#lanes .cursor { stroke: var(--ink); stroke-width: 1.5; }
+#scrub { width: 100%; margin: 0; accent-color: var(--ink-2); }
+
+/* The log card takes the map card's height (height 0, min-height 100% of the grid row) and scrolls inside */
+.side { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 0; min-height: 100%; overflow: hidden; }
+h2 { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); margin: 0; padding: 12px 14px 6px; font-weight: 650; }
+.side h2 { border-bottom: 1px solid var(--rule); padding-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.side h2 span { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-3); font-size: 12px; }
+.log { position: relative; overflow-y: auto; overscroll-behavior: contain; }
+
+.sil { display: block; flex: none; overflow: visible; }
+.oob-card { padding-bottom: 14px; }
+.oob { padding: 4px 14px 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr); gap: 14px 28px; font-size: 13px; }
+.oob h3 { font-size: 13px; margin: 0 0 8px; }
+.oob .muted { color: var(--ink-3); font-size: 12px; }
+.plates { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px 14px; }
+.pack .plates { grid-template-columns: minmax(0, 1fr); }
+.plate { display: grid; gap: 3px; align-content: start; }
+.plate .sil { width: 100%; max-width: 150px; height: auto; }
+.pack .plate { grid-template-columns: 150px minmax(0, 1fr); gap: 2px 12px; align-items: end; }
+.pack .plate .sil { grid-row: span 2; }
+.plate .nm { font-weight: 600; line-height: 1.25; }
+.plate .kd { color: var(--ink-3); font-size: 12px; line-height: 1.3; }
+.plate.sunk .nm::after { content: " ✕ sunk"; font-weight: 400; color: var(--ink-2); font-size: 12px; }
+.oob .convoy-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: -4px 0 10px; }
+.oob .outcome { margin: 12px 0 0; max-width: 90ch; }
+.row { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 2px 10px; padding: 9px 14px; border-top: 1px solid var(--rule); cursor: pointer; }
+.row:hover { background: var(--wash); }
+.row.current { background: var(--wash); box-shadow: inset 3px 0 0 var(--ink); }
+.row.future { opacity: 0.45; }
+.row .t { font: 700 13px var(--font-type); font-variant-numeric: tabular-nums; }
+.row .t small { display: block; font: 400 11px var(--font-type); color: var(--ink-3); }
+.row .who { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); flex-wrap: wrap; }
+.row .who b { color: var(--ink); }
+.row .chip { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+.row .who .sil { width: 48px; height: 9.6px; margin-right: 2px; }
+.row .q { font-family: var(--font-type); font-size: 13px; line-height: 1.4; margin-top: 2px; overflow-wrap: anywhere; }
+.row .out { font-size: 12px; color: var(--ink-2); margin-top: 4px; padding-left: 8px; border-left: 2px solid var(--rule); }
+.row .doubt { font-size: 12px; color: var(--ink-3); font-style: italic; margin-top: 3px; }
+.row a { color: var(--ink-2); font-size: 12px; }
+
+.notes { color: var(--ink-2); font-size: 13px; display: grid; gap: 6px; max-width: 95ch; }
+.notes p { margin: 0; }
+
+#tip { position: fixed; z-index: 10; pointer-events: none; max-width: 300px; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-size: 12px; }
+#tip .v { font-weight: 650; font-size: 13px; }
+#tip .k { color: var(--ink-2); font-family: var(--font-type); }
+#tip .m { color: var(--ink-2); margin-top: 4px; }
+#tip .i { color: var(--ink-3); font-style: italic; margin-top: 4px; }
+
+@media (max-width: 760px) {
+  .main { grid-template-columns: minmax(0, 1fr); }
+  .side { height: 60vh; min-height: 320px; }
+  .map-box { height: 58vh; }
+  #inset { width: 96px; height: 96px; }
+  .oob { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  .wrap { padding-inline: 16px; }
+  h1 { font-size: 20px; }
+  .seg button { padding: 6px 10px; }
+  .pack .plate { grid-template-columns: 110px minmax(0, 1fr); }
+  .plates { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html">Map</a><a href="dives.html">Dive profile</a><a href="battle.html" aria-current="page">Battles</a><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a></nav>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 id="title"></h1>
+    <p class="lede" id="lede"></p>
+  </header>
+
+  <div class="controls">
+    <label class="pick" id="pick" hidden>Engagement <select id="engagement"></select></label>
+    <div class="seg" id="nights" role="group" aria-label="Action"></div>
+  </div>
+
+  <div class="main">
+    <div class="card map-card">
+      <div class="legend" id="legend"></div>
+      <div class="map-box">
+        <svg id="map" role="img" aria-label="Map of the battle"></svg>
+        <svg id="inset" role="img" aria-label="Where the battles were fought"></svg>
+      </div>
+      <div class="time">
+        <button id="play" aria-label="Play the battle">▶</button>
+        <div class="readout"><span><b id="gmt"></b> GMT</span><span id="tokyo"></span></div>
+        <svg id="lanes" aria-label="Timeline: one lane per boat and one for the Japanese side. Click to set the time."></svg>
+        <input id="scrub" type="range" aria-label="Time">
+      </div>
+    </div>
+
+    <div class="card side">
+      <h2>Log <span>Follows the clock; click an entry to go there</span></h2>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <section class="card oob-card" aria-labelledby="oob-h">
+    <h2 id="oob-h">Order of battle</h2>
+    <div class="oob" id="oob"></div>
+  </section>
+
+  <div class="notes" id="notes"></div>
+</div>
+<div id="tip" hidden></div>
+
+<script type="application/json" id="data"></script>
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+(async () => {
+  // records/battles/<id>.json is built by tools/build_battle.py; a standalone copy carries one engagement inline instead
+  const inline = document.getElementById("data").textContent.trim();
+  let D;
+  // three ways in: one engagement inlined; every engagement inlined ({index, engagements}, chosen by #id);
+  // or served, chosen by ?e=<id>
+  const bundle = inline ? JSON.parse(inline) : null;
+  let index = null, id = null;
+  if (bundle && !bundle.engagements) D = bundle;
+  else {
+    index = bundle ? bundle.index : await fetch(RECORDS + "battles/index.json").then(r => r.json());
+    const want = bundle ? decodeURIComponent(location.hash.slice(1)) : new URLSearchParams(location.search).get("e");
+    id = index.some(x => x.id === want) ? want : index[0].id;
+    D = bundle ? bundle.engagements[id] : await fetch(`${RECORDS}battles/${id}.json`).then(r => r.json());
+    const sel = document.getElementById("engagement");
+    sel.innerHTML = index.map(x => `<option value="${x.id}"${x.id === id ? " selected" : ""}>${x.short} · ${x.boats.join(", ")} · ${x.actions.length > 1 ? x.actions.length + " actions" : x.actions[0]}</option>`).join("");
+    sel.addEventListener("change", () => {
+      if (bundle) { location.hash = encodeURIComponent(sel.value); location.reload(); }
+      else location.search = "?e=" + encodeURIComponent(sel.value);
+    });
+    document.getElementById("pick").hidden = index.length < 2;
+  }
+  D.nights = D.actions;
+  const BOATS = D.boats;
+  const OTHERS = D.others || [];
+  const SIDES = [...BOATS.map(b => ({ id: b.id, name: b.name })), ...OTHERS.map(o => ({ id: o.id, name: o.name })), { id: "japan", name: "Japanese" }];
+  const isOther = id => OTHERS.some(o => o.id === id);
+  const color = id => id === "japan" ? "var(--japan)" : isOther(id) ? "var(--ink-2)" : `var(--c${BOATS.findIndex(b => b.id === id) + 1})`;
+  const nameOf = id => (SIDES.find(s => s.id === id) || {}).name || id;
+  const T = s => Date.parse(s);
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const pad = n => String(n).padStart(2, "0");
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const hhmm = ms => { const d = new Date(ms); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()); };
+  const day = ms => { const d = new Date(ms); return `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`; };
+  const dm = (v, pos, neg) => { const a = Math.abs(v), d = Math.floor(a + 1e-9), m = Math.round((a - d) * 60); return `${d}°${m ? pad(m) + "′" : ""}${v >= 0 ? pos : neg}`; };
+  const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // Category silhouettes (records/silhouettes/silhouettes.yml), bow to the right, waterline at y=22 (viewBox 0 0 120 24).
+  // build_battle.py copies them into each engagement's data, so a standalone copy carries them too.
+  const SIL = D.silhouettes;
+  const sil = (type, fill, w) => SIL[type] ? `<svg class="sil" viewBox="0 0 120 24" width="${w}" height="${w / 5}" aria-hidden="true"><path d="${SIL[type]}" fill="${fill}"/></svg>` : "";
+
+  let night = 0, t = 0, playing = false, raf = 0;
+
+  // ---------- header and notes from the engagement
+  document.title = D.short || D.title;
+  document.getElementById("eyebrow").textContent = D.eyebrow;
+  document.getElementById("title").textContent = D.title;
+  document.getElementById("lede").textContent = D.lede;
+  document.getElementById("notes").innerHTML = D.notes.map(n => `<p><b>${esc(n.head)}</b> ${esc(n.text)}</p>`).join("");
+  const N = () => D.nights[night];
+  // an action is named for its convoy, or, where none is identified, for what the boat saw ("Lone tanker")
+  const target = n => n.convoy ? `Convoy ${n.convoy}` : (n.target_label || "Target");
+
+  // ---------- night switcher
+  const navEl = document.getElementById("nights");
+  D.nights.forEach((n, i) => {
+    const b = document.createElement("button");
+    b.innerHTML = `<b>${esc(n.label)}</b><span>${esc(target(n))}</span>`;
+    b.addEventListener("click", () => select(i));
+    navEl.appendChild(b);
+  });
+  navEl.hidden = D.nights.length < 2;
+
+  // ---------- legend
+  const shape = {
+    diamond: "M0,-6L6,0L0,6L-6,0Z",
+    cross: "M-5,-5L5,5M5,-5L-5,5",
+  };
+  // legend: only the marks this engagement has
+  const has = f => D.actions.some(f);
+  const LEG = [
+    ...BOATS.map(b => `<span class="boat"><svg width="22" height="10"><line x1="1" y1="5" x2="21" y2="5" stroke="${color(b.id)}" stroke-width="2.5"/></svg>${b.name}</span>`),
+    has(a => a.events.some(e => e.type === "attack")) && `<span><svg width="12" height="12" viewBox="-6 -6 12 12"><path d="${shape.diamond}" fill="var(--ink-2)"/></svg>Torpedo attack (pulses <svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="4.5" class="fire" stroke-width="2"/></svg> when fired)</span>`,
+    `<span><svg width="10" height="10" viewBox="-5 -5 10 10"><circle r="3.5" fill="var(--ink-2)"/></svg>Boat's reported position</span>`,
+    has(a => a.fixes.some(f => f.kind === "ship")) && `<span><svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="4.5" fill="none" stroke="var(--ink-2)" stroke-width="1.6"/></svg>Convoy or escort sighted</span>`,
+    has(a => a.sinkings.length) && `<span><svg width="12" height="12" viewBox="-6 -6 12 12"><path d="${shape.cross}" stroke="var(--japan)" stroke-width="2.2"/></svg>Ship hit or sunk (Japanese record)</span>`,
+    has(a => (a.estimates || []).length) && `<span><svg width="14" height="14" viewBox="-7 -7 14 14"><circle r="6" fill="var(--wash)" stroke="var(--ink-2)" stroke-width="1.4" stroke-dasharray="3 3"/></svg>Estimated position (another US record)</span>`,
+    has(a => a.fixes.some(f => !f.on_track && f.kind !== "ship")) && `<span><svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="4.5" fill="none" stroke="var(--ink-2)" stroke-width="1.4" stroke-dasharray="2 2"/></svg>Contradicted in the report</span>`,
+  ];
+  document.getElementById("legend").innerHTML = LEG.filter(Boolean).join("");
+
+  // ---------- map
+  const svg = d3.select("#map");
+  const gLand = svg.append("g"), gGrat = svg.append("g"), gPlace = svg.append("g"), gTrk = svg.append("g"),
+        gNowName = svg.append("g"), gMk = svg.append("g"), gNow = svg.append("g"), gPulse = svg.append("g"), gScale = svg.append("g").attr("class", "scale");
+  let proj = null, W = 0, H = 0, markBoxes = [];
+  const tip = document.getElementById("tip");
+
+  const PLACES = D.places;
+
+  function project(lon, lat) { return proj([lon, lat]); }
+
+  function drawStatic() {
+    const n = N(), box = n.box;
+    const el = svg.node(); W = el.clientWidth; H = el.clientHeight;
+    const corners = { type: "MultiPoint", coordinates: [[box[0], box[1]], [box[2], box[3]], [box[0], box[3]], [box[2], box[1]]] };
+    const m = Math.min(44, W * 0.06);
+    proj = d3.geoMercator().fitExtent([[m, 26], [W - m, H - 34]], corners);
+    const ringPath = r => "M" + r.map(p => proj(p).map(v => v.toFixed(1)).join(",")).join("L") + "Z";
+    gLand.selectAll("path").data([0]).join("path").attr("class", "land").attr("fill-rule", "evenodd")
+      .attr("d", N().land.map(ringPath).join(""));
+
+    // visible extent in lon/lat
+    const [w, nlat] = proj.invert([0, 0]), [e, slat] = proj.invert([W, H]);
+    const step = (e - w) > 4 ? 1 : 0.5;
+    const lats = d3.range(Math.ceil(slat / step) * step, nlat, step), lons = d3.range(Math.ceil(w / step) * step, e, step);
+    gGrat.selectAll("*").remove();
+    lats.forEach(la => {
+      const y = project(w, la)[1];
+      gGrat.append("line").attr("class", "grat").attr("x1", 0).attr("x2", W).attr("y1", y).attr("y2", y);
+      gGrat.append("text").attr("class", "grat-label").attr("x", 6).attr("y", y - 4).text(dm(la, "N", "S"));
+    });
+    lons.forEach(lo => {
+      const x = project(lo, slat)[0];
+      gGrat.append("line").attr("class", "grat").attr("y1", 0).attr("y2", H).attr("x1", x).attr("x2", x);
+      gGrat.append("text").attr("class", "grat-label").attr("x", x + 4).attr("y", H - 8).text(dm(lo, "E", "W"));
+    });
+    gPlace.selectAll("text").data(PLACES.filter(p => { const [x, y] = project(p.lon, p.lat); return x > 40 && x < W - 150 && y > 30 && y < H - 30; }))
+      .join("text").attr("class", "place").attr("x", p => project(p.lon, p.lat)[0]).attr("y", p => project(p.lon, p.lat)[1])
+      .attr("text-anchor", "middle").style("font-size", p => p.small ? "10px" : null).text(p => p.name);
+
+    // scale bar: 20 nautical miles
+    const midLat = (box[1] + box[3]) / 2, x0 = 16, y0 = H - 30;
+    const px = project(box[0] + 20 / (60 * Math.cos(midLat * Math.PI / 180)), midLat)[0] - project(box[0], midLat)[0];
+    gScale.selectAll("*").remove();
+    gScale.append("line").attr("x1", x0).attr("x2", x0 + px).attr("y1", y0).attr("y2", y0);
+    [0, px / 2, px].forEach(d => gScale.append("line").attr("x1", x0 + d).attr("x2", x0 + d).attr("y1", y0 - 4).attr("y2", y0 + (d % px ? 0 : 4)));
+    gScale.append("text").attr("x", x0 + px + 6).attr("y", y0 + 4).text("20 nm");
+
+    drawMarks();
+    drawInset();
+  }
+
+  function drawMarks() {
+    const n = N();
+    // tracks are drawn per frame (past/ahead); markers once per night
+    const items = [];
+    n.fixes.filter(f => f.kind !== "attack" && !f.ref.endsWith(" fired")).forEach(f => items.push({ k: f.kind === "ship" ? "ship" : (f.on_track ? "fix" : "off"), f, utc: T(f.utc), lon: f.lon, lat: f.lat }));
+    // attacks grouped by position so labels don't stack
+    const groups = d3.groups(n.events.filter(e => e.type === "attack" && e.lat != null), e => e.side + Math.round(e.lat * 30) + "," + Math.round(e.lon * 30));
+    groups.forEach(([, es]) => items.push({ k: "attack", es, utc: Math.min(...es.map(e => T(e.utc))), lon: es[0].lon, lat: es[0].lat, side: es[0].side, doubt: es.every(e => e.doubt) }));
+    d3.groups(n.sinkings, e => e.lat + "," + e.lon).forEach(([, es]) => items.push({ k: "jp", es, utc: Math.min(...es.map(e => T(e.utc))), lon: es[0].lon, lat: es[0].lat }));
+    (n.estimates || []).forEach(e => items.push({ k: "est", es: [e], utc: T(e.utc), lon: e.lon, lat: e.lat }));
+    const order = { off: 0, est: 1, ship: 2, fix: 3, jp: 4, attack: 5 };
+    items.sort((a, b) => order[a.k] - order[b.k]);
+
+    const labelled = new Set();
+    const sel = gMk.selectAll("g.mk").data(items).join("g").attr("class", d => "mk " + d.k)
+      .attr("transform", d => `translate(${project(d.lon, d.lat).map(v => v.toFixed(1))})`);
+    sel.selectAll("*").remove();
+    sel.each(function (d) {
+      const g = d3.select(this);
+      if (d.k === "fix") { g.append("circle").attr("class", "ring").attr("r", 5); g.append("circle").attr("class", "shape").attr("r", 3.5).attr("fill", color(d.f.boat)); }
+      if (d.k === "off") g.append("circle").attr("class", "shape").attr("r", 4.5).attr("fill", "none").attr("stroke", color(d.f.boat)).attr("stroke-width", 1.4).attr("stroke-dasharray", "2 2");
+      if (d.k === "ship") g.append("circle").attr("class", "shape").attr("r", 4.5).attr("fill", "var(--surface)").attr("stroke", color(d.f.boat)).attr("stroke-width", 1.8);
+      if (d.k === "attack") {
+        g.append("path").attr("d", shape.diamond).attr("transform", "scale(1.25)").attr("fill", "var(--surface)").attr("stroke", "var(--surface)").attr("stroke-width", 3);
+        g.append("path").attr("d", shape.diamond).attr("transform", "scale(1.1)")
+          .attr("fill", d.doubt ? "var(--surface)" : color(d.side)).attr("stroke", color(d.side)).attr("stroke-width", d.doubt ? 1.6 : 0).attr("stroke-dasharray", d.doubt ? "2 2" : null);
+      }
+      if (d.k === "jp") {
+        g.append("path").attr("d", shape.cross).attr("stroke", "var(--surface)").attr("stroke-width", 5);
+        g.append("path").attr("d", shape.cross).attr("stroke", "var(--japan)").attr("stroke-width", 2.2).attr("stroke-dasharray", d.es.every(e => e.doubt) ? "3 1.5" : null);
+        // the same ships recorded by two sources (HI-67's oilers: escort division chart and combinedfleet.com) get one label
+        const names = d.es.flatMap(e => e.title.replace(/ Maru/g, "").split(/ and |, /)), key = [...names].sort().join("+");
+        d.labelled = !labelled.has(key);
+        labelled.add(key);
+        if (d.labelled) {
+          const lab = g.append("g").attr("class", "lab");
+          const label = lab.append("text").attr("class", "mk-label jp").attr("x", -9).attr("y", 4).attr("text-anchor", "end")
+            .text([...new Set(names)].join(" + "));
+          const st = d.es.find(e => e.ship_type)?.ship_type;
+          if (st) {
+            const w = 34, x = -9 - Math.max(w, label.node().getComputedTextLength());
+            lab.insert("path", "text").attr("d", SIL[st]).attr("fill", "var(--japan)").attr("stroke", "var(--surface)").attr("stroke-width", 3).attr("vector-effect", "non-scaling-stroke").attr("paint-order", "stroke")
+              .attr("transform", `translate(${x},-12) scale(${w / 120})`);
+          }
+        }
+      }
+      if (d.k === "est") {  // a position another record gives only roughly ("about twenty miles East of the Island")
+        const e = d.es[0];
+        g.append("circle").attr("r", 13).attr("fill", "var(--wash)").attr("stroke", "var(--ink-2)").attr("stroke-width", 1.4).attr("stroke-dasharray", "3 3");
+        d.labelled = true;
+        const lab = g.append("g").attr("class", "lab");
+        const label = lab.append("text").attr("class", "mk-label jp").attr("x", 17).attr("y", 4).text(e.title.split(";")[0] + " (estimated)");
+        if (e.ship_type) lab.insert("path", "text").attr("d", SIL[e.ship_type]).attr("fill", "var(--ink-2)").attr("transform", `translate(10,-16) scale(${34 / 120})`);
+      }
+      g.append("circle").attr("r", 11).attr("fill", "transparent");
+    });
+    // Japanese labels that would cover another label or mark move up or down (nearest free slot first), with a leader line
+    const taken = items.map(d => { const [x, y] = project(d.lon, d.lat); return { x0: x - 7, x1: x + 7, y0: y - 7, y1: y + 7 }; });
+    sel.filter(d => (d.k === "jp" || d.k === "est") && d.labelled).each(function (d) {
+      const lab = d3.select(this).select(".lab"), b = lab.node().getBBox(), [x, y] = project(d.lon, d.lat);
+      const at = dy => ({ x0: x + b.x, x1: x + b.x + b.width, y0: y + dy + b.y, y1: y + dy + b.y + b.height });
+      const free = dy => { const q = at(dy); return !taken.some(r => q.x0 < r.x1 && q.x1 > r.x0 && q.y0 < r.y1 && q.y1 > r.y0); };
+      let dy = 0;
+      for (let k = 1; !free(dy) && k <= 30; k++) dy = (k % 2 ? -1 : 1) * Math.ceil(k / 2) * 4;
+      if (!free(dy)) dy = 0;
+      if (dy) {
+        const side = d.k === "jp" ? -1 : 1;
+        lab.attr("transform", `translate(0,${dy})`);
+        d3.select(this).insert("line", ".lab").attr("x1", side * 8).attr("y1", dy).attr("x2", side * 4).attr("y2", Math.sign(dy) * 3)
+          .attr("stroke", "var(--ink-2)").attr("stroke-width", 1);
+      }
+      taken.push(at(dy));
+    });
+    markBoxes = taken;
+    sel.on("mouseenter", (ev, d) => showTip(ev, d)).on("mousemove", moveTip).on("mouseleave", hideTip)
+      .on("click", (ev, d) => { setTime(d.utc); highlightRow(d.utc); });
+  }
+
+  function tipHTML(d) {
+    if (d.k === "attack" || d.k === "jp" || d.k === "est") {
+      return d.es.map(e => `<div class="v">${esc(nameOf(e.side))} · ${esc(e.title)}</div><div class="k">${hhmm(T(e.utc))} GMT · ${esc(e.local)}</div><div class="m">${esc(e.text)}</div>${e.outcome ? `<div class="m"><b>Japanese side.</b> ${esc(e.outcome)}</div>` : ""}${e.doubt ? `<div class="i">${esc(e.doubt)}</div>` : ""}`).join("<hr style='border:0;border-top:1px solid var(--rule)'>");
+    }
+    const f = d.f;
+    const what = d.k === "ship" ? "Sighted (target's position)" : d.k === "off" ? "Left off the track" : "Reported position";
+    return `<div class="v">${esc(nameOf(f.boat))} · ${esc(f.ref)}</div><div class="k">${esc(f.raw)} · ${hhmm(T(f.utc))} GMT · ${esc(f.local)}</div><div class="m">${what}. ${esc(f.note)}</div>${f.fix ? `<div class="i">${esc(f.fix)}</div>` : ""}`;
+  }
+  function showTip(ev, d) { tip.innerHTML = tipHTML(d); tip.hidden = false; moveTip(ev); }
+  function moveTip(ev) {
+    const r = tip.getBoundingClientRect();
+    let x = ev.clientX + 14, y = ev.clientY + 14;
+    if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - 14;
+    if (y + r.height > innerHeight - 8) y = ev.clientY - r.height - 14;
+    tip.style.left = Math.max(8, x) + "px"; tip.style.top = Math.max(8, y) + "px";
+  }
+  function hideTip() { tip.hidden = true; }
+
+  function posAt(pts, ms) {
+    if (!pts.length || ms < T(pts[0].utc) || ms > T(pts[pts.length - 1].utc)) return null;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i], ta = T(a.utc), tb = T(b.utc);
+      if (ms <= tb) { const k = tb === ta ? 1 : (ms - ta) / (tb - ta); return [a.lon + (b.lon - a.lon) * k, a.lat + (b.lat - a.lat) * k]; }
+    }
+    return [pts[pts.length - 1].lon, pts[pts.length - 1].lat];
+  }
+
+  // ---------- firing pulses: a red ring at the boat's position on her track as each attack's time is passed.
+  // A boat whose summary table and narrative both time an attack pulses once, at the narrative's (timed to the second).
+  let fires = [], lastT = null;
+  function setFires() {
+    const n = N(), attacks = n.events.filter(e => e.type === "attack");
+    const num = e => e.side + ":" + (e.title.match(/Attack (\d+)/) || [])[1];
+    const narrated = new Set(attacks.filter(e => e.title.includes("(narrative)")).map(num));
+    fires = attacks.filter(e => e.title.includes("(narrative)") || !narrated.has(num(e))).map(e => {
+      const ms = T(e.utc), at = posAt(n.tracks[e.side] || [], ms) || [e.lon, e.lat];
+      return { ms, lon: at[0], lat: at[1] };
+    });
+  }
+  function pulse(f) {
+    const [x, y] = project(f.lon, f.lat);
+    if (reduced) {  // no motion: a still ring for a moment
+      const c = gPulse.append("circle").attr("class", "fire").attr("cx", x).attr("cy", y).attr("r", 14).attr("stroke-width", 2.5);
+      setTimeout(() => c.remove(), 1100);
+      return;
+    }
+    gPulse.append("circle").attr("class", "fire-core").attr("cx", x).attr("cy", y).attr("r", 6).attr("opacity", 1)
+      .transition().duration(700).attr("opacity", 0).remove();
+    [0, 280].forEach(delay => gPulse.append("circle").attr("class", "fire").attr("cx", x).attr("cy", y).attr("r", 5).attr("stroke-width", 3).attr("opacity", 1)
+      .transition().delay(delay).duration(1300).ease(d3.easeCubicOut).attr("r", 30).attr("stroke-width", 0.5).attr("opacity", 0).remove());
+  }
+  function firePulses() {
+    // forward steps of up to three hours (playback, scrubbing) pulse what they pass; a jump onto an attack's minute pulses it
+    if (lastT !== null && t !== lastT) fires.filter(f => (f.ms > lastT && f.ms <= t && t - lastT < 3 * 3600e3) || f.ms === t).forEach(pulse);
+    lastT = t;
+  }
+
+  function drawFrame() {
+    const n = N();
+    const line = d3.line().x(p => project(p[0], p[1])[0]).y(p => project(p[0], p[1])[1]);
+    const rows = [];
+    BOATS.forEach(b => {
+      const pts = n.tracks[b.id] || [];
+      const now = posAt(pts, t);
+      const past = pts.filter(p => T(p.utc) <= t).map(p => [p.lon, p.lat]);
+      const ahead = pts.filter(p => T(p.utc) > t).map(p => [p.lon, p.lat]);
+      if (now) { past.push(now); ahead.unshift(now); }
+      rows.push({ id: b.id, cls: "past", pts: past }, { id: b.id, cls: "ahead", pts: ahead });
+      b._now = now;
+    });
+    gTrk.selectAll("path").data(rows).join("path").attr("class", d => "trk " + d.cls).attr("stroke", d => color(d.id))
+      .attr("d", d => d.pts.length > 1 ? line(d.pts) : null);
+    gMk.selectAll("g.mk").classed("future", d => d.utc > t);
+    firePulses();
+    const nows = BOATS.filter(b => b._now);
+    const ng = gNow.selectAll("g.now-boat").data(nows, b => b.id).join(enter => {
+      const g = enter.append("g").attr("class", "now-boat");
+      g.append("circle").attr("r", 10).attr("fill", b => color(b.id)).attr("opacity", 0.22);
+      g.append("circle").attr("r", 5).attr("fill", b => color(b.id)).attr("stroke", "var(--surface)").attr("stroke-width", 2);
+      return g;
+    });
+    ng.attr("transform", b => `translate(${project(b._now[0], b._now[1]).map(v => v.toFixed(1))})`);
+    // each boat's name takes the corner around her (NE, SE, NW, SW) that covers least of the other labels, marks
+    // and boats; the names sit under the marks layer, so where nothing is clear the attack labels still read
+    const used = markBoxes.concat(nows.map(b => { const [x, y] = project(b._now[0], b._now[1]); return { x0: x - 10, x1: x + 10, y0: y - 10, y1: y + 10 }; }));
+    const overlap = c => used.reduce((sum, r) => sum + Math.max(0, Math.min(c.x1, r.x1) - Math.max(c.x0, r.x0)) * Math.max(0, Math.min(c.y1, r.y1) - Math.max(c.y0, r.y0)), 0);
+    const spots = nows.map(b => {
+      const [x, y] = project(b._now[0], b._now[1]), w = b.name.length * 7.4;
+      // near corners first, then sides and farther spots; a little distance costs less than any overlap
+      const offs = [[11, -9, 0], [11, 17, 0], [-11 - w, -9, 0], [-11 - w, 17, 0], [14, 4, 1], [-14 - w, 4, 1],
+                    [11, -25, 2], [-11 - w, -25, 2], [11, 33, 2], [-11 - w, 33, 2]];
+      const cands = offs.map(([dx, dy, far]) => ({ cx: x + dx, cy: y + dy, far, x0: x + dx, x1: x + dx + w, y0: y + dy - 10, y1: y + dy + 2 }));
+      const score = c => overlap(c) + c.far * 4;
+      const pick = cands.reduce((best, c) => score(c) < score(best) ? c : best);
+      used.push(pick);
+      return pick;
+    });
+    gNowName.selectAll("text").data(nows, b => b.id).join("text").attr("class", "now-name").text(b => b.name)
+      .attr("x", (b, i) => spots[i].cx).attr("y", (b, i) => spots[i].cy);
+
+    document.getElementById("gmt").textContent = `${hhmm(t)} · ${day(t)}`;
+    document.getElementById("tokyo").textContent = `Tokyo time ${hhmm(t + 9 * 3600e3)} · ${day(t + 9 * 3600e3)}`;
+    document.getElementById("scrub").value = t;
+    drawCursor();
+    updateLog();
+  }
+
+  // ---------- inset locator
+  function drawInset() {
+    const s = d3.select("#inset"), el = s.node(), w = el.clientWidth, h = el.clientHeight;
+    s.selectAll("*").remove();
+    const ext = { type: "MultiPoint", coordinates: [[D.inset[0], D.inset[1]], [D.inset[2], D.inset[3]]] };
+    const p = d3.geoMercator().fitExtent([[4, 4], [w - 4, h - 4]], ext);
+    s.append("path").attr("class", "land").attr("fill-rule", "evenodd").attr("d", D.inset_land.map(r => "M" + r.map(q => p(q).map(v => v.toFixed(1)).join(",")).join("L") + "Z").join(""));
+    D.nights.forEach((n, i) => {
+      const [x0, y0] = p([n.box[0], n.box[3]]), [x1, y1] = p([n.box[2], n.box[1]]);
+      s.append("rect").attr("x", x0).attr("y", y0).attr("width", x1 - x0).attr("height", y1 - y0)
+        .attr("fill", i === night ? "var(--wash)" : "none").attr("stroke", i === night ? "var(--ink)" : "var(--ink-3)")
+        .attr("stroke-width", i === night ? 1.5 : 1).attr("stroke-dasharray", i === night ? null : "3 2");
+    });
+    PLACES.filter(q => q.inset).forEach(q => {
+      const [x, y] = p(Array.isArray(q.inset) ? q.inset : [q.lon, q.lat]);
+      s.append("text").attr("x", Math.max(4, Math.min(w - 4, x))).attr("y", Math.max(12, Math.min(h - 4, y))).attr("text-anchor", x > w / 2 ? "end" : "start")
+        .attr("class", "place").style("font-size", "9px").text(q.name);
+    });
+  }
+
+  // ---------- lanes
+  const lanes = d3.select("#lanes");
+  let lx = null;
+  function drawLanes() {
+    lanes.style("height", `${4 + SIDES.length * 16 + 22}px`);  // one 16px lane per side, plus the axis
+    const n = N(), el = lanes.node(), w = el.clientWidth, h = el.clientHeight;
+    const left = 70, laneH = 16, top = 4;
+    lx = d3.scaleUtc().domain([T(n.start), T(n.end)]).range([left, w - 8]);
+    lanes.selectAll("*").remove();
+    SIDES.forEach((s, i) => {
+      const y = top + i * laneH + laneH / 2;
+      lanes.append("line").attr("class", "lane-line").attr("x1", left).attr("x2", w - 8).attr("y1", y).attr("y2", y);
+      lanes.append("text").attr("class", "lane-label").attr("x", 0).attr("y", y + 4).text(s.name);
+      n.events.filter(e => e.side === s.id).forEach(e => {
+        const x = lx(T(e.utc));
+        if (e.type === "attack") lanes.append("path").attr("d", shape.diamond).attr("transform", `translate(${x},${y}) scale(0.95)`)
+          .attr("fill", e.doubt ? "var(--surface)" : color(s.id)).attr("stroke", color(s.id)).attr("stroke-width", e.doubt ? 1.4 : 0);
+        else if (e.type === "ditched") lanes.append("circle").attr("cx", x).attr("cy", y).attr("r", 4.5).attr("fill", "var(--wash)").attr("stroke", "var(--ink-2)").attr("stroke-width", 1.4).attr("stroke-dasharray", "2 2");
+        else if (s.id === "japan" && /torpedoed|sank/.test(e.type)) lanes.append("path").attr("d", shape.cross).attr("transform", `translate(${x},${y}) scale(0.7)`).attr("stroke", "var(--japan)").attr("stroke-width", 2.4);
+        else lanes.append("line").attr("x1", x).attr("x2", x).attr("y1", y - 4).attr("y2", y + 4).attr("stroke", e.type === "dive" ? color(s.id) : "var(--ink-3)").attr("stroke-width", 1.5);
+      });
+    });
+    const axisY = top + SIDES.length * laneH + 4;
+    const ax = lanes.append("g").attr("class", "axis");
+    lx.ticks(w < 500 ? 4 : 8).forEach(d => {
+      ax.append("line").attr("x1", lx(d)).attr("x2", lx(d)).attr("y1", top).attr("y2", axisY);
+      ax.append("text").attr("x", lx(d)).attr("y", axisY + 11).attr("text-anchor", "middle").text(hhmm(+d) + "Z");
+    });
+    lanes.append("line").attr("class", "cursor").attr("y1", 0).attr("y2", axisY);
+    const sc = document.getElementById("scrub");
+    sc.min = T(n.start); sc.max = T(n.end); sc.step = 60000;
+    drawCursor();
+  }
+  function drawCursor() { if (lx) lanes.select(".cursor").attr("x1", lx(t)).attr("x2", lx(t)); }
+  lanes.on("click", ev => { if (!lx) return; const [x] = d3.pointer(ev); stop(); setTime(+lx.invert(x)); });
+  document.getElementById("scrub").addEventListener("input", e => { stop(); setTime(+e.target.value); });
+
+  // ---------- order of battle
+  function drawOOB() {
+    const n = N();
+    const plate = s => `<div class="plate${s.sunk ? " sunk" : ""}">${sil(s.type, s.sunk ? "var(--ink)" : "var(--ink-3)", 150)}<div class="nm">${esc(s.name)}</div><div class="kd">${esc(s.kind)}</div></div>`;
+    document.getElementById("oob").innerHTML = `
+      <div class="pack"><h3>${BOATS.length > 1 ? "The pack" : "The boat"}</h3><div class="plates">${BOATS.map(b => `<div class="plate">${sil("submarine", color(b.id), 150)}<div class="nm">${b.name} (${b.hull}), patrol ${b.patrol_no}</div><div class="kd">${esc(b.co)}</div></div>`).join("")}</div></div>
+      <div><h3>${esc(target(n))}</h3><div class="muted convoy-meta"><span>${esc(n.route)}</span><span>${esc(n.ships_note)}</span></div>
+        <div class="plates">${n.escorts.map(plate).join("")}${n.ships.map(plate).join("")}</div>
+        <p class="outcome">${esc(n.outcome)}</p>
+        <p class="muted" style="margin:6px 0 0">${esc(n.sil_note)}</p></div>`;
+  }
+
+  // ---------- log
+  function drawLog() {
+    const n = N();
+    document.getElementById("log").innerHTML = n.events.map((e, i) => `
+      <div class="row" tabindex="0" data-i="${i}" data-t="${T(e.utc)}">
+        <div class="t">${hhmm(T(e.utc))}Z<small>${day(T(e.utc))}</small></div>
+        <div>
+          <div class="who">${e.side === "japan" || isOther(e.side) ? (sil(e.ship_type, color(e.side), 48) || `<span class="chip" style="background:${color(e.side)}"></span>`) : sil("submarine", color(e.side), 48)}<b>${esc(nameOf(e.side))}</b><span>${esc(e.title === "Log" ? "" : e.title)}</span><span>· ${esc(e.local)}</span></div>
+          <div class="q">${esc(e.text)}</div>
+          ${e.original ? `<div class="q" lang="ja" style="color:var(--ink-3)">${esc(e.original)}</div>` : ""}
+          ${e.outcome ? `<div class="out"><b>Japanese side.</b> ${esc(e.outcome)}</div>` : ""}
+          ${e.doubt ? `<div class="doubt">${esc(e.doubt)}</div>` : ""}
+          ${e.scan ? `<a href="${esc(e.scan)}" target="_blank" rel="noopener">${e.side === "japan" ? "Source" : "Report page"} ↗</a>` : ""}
+        </div>
+      </div>`).join("");
+    document.querySelectorAll("#log .row").forEach(r => {
+      const go = () => { stop(); setTime(+r.dataset.t); };
+      r.addEventListener("click", ev => { if (ev.target.closest("a")) return; go(); });
+      r.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); go(); } });
+    });
+  }
+  let lastCurrent = null;
+  function updateLog() {
+    const rows = [...document.querySelectorAll("#log .row")];
+    let cur = null;
+    rows.forEach(r => { const f = +r.dataset.t > t; r.classList.toggle("future", f); if (!f) cur = r; });
+    rows.forEach(r => r.classList.toggle("current", r === cur));
+    if (playing && cur && cur !== lastCurrent) scrollLog(cur, true);
+    lastCurrent = cur;
+  }
+  // scrollIntoView would also scroll the page away from the map; scroll the log panel alone
+  function scrollLog(row, smooth) {
+    const box = document.getElementById("log");
+    box.scrollTo({ top: Math.max(0, row.offsetTop - box.clientHeight / 3), behavior: smooth && !reduced ? "smooth" : "auto" });
+  }
+  function highlightRow(ms) {
+    const r = [...document.querySelectorAll("#log .row")].find(r => +r.dataset.t === ms);
+    if (r) scrollLog(r, true);
+  }
+
+  // ---------- time & playback
+  function setTime(ms) { const n = N(); t = Math.max(T(n.start), Math.min(T(n.end), ms)); drawFrame(); }
+  const playBtn = document.getElementById("play");
+  function stop() { playing = false; cancelAnimationFrame(raf); clearTimeout(raf); playBtn.textContent = "▶"; playBtn.setAttribute("aria-label", "Play the battle"); }
+  function play() {
+    const n = N(), span = T(n.end) - T(n.start);
+    if (t >= T(n.end)) t = T(n.start);
+    playing = true; playBtn.textContent = "❚❚"; playBtn.setAttribute("aria-label", "Pause");
+    if (reduced) {
+      const times = n.events.map(e => T(e.utc)).filter(x => x > t);
+      const step = () => { if (!playing) return; const nx = times.shift(); if (nx == null) { setTime(T(n.end)); stop(); return; } setTime(nx); raf = setTimeout(step, 1200); };
+      step(); return;
+    }
+    let last = performance.now();
+    const tick = now => {
+      if (!playing) return;
+      t += (now - last) * span / 45000; last = now;
+      if (t >= T(n.end)) { setTime(T(n.end)); stop(); return; }
+      drawFrame(); raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+  }
+  playBtn.addEventListener("click", () => playing ? stop() : play());
+
+  function select(i) {
+    stop(); night = i;
+    [...navEl.children].forEach((b, j) => b.setAttribute("aria-pressed", j === i ? "true" : "false"));
+    t = T(N().end); lastT = null; gPulse.selectAll("*").remove();
+    setFires(); drawOOB(); drawLog(); drawStatic(); drawLanes(); drawFrame();
+  }
+
+  new ResizeObserver(() => { if (proj) { drawStatic(); drawLanes(); drawFrame(); } }).observe(document.querySelector(".map-box"));
+  select(0);
+})();
+</script>
+</body>
+</html>
