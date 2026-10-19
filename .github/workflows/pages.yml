@@ -47,6 +47,13 @@ jobs:
           cp -r site reference records _site/
           rm -rf _site/records/.git
           printf '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=site/"><title>WWII research kit</title><a href="site/">WWII research kit</a>\n' > _site/index.html
+      - name: Stamp the build (time, and each repository's commit and date) for the page footer
+        run: |
+          kit_sha=$(git rev-parse HEAD); kit_date=$(git log -1 --format=%cI)
+          rec_sha=$(git -C records rev-parse HEAD); rec_date=$(git -C records log -1 --format=%cI)
+          printf '{"built":"%s","kit":{"sha":"%s","date":"%s"},"records":{"sha":"%s","date":"%s"}}\n' \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$kit_sha" "$kit_date" "$rec_sha" "$rec_date" > _site/site/build.json
+          cat _site/site/build.json
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
