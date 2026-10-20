@@ -73,8 +73,8 @@ const fmtUTC = d3.utcFormat("%-d %b %Y · %H%M GCT");
 
 // ── Data ────────────────────────────────────────────────────────────────────
 d3.json(RECORDS + "ships.json").then(ships => {
-  SHIPS = ships;
-  SHIP = chooseShip(ships);
+  SHIPS = ships.filter(s => s.geojson);   // a ship with no positions yet has no map
+  SHIP = chooseShip(SHIPS);
   ({ periods: PATROLS, ports: PORTS, places: PLACES } = SHIP);
   LABEL = { ...BASE_LABEL, ...SHIP.labels };
   return Promise.all([

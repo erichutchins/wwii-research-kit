@@ -56,12 +56,12 @@ def patrols(key):
 
 def units(key=None):
     """Track units: 'ss-385-bang/1' ... for a boat's patrols, 'dd-700-haynsworth' for a ship;
-    every vessel's when key is None."""
+    every vessel's when key is None. A ship with no positions.csv yet (only a ship.yml) has none."""
     keys = [d.name for d in vessels()] if key is None else [vessel_dir(key).name]
     out = []
     for k in keys:
         ns = patrols(k)
-        out += [f"{k}/{n}" for n in ns] if ns else [k]
+        out += [f"{k}/{n}" for n in ns] if ns else [k] if (vessel_dir(k) / "positions.csv").exists() else []
     return out
 
 

@@ -190,13 +190,14 @@ def write_boat_tracks(key):
 
 
 def write_ships_json():
-    """records/ships.json: every ship.yml, with the track file the map page loads."""
+    """records/ships.json: every ship.yml, with the track file the map page loads (none for a ship
+    with no positions yet, which the map pages leave out)."""
     out = []
     for d in records.vessels():
         y = records.load_yaml(d / "ship.yml")
         geojson = d / ("tracks.geojson" if records.patrols(d.name) else "track.geojson")
         out.append({"key": d.name, "alias": y["name"].lower(), **{k: v for k, v in y.items() if k != "map"},
-                    "geojson": str(geojson.relative_to(RECORDS)), **y.get("map", {})})
+                    "geojson": str(geojson.relative_to(RECORDS)) if geojson.exists() else None, **y.get("map", {})})
     records.write_json(RECORDS / "ships.json", out, indent=1, ensure_ascii=False)
     print(f"wrote {rel(RECORDS / 'ships.json')} ({len(out)} ships)")
 
