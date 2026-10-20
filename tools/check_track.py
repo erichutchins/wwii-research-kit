@@ -39,7 +39,8 @@ from records import RECORDS, rel, unit_dir
 # Zone letter -> hours ahead of GMT (K = -10 in the reports' "zone" notation).
 # KL and IK are the half-hour zones between K and L, and I and K (GROWLER's Patrol 9 report).
 # L, V, UV and WX are the Haynsworth war diary's zones (Ulithi to Hawaii, half-hour zones included).
-ZONES = {"Z": 0, "M": 12, "L": 11, "KL": 10.5, "K": 10, "IK": 9.5, "I": 9, "H": 8, "UV": -8.5, "V": -9, "VW": -9.5,
+# A and N to R are the Atlantic's (SOLAR's war diaries type no zone; her rows carry the zone of their longitude).
+ZONES = {"A": 1, "Z": 0, "N": -1, "O": -2, "P": -3, "Q": -4, "R": -5, "M": 12, "L": 11, "KL": 10.5, "K": 10, "IK": 9.5, "I": 9, "H": 8, "UV": -8.5, "V": -9, "VW": -9.5,
          "W": -10, "WX": -10.5, "X": -11, "Y": -12}
 DR_TOL = 30     # nm of dead-reckoning disagreement allowed between fixes
 

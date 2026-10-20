@@ -218,7 +218,7 @@ function render() {
 
   const shown = state.patrol === null ? DATA.tracks : [current()];
   const fitTo = { type: "MultiLineString", coordinates: shown.map(t => t.coords) };
-  proj = d3.geoMercator().rotate([-160, 0]).fitExtent([[30, 30], [W - 90, H - 30]], fitTo);
+  proj = d3.geoMercator().rotate([SHIP.rotate ?? -160, 0]).fitExtent([[30, 30], [W - 90, H - 30]], fitTo);
   path = d3.geoPath(proj);
 
   const g = svg.append("g").attr("class", "zoomable");
