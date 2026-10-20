@@ -43,11 +43,11 @@ function chooseShip(ships) {
 }
 
 // Report section -> map class
-const CLASS = { bt: "fix", noon: "fix", radar: "fix", narrative: "fix", diary: "fix", air: "air", attack: "attack", ship: "ship",
-                event: "event" };
+const CLASS = { bt: "fix", noon: "fix", radar: "fix", narrative: "fix", diary: "fix", air: "air", attack: "attack", gun: "attack",
+                ship: "ship", event: "event" };
 const BASE_LABEL = {
   bt: "Bathythermograph reading", noon: "Noon position", radar: "Radar intercept", diary: "War diary position",
-  narrative: "Port / narrative", air: "Aircraft contact", attack: "Torpedo attack", ship: "Ship contact",
+  narrative: "Port / narrative", air: "Aircraft contact", attack: "Torpedo attack", gun: "Gun attack", ship: "Ship contact",
 };
 const SHAPE = {
   fix:    { type: d3.symbolCircle,   size: 40 },
@@ -630,7 +630,9 @@ function renderLegend() {
   }
   item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("stroke", "var(--series-track)").attr("stroke-width", 2), "Track between fixes");
   SHIP.legend.filter(l => !l.ifPresent || current().all.some(d => d.cls === l.cls))
-    .filter(l => !l.showOff || state.showOff).forEach(l => item(shape(l.cls), l.text));
+    .filter(l => !l.showOff || state.showOff)
+    // gun attacks share the torpedo attack's diamond (REDFISH, patrol 2)
+    .forEach(l => item(shape(l.cls), l.cls === "attack" && current().all.some(d => d.kind === "gun") ? "Torpedo or gun attack" : l.text));
   item(g => { g.append("circle").attr("r", 7).attr("fill", "var(--series-track)").attr("opacity", 0.25);
               g.append("path").attr("d", "M0,-10 L6.5,7 L0,3.5 L-6.5,7 Z").attr("transform", "rotate(45) scale(0.6)")
                 .attr("fill", "var(--text-primary)"); }, `${SHIP.short}, pointing along her course`);
@@ -700,14 +702,14 @@ function el(tag, cls, text) {
 // "Air 3" -> "Aircraft contact No. 3"; narrative rows use their own wording ("depart Midway")
 function title(d) {
   if (d.kind === "narrative") return d.ref[0].toUpperCase() + d.ref.slice(1);
-  const no = ["air", "attack", "ship"].includes(d.kind) ? d.ref.replace(/^\D+/, "") : "";
+  const no = ["air", "attack", "gun", "ship"].includes(d.kind) ? d.ref.replace(/^\D+/, "") : "";
   return no ? `${LABEL[d.kind]} No. ${no}` : LABEL[d.kind];
 }
 
 // The CSV note often restates the title ("Torpedo attack No. 2 (time 1616-32)"); keep only what's new.
 function noteText(d) {
   const t = title(d);
-  return d.note.toLowerCase().startsWith(t.toLowerCase()) ? d.note.slice(t.length).trim() : d.note;
+  return d.note.toLowerCase().startsWith(t.toLowerCase()) ? d.note.slice(t.length).replace(/^[:;,]/, "").trim() : d.note;
 }
 
 // "1944-04-29 2256(K)" -> "29 Apr 1944 · 2256 K"   (time and zone as typed in the report)
