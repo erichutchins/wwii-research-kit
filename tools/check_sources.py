@@ -44,6 +44,8 @@ CITES = {
     "seabees/stations.csv": ["ref"],
     "seabees/places.csv": ["source"],
     "seabees/weather.csv": ["source"],
+    "seabees/voyages.csv": ["ref"],
+    "seabees/voyage_positions.csv": ["ref"],
     "jgrid/anchors.csv": ["source"],
 }
 # files whose rows don't carry a citation of their own, and why

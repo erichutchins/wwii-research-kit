@@ -42,8 +42,29 @@ Read each value on the scan; the OCR only finds the page.
 
 The Navy Seabee Museum has scanned the Bureau of Yards and Docks' "Historical Information" cards
 for most battalions (`SOURCES.yml` `ncbhist`): embarkations with dates, and a log quoting the
-battalion's monthly reports ("arrived Guadalcanal 14 Jun'43, Russell Is. 16 Jun'43"). These are
-the best dates of sailing and arriving. The margin date is when the entry was logged.
+battalion's monthly reports ("arrived Guadalcanal 14 Jun'43, Russell Is. 16 Jun'43"), and often a
+narrative history and a chronology written later. They give most dates of sailing and arriving, but
+check them against the war diaries: the 20th's card has it reach Guadalcanal on 14 June 1943, its
+transport division's diary has the ships unloading it on 11 June. The margin date is when the entry
+was logged.
+
+## The ships
+
+Neither the rolls nor the history sheet name the ships. The war diaries do (NARA RG 38): search the
+catalog for every way the battalion's name was typed (`"20th Construction Battalion"`,
+`"20th C.B."`, `"20th USN Construction"`, `"20th NCB"`, `"NCB 20"`...), keep the hits from 1942-45
+war diaries, then read each hit's pages (`morning_reports.py pages <id> "<text>"` finds them in a
+file unit). What turns up:
+
+- a **command's diary** (a transport division, an amphibious force, a task group) logging what each
+  ship loaded and landed, often with the convoy's noon positions;
+- an **operation or loading order** for a landing: which landing craft carried how many men of the
+  battalion, loading where and when, landing where and when. A plan, not a record: mark it so;
+- a **ship's own diary** (an LST) with the battalion's men and gear aboard, and its positions.
+
+Positions go in `voyage_positions.csv` as typed, with the zone letter; a slip gets a `*_fix` and a
+reason, or `on_track=no`. The ocean transports of 1942-44 are seldom found this way; a battalion's
+cruise book may name them.
 
 ## Parts of a battalion
 
