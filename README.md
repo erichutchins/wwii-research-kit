@@ -22,7 +22,7 @@ Values are recorded exactly as typed; corrections go beside them with a reason, 
 | Folder | What |
 |---|---|
 | `tools/` | Python: find and download records (National Archives catalog, JACAR, Google Books, FRUPAC maps), crop scans for reading, check transcriptions, build the pages' data |
-| `guides/` | How each archive works and how the records were read: [METHODS](guides/METHODS.md), [morning reports](guides/MORNING-REPORTS.md), [battles](guides/BATTLES.md), [the Japanese grid](guides/JAPANESE-GRID.md), [Google Books](guides/GOOGLEBOOKS.md), [expanding to the fleet](guides/FLEET.md) |
+| `guides/` | How each archive works and how the records were read: [METHODS](guides/METHODS.md), [morning reports](guides/MORNING-REPORTS.md), [Navy muster rolls](guides/MUSTER-ROLLS.md), [battles](guides/BATTLES.md), [the Japanese grid](guides/JAPANESE-GRID.md), [Google Books](guides/GOOGLEBOOKS.md), [expanding to the fleet](guides/FLEET.md) |
 | `reference/` | Reference tables: the Japanese kana grid keys and the positions they were worked out from |
 | `site/` | The pages (static HTML and D3, no build step) |
 | `records/` | The data: the [wwii-unit-records](https://github.com/erichutchins/wwii-unit-records) repository, a submodule |

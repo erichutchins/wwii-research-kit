@@ -1,4 +1,4 @@
-"""Fill in coordinates for records/army/places.csv from OpenStreetMap.
+"""Fill in coordinates for a places.csv (records/army/ by default) from OpenStreetMap.
 
 Rows with an empty lat/lon are looked up by their `query` column (town,
 region, country) with the Nominatim API, one request a second as its usage
@@ -7,10 +7,13 @@ coordinates are left alone, so a hand-placed point (a harbour, a camp) is
 never overwritten. Every looked-up row gets source "OSM Nominatim" and the
 OSM name it matched, so a wrong match is easy to spot.
 
-  python3 tools/geocode_places.py
+  python3 tools/geocode_places.py                              # records/army/places.csv
+  python3 tools/geocode_places.py records/seabees/places.csv   # any other (path from here)
 """
 import csv
 import json
+from pathlib import Path
+import sys
 import time
 import urllib.parse
 import urllib.request
@@ -37,7 +40,8 @@ def lookup(query):
 
 
 def main():
-    with PLACES.open(newline="") as f:
+    places = Path(sys.argv[1]) if len(sys.argv) > 1 else PLACES
+    with places.open(newline="") as f:
         reader = csv.DictReader(f)
         fields, rows = reader.fieldnames, list(reader)
     for r in rows:
@@ -52,7 +56,7 @@ def main():
         r["source"] = "OSM Nominatim"
         r["note"] = r["note"] or f"matched: {h['display_name'][:90]}"
         print(f"{r['place']:28} {r['lat']:>9} {r['lon']:>9}  {h['display_name'][:70]}")
-    with PLACES.open("w", newline="") as f:
+    with places.open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
         w.writerows(rows)

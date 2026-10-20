@@ -41,6 +41,9 @@ CITES = {
     "army/actions.csv": ["page"],
     "army/places.csv": ["source"],
     "army/ships.csv": ["links"],
+    "seabees/stations.csv": ["ref"],
+    "seabees/places.csv": ["source"],
+    "seabees/weather.csv": ["source"],
     "jgrid/anchors.csv": ["source"],
 }
 # files whose rows don't carry a citation of their own, and why
@@ -50,6 +53,8 @@ UNCITED = {
     "seafloor.csv": "dataset file: SOURCES.yml etopo1",
     "weather.csv": "dataset file: SOURCES.yml era5",
     "army/units.csv": "unit names and lineage; the stations give the pages",
+    "seabees/parts.csv": "the battalions' parts and when they existed; each note cites its source",
+    "seabees/units.csv": "battalion names and outlines, citing the stations' sources in the note",
     "army/routes.csv": "sea legs the reports don't trace, drawn approximately; each note says so",
     "jgrid/keys.csv": "letters worked out from the anchors (anchors.csv), named in the evidence column",
 }

@@ -1,8 +1,8 @@
 # CLAUDE.md
 
 A kit for rebuilding WWII ships' and units' movements from their own records. Read
-`guides/METHODS.md` before transcribing anything, and `guides/MORNING-REPORTS.md` before
-reading Army morning reports.
+`guides/METHODS.md` before transcribing anything, `guides/MORNING-REPORTS.md` before
+reading Army morning reports, and `guides/MUSTER-ROLLS.md` before following a Navy shore unit.
 
 ## The rule: cite every source
 
@@ -17,7 +17,7 @@ reading Army morning reports.
 - `records/`: the data (the wwii-unit-records repository, a submodule). Hand-edited CSV and YAML
   are the source of truth; columns in `records/README.md`.
   - `boats/<hull>-<name>/ship.yml` + `patrol-N/` (positions, depths, layers, japanese, crossrefs,
-    frupac); `ships/<hull>-<name>/`; `engagements/<id>/engagement.yml`; `army/`;
+    frupac); `ships/<hull>-<name>/`; `engagements/<id>/engagement.yml`; `army/`; `seabees/`;
     `silhouettes/silhouettes.yml` (recognition silhouettes, each citing its plate).
   - `inventory.yml`: every report, found or not, and how far along it is. Update it with the work.
   - Generated, never edited: `*.geojson`, `ships.json`, `seafloor.csv`, `weather.csv`,
@@ -60,6 +60,7 @@ uv run tools/check_track.py bang/1            # one patrol, leg by leg
 uv run tools/check_sources.py [--fetch]       # citations resolve; inventory matches the folders
 uv run tools/check_crossrefs.py               # attacks vs japanese.csv -> crossrefs.json
 uv run tools/fetch_seafloor.py; uv run tools/fetch_weather.py   # after positions change (cached)
+python3 tools/fetch_station_weather.py seabees  # a shore unit's daily weather: ISD stations + ERA5
 uv run tools/build_dives.py                   # records/boats/ss-385-bang/dives.json
 uv run tools/build_silhouettes.py             # records/silhouettes/silhouettes.json (then build_battle.py)
 uv run tools/trace_silhouette.py PLATE.png --crop X Y W H [--symmetric] [--open 2] --preview /tmp/p.png   # trace a plate
@@ -69,7 +70,7 @@ uv run --with pillow python3 tools/crop_pages.py sheet|halves|zoom|heads ...
 python3 tools/morning_reports.py serial|unit|locate|changes|fetch ...
 python3 tools/jacar.py search|meta|fetch ...;  python3 tools/jgrid.py decode|check|key ...
 python3 tools/frupac.py find|date ...;  python3 tools/gbooks.py search|meta|fetch ...  (key in .env)
-python3 tools/grid_ref.py <grid> <ref>;  python3 tools/geocode_places.py
+python3 tools/grid_ref.py <grid> <ref>;  python3 tools/geocode_places.py [records/seabees/places.csv]
 python3 tools/serve.py                        # http://localhost:8385/site/
 ```
 
