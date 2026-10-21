@@ -114,7 +114,7 @@ async function replay() {
     const words = e.original
       ? `<span class="ja" lang="ja">${esc(e.original)}</span><span class="tr">${esc(e.text)} (translated)${cite}</span>`
       : `<span class="said">${esc(boat && titleAdds(e) ? e.text : (e.text && e.text !== e.title ? e.text : e.title))}${cite}</span>`;
-    return `<li class="${old ? "old" : ""}" style="--bar:${boat ? boat.color : "var(--ink)"}" title="${esc(e.local || "")}">
+    return `<li class="entry" style="--bar:${boat ? boat.color : "var(--ink)"}" title="${esc(e.local || "")}">
       <span class="t">${d3.utcFormat("%H%M")(e.t)}</span>
       <span class="body"><span class="who"><b>${esc(boat ? boat.name : e.title)}</b>${boat && titleAdds(e) ? `<span class="what">${esc(e.title)}</span>` : ""}${own ? `<span class="own">${own[1]} ${esc(own[2])}</span>` : ""}</span>${words}</span></li>`;
   };

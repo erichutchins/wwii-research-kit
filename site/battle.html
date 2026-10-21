@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap">
 <link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="entry.css">
 <style>
 /* One page for every engagement in records/battles/ (battle.html?e=<id>; built by tools/build_battle.py).
    Layout: chart-room working sheet. Map left and the pack's log right, the same height so playback never moves the page
@@ -22,6 +23,7 @@
   --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --fire: #d42a3c; --japan: #1d1d1b;
   --font-ui: et-book, Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
   --font-type: "TT2020E", "Courier New", Courier, monospace;
+  --serif: var(--font-ui); --typed: var(--font-type); --ja: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif; --pencil: #2253a3;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -132,23 +134,14 @@ h2 { font-size: 16px; font-weight: 400; font-style: italic; color: var(--ink-2);
 .plate.sunk .nm::after { content: " ✕ sunk"; font-weight: 400; color: var(--ink-2); font-size: 12px; }
 .oob .convoy-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: -4px 0 10px; }
 .oob .outcome { margin: 12px 0 0; max-width: 90ch; }
-.row { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 2px 10px; padding: 9px 14px; border-top: 1px solid var(--rule); cursor: pointer; }
+/* log entries: entry.css; here only what the log adds (the clock's entry, entries still to come) */
+.row { cursor: pointer; padding: 9px 14px 9px 4px; }
+.row + .row { border-top: 1px solid var(--rule); }
 .row:hover { background: var(--wash); }
-.row.current { background: var(--wash); box-shadow: inset 3px 0 0 var(--ink); }
+.row.current { background: var(--wash); }
 .row.future { opacity: 0.45; }
-.row .t { font: 700 13px var(--font-type); font-variant-numeric: tabular-nums; }
-.row .t small { display: block; font: 400 11px var(--font-type); color: var(--ink-3); }
-.row .who { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); flex-wrap: wrap; }
-.row .who b { color: var(--ink); }
-.row .chip { width: 9px; height: 9px; border-radius: 2px; flex: none; }
-.row .who .sil { width: 48px; height: 9.6px; margin-right: 2px; }
-.row .q { font-family: var(--font-type); font-size: 13px; line-height: 1.4; margin-top: 2px; overflow-wrap: anywhere; }
-/* the Japanese record leads in its own script; our translation follows in the page's own voice */
-.row .ja { font: 500 15px/1.7 "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif; margin-top: 2px; }
-.row .tr { font-size: 13px; line-height: 1.45; color: var(--ink-2); margin-top: 2px; }
-.row .out { font-size: 12px; color: var(--ink-2); margin-top: 4px; padding-left: 8px; border-left: 2px solid var(--rule); }
-.row .doubt { font-size: 12px; color: var(--ink-3); font-style: italic; margin-top: 3px; }
-.row a { color: var(--ink-2); font-size: 12px; }
+.row .who .sil { width: 40px; height: 8px; }
+.row .note b { font-weight: 700; color: var(--ink); }
 
 .notes { color: var(--ink-2); font-size: 13px; display: grid; gap: 6px; max-width: 95ch; }
 .notes p { margin: 0; }
@@ -616,17 +609,23 @@ h2 { font-size: 16px; font-weight: 400; font-style: italic; color: var(--ink-2);
   // ---------- log
   function drawLog() {
     const n = N();
-    document.getElementById("log").innerHTML = n.events.map((e, i) => `
-      <div class="row" tabindex="0" data-i="${i}" data-t="${T(e.utc)}">
-        <div class="t">${hhmm(T(e.utc))}Z<small>${day(T(e.utc))}</small></div>
-        <div>
-          <div class="who">${e.side === "japan" || isOther(e.side) ? (sil(e.ship_type, color(e.side), 48) || `<span class="chip" style="background:${color(e.side)}"></span>`) : sil("submarine", color(e.side), 48)}<b>${esc(nameOf(e.side))}</b><span>${esc(e.title === "Log" ? "" : e.title)}</span><span>· ${esc(e.local)}</span></div>
-          ${e.original ? `<div class="ja" lang="ja">${esc(e.original)}</div><div class="tr">${esc(e.text)} (translated)</div>` : `<div class="q">${esc(e.text)}</div>`}
-          ${e.outcome ? `<div class="out"><b>Japanese side.</b> ${esc(e.outcome)}</div>` : ""}
-          ${e.doubt ? `<div class="doubt">${esc(e.doubt)}</div>` : ""}
-          ${e.scan ? `<a href="${esc(e.scan)}" target="_blank" rel="noopener">${e.side === "japan" ? "Source" : "Report page"} ↗</a>` : ""}
+    const pageOf = cite => { const m = /p0*(\d+)\s*$/.exec(cite || ""); return m ? `p. ${m[1]}` : "page"; };
+    const titleAdds = e => e.title && e.title !== "Log" && !(e.text || "").toLowerCase().includes(e.title.toLowerCase().split(/\W+/)[0]);
+    document.getElementById("log").innerHTML = n.events.map((e, i) => {
+      const own = /^\S+ (\d{4}) \(([^),]+)/.exec(e.local || "");
+      const shape = e.side === "japan" || isOther(e.side) ? (sil(e.ship_type, color(e.side), 40) || "") : sil("submarine", color(e.side), 40);
+      return `
+      <div class="row entry" tabindex="0" data-i="${i}" data-t="${T(e.utc)}" style="--bar:${color(e.side)}" title="${esc(e.local || "")}">
+        <div class="t">${hhmm(T(e.utc))}<small>${day(T(e.utc))}</small></div>
+        <div class="body">
+          <div class="who">${shape}${e.side === "japan" || isOther(e.side) ? `<b>${esc(e.title)}</b>` : `<b>${esc(nameOf(e.side))}</b>${titleAdds(e) ? `<span class="what">${esc(e.title)}</span>` : ""}`}${own ? `<span class="own">${own[1]} ${esc(own[2])}</span>` : ""}</div>
+          ${e.original ? `<div class="ja" lang="ja">${esc(e.original)}</div><div class="tr">${esc(e.text)} (translated)</div>` : `<div class="said">${esc(e.text || e.title)}</div>`}
+          ${e.outcome ? `<div class="note"><b>Japanese side.</b> ${esc(e.outcome)}</div>` : ""}
+          ${e.doubt ? `<div class="assume">${esc(e.doubt)}</div>` : ""}
+          ${e.scan ? `<a class="src alone" href="${esc(e.scan)}" target="_blank" rel="noopener" title="${esc(e.page || "")}">${pageOf(e.page)}</a>` : ""}
         </div>
-      </div>`).join("");
+      </div>`;
+    }).join("");
     document.querySelectorAll("#log .row").forEach(r => {
       const go = () => { stop(); setTime(+r.dataset.t); };
       r.addEventListener("click", ev => { if (ev.target.closest("a")) return; go(); });

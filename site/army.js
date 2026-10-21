@@ -458,23 +458,34 @@ function renderSide() {
   rows.forEach(r => list.append(r.act ? actionRow(r) : stationRow(r)));
 }
 
+// Each entry (entry.css): the date; a bar in the colour of its mark (dashed where the position is the battalion's or
+// isn't known); where, with the grid reference as typed; the STATION line as typed; how it was placed; the page.
+function dayCol(t) {
+  const d = el("div", "t", d3.utcFormat("%-d %b")(new Date(t)));
+  d.append(el("small", null, d3.utcFormat("%Y")(new Date(t))));
+  return d;
+}
+
 function stationRow(r) {
-  const row = el("div", "row");
+  const row = el("div", "row entry" + (!r.plotted || r.bn ? " assumed" : ""));
+  row.style.setProperty("--bar", r.plotted ? "var(--series-track)" : "var(--text-muted)");
   row.tabIndex = 0;
   row.setAttribute("role", "button");
   row.dataset.t = r.t;
-  row.append(el("div", `dot${r.plotted ? "" : " none"}${r.bn ? " bn" : ""}`));
-  const body = el("div");
-  body.append(el("div", "when", fmtDay(new Date(r.t))), el("div", "typed", r.station));
+  const body = el("div", "body");
+  const who = el("div", "who");
+  who.append(el("b", null, r.place || "No position"));
+  if (r.grid) who.append(el("span", "own", r.grid));
+  body.append(who, el("div", "said", r.station));
   const placed = placedText(r);
   if (placed) body.append(el("div", "note", placed));
   (r.ships || []).forEach(sh => body.append(shipBlock(sh)));
   if (r.arrived_by) body.append(el("div", "note", `Landed from ${r.arrived_by.map(shipName).join(" or ")} (see the crossing above)`));
-  if (r.presumed) body.append(el("div", "fixnote", r.presumed));
-  if (r.routeNote) body.append(el("div", "fixnote", r.routeNote));
-  if (r.note) body.append(el("div", "fixnote", r.note));
+  if (r.presumed) body.append(el("div", "assume", r.presumed));
+  if (r.routeNote) body.append(el("div", "assume", r.routeNote));
+  if (r.note) body.append(el("div", "note", r.note));
   body.append(pageLink(r, pageLabel(r)));
-  row.append(body);
+  row.append(dayCol(r.t), body);
   const go = () => { stop(); setTime(r.t, { fromList: true }); if (r.plotted) flyTo(r); };
   row.addEventListener("click", go);
   row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
@@ -482,18 +493,20 @@ function stationRow(r) {
 }
 
 function actionRow(r) {
-  const row = el("div", "row action");
+  const row = el("div", "row entry action");
+  row.style.setProperty("--bar", "var(--series-attack)");
   row.tabIndex = 0;
   row.setAttribute("role", "button");
   row.dataset.t = r.t;
   row.dataset.act = "1";
-  row.append(el("div", `dot act ${r.kind}`));
-  const body = el("div");
-  body.append(el("div", "when", `${fmtDay(new Date(r.t))}${r.time ? ` ${r.time}` : ""}`),
-              el("div", "typed", r.station), el("div", "note", `“${r.text}”`), el("div", "note", actionPlaced(r)));
-  if (r.note) body.append(el("div", "fixnote", r.note));
+  const body = el("div", "body");
+  const who = el("div", "who");
+  who.append(el("b", null, r.station));
+  if (r.time) who.append(el("span", "own", r.time));
+  body.append(who, el("div", "said", r.text), el("div", "note", actionPlaced(r)));
+  if (r.note) body.append(el("div", "note", r.note));
   body.append(pageLink(r, pageLabel(r)));
-  row.append(body);
+  row.append(dayCol(r.t), body);
   const go = () => { stop(); setTime(r.t, { fromList: true }); flyTo(r); };
   row.addEventListener("click", go);
   row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
@@ -501,8 +514,8 @@ function actionRow(r) {
 }
 
 function pageLink(r, text) {
-  const a = el("a", "fixnote", text);
-  a.href = "#"; a.style.fontStyle = "normal";
+  const a = el("a", "src alone", text);
+  a.href = "#";
   a.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); openScan(r); });
   return a;
 }

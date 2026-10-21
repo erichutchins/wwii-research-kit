@@ -25,6 +25,7 @@
   --series-track:   #2a78d6;   /* slot 1 blue   — selected patrol's track */
   --series-attack:  #eb6834;   /* slot 2 orange — torpedo attacks */
   --series-air:     #1baf7a;   /* slot 3 aqua   — aircraft contacts */
+  --pencil:         #2253a3;   /* a correction to the record */
 }
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) .viz-root {
@@ -43,6 +44,7 @@
     --series-track:   #3987e5;
     --series-attack:  #d95926;
     --series-air:     #199e70;
+    --pencil:         #86aaf0;
   }
 }
 :root[data-theme="dark"] .viz-root {
@@ -50,7 +52,7 @@
   --page: #131312; --surface-1: #131312; --land: #33332f; --coast: #55554e; --grid: #222220;
   --text-primary: #ecebe5; --text-secondary: #b3b1a7; --text-muted: #7d7b73;
   --border: #2d2c28; --track-other: #5b5a55; --wash: rgba(255,255,255,0.06);
-  --series-track: #3987e5; --series-attack: #d95926; --series-air: #199e70;
+  --series-track: #3987e5; --series-attack: #d95926; --series-air: #199e70; --pencil: #86aaf0;
 }
 
 * { box-sizing: border-box; }

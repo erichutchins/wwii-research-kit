@@ -107,7 +107,7 @@ function prepare(geo) {
     return {
       patrol: p.patrol, kind: p.kind, cls: off ? "off" : event ? "event" : CLASS[p.kind], off,
       ref: p.ref, utc: new Date(p.utc), local: p.local, page: p.page, note: p.note, fix: p.fix, assumed: !!p.assumed,
-      latRaw: p.lat_raw, lonRaw: p.lon_raw, lonlat: f.geometry.coordinates,
+      latRaw: p.lat_raw, lonRaw: p.lon_raw, typed: p.typed, lonlat: f.geometry.coordinates,
     };
   });
   const tracks = PATROLS.map(P => {
@@ -552,21 +552,33 @@ function renderSide() {
   document.getElementById("side-title").textContent = PATROLS.length === 1 ? `${SHIP.short} log` : `Patrol ${tr.n} log`;
   const rows = tr.all.filter(d => (state.showOff || !d.off) &&
     (state.logFilter === "all" || d.cls !== "fix" || d.note || d.fix));
+  // Each entry (entry.css): the date as the report gives it; a bar in the colour of its mark on the map (dashed for a
+  // position left off the track); the mark and what it is, with the report's own clock; the position as typed; notes;
+  // a correction in blue pencil; the page.
+  const BAR = { fix: "var(--text-muted)", event: "var(--text-primary)", air: "var(--series-air)", attack: "var(--series-attack)",
+                ship: "var(--text-secondary)", off: "var(--text-muted)" };
   rows.forEach(d => {
-    const row = el("div", "row");
+    const row = el("div", "row entry" + (d.cls === "off" ? " assumed" : ""));
+    row.style.setProperty("--bar", BAR[d.cls] || "var(--text-muted)");
     row.dataset.t = +d.utc;
     row.tabIndex = 0;
     row.setAttribute("role", "button");
-    row.append(iconFor(d));
-    const body = el("div");
-    body.append(el("div", "when", `${localWhen(d)} · ${d.latRaw} ${d.lonRaw}`), el("div", "what", title(d)));
+    const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{4})\((\w+)\)$/.exec(d.local);
+    const day = m ? fmtDay(new Date(`${m[1]}-${m[2]}-${m[3]}T00:00Z`)) : fmtUTC(d.utc);
+    const t = el("div", "t", day.replace(/ \d{4}$/, ""));
+    t.append(el("small", null, m ? m[1] : ""));
+    const body = el("div", "body");
+    const who = el("div", "who");
+    who.append(iconFor(d), el("b", null, title(d)));
+    if (m) who.append(el("span", "own", `${m[4]} ${m[5] === "Z" ? "GCT" : m[5]}`));
+    body.append(who, el("div", "said", d.typed || `${d.latRaw} ${d.lonRaw}`));   // as typed; a correction follows in pencil
     if (noteText(d)) body.append(el("div", "note", noteText(d)));
-    if (d.fix) body.append(el("div", "fixnote", d.fix));
-    const pg = el("a", "fixnote", `${cap(SHIP.pageNoun)} ${d.page.split("/p")[1]} ↗`);
-    pg.href = "#"; pg.style.fontStyle = "normal";
+    if (d.fix) body.append(el("div", /->|→|typo|read as/i.test(d.fix) ? "fix" : "assume", d.fix));
+    const pg = el("a", "src alone", `p. ${+d.page.split("/p")[1]}`);
+    pg.href = "#"; pg.title = `${cap(SHIP.pageNoun)} ${d.page}`;
     pg.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); openScan(d); });
     body.append(pg);
-    row.append(body);
+    row.append(t, body);
     const go = () => { stop(); setTime(+d.utc); flyTo(d); };
     row.addEventListener("click", go);
     row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });

@@ -1,0 +1,46 @@
+/* A record's entry, the same on every page that lists them: the front page's replay (index.html), battle.html,
+   haynsworth.html, and the side lists of patrols.html, army.html and seabees.html.
+
+     <div class="entry" style="--bar: var(--series-track)">     .assumed: the position is assumed (a dashed bar)
+       <div class="t">1300<small>29 Apr</small></div>           our time or date (GMT where we converted it)
+       <div class="body">
+         <div class="who"><b>BANG</b><span class="what">Ship contact</span><span class="own">2300 K</span></div>
+         <div class="said">the record's words, as typed</div>      or .ja (the Japanese original) then .tr (our translation),
+                                                                  or .text (the entry in our words, quoting the record)
+         <div class="note">our note</div>  <div class="fix">a correction</div>  <div class="assume">what's assumed</div>
+         <a class="src">p. 6</a>
+       </div>
+     </div>
+
+   The bar is the colour of the entry's mark on the map. Works with either page's variables (home.css and battle.html's
+   --ink..., or viz.css's --text-...). */
+.entry {
+  --e-ink: var(--ink, var(--text-primary)); --e-ink-2: var(--ink-2, var(--text-secondary));
+  --e-ink-3: var(--ink-3, var(--text-muted)); --e-rule: var(--rule, var(--border));
+  display: grid; grid-template-columns: var(--entry-t, 46px) minmax(0, 1fr); gap: 0 12px; padding: 9px 0;
+  font: 15px/1.4 var(--serif); color: var(--e-ink); text-align: left;
+}
+.entry + .entry { border-top: 1px solid var(--e-rule); }
+.entry > .t { font: 16px/1.3 var(--serif); font-variant-numeric: lining-nums tabular-nums; text-align: right; padding-top: 1px; }
+.entry > .t small { display: block; font-size: 12.5px; color: var(--e-ink-3); }
+.entry > .t.placed { font-style: italic; }
+.entry > .body { border-left: 3px solid var(--bar, var(--e-ink)); padding-left: 12px; min-width: 0; }
+.entry.assumed > .body { border-left-style: dashed; }
+.entry .who { display: flex; align-items: baseline; gap: 8px; font: 16px/1.3 var(--serif); margin-bottom: 3px; }
+.entry .who b { font-weight: 700; letter-spacing: .02em; }
+.entry .who .what { color: var(--e-ink-2); font-style: italic; }
+.entry .who .own { margin-left: auto; padding-left: 8px; font: 13px var(--typed); color: var(--e-ink-3); white-space: nowrap; }
+.entry .who svg { flex: none; align-self: center; }
+.entry .said { display: block; font: 13.5px/1.55 var(--typed); overflow-wrap: anywhere; }
+.entry .text { display: block; font-size: 15px; line-height: 1.45; }
+.entry .ja { display: block; font: 500 16px/1.7 var(--ja); }
+.entry .tr, .entry .note { display: block; font-size: 14.5px; line-height: 1.45; color: var(--e-ink-2); margin-top: 2px; }
+.entry .fix { display: block; font-size: 14px; font-style: italic; color: var(--pencil, #2253a3); margin-top: 2px; }
+.entry .assume { display: block; font-size: 14px; font-style: italic; color: var(--e-ink-3); margin-top: 2px; }
+.entry .src { font-size: 13px; color: var(--e-ink-3); white-space: nowrap; margin-left: 4px; }
+.entry .src.alone { display: inline-block; margin: 3px 0 0; white-space: normal; }
+
+/* In a side list (viz.css's .row): the list's own padding and rules, and the selected entry washed, not barred */
+.row.entry { --entry-t: 52px; padding: 9px 14px 9px 6px; border-bottom: 0; }
+.row.entry + .row.entry { border-top: 1px solid var(--e-rule); }
+.row.entry.current { box-shadow: none; background: var(--wash); }

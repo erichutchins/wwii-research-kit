@@ -407,21 +407,26 @@ function renderSide() {
   U.rows.slice().sort((a, b) => a.t - b.t || a.id - b.id).forEach(r => list.append(stationRow(r)));
 }
 
+// Each entry (entry.css): the date; a bar in the colour of its mark (dashed where the place is assumed, muted where
+// there's none); where, and which part of the battalion; the roll's words as typed; notes; the pages.
 function stationRow(r) {
-  const row = el("div", "row");
+  const row = el("div", "row entry" + (!r.lonlat || r.hollow ? " assumed" : ""));
+  row.style.setProperty("--bar", r.lonlat ? "var(--series-track)" : "var(--text-muted)");
   row.tabIndex = 0;
   row.setAttribute("role", "button");
   row.dataset.t = r.t;
-  row.append(el("div", `dot${!r.lonlat ? " none" : r.hollow ? " assumed" : ""}`));
-  const body = el("div");
-  const when = el("div", "when", fmtDay(new Date(r.t)));
-  if (r.part !== "battalion") when.append(el("span", "part", ` · ${r.part}`));
-  body.append(when, el("div", "what", r.place ?? "No position"), el("div", "typed", `“${r.station}”`));
+  const t = el("div", "t", d3.utcFormat("%-d %b")(new Date(r.t)));
+  t.append(el("small", null, d3.utcFormat("%Y")(new Date(r.t))));
+  const body = el("div", "body");
+  const who = el("div", "who");
+  who.append(el("b", null, r.place ?? "No position"));
+  if (r.part !== "battalion") who.append(el("span", "what", r.part));
+  body.append(who, el("div", "said", r.station));
   if (r.note) body.append(el("div", "note", r.note));
-  r.presumed.forEach(x => body.append(el("div", "fixnote", x)));
+  r.presumed.forEach(x => body.append(el("div", "assume", x)));
   body.append(linksBlock(r.links, r));
   (r.arrivals || []).forEach(v => body.append(shipBlock(v)));
-  row.append(body);
+  row.append(t, body);
   row.addEventListener("click", ev => { if (ev.target.closest("a")) return; stop(); setTime(r.t); flyTo(r); });
   row.addEventListener("keydown", ev => { if (ev.key === "Enter") { setTime(r.t); flyTo(r); } });
   return row;

@@ -149,6 +149,8 @@ def write_geojson(unit, rows):
             "properties": {"kind": r["source"], "ref": r["ref"], "patrol": period(unit),
                            "on_track": r["on_track"] == "yes", "utc": f"{r['utc']:%Y-%m-%dT%H:%MZ}",
                            "lat_raw": r["lat_fix"] or r["lat_raw"], "lon_raw": r.get("lon_fix") or r["lon_raw"],
+                           # the position as the page typed it, where lat_fix/lon_fix corrected it
+                           **({"typed": f"{r['lat_raw']} {r['lon_raw']}"} if r["lat_fix"] or r.get("lon_fix") else {}),
                            "local": f"{r['date_fix'] or r['date']} {r['time_fix'] or r['time']}({r['zone']})",
                            "page": r["page"], "note": r["note"], "fix": r["fix_note"],
                            **({"assumed": True} if r.get("assumed") else {})},

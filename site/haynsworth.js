@@ -156,16 +156,19 @@ function buildSteps(timeline) {
     c.append("div").attr("class", "when").text(s.when);
     c.append("h3").text(s.title);
     c.append("p").html(rich(s.body));
-    const ul = c.append("ul").attr("class", "entries");
+    const ul = c.append("div").attr("class", "entries");
     rows.forEach(r => {
-      const li = ul.append("li");
-      const side = r.kind === "hit" ? "hit" : r.side;
+      const bar = r.kind === "hit" ? "var(--fire)" : r.side === "jp" ? "var(--japan)" : "var(--c1)";
+      const li = ul.append("div").attr("class", "entry").attr("style", `--bar:${bar}`);
       li.append("div").attr("class", "t" + (r.placed ? " placed" : ""))
-        .html((r.time ? (r.placed ? "~" : "") + esc(r.time) : "—") + (r.date !== "1945-04-06" ? `<small>${esc(+r.date.slice(8))} Apr</small>` : "") + (r.placed ? `<small>${esc(r.placed)}</small>` : ""));
-      const d = li.append("div");
-      d.append("div").attr("class", "who").html(`<span class="chip ${side}"></span><b>${esc(r.actor)}</b>`);
-      d.append("div").html(rich(r.text));
-      d.append("div").attr("class", "src").html(r.ref ? `<a href="${esc(r.ref)}" target="_blank" rel="noopener">${esc(r.source)}</a>` : esc(r.source));
+        .attr("title", r.placed || null)
+        .html((r.time ? (r.placed ? "~" : "") + esc(r.time) : "—") + (r.date !== "1945-04-06" ? `<small>${esc(+r.date.slice(8))} Apr</small>` : ""));
+      const d = li.append("div").attr("class", "body");
+      d.append("div").attr("class", "who").html(`<b>${esc(r.actor)}</b>${r.placed ? `<span class="what">${esc(r.placed)}</span>` : ""}`);
+      // wholly the record's words: its typed face; otherwise our words, quoting it
+      const quoted = /^"[^"]+"\.?$/.test(r.text.trim());
+      d.append("div").attr("class", quoted ? "said" : "text").html(rich(quoted ? r.text.trim().replace(/^"|"\.?$/g, "") : r.text));
+      d.append("div").html(r.ref ? `<a class="src alone" href="${esc(r.ref)}" target="_blank" rel="noopener">${esc(r.source)}</a>` : `<span class="src alone">${esc(r.source)}</span>`);
     });
   });
 }
