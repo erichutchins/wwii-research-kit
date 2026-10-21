@@ -26,6 +26,10 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - name: Every citation resolves; inventory matches the folders
         run: uv run tools/check_sources.py
+      - name: Every Army station is placed, and army.json is up to date
+        run: |
+          python3 tools/build_army.py
+          git diff --exit-code records/army/army.json
       - name: Every track passes the speed check
         run: |
           uv run tools/check_track.py all -q | tee /tmp/tracks.txt

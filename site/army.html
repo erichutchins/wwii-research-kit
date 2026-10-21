@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Army units: North Africa, the Mediterranean and Europe</title>
+<link rel="stylesheet" href="viz.css">
+<style>
+  .map-card { display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 14px 6px; color: var(--text-secondary); font-size: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend svg { overflow: visible; }
+  .map-wrap { position: relative; min-height: 300px; }
+  #map { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+  #map:active { cursor: grabbing; }
+  .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .zoom-btns button { font: 16px system-ui; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+                      background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
+  .hint { position: absolute; left: 12px; bottom: 8px; color: var(--text-muted); font-size: 12px; pointer-events: none; }
+
+  .land { fill: var(--land); stroke: var(--coast); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
+  .border { fill: none; stroke: var(--coast); stroke-width: 0.6; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
+  .graticule { fill: none; stroke: var(--grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .place { fill: var(--text-muted); font-size: 11px; letter-spacing: 0.06em; pointer-events: none; }
+  .city-label { fill: var(--text-secondary); font-size: 11px; pointer-events: none;
+                paint-order: stroke; stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round; }
+  .city { pointer-events: none; }
+  .city-dot { fill: var(--surface-1); stroke: var(--text-muted); stroke-width: 1.2; }
+
+  /* Track: solid where the unit's records give its position, dashed where assumed */
+  .track { fill: none; stroke: var(--series-track); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round;
+           vector-effect: non-scaling-stroke; }
+  .track.ahead { stroke-opacity: 0.22; }
+  .track.assumed { stroke-dasharray: 5 4; }
+  .mk .ring { fill: none; stroke: var(--surface-1); stroke-width: 2.5; }
+  .mk .shape { fill: var(--series-track); }
+  /* a headquarters' or division's position: hollow, the unit's own position assumed */
+  .mk.bn .shape { fill: var(--surface-1); stroke: var(--series-track); stroke-width: 2.5; }
+  .mk.future, .act.future { opacity: 0.3; }
+  .mk.hover .shape { stroke: var(--text-primary); stroke-width: 2; }
+  /* action from the battalion's histories: a diamond, outlined in the page's text colour */
+  .act .shape { fill: var(--series-attack); stroke: var(--text-primary); stroke-width: 1.5; }
+  .act .ring { fill: none; stroke: var(--surface-1); stroke-width: 3; }
+  .act.casualty .shape { fill: var(--surface-1); stroke-width: 2.5; }
+  .act.hover .shape { stroke-width: 3; }
+  .who circle.halo { fill: var(--series-track); opacity: 0.25; }
+  .who circle.core { fill: var(--text-primary); stroke: var(--surface-1); stroke-width: 2; }
+  .who text { font-size: 12px; font-weight: 600; fill: var(--text-primary); paint-order: stroke;
+              stroke: var(--surface-1); stroke-width: 3px; }
+
+  /* Timeline */
+  .timeline { border-top: 1px solid var(--border); padding: 6px 14px 10px; display: grid;
+              grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; }
+  #play { font: inherit; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border);
+          background: var(--surface-1); color: var(--text-primary); cursor: pointer; grid-row: span 2; }
+  #strip { width: 100%; height: 64px; display: block; cursor: pointer; }
+  #strip .axis text { fill: var(--text-muted); font-size: 11px; }
+  #strip .axis line, #strip .axis path { stroke: var(--coast); }
+  #scrub { width: 100%; margin: 0; accent-color: var(--series-track); }
+  .now { grid-column: 2; display: flex; justify-content: space-between; color: var(--text-secondary); font-size: 12px; gap: 12px; }
+  .now b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+  .row .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; background: var(--series-track); }
+  .row .dot.none { background: none; border: 1.5px dashed var(--text-muted); }
+  .row .dot.bn { background: none; border: 2px solid var(--series-track); }
+  .row .dot.act { border-radius: 1px; transform: rotate(45deg) scale(0.85); background: var(--series-attack);
+                  outline: 1.5px solid var(--text-primary); }
+  .row .dot.act.casualty { background: var(--surface-1); }
+  .row .typed { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; }
+  .row.action .typed { font-family: inherit; }
+  .unit-note { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 13px; }
+  .scan-missing { padding: 24px; color: var(--text-secondary); }
+  /* a sea crossing's ship (ships.csv), in the station list */
+  .row .ship { margin: 6px 0 4px; padding: 6px 9px; border-left: 3px solid var(--text-muted); background: var(--wash);
+               border-radius: 0 6px 6px 0; font-size: 12.5px; color: var(--text-secondary); display: grid; gap: 4px; }
+  .row .ship.confirmed { border-left-color: var(--text-primary); }
+  .row .ship.candidate, .row .ship.unknown, .row .ship.none { border-left-style: dashed; }
+  .row .ship .ship-head { color: var(--text-primary); font-weight: 600; }
+  .row .ship .ship-voyage { color: var(--text-muted); }
+  .row .ship a { color: var(--text-secondary); justify-self: start; }
+
+  @media (max-width: 900px) {
+    .app { height: auto; }
+    header { flex-direction: column; }
+    .nav { margin-left: 0; flex-wrap: wrap; }
+    .main { grid-template-columns: 1fr; }
+    .map-wrap { height: 60vh; }
+    .side { max-height: 60vh; }
+  }
+</style>
+</head>
+<body class="viz-root">
+<div class="app">
+  <header>
+    <div>
+      <h1>Army units: North Africa, the Mediterranean and Europe, 1942–1945</h1>
+      <p>Where eight Army units were, day by day, from their own records: the STATION line of each
+         <a href="https://catalog.archives.gov/id/85713825" target="_blank" rel="noopener">morning report</a>
+         (online at the National Archives through December 1944), and for 1945 the units' own histories and journals,
+         Third Army's after action report and division sources. Choose a unit; click any point to see the page it came from.</p>
+    </div>
+    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html">Ship tracks</a><a href="army.html" aria-current="page">Army map</a><a href="dives.html">Dive profile</a><a href="battle.html">Battles</a><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a></nav>
+  </header>
+
+  <div class="filters">
+    <label class="pick">Unit <select id="unit-pick"></select></label>
+    <label class="check" id="acts-check"><input type="checkbox" id="acts-toggle" checked> Show engagements <span id="acts-count" style="color:var(--text-muted)"></span></label>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="main">
+    <div class="card map-card">
+      <div class="legend" id="legend"></div>
+      <div class="map-wrap">
+        <svg id="map" role="img" aria-label="Map of the unit's stations"></svg>
+        <div class="zoom-btns">
+          <button id="zin" aria-label="Zoom in">+</button>
+          <button id="zout" aria-label="Zoom out">−</button>
+          <button id="zreset" aria-label="Reset view">⟲</button>
+        </div>
+        <div class="hint" id="hint">Scroll or pinch to zoom · drag to pan · modern borders</div>
+      </div>
+      <div class="timeline">
+        <button id="play" aria-label="Play">▶</button>
+        <svg id="strip" aria-label="Timeline of the unit's stations, click to jump"></svg>
+        <input type="range" id="scrub" min="0" max="1000" value="1000" aria-label="Date">
+        <div class="now"><span id="now-date"></span><span id="now-where"></span></div>
+      </div>
+    </div>
+
+    <div class="card side">
+      <div class="side-head"><h2 id="side-title">Stations</h2></div>
+      <div class="list" id="list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="tip" role="tooltip"></div>
+
+<dialog id="scan">
+  <div class="dlg-head">
+    <div><b id="scan-title"></b> <a id="scan-link" target="_blank" rel="noopener">Open in National Archives catalog ↗</a>
+      <div class="fixnote" id="scan-credit" hidden>Courtesy of 45th Infantry Division Museum and the Metropolitan Library System of Oklahoma County</div></div>
+    <button id="scan-close">Close</button>
+  </div>
+  <div class="dlg-body"><img id="scan-img" alt=""><div class="scan-missing" id="scan-missing" hidden></div></div>
+</dialog>
+
+<script src="config.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="army.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>

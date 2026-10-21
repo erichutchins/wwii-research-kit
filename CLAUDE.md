@@ -21,7 +21,8 @@ reading Army morning reports, and `guides/MUSTER-ROLLS.md` before following a Na
     `silhouettes/silhouettes.yml` (recognition silhouettes, each citing its plate).
   - `inventory.yml`: every report, found or not, and how far along it is. Update it with the work.
   - Generated, never edited: `*.geojson`, `ships.json`, `seafloor.csv`, `weather.csv`,
-    `crossrefs.json`, `pack_timeline.csv`, `dives.json`, `battles/`, `silhouettes.json`, `scans.json`, `citations.json`.
+    `crossrefs.json`, `pack_timeline.csv`, `dives.json`, `battles/`, `silhouettes.json`, `scans.json`, `citations.json`,
+    `army/army.json`.
 - `tools/`: Python. Standard library only, except scripts with a PEP 723 header (PyYAML,
   Pillow, PyMuPDF), run with `uv run`. `tools/records.py` finds the records and the cache.
 - `reference/jgrid/`: the Japanese kana grid keys and anchors (hand-edited; `guides/JAPANESE-GRID.md`).
@@ -62,6 +63,7 @@ uv run tools/check_crossrefs.py               # attacks vs japanese.csv -> cross
 uv run tools/fetch_seafloor.py; uv run tools/fetch_weather.py   # after positions change (cached)
 python3 tools/fetch_station_weather.py seabees  # a shore unit's daily weather: ISD stations + ERA5
 uv run tools/build_dives.py                   # records/boats/ss-385-bang/dives.json
+python3 tools/build_army.py                   # records/army/army.json (after editing records/army/); 0 problems
 uv run tools/build_silhouettes.py             # records/silhouettes/silhouettes.json (then build_battle.py)
 uv run tools/trace_silhouette.py PLATE.png --crop X Y W H [--symmetric] [--open 2] --preview /tmp/p.png   # trace a plate
 uv run tools/build_battle.py [<id>]           # records/battles/ (new <id> <patrol>... drafts one)
@@ -74,7 +76,8 @@ python3 tools/grid_ref.py <grid> <ref>;  python3 tools/geocode_places.py [record
 python3 tools/serve.py                        # http://localhost:8385/site/
 ```
 
-After editing any CSV: `check_track.py all --geojson`, `build_dives.py`, `check_sources.py`.
+After editing any CSV: `check_track.py all --geojson`, `build_dives.py`, `check_sources.py`; after `records/army/`,
+`build_army.py`.
 
 ## Pages
 
