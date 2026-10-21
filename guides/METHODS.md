@@ -4,9 +4,8 @@ How the USS BANG (SS-385) data in this repository was collected, transcribed,
 checked, enriched and presented. Written so the same process can be repeated
 for other submarines, by a person or by Claude.
 
-The work was done in October 2026 by Eric Hutchins with Claude (Anthropic),
-working in Claude Code. Claude read the page scans and wrote the code; Eric
-directed the research. Every number on the pages traces back to a specific
+The work was done in October 2026 using Claude (Anthropic) in Claude Code:
+Claude read the page scans and wrote the code. Every number on the pages traces back to a specific
 scanned page, and every correction to the 1944–45 originals is recorded next
 to the value as it was typed.
 
