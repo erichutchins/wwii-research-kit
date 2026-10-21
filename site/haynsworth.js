@@ -69,6 +69,11 @@ const STEPS = [
 
 const tip = document.getElementById("tip");
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+// A citation as shown: Chicago short form, the book's short title in italics ("Irons, Phalanx, 327–30"); the full
+// reference is in the Sources list (BOOKS)
+const cite = s => esc(s).replace(/\bPhalanx\b/g, "<i>Phalanx</i>");
+const BOOKS = [{ match: /\bIrons\b/, url: REF_LINKS.irons,
+  html: "Irons, Martin. <i>Phalanx Against the Divine Wind: Protecting the Fast Carrier Task Force During World War 2</i>. Merriam Press, 2017." }];
 const t4 = t => t ? t.slice(0, 2) + t.slice(2) : "";
 
 // Japanese grid codes in the text -> the square they name on the map (メツミス is how the 210th's report writes メツ三ス)
@@ -168,7 +173,7 @@ function buildSteps(timeline) {
       // wholly the record's words: its typed face; otherwise our words, quoting it
       const quoted = /^"[^"]+"\.?$/.test(r.text.trim());
       d.append("div").attr("class", quoted ? "said" : "text").html(rich(quoted ? r.text.trim().replace(/^"|"\.?$/g, "") : r.text));
-      d.append("div").html(r.ref ? `<a class="src alone" href="${esc(r.ref)}" target="_blank" rel="noopener">${esc(r.source)}</a>` : `<span class="src alone">${esc(r.source)}</span>`);
+      d.append("div").html(r.ref ? `<a class="src alone" href="${esc(r.ref)}" target="_blank" rel="noopener">${cite(r.source)}</a>` : `<span class="src alone">${cite(r.source)}</span>`);
     });
   });
 }
@@ -757,7 +762,7 @@ function buildBoard(claims) {
       el.append("span").attr("class", "wt").html(`<i></i>${esc(c.weight)}`);
       el.append("span").attr("class", "what").text(c.claim);
       if (c.note) el.append("span").attr("class", "nt").text(c.note);
-      el.append("span").attr("class", "src").html(c.ref ? `<a href="${esc(c.ref)}" target="_blank" rel="noopener">${esc(c.source)}</a>` : esc(c.source));
+      el.append("span").attr("class", "src").html(c.ref ? `<a href="${esc(c.ref)}" target="_blank" rel="noopener">${cite(c.source)}</a>` : cite(c.source));
     });
   });
 }
@@ -785,9 +790,18 @@ function buildCrews(people) {
 }
 
 function buildSources(timeline, claims) {
-  const seen = new Map();
-  [...timeline, ...claims].forEach(r => { const k = r.source.split(/[,;]/)[0].trim(); if (!seen.has(k)) seen.set(k, r.ref ? r.ref.replace(/\?objectPage=\d+$/, "") : ""); });
+  // One line per record, by the first part of its citation; a book's citations ("in Irons, Phalanx") fold into its
+  // full reference (Chicago bibliography form, BOOKS)
+  const seen = new Map(), books = new Set();
+  [...timeline, ...claims].forEach(r => {
+    BOOKS.filter(b => b.match.test(r.source)).forEach(b => books.add(b));
+    const first = r.source.split(/[;,]/)[0].trim();
+    if (first && !BOOKS.some(b => b.match.test(r.source.split(";")[0])) && !seen.has(first))
+      seen.set(first, r.ref ? r.ref.replace(/\?objectPage=\d+$/, "") : "");
+  });
   const ul = d3.select("#sources");
-  [...seen].sort((a, b) => a[0].localeCompare(b[0])).forEach(([k, u]) => ul.append("li").html(u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(k)}</a>` : esc(k)));
+  const lines = [...[...seen].map(([k, u]) => [k, u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(k)}</a>` : esc(k)]),
+                 ...[...books].map(b => [b.html.replace(/<[^>]+>/g, ""), b.url ? `${b.html} <a href="${esc(b.url)}" target="_blank" rel="noopener">About the book</a>` : b.html])];
+  lines.sort((a, b) => a[0].localeCompare(b[0])).forEach(([, html]) => ul.append("li").html(html));
   ul.append("li").text("Recognition plates: ONI 54-D, 54-CV, 54-R, 54-C (via coatneyhistory.com); CINCPAC-CINCPOA Bulletin 105-45 (HyperWar; NHHC); FM 30-30 (Internet Archive).");
 }
