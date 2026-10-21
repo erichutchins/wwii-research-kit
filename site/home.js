@@ -102,14 +102,18 @@ async function replay() {
   drawScrub();
   new ResizeObserver(() => { drawScrub(); set(+scrub.value); }).observe(ss.node());
 
+  // who and what in the page's own voice, on a line of their own (a stroke in the boat's colour); then the record's words
   const entry = (e, old) => {
     const boat = boats.find(b => b.id === e.side);
     const u = pageUrl(e.page, e.scan);
-    const who = boat ? `<span class="who" style="color:${boat.color}">${boat.name}</span> ` : "";
+    const name = boat ? boat.name : e.title;
+    const what = boat && e.title !== "Log" ? e.title : "";
+    const said = boat ? (e.text && e.text !== e.title ? e.text : e.title) : "";
     return `<li class="${old ? "old" : ""}"><span class="t">${d3.utcFormat("%H%M")(e.t)}<small>${esc(e.local || "")}</small></span>
-      <span>${e.original
-        ? `<span class="ja" lang="ja">${esc(e.original)}</span><span class="tr">${esc(e.title)}: ${esc(e.text)} (translated)</span>`
-        : `${who}<span class="said">${esc(e.title)}${e.text && e.text !== e.title ? `: ${esc(e.text)}` : ""}</span>`}
+      <span><span class="who"><i style="background:${boat ? boat.color : "var(--ink)"}"></i><b>${esc(name)}</b>${what ? ` <span>${esc(what)}</span>` : ""}</span>
+      ${e.original
+        ? `<span class="ja" lang="ja">${esc(e.original)}</span><span class="tr">${esc(e.text)} (translated)</span>`
+        : `<span class="said">${esc(said)}</span>`}
       ${u ? `<a class="src" href="${esc(u)}" target="_blank" rel="noopener">${esc(e.page || "page")}</a>` : ""}</span></li>`;
   };
   const logUS = document.getElementById("log-us"), logJP = document.getElementById("log-jp"), now = document.getElementById("now");
