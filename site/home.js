@@ -102,19 +102,21 @@ async function replay() {
   drawScrub();
   new ResizeObserver(() => { drawScrub(); set(+scrub.value); }).observe(ss.node());
 
-  // who and what in the page's own voice, on a line of their own (a stroke in the boat's colour); then the record's words
+  // One entry: our GMT time; a bar in the boat's colour (the map's track colour) down its left edge; the name, and at
+  // the right the record's own clock; then the record's words, and the page they're on.
+  const pageOf = cite => { const m = /p0*(\d+)\s*$/.exec(cite || ""); return m ? `p. ${m[1]}` : "page"; };
+  const titleAdds = e => e.title && e.title !== "Log" && !(e.text || "").toLowerCase().includes(e.title.toLowerCase().split(/\W+/)[0]);
   const entry = (e, old) => {
     const boat = boats.find(b => b.id === e.side);
     const u = pageUrl(e.page, e.scan);
-    const name = boat ? boat.name : e.title;
-    const what = boat && e.title !== "Log" ? e.title : "";
-    const said = boat ? (e.text && e.text !== e.title ? e.text : e.title) : "";
-    return `<li class="${old ? "old" : ""}"><span class="t">${d3.utcFormat("%H%M")(e.t)}<small>${esc(e.local || "")}</small></span>
-      <span><span class="who"><i style="background:${boat ? boat.color : "var(--ink)"}"></i><b>${esc(name)}</b>${what ? ` <span>${esc(what)}</span>` : ""}</span>
-      ${e.original
-        ? `<span class="ja" lang="ja">${esc(e.original)}</span><span class="tr">${esc(e.text)} (translated)</span>`
-        : `<span class="said">${esc(said)}</span>`}
-      ${u ? `<a class="src" href="${esc(u)}" target="_blank" rel="noopener">${esc(e.page || "page")}</a>` : ""}</span></li>`;
+    const own = /^\S+ (\d{4}) \(([^),]+)/.exec(e.local || "");   // "1944-04-29 2300 (K)" -> 2300 K
+    const cite = u ? ` <a class="src" href="${esc(u)}" target="_blank" rel="noopener" title="${esc(e.page || "")}">${pageOf(e.page)}</a>` : "";
+    const words = e.original
+      ? `<span class="ja" lang="ja">${esc(e.original)}</span><span class="tr">${esc(e.text)} (translated)${cite}</span>`
+      : `<span class="said">${esc(boat && titleAdds(e) ? e.text : (e.text && e.text !== e.title ? e.text : e.title))}${cite}</span>`;
+    return `<li class="${old ? "old" : ""}" style="--bar:${boat ? boat.color : "var(--ink)"}" title="${esc(e.local || "")}">
+      <span class="t">${d3.utcFormat("%H%M")(e.t)}</span>
+      <span class="body"><span class="who"><b>${esc(boat ? boat.name : e.title)}</b>${boat && titleAdds(e) ? `<span class="what">${esc(e.title)}</span>` : ""}${own ? `<span class="own">${own[1]} ${esc(own[2])}</span>` : ""}</span>${words}</span></li>`;
   };
   const logUS = document.getElementById("log-us"), logJP = document.getElementById("log-jp"), now = document.getElementById("now");
   function set(t) {
