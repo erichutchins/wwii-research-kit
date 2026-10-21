@@ -15,7 +15,7 @@
   #map { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
   #map:active { cursor: grabbing; }
   .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
-  .zoom-btns button { font: 16px system-ui; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+  .zoom-btns button { font: 18px var(--serif); width: 30px; height: 30px; border-radius: 2px; cursor: pointer;
                       background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
   .hint { position: absolute; left: 12px; bottom: 8px; color: var(--text-muted); font-size: 12px; pointer-events: none; }
 
@@ -67,7 +67,7 @@
   .row .dot.act { border-radius: 1px; transform: rotate(45deg) scale(0.85); background: var(--series-attack);
                   outline: 1.5px solid var(--text-primary); }
   .row .dot.act.casualty { background: var(--surface-1); }
-  .row .typed { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; }
+  .row .typed { font-family: var(--typed); font-size: 13.5px; }
   .row.action .typed { font-family: inherit; }
   .unit-note { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 13px; }
   .scan-missing { padding: 24px; color: var(--text-secondary); }
@@ -93,6 +93,7 @@
 <body class="viz-root">
 <div class="app">
   <header>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="battle.html">Battles</a><a href="haynsworth.html">Haynsworth</a><a href="seabees.html">Seabees</a><a href="army.html" aria-current="page">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
     <div>
       <h1>Army units: North Africa, the Mediterranean and Europe, 1942–1945</h1>
       <p>Where eight Army units were, day by day, from their own records: the STATION line of each
@@ -100,7 +101,6 @@
          (online at the National Archives through December 1944), and for 1945 the units' own histories and journals,
          Third Army's after action report and division sources. Choose a unit; click any point to see the page it came from.</p>
     </div>
-    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html">Ship tracks</a><a href="army.html" aria-current="page">Army map</a><a href="seabees.html">Seabees</a><a href="dives.html">Dive profile</a><a href="battle.html">Battles</a><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a></nav>
   </header>
 
   <div class="filters">

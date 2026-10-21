@@ -87,6 +87,11 @@ After editing any CSV: `check_track.py all --geojson`, `build_dives.py`, `check_
 - Silhouettes are data, not drawing code: shapes in `records/silhouettes/silhouettes.yml`; `site/silhouettes.js`
   only loads them (the `SILHOUETTES` promise) and draws hull symbols. Never draw one from memory: trace a plate
   or work to its printed dimensions, and cite it.
+- Type has three voices, each with one job: ET Book for the kit's own words, TT2020 style E for the records' typed
+  words (`.typed`, `.mono`, `code`; `--typed`), Shippori Mincho for Japanese (`[lang="ja"]`; the original before our
+  translation). Fonts are in `site/fonts/fonts.css`. Special Elite only for the front page's masthead. No capitals for
+  labels: italics instead.
+- Every page has the same navigation bar, at the top of its header (copy it from any page).
 - Colours are CSS variables in `site/viz.css` with light and dark values. The three categorical
   colours were checked for colour-blind separation: don't add hues without checking again.
 - Verify changes in a browser: light and dark mode, every ship on `patrols.html`, no console errors.

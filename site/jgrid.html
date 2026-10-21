@@ -26,7 +26,7 @@
   .hotsq path, .probe path { fill: var(--c); fill-opacity: 0.18; stroke: var(--c); pointer-events: none; }
   .probe path.partial { fill-opacity: 0.12; stroke-dasharray: 6 3; }
   .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
-  .zoom-btns button { font: 16px system-ui; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+  .zoom-btns button { font: 18px var(--serif); width: 30px; height: 30px; border-radius: 2px; cursor: pointer;
                       background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
   .hint { position: absolute; left: 12px; bottom: 8px; color: var(--text-muted); font-size: 12px; pointer-events: none; }
   .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
@@ -34,7 +34,7 @@
   .anatomy .a { color: var(--series-track); font-weight: 700; }
   .anatomy .b { color: var(--series-attack); font-weight: 700; }
   .anatomy .c { color: var(--series-air); }
-  .decoder input { font: 18px system-ui; padding: 5px 10px; width: 9em; border: 1px solid var(--border);
+  .decoder input { font: 500 18px var(--ja); padding: 5px 10px; width: 9em; border: 1px solid var(--border);
                    border-radius: 6px; background: var(--page); color: var(--text-primary); }
   .decoder select { font: inherit; padding: 5px 6px; border: 1px solid var(--border); border-radius: 6px;
                     background: var(--page); color: var(--text-primary); margin-left: 6px; }
@@ -56,6 +56,7 @@
 <body class="viz-root">
 <div class="doc">
   <header>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="battle.html">Battles</a><a href="haynsworth.html">Haynsworth</a><a href="seabees.html">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html" aria-current="page">Position codes</a><a href="grids.html">Map grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
     <div>
       <h1>Position codes: the Japanese Navy's kana grid</h1>
       <p class="lede">Japanese search planes reported an enemy's position as four characters:
@@ -63,7 +64,6 @@
         ocean, but the letters are scrambled and change with the base the search flew from. The code tables
         don't survive, so each key is being rebuilt letter by letter from reports whose position is known some other way.</p>
     </div>
-    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html">Ship tracks</a><a href="army.html">Army map</a><a href="seabees.html">Seabees</a><a href="dives.html">Dive profile</a><a href="battle.html">Battles</a><a href="zones.html">Time zones</a><a href="jgrid.html" aria-current="page">Position codes</a><a href="grids.html">Map grids</a></nav>
   </header>
 
   <h2>How to read one</h2>

@@ -11,7 +11,7 @@
   const link = (href, text) => { const a = document.createElement("a"); a.href = href; a.textContent = text; a.rel = "noopener"; return a; };
 
   const style = document.createElement("style");
-  style.textContent = `.site-foot { max-width: 1080px; margin: 0 auto; padding: 14px 20px 22px; font: 12px/1.6 system-ui, sans-serif;
+  style.textContent = `.site-foot { max-width: 1080px; margin: 0 auto; padding: 14px 20px 22px; font: 14px/1.6 et-book, Palatino, Georgia, serif;
     color: inherit; opacity: 0.72; display: flex; flex-wrap: wrap; gap: 4px 18px; border-top: 1px solid currentColor;
     border-top-color: color-mix(in srgb, currentColor 18%, transparent); }
     .site-foot a { color: inherit; }`;

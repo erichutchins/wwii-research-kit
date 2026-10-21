@@ -1,18 +1,25 @@
+@import url("fonts/fonts.css");
 /* Shared styles for the pages (patrols, dives, army, zones, grids).
+   Type, as on the front page (home.css): ET Book for the kit's own words, TT2020 for the records' typed words
+   (.typed, .mono, code), Shippori Mincho for Japanese. font-size-adjust keeps ET Book's small x-height as legible
+   as the system face these pages were laid out in.
    Colour roles: light and dark are separately chosen steps of the same hues,
    validated against their own surfaces (dataviz palette, slots 1-3). */
 
 .viz-root {
   color-scheme: light;
-  --page:           #f9f9f7;
-  --surface-1:      #fcfcfb;
+  --serif: et-book, Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --typed: "TT2020E", "Courier New", Courier, monospace;
+  --ja: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --page:           #fcfcf9;
+  --surface-1:      #fcfcf9;
   --land:           #e6e5df;
   --coast:          #c3c2b7;
   --grid:           #ecebe6;
-  --text-primary:   #0b0b0b;
-  --text-secondary: #52514e;
-  --text-muted:     #898781;
-  --border:         rgba(11,11,11,0.10);
+  --text-primary:   #1d1d1b;
+  --text-secondary: #57564f;
+  --text-muted:     #85847b;
+  --border:         #e1dfd5;
   --track-other:    #b9b8b0;
   --wash:           rgba(11,11,11,0.05);
   --series-track:   #2a78d6;   /* slot 1 blue   — selected patrol's track */
@@ -22,15 +29,15 @@
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) .viz-root {
     color-scheme: dark;
-    --page:           #0d0d0d;
-    --surface-1:      #1a1a19;
+    --page:           #131312;
+    --surface-1:      #131312;
     --land:           #33332f;
     --coast:          #55554e;
     --grid:           #222220;
-    --text-primary:   #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted:     #898781;
-    --border:         rgba(255,255,255,0.10);
+    --text-primary:   #ecebe5;
+    --text-secondary: #b3b1a7;
+    --text-muted:     #7d7b73;
+    --border:         #2d2c28;
     --track-other:    #5b5a55;
     --wash:           rgba(255,255,255,0.06);
     --series-track:   #3987e5;
@@ -40,9 +47,9 @@
 }
 :root[data-theme="dark"] .viz-root {
   color-scheme: dark;
-  --page: #0d0d0d; --surface-1: #1a1a19; --land: #33332f; --coast: #55554e; --grid: #222220;
-  --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
-  --border: rgba(255,255,255,0.10); --track-other: #5b5a55; --wash: rgba(255,255,255,0.06);
+  --page: #131312; --surface-1: #131312; --land: #33332f; --coast: #55554e; --grid: #222220;
+  --text-primary: #ecebe5; --text-secondary: #b3b1a7; --text-muted: #7d7b73;
+  --border: #2d2c28; --track-other: #5b5a55; --wash: rgba(255,255,255,0.06);
   --series-track: #3987e5; --series-attack: #d95926; --series-air: #199e70;
 }
 
@@ -50,16 +57,18 @@
 [hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; }
 body.viz-root { background: var(--page); color: var(--text-primary);
-                font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+                font: 15px/1.45 var(--serif); font-size-adjust: 0.47; }
+.viz-root .typed, .viz-root .mono, .viz-root code { font-family: var(--typed); }
+.viz-root [lang="ja"] { font-family: var(--ja); font-weight: 500; }
 .app { display: grid; grid-template-rows: auto auto auto 1fr; height: 100vh; padding: 16px 20px; gap: 12px; }
 
-header h1 { font-size: 20px; font-weight: 600; margin: 0; }
+header h1 { font-size: 26px; font-weight: 400; line-height: 1.15; margin: 0; }
 header p { margin: 2px 0 0; color: var(--text-secondary); }
 header a { color: inherit; }
 
 /* Filter row: one row, above everything it scopes */
 .filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
 .seg button { font: inherit; background: var(--surface-1); color: var(--text-secondary); border: 0;
               padding: 6px 12px; cursor: pointer; border-right: 1px solid var(--border); }
 .seg button:last-child { border-right: 0; }
@@ -68,22 +77,23 @@ header a { color: inherit; }
 .check { display: inline-flex; gap: 6px; align-items: center; color: var(--text-secondary); margin-left: 12px; }
 .pick { display: inline-flex; gap: 6px; align-items: center; color: var(--text-secondary); margin-right: 6px; }
 .pick select { font: inherit; background: var(--surface-1); color: var(--text-primary); border: 1px solid var(--border);
-               border-radius: 8px; padding: 5px 8px; }
+               border-radius: 3px; padding: 5px 8px; }
 
 /* Stat tiles */
 .stats { display: flex; gap: 10px; flex-wrap: wrap; min-height: 62px; }
-.tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; min-width: 120px; }
-.tile .label { color: var(--text-muted); font-size: 12px; }
-.tile .value { font-size: 20px; font-weight: 600; }
+.tile { padding: 4px 22px 4px 0; min-width: 120px; border-right: 1px solid var(--border); margin-right: 8px; }
+.tile:last-child { border-right: 0; }
+.tile .label { color: var(--text-muted); font-size: 13px; font-style: italic; }
+.tile .value { font-size: 22px; font-weight: 400; font-variant-numeric: lining-nums tabular-nums; }
 .tile .sub { color: var(--text-secondary); font-size: 12px; }
 
 .main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 12px; min-height: 0; }
-.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; min-height: 0; }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 0; min-height: 0; }
 
 /* Side panel: patrol list (All view) or patrol log (single patrol) — doubles as the table view */
 .side { display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
 .side-head { padding: 12px 14px 8px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.side-head h2 { font-size: 14px; margin: 0; }
+.side-head h2 { font-size: 16px; font-weight: 400; font-style: italic; margin: 0; }
 .side-head .seg button { padding: 3px 8px; font-size: 12px; }
 .list { overflow-y: auto; position: relative; }
 .row { display: grid; grid-template-columns: 16px 1fr; gap: 8px; width: 100%; text-align: left; font: inherit;
@@ -107,14 +117,14 @@ header a { color: inherit; }
 /* Tooltip: value leads, label follows */
 #tip { position: fixed; z-index: 10; pointer-events: none; display: none; max-width: 320px;
        background: var(--surface-1); color: var(--text-primary); border: 1px solid var(--border);
-       border-radius: 8px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-size: 12px; }
+       border-radius: 2px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-size: 13px; }
 #tip .v { font-size: 14px; font-weight: 600; }
 #tip .k { color: var(--text-secondary); }
 #tip .m { color: var(--text-muted); margin-top: 4px; }
 #tip .i { color: var(--text-muted); font-style: italic; }
 
 /* Scan viewer */
-dialog { border: 1px solid var(--border); border-radius: 10px; padding: 0; width: min(1000px, 94vw);
+dialog { border: 1px solid var(--border); border-radius: 2px; padding: 0; width: min(1000px, 94vw);
          max-height: 92vh; background: var(--surface-1); color: var(--text-primary); }
 dialog::backdrop { background: rgba(0,0,0,0.55); }
 .dlg-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px;
@@ -126,26 +136,29 @@ dialog::backdrop { background: rgba(0,0,0,0.55); }
 .dlg-body img { display: block; width: 100%; cursor: zoom-in; }
 .dlg-body img.full { width: auto; max-width: none; cursor: zoom-out; }
 
-/* Page-to-page navigation */
-.nav { display: flex; gap: 4px; margin-left: auto; }
-.nav a { white-space: nowrap; color: var(--text-secondary); text-decoration: none; padding: 6px 12px; border-radius: 8px; border: 1px solid transparent; }
-.nav a:hover { background: var(--wash); }
-.nav a[aria-current="page"] { color: var(--text-primary); font-weight: 600; border-color: var(--border); background: var(--surface-1); }
-/* the other theater's pages, set apart by a rule */
-.nav a.theater { margin-left: 8px; position: relative; }
-.nav a.theater::before { content: ""; position: absolute; left: -7px; top: 20%; bottom: 20%; border-left: 1px solid var(--text-muted); opacity: .5; }
-header { display: flex; align-items: flex-start; gap: 16px; }
+/* Page-to-page navigation: the same bar on every page, above the title (as on the front page) */
+header { display: block; }
+.nav { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; margin: 0 0 14px; padding-bottom: 8px;
+       border-bottom: 1px solid var(--border); font-size: 15px; }
+.nav a { color: var(--text-secondary); text-decoration: none; white-space: nowrap; }
+.nav a:hover { color: var(--text-primary); text-decoration: underline; text-underline-offset: 3px; }
+.nav a[aria-current="page"] { color: var(--text-primary); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.nav .home { color: var(--text-primary); font-size: 17px; margin-right: 6px; }
+.nav .grp { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
+.nav .grp + .grp, .nav .grp + a { padding-left: 15px; border-left: 1px solid var(--border); }
+/* the family's own pages: a bar to the kit, set apart by a rule */
+.nav a.theater { padding-left: 15px; border-left: 1px solid var(--border); }
 
 /* Explainer pages (zones.html, grids.html): a scrolling article around one map */
-.doc { max-width: 1080px; margin: 0 auto; padding: 16px 20px 48px; }
+.doc { max-width: 1240px; margin: 0 auto; padding: 16px 20px 48px; }
 .doc header { margin-bottom: 14px; }
-.doc h2 { font-size: 16px; margin: 28px 0 6px; }
+.doc h2 { font-size: 22px; font-weight: 400; font-style: italic; margin: 32px 0 6px; }
 .doc p, .doc li { max-width: 72ch; line-height: 1.55; }
 .doc p { margin: 8px 0; }
 .doc ul { padding-left: 20px; }
 .doc a { color: inherit; }
-.doc code, .doc .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; }
-.doc .lede { font-size: 15px; color: var(--text-secondary); }
+.doc code, .doc .mono { font-family: var(--typed); font-size: 13.5px; }
+.doc .lede { font-size: 17px; color: var(--text-secondary); }
 .doc .filters { margin: 14px 0 8px; }
 .doc .map-card { overflow: hidden; }
 .doc .map-wrap { position: relative; height: min(62vh, 560px); min-height: 320px; }
@@ -158,5 +171,5 @@ header { display: flex; align-items: flex-start; gap: 16px; }
 .doc th, .doc td { text-align: left; padding: 5px 12px 5px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
 .doc th { color: var(--text-muted); font-weight: 500; font-size: 12px; }
 .doc td.num { font-variant-numeric: tabular-nums; text-align: right; }
-.doc .callout { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin: 12px 0; }
+.doc .callout { border-left: 2px solid var(--border); padding: 4px 16px; margin: 12px 0; }
 .doc .muted { color: var(--text-muted); }

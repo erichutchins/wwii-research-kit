@@ -17,47 +17,48 @@
    board. Colours are the project's checked palette (as battle.html): the US side takes slot 1 (blue),
    US aircraft slot 3, the Japanese side is ink, the hit is --fire. Anything assumed is hatched and says so. */
 :root {
-  --page: #f9f9f7; --surface: #fcfcfb; --land: #e6e5df; --coast: #b7b6ab; --sea-grid: #ecebe6;
-  --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #6f6e69; --rule: rgba(11,11,11,0.10); --wash: rgba(11,11,11,0.05);
-  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --fire: #d42a3c; --japan: #0b0b0b;
-  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --page: #fcfcf9; --surface: #fcfcf9; --land: #e6e5df; --coast: #b7b6ab; --sea-grid: #ecebe6;
+  --ink: #1d1d1b; --ink-2: #57564f; --ink-3: #6f6e69; --rule: #e1dfd5; --wash: rgba(29,29,27,0.05);
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --fire: #d42a3c; --japan: #1d1d1b;
+  --font-ui: et-book, Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
   --font-type: "TT2020E", "Courier New", Courier, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --page: #0d0d0d; --surface: #1a1a19; --land: #33332f; --coast: #5f5f57; --sea-grid: #242422;
-    --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #9d9c95; --rule: rgba(255,255,255,0.10); --wash: rgba(255,255,255,0.06);
-    --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --japan: #ffffff; color-scheme: dark;
+    --page: #131312; --surface: #131312; --land: #33332f; --coast: #5f5f57; --sea-grid: #242422;
+    --ink: #ecebe5; --ink-2: #b3b1a7; --ink-3: #9d9c95; --rule: #2d2c28; --wash: rgba(255,255,255,0.06);
+    --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --japan: #ecebe5; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --page: #0d0d0d; --surface: #1a1a19; --land: #33332f; --coast: #5f5f57; --sea-grid: #242422;
-  --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #9d9c95; --rule: rgba(255,255,255,0.10); --wash: rgba(255,255,255,0.06);
-  --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --japan: #ffffff; color-scheme: dark;
+  --page: #131312; --surface: #131312; --land: #33332f; --coast: #5f5f57; --sea-grid: #242422;
+  --ink: #ecebe5; --ink-2: #b3b1a7; --ink-3: #9d9c95; --rule: #2d2c28; --wash: rgba(255,255,255,0.06);
+  --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --japan: #ecebe5; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.55 var(--font-ui); }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.55 var(--font-ui); font-size-adjust: 0.47; }
 a { color: inherit; text-decoration-color: var(--ink-3); text-underline-offset: 2px; }
 a:hover { text-decoration-color: var(--ink); }
 a:focus-visible, button:focus-visible, .mk:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
 .wrap { max-width: 1440px; margin: 0 auto; padding: 18px 20px 40px; }
-header { display: grid; gap: 4px; margin-bottom: 18px; }
-.nav { display: flex; flex-wrap: wrap; gap: 4px; justify-self: end; grid-row: 1; }
-.nav a { white-space: nowrap; color: var(--ink-2); text-decoration: none; padding: 5px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 13px; }
-.nav a:hover { background: var(--wash); }
-.nav a[aria-current="page"] { color: var(--ink); font-weight: 600; border-color: var(--rule); background: var(--surface); }
-.nav a.theater { margin-left: 8px; position: relative; }
-.nav a.theater::before { content: ""; position: absolute; left: -7px; top: 20%; bottom: 20%; border-left: 1px solid var(--ink-3); opacity: .5; }
-.eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
-h1 { font-size: 28px; line-height: 1.15; margin: 0; text-wrap: balance; font-weight: 650; max-width: 30ch; }
+header { display: grid; gap: 4px; }
+.nav { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 15px; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); font-size: 14.5px; }
+.nav a { white-space: nowrap; color: var(--ink-2); text-decoration: none; }
+.nav a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.nav a[aria-current="page"] { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.nav .home { color: var(--ink); font-size: 17px; margin-right: 6px; }
+.nav .grp { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
+.nav .grp + .grp, .nav .grp + a, .nav a.theater { padding-left: 15px; border-left: 1px solid var(--rule); }
+.eyebrow { font-size: 15px; font-style: italic; color: var(--ink-3); }
+h1 { font-size: 30px; line-height: 1.15; margin: 0; text-wrap: balance; font-weight: 400; max-width: 30ch; }
 .lede { margin: 4px 0 0; color: var(--ink-2); max-width: 78ch; font-size: 16px; }
 .clocknote { margin: 6px 0 0; color: var(--ink-3); font-size: 13px; max-width: 90ch; }
-h2 { font-size: 20px; line-height: 1.25; margin: 0 0 4px; font-weight: 650; }
+h2 { font-size: 20px; line-height: 1.25; margin: 0 0 4px; font-weight: 400; font-style: italic; }
 h3 { font-size: 15px; margin: 0; font-weight: 650; }
 .sec { margin-top: 56px; }
 .sec > .intro { color: var(--ink-2); max-width: 80ch; margin: 0 0 16px; }
-.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 0; }
 .t { font: 700 13px var(--font-type); font-variant-numeric: tabular-nums; }
 .muted { color: var(--ink-3); }
 
@@ -133,7 +134,7 @@ h3 { font-size: 15px; margin: 0; font-weight: 650; }
 .path-ctl { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13px; color: var(--ink-2); }
 .path-ctl label { display: inline-flex; align-items: center; gap: 8px; }
 .path-ctl output { font: 700 13px var(--font-type); color: var(--ink); min-width: 52px; }
-.path-ctl select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 4px 8px; }
+.path-ctl select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: 4px 8px; }
 .path-ctl input[type=range] { accent-color: var(--ink-2); width: 130px; }
 #pathmap, #scale100 { width: 100%; height: auto; display: block; }
 .path-read { display: flex; flex-wrap: wrap; gap: 4px 22px; font-size: 13px; color: var(--ink-2); }
@@ -171,9 +172,9 @@ h3 { font-size: 15px; margin: 0; font-weight: 650; }
 .q { padding: 12px 14px; display: grid; grid-template-columns: minmax(170px, 0.28fr) minmax(0, 1fr); gap: 10px 18px; }
 .q h3 { font-size: 14px; }
 .claims { display: flex; flex-wrap: wrap; gap: 8px; }
-.claim { border: 1px solid var(--rule); border-radius: 8px; padding: 7px 10px 8px; max-width: 360px; font-size: 13px; display: grid; gap: 3px; background: var(--page); }
+.claim { border: 1px solid var(--rule); border-radius: 3px; padding: 7px 10px 8px; max-width: 360px; font-size: 13px; display: grid; gap: 3px; background: var(--page); }
 .claim .what { font-weight: 600; }
-.claim .wt { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.claim .wt { font-size: 13px; font-style: italic; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
 .claim .wt i { width: 10px; height: 10px; display: inline-block; border: 1.5px solid var(--ink); border-radius: 2px; }
 .claim.record .wt i { background: var(--ink); }
 .claim.photo .wt i { background: var(--ink-3); border-color: var(--ink-3); }
@@ -191,7 +192,7 @@ h3 { font-size: 15px; margin: 0; font-weight: 650; }
 .crew h3 { margin-bottom: 2px; }
 .crew .sub { font-size: 12.5px; color: var(--ink-3); margin: 0 0 8px; }
 .crew table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.crew th { text-align: left; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; padding: 6px 6px 4px 0; border-bottom: 1px solid var(--rule); }
+.crew th { text-align: left; font-size: 13px; font-style: italic; color: var(--ink-3); font-weight: 600; padding: 6px 6px 4px 0; border-bottom: 1px solid var(--rule); }
 .crew td { padding: 6px 6px 6px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
 .crew tr.grp td { font-weight: 650; color: var(--ink-2); padding-top: 12px; font-size: 12px; letter-spacing: 0.04em; }
 .crew tr.him td { background: var(--wash); }
@@ -199,7 +200,7 @@ h3 { font-size: 15px; margin: 0; font-weight: 650; }
 .sources { columns: 2 360px; column-gap: 28px; font-size: 13px; color: var(--ink-2); }
 .sources li { break-inside: avoid; margin-bottom: 6px; }
 
-#tip { position: fixed; z-index: 10; pointer-events: none; max-width: 320px; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-size: 12px; }
+#tip { position: fixed; z-index: 10; pointer-events: none; max-width: 320px; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 3px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-size: 12px; }
 #tip .v { font-weight: 650; font-size: 13px; }
 #tip .k { color: var(--ink-2); font-family: var(--font-type); }
 #tip .m { color: var(--ink-2); margin-top: 4px; }
@@ -221,7 +222,7 @@ h3 { font-size: 15px; margin: 0; font-weight: 650; }
 <body>
 <div class="wrap">
   <header>
-    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html">Ship tracks</a><a href="army.html">Army map</a><a href="seabees.html">Seabees</a><a href="dives.html">Dive profile</a><a href="battle.html">Battles</a><a href="haynsworth.html" aria-current="page">Haynsworth</a><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a></nav>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="battle.html">Battles</a><a href="haynsworth.html" aria-current="page">Haynsworth</a><a href="seabees.html">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
     <div class="eyebrow">USS Haynsworth (DD-700) · TF 58 picket line · Kikusui No. 1</div>
     <h1>Twelve miles out: the kamikaze hit on USS Haynsworth, 6 April 1945</h1>
     <p class="lede">On the first day of Japan's mass kamikaze offensive at Okinawa, a destroyer posted 12 miles out from Task Group 58.3's carriers was hit by a single dive bomber that came out of low cloud. Seven men died at once; five more died of their burns. This page puts her own reports beside the other ships of the group and the Japanese records of the planes sent against them.</p>

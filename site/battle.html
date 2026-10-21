@@ -17,44 +17,45 @@
    Colours are the project's validated chart palette (viz.css): boats take categorical slots 1-3 in the engagement's
    order (--c1..--c3); the Japanese side is ink. */
 :root {
-  --page: #f9f9f7; --surface: #fcfcfb; --land: #e6e5df; --coast: #b7b6ab; --sea-grid: #ecebe6;
-  --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #6f6e69; --rule: rgba(11,11,11,0.10); --wash: rgba(11,11,11,0.05);
-  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --fire: #d42a3c; --japan: #0b0b0b;
-  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --page: #fcfcf9; --surface: #fcfcf9; --land: #e6e5df; --coast: #b7b6ab; --sea-grid: #ecebe6;
+  --ink: #1d1d1b; --ink-2: #57564f; --ink-3: #6f6e69; --rule: #e1dfd5; --wash: rgba(29,29,27,0.05);
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --fire: #d42a3c; --japan: #1d1d1b;
+  --font-ui: et-book, Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
   --font-type: "TT2020E", "Courier New", Courier, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --page: #0d0d0d; --surface: #1a1a19; --land: #33332f; --coast: #5f5f57; --sea-grid: #242422;
-    --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #9d9c95; --rule: rgba(255,255,255,0.10); --wash: rgba(255,255,255,0.06);
-    --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --japan: #ffffff; color-scheme: dark;
+    --page: #131312; --surface: #131312; --land: #33332f; --coast: #5f5f57; --sea-grid: #242422;
+    --ink: #ecebe5; --ink-2: #b3b1a7; --ink-3: #9d9c95; --rule: #2d2c28; --wash: rgba(255,255,255,0.06);
+    --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --japan: #ecebe5; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --page: #0d0d0d; --surface: #1a1a19; --land: #33332f; --coast: #5f5f57; --sea-grid: #242422;
-  --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #9d9c95; --rule: rgba(255,255,255,0.10); --wash: rgba(255,255,255,0.06);
-  --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --japan: #ffffff; color-scheme: dark;
+  --page: #131312; --surface: #131312; --land: #33332f; --coast: #5f5f57; --sea-grid: #242422;
+  --ink: #ecebe5; --ink-2: #b3b1a7; --ink-3: #9d9c95; --rule: #2d2c28; --wash: rgba(255,255,255,0.06);
+  --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --japan: #ecebe5; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { background: var(--page); color: var(--ink); font: 14px/1.45 var(--font-ui); }
+body { background: var(--page); color: var(--ink); font: 14px/1.45 var(--font-ui); font-size-adjust: 0.47; }
 .wrap { max-width: 1440px; margin: 0 auto; padding-inline: 20px; padding-block: 18px 28px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 
 header { display: grid; gap: 4px; }
-.nav { display: flex; gap: 4px; justify-self: end; grid-row: 1; }
-.nav a { white-space: nowrap; color: var(--ink-2); text-decoration: none; padding: 5px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 13px; }
-.nav a:hover { background: var(--wash); }
-.nav a[aria-current="page"] { color: var(--ink); font-weight: 600; border-color: var(--rule); background: var(--surface); }
-.nav a.theater { margin-left: 8px; position: relative; }
-.nav a.theater::before { content: ""; position: absolute; left: -7px; top: 20%; bottom: 20%; border-left: 1px solid var(--ink-3); opacity: .5; }
-.eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
-h1 { font-size: 24px; line-height: 1.2; margin: 0; text-wrap: balance; font-weight: 650; }
+.nav { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 15px; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); font-size: 14.5px; }
+.nav a { white-space: nowrap; color: var(--ink-2); text-decoration: none; }
+.nav a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.nav a[aria-current="page"] { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.nav .home { color: var(--ink); font-size: 17px; margin-right: 6px; }
+.nav .grp { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
+.nav .grp + .grp, .nav .grp + a, .nav a.theater { padding-left: 15px; border-left: 1px solid var(--rule); }
+.eyebrow { font-size: 15px; font-style: italic; color: var(--ink-3); }
+h1 { font-size: 30px; line-height: 1.2; margin: 0; text-wrap: balance; font-weight: 400; }
 .lede { margin: 0; color: var(--ink-2); max-width: 75ch; }
 
 .controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
 .pick { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 13px; }
-.pick select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 7px 10px; max-width: 100%; }
-.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.pick select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: 7px 10px; max-width: 100%; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; background: var(--surface); }
 .seg button { font: inherit; background: none; color: var(--ink-2); border: 0; border-right: 1px solid var(--rule); padding: 7px 14px; cursor: pointer; text-align: left; }
 .seg button:last-child { border-right: 0; }
 .seg button:hover { background: var(--wash); }
@@ -64,7 +65,7 @@ h1 { font-size: 24px; line-height: 1.2; margin: 0; text-wrap: balance; font-weig
 button:focus-visible, input:focus-visible, a:focus-visible, .row:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
 
 .main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 400px); gap: 14px; }
-.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 0; min-width: 0; }
 
 .map-card { display: grid; grid-template-rows: auto auto auto; overflow: hidden; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 14px 8px; color: var(--ink-2); font-size: 12px; border-bottom: 1px solid var(--rule); }
@@ -73,7 +74,7 @@ button:focus-visible, input:focus-visible, a:focus-visible, .row:focus-visible {
 .legend .boat { color: var(--ink); font-weight: 600; }
 .map-box { position: relative; height: clamp(340px, calc(100vh - 250px), 660px); }
 #map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-#inset { position: absolute; right: 10px; top: 10px; width: 132px; height: 132px; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; }
+#inset { position: absolute; right: 10px; top: 10px; width: 132px; height: 132px; background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; }
 
 .land { fill: var(--land); stroke: var(--coast); stroke-width: 0.8; }
 .grat { stroke: var(--sea-grid); stroke-width: 1; fill: none; }
@@ -110,7 +111,7 @@ button:focus-visible, input:focus-visible, a:focus-visible, .row:focus-visible {
 
 /* The log card takes the map card's height (height 0, min-height 100% of the grid row) and scrolls inside */
 .side { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 0; min-height: 100%; overflow: hidden; }
-h2 { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); margin: 0; padding: 12px 14px 6px; font-weight: 650; }
+h2 { font-size: 16px; font-weight: 400; font-style: italic; color: var(--ink-2); margin: 0; padding: 12px 14px 6px; font-weight: 400; font-style: italic; }
 .side h2 { border-bottom: 1px solid var(--rule); padding-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
 .side h2 span { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-3); font-size: 12px; }
 .log { position: relative; overflow-y: auto; overscroll-behavior: contain; }
@@ -152,7 +153,7 @@ h2 { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: 
 .notes { color: var(--ink-2); font-size: 13px; display: grid; gap: 6px; max-width: 95ch; }
 .notes p { margin: 0; }
 
-#tip { position: fixed; z-index: 10; pointer-events: none; max-width: 300px; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-size: 12px; }
+#tip { position: fixed; z-index: 10; pointer-events: none; max-width: 300px; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 3px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-size: 12px; }
 #tip .v { font-weight: 650; font-size: 13px; }
 #tip .k { color: var(--ink-2); font-family: var(--font-type); }
 #tip .m { color: var(--ink-2); margin-top: 4px; }
@@ -178,7 +179,7 @@ h2 { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: 
 
 <div class="wrap">
   <header>
-    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html">Ship tracks</a><a href="army.html">Army map</a><a href="seabees.html">Seabees</a><a href="dives.html">Dive profile</a><a href="battle.html" aria-current="page">Battles</a><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a></nav>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="battle.html" aria-current="page">Battles</a><a href="haynsworth.html">Haynsworth</a><a href="seabees.html">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
     <div class="eyebrow" id="eyebrow"></div>
     <h1 id="title"></h1>
     <p class="lede" id="lede"></p>

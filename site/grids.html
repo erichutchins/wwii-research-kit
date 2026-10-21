@@ -23,15 +23,15 @@
   .probe text { font-size: 12px; font-weight: 600; fill: var(--text-primary); paint-order: stroke;
                 stroke: var(--surface-1); stroke-width: 3px; pointer-events: none; }
   .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
-  .zoom-btns button { font: 16px system-ui; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+  .zoom-btns button { font: 18px var(--serif); width: 30px; height: 30px; border-radius: 2px; cursor: pointer;
                       background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
   .hint { position: absolute; left: 12px; bottom: 8px; color: var(--text-muted); font-size: 12px; pointer-events: none; }
   .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
-  .decoder input { font: 15px ui-monospace, "SF Mono", Menlo, monospace; padding: 6px 10px; width: 14ch;
+  .decoder input { font: 16px var(--typed); padding: 6px 10px; width: 14ch;
                    border: 1px solid var(--border); border-radius: 6px; background: var(--page); color: var(--text-primary); }
   .decoder .try { font: inherit; font-size: 12.5px; background: none; border: 1px solid var(--border); border-radius: 6px;
                   color: var(--text-secondary); padding: 3px 8px; cursor: pointer; margin-left: 4px; }
-  .anatomy { font: 22px ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.04em; margin: 6px 0 2px; }
+  .anatomy { font: 24px var(--typed); letter-spacing: 0.04em; margin: 6px 0 2px; }
   .anatomy .a { color: var(--series-track); font-weight: 700; }
   .anatomy .b { color: var(--series-attack); }
   .anatomy .c { color: var(--series-air); }
@@ -43,6 +43,7 @@
 <body class="viz-root">
 <div class="doc">
   <header>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="battle.html">Battles</a><a href="haynsworth.html">Haynsworth</a><a href="seabees.html">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html" aria-current="page">Map grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
     <div>
       <h1>Map grids: reading the Army's grid references</h1>
       <p class="lede">The morning reports and the battalion journals place a battery with a grid reference:
@@ -50,7 +51,6 @@
         Between Sicily in 1943 and Bavaria in 1945, the family's Army units used six different grids.
         Their square letters overlap, so a reference only means a place once you know which grid it is on.</p>
     </div>
-    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html">Ship tracks</a><a href="army.html">Army map</a><a href="seabees.html">Seabees</a><a href="dives.html">Dive profile</a><a href="battle.html">Battles</a><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html" aria-current="page">Map grids</a></nav>
   </header>
 
   <h2>How to read one</h2>

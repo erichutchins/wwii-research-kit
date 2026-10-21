@@ -4,12 +4,6 @@
    Shippori Mincho, the original before our translation. Special Elite once, for the masthead. Colours are the kit's
    checked palette (viz.css): boats take slots 1-3 in the engagement's order, the other side is ink, a hit is --fire.
    A correction is in blue pencil. Figures are drawn by home.js from the records. */
-@font-face { font-family: "et-book"; font-style: normal; font-weight: 400; font-display: swap;
-  src: url("https://cdn.jsdelivr.net/gh/edwardtufte/tufte-css@gh-pages/et-book/et-book-roman-line-figures/et-book-roman-line-figures.woff") format("woff"); }
-@font-face { font-family: "et-book"; font-style: italic; font-weight: 400; font-display: swap;
-  src: url("https://cdn.jsdelivr.net/gh/edwardtufte/tufte-css@gh-pages/et-book/et-book-display-italic-old-style-figures/et-book-display-italic-old-style-figures.woff") format("woff"); }
-@font-face { font-family: "et-book"; font-style: normal; font-weight: 700; font-display: swap;
-  src: url("https://cdn.jsdelivr.net/gh/edwardtufte/tufte-css@gh-pages/et-book/et-book-bold-line-figures/et-book-bold-line-figures.woff") format("woff"); }
 :root {
   color-scheme: light;
   --paper: #fcfcf9; --ink: #1d1d1b; --ink-2: #57564f; --ink-3: #85847b; --rule: #e1dfd5; --wash: rgba(29,29,27,.05);

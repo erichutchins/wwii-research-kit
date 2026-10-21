@@ -15,10 +15,10 @@
   #map { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
   #map:active { cursor: grabbing; }
   .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
-  .zoom-btns button { font: 16px system-ui; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+  .zoom-btns button { font: 18px var(--serif); width: 30px; height: 30px; border-radius: 2px; cursor: pointer;
                       background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
   .regions { position: absolute; left: 10px; top: 10px; display: flex; flex-wrap: wrap; gap: 4px; max-width: 70%; }
-  .regions button { font: 12px system-ui; padding: 4px 9px; border-radius: 6px; cursor: pointer;
+  .regions button { font: 13px var(--serif); padding: 4px 9px; border-radius: 2px; cursor: pointer;
                     background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
   .regions button:hover, .zoom-btns button:hover { background: var(--wash); }
   .hint { position: absolute; left: 12px; bottom: 8px; color: var(--text-muted); font-size: 12px; pointer-events: none; }
@@ -63,7 +63,7 @@
   .row .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; background: var(--series-track); }
   .row .dot.assumed { background: none; border: 2px solid var(--series-track); }
   .row .dot.none { background: none; border: 1.5px dashed var(--text-muted); }
-  .row .typed { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; }
+  .row .typed { font-family: var(--typed); font-size: 13.5px; }
   .row .part { color: var(--text-muted); }
   .row .links { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 2px; font-size: 12px; }
   .row .links a { color: var(--text-secondary); }
@@ -91,6 +91,7 @@
 <body class="viz-root">
 <div class="app">
   <header>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="battle.html">Battles</a><a href="haynsworth.html">Haynsworth</a><a href="seabees.html" aria-current="page">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
     <div>
       <h1>Seabee battalions in the Pacific, 1942–1945</h1>
       <p>Where a naval construction battalion, and each part of it, was: from its muster rolls at the
@@ -100,7 +101,6 @@
          the war diaries of the ships that carried it, and the Navy's and Marine Corps' histories of the bases and landings.
          Choose a battalion; click any point to see the page it came from.</p>
     </div>
-    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html">Ship tracks</a><a href="army.html">Army map</a><a href="seabees.html" aria-current="page">Seabees</a><a href="dives.html">Dive profile</a><a href="battle.html">Battles</a><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a></nav>
   </header>
 
   <div class="filters">
