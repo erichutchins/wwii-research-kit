@@ -1,0 +1,6 @@
+/* The records' typed words: TT2020 style E (Fredrick R. Brennan, SIL Open Font License 1.1; TT2020-LICENSE.txt), cut
+   down to Latin with all its alternate letters, so no two neighbouring letters print quite alike:
+     pyftsubset TT2020StyleE-Regular.ttf --unicodes="U+0020-007E,U+00A0-00FF,U+2013-2014,U+2018-201D,U+2026" \
+       --layout-features='*' --flavor=woff2 --output-file=tt2020e.woff2
+   It has no °, ′ or →; those come from the next font in the stack. */
+@font-face { font-family: "TT2020E"; font-style: normal; font-weight: 400; font-display: swap; src: url("tt2020e.woff2") format("woff2"); }

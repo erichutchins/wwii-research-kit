@@ -7,7 +7,8 @@
 <title>Submarine Battles</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* One page for every engagement in records/battles/ (battle.html?e=<id>; built by tools/build_battle.py).
    Layout: chart-room working sheet. Map left and the pack's log right, the same height so playback never moves the page
@@ -20,7 +21,7 @@
   --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #6f6e69; --rule: rgba(11,11,11,0.10); --wash: rgba(11,11,11,0.05);
   --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --fire: #d42a3c; --japan: #0b0b0b;
   --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-type: "Courier Prime", "Courier New", Courier, monospace;
+  --font-type: "TT2020E", "Courier New", Courier, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -141,6 +142,9 @@ h2 { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: 
 .row .chip { width: 9px; height: 9px; border-radius: 2px; flex: none; }
 .row .who .sil { width: 48px; height: 9.6px; margin-right: 2px; }
 .row .q { font-family: var(--font-type); font-size: 13px; line-height: 1.4; margin-top: 2px; overflow-wrap: anywhere; }
+/* the Japanese record leads in its own script; our translation follows in the page's own voice */
+.row .ja { font: 500 15px/1.7 "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif; margin-top: 2px; }
+.row .tr { font-size: 13px; line-height: 1.45; color: var(--ink-2); margin-top: 2px; }
 .row .out { font-size: 12px; color: var(--ink-2); margin-top: 4px; padding-left: 8px; border-left: 2px solid var(--rule); }
 .row .doubt { font-size: 12px; color: var(--ink-3); font-style: italic; margin-top: 3px; }
 .row a { color: var(--ink-2); font-size: 12px; }
@@ -616,8 +620,7 @@ h2 { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: 
         <div class="t">${hhmm(T(e.utc))}Z<small>${day(T(e.utc))}</small></div>
         <div>
           <div class="who">${e.side === "japan" || isOther(e.side) ? (sil(e.ship_type, color(e.side), 48) || `<span class="chip" style="background:${color(e.side)}"></span>`) : sil("submarine", color(e.side), 48)}<b>${esc(nameOf(e.side))}</b><span>${esc(e.title === "Log" ? "" : e.title)}</span><span>· ${esc(e.local)}</span></div>
-          <div class="q">${esc(e.text)}</div>
-          ${e.original ? `<div class="q" lang="ja" style="color:var(--ink-3)">${esc(e.original)}</div>` : ""}
+          ${e.original ? `<div class="ja" lang="ja">${esc(e.original)}</div><div class="tr">${esc(e.text)} (translated)</div>` : `<div class="q">${esc(e.text)}</div>`}
           ${e.outcome ? `<div class="out"><b>Japanese side.</b> ${esc(e.outcome)}</div>` : ""}
           ${e.doubt ? `<div class="doubt">${esc(e.doubt)}</div>` : ""}
           ${e.scan ? `<a href="${esc(e.scan)}" target="_blank" rel="noopener">${e.side === "japan" ? "Source" : "Report page"} ↗</a>` : ""}

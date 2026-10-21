@@ -1,6 +1,7 @@
 /* The front page (index.html) and the guide for relatives (relatives.html): the best finding in each theater,
    then the reference shelf, then how to do it yourself.
-   Two voices: ET Book for the kit's own words, Courier Prime for the records' (they were typed). Colours are the kit's
+   Two voices: ET Book for the kit's own words, TT2020 for the records' (they were typed; fonts/fonts.css); Japanese in
+   Shippori Mincho, the original before our translation. Special Elite once, for the masthead. Colours are the kit's
    checked palette (viz.css): boats take slots 1-3 in the engagement's order, the other side is ink, a hit is --fire.
    A correction is in blue pencil. Figures are drawn by home.js from the records. */
 @font-face { font-family: "et-book"; font-style: normal; font-weight: 400; font-display: swap;
@@ -15,7 +16,8 @@
   --land: #ebeae2; --coast: #c4c2b6;
   --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --fire: #d42a3c; --pencil: #2253a3;
   --serif: et-book, Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  --typed: "Courier Prime", "Courier New", Courier, monospace;
+  --typed: "TT2020E", "Courier New", Courier, monospace;
+  --ja: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
 }
 @media (prefers-color-scheme: dark) {
   :root { color-scheme: dark;
@@ -37,7 +39,7 @@ a:hover { text-decoration-color: currentColor; }
 /* Masthead */
 .top { display: flex; justify-content: flex-end; gap: 22px; flex-wrap: wrap; padding: 20px 0 0; font-size: 16px; color: var(--ink-2); }
 .mast { padding: 56px 0 8px; max-width: 760px; }
-h1 { font-weight: 400; font-size: clamp(42px, 6vw, 68px); line-height: 1.02; margin: 0 0 18px; letter-spacing: -.01em; }
+h1 { font: 400 clamp(40px, 5.8vw, 66px)/1.05 "Special Elite", var(--typed); margin: 0 0 20px; letter-spacing: -.02em; }
 .lede { font-size: clamp(21px, 2.3vw, 25px); line-height: 1.4; margin: 0; color: var(--ink-2); }
 .lede i { color: var(--ink); }
 .chapters { display: flex; gap: 22px; flex-wrap: wrap; margin: 26px 0 0; font-size: 17px; }
@@ -78,7 +80,8 @@ h1 { font-weight: 400; font-size: clamp(42px, 6vw, 68px); line-height: 1.02; mar
 .log .t small { display: block; font: 400 11.5px var(--serif); color: var(--ink-3); }
 .log .who { font: 700 12.5px var(--typed); }
 .log .said { font: 13.5px/1.45 var(--typed); }
-.log .jp { display: block; font: 13px/1.5 "Hiragino Mincho ProN", "Yu Mincho", serif; color: var(--ink-3); margin-top: 3px; }
+.log .ja { display: block; font: 500 16px/1.7 var(--ja); color: var(--ink); }
+.log .tr { display: block; font: 15px/1.45 var(--serif); color: var(--ink-2); margin-top: 2px; }
 .log .src { font-size: 13px; color: var(--ink-3); }
 .log .none { color: var(--ink-3); font-style: italic; font-size: 15px; padding: 8px 0; }
 .clockbar { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; margin-top: 14px; }
@@ -133,7 +136,7 @@ h1 { font-weight: 400; font-size: clamp(42px, 6vw, 68px); line-height: 1.02; mar
 .shelf h3, .steps h3 { font-weight: 400; font-size: 22px; margin: 0 0 4px; }
 .shelf p, .steps p { margin: 0; font-size: 17px; color: var(--ink-2); }
 .shelf .ex { font-family: var(--typed); font-size: 15px; color: var(--ink); }
-.shelf .kana { font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; color: var(--ink); }
+.shelf .kana { font: 500 1.05em var(--ja); color: var(--ink); }
 .guides { margin: 36px 0 0; font-size: 17px; color: var(--ink-2); max-width: 70ch; }
 .steps { counter-reset: step; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 56px; margin-top: 30px; }
 .steps > div { counter-increment: step; }

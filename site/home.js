@@ -107,8 +107,9 @@ async function replay() {
     const u = pageUrl(e.page, e.scan);
     const who = boat ? `<span class="who" style="color:${boat.color}">${boat.name}</span> ` : "";
     return `<li class="${old ? "old" : ""}"><span class="t">${d3.utcFormat("%H%M")(e.t)}<small>${esc(e.local || "")}</small></span>
-      <span>${who}<span class="said">${esc(e.title)}${e.text && e.text !== e.title ? `: ${esc(e.text)}` : ""}</span>
-      ${e.original ? `<span class="jp" lang="ja">${esc(e.original)}</span>` : ""}
+      <span>${e.original
+        ? `<span class="ja" lang="ja">${esc(e.original)}</span><span class="tr">${esc(e.title)}: ${esc(e.text)} (translated)</span>`
+        : `${who}<span class="said">${esc(e.title)}${e.text && e.text !== e.title ? `: ${esc(e.text)}` : ""}</span>`}
       ${u ? `<a class="src" href="${esc(u)}" target="_blank" rel="noopener">${esc(e.page || "page")}</a>` : ""}</span></li>`;
   };
   const logUS = document.getElementById("log-us"), logJP = document.getElementById("log-jp"), now = document.getElementById("now");
