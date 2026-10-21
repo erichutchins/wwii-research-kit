@@ -51,6 +51,9 @@ CITES = {
     "seabees/voyages.csv": ["ref"],
     "seabees/voyage_positions.csv": ["ref"],
     "jgrid/anchors.csv": ["source"],
+    "engagements/timeline.csv": ["ref"],
+    "engagements/claims.csv": ["ref"],
+    "engagements/positions.csv": ["ref"],
 }
 # files whose rows don't carry a citation of their own, and why
 UNCITED = {
@@ -67,9 +70,12 @@ UNCITED = {
 
 
 def key(path):
-    """'records/army/stations.csv' -> 'army/stations.csv'; 'records/boats/x/patrol-1/depths.csv' -> 'depths.csv'"""
-    folder = path.parent.name
-    return f"{folder}/{path.name}" if f"{folder}/{path.name}" in CITES or f"{folder}/{path.name}" in UNCITED else path.name
+    """'records/army/stations.csv' -> 'army/stations.csv'; 'records/engagements/<id>/timeline.csv' ->
+    'engagements/timeline.csv'; 'records/boats/x/patrol-1/depths.csv' -> 'depths.csv'"""
+    for k in (f"{path.parent.name}/{path.name}", f"{path.parent.parent.name}/{path.name}"):
+        if k in CITES or k in UNCITED:
+            return k
+    return path.name
 
 
 def resolver(sources):
