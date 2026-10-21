@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>USS Haynsworth, 6 April 1945</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap">
+<style>
+/* One engagement told end to end from both sides' records: USS Haynsworth (DD-700) on TF 58's picket line,
+   6 April 1945, the first day of Kikusui No. 1. Data: records/engagements/haynsworth-1945-04-06/*.csv (hand-edited),
+   records/ships/dd-700-haynsworth/positions.csv (her track). Silhouettes: records/silhouettes/silhouettes.yml, loaded by silhouettes.js.
+   Layout: a scrolling narrative beside a map that stays put; then the attack sequence, the damage plate, the evidence
+   board. Colours are the project's checked palette (as battle.html): the US side takes slot 1 (blue),
+   US aircraft slot 3, the Japanese side is ink, the hit is --fire. Anything assumed is hatched and says so. */
+:root {
+  --page: #f9f9f7; --surface: #fcfcfb; --land: #e6e5df; --coast: #b7b6ab; --sea-grid: #ecebe6;
+  --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #6f6e69; --rule: rgba(11,11,11,0.10); --wash: rgba(11,11,11,0.05);
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --fire: #d42a3c; --japan: #0b0b0b;
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-type: "Courier Prime", "Courier New", Courier, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #0d0d0d; --surface: #1a1a19; --land: #33332f; --coast: #5f5f57; --sea-grid: #242422;
+    --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #9d9c95; --rule: rgba(255,255,255,0.10); --wash: rgba(255,255,255,0.06);
+    --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --japan: #ffffff; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #0d0d0d; --surface: #1a1a19; --land: #33332f; --coast: #5f5f57; --sea-grid: #242422;
+  --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #9d9c95; --rule: rgba(255,255,255,0.10); --wash: rgba(255,255,255,0.06);
+  --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --japan: #ffffff; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.55 var(--font-ui); }
+a { color: inherit; text-decoration-color: var(--ink-3); text-underline-offset: 2px; }
+a:hover { text-decoration-color: var(--ink); }
+a:focus-visible, button:focus-visible, .mk:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
+.wrap { max-width: 1440px; margin: 0 auto; padding: 18px 20px 40px; }
+header { display: grid; gap: 4px; margin-bottom: 18px; }
+.nav { display: flex; flex-wrap: wrap; gap: 4px; justify-self: end; grid-row: 1; }
+.nav a { white-space: nowrap; color: var(--ink-2); text-decoration: none; padding: 5px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 13px; }
+.nav a:hover { background: var(--wash); }
+.nav a[aria-current="page"] { color: var(--ink); font-weight: 600; border-color: var(--rule); background: var(--surface); }
+.nav a.theater { margin-left: 8px; position: relative; }
+.nav a.theater::before { content: ""; position: absolute; left: -7px; top: 20%; bottom: 20%; border-left: 1px solid var(--ink-3); opacity: .5; }
+.eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+h1 { font-size: 28px; line-height: 1.15; margin: 0; text-wrap: balance; font-weight: 650; max-width: 30ch; }
+.lede { margin: 4px 0 0; color: var(--ink-2); max-width: 78ch; font-size: 16px; }
+.clocknote { margin: 6px 0 0; color: var(--ink-3); font-size: 13px; max-width: 90ch; }
+h2 { font-size: 20px; line-height: 1.25; margin: 0 0 4px; font-weight: 650; }
+h3 { font-size: 15px; margin: 0; font-weight: 650; }
+.sec { margin-top: 56px; }
+.sec > .intro { color: var(--ink-2); max-width: 80ch; margin: 0 0 16px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; }
+.t { font: 700 13px var(--font-type); font-variant-numeric: tabular-nums; }
+.muted { color: var(--ink-3); }
+
+/* Scrolling narrative: steps on the left, the map sticks on the right */
+.story { display: grid; grid-template-columns: minmax(300px, 0.8fr) minmax(0, 1.2fr); gap: 24px; align-items: start; }
+.steps { display: grid; gap: 0; padding-bottom: 30vh; }
+.step { min-height: 78vh; padding: 18px 0; display: flex; align-items: center; }
+.step .card { padding: 16px 18px 12px; width: 100%; opacity: 0.45; transition: opacity 200ms; }
+.step.active .card { opacity: 1; box-shadow: inset 3px 0 0 var(--ink); }
+.step .when { font: 700 13px var(--font-type); color: var(--ink-2); margin-bottom: 4px; }
+.step p { margin: 6px 0 10px; }
+.entries { list-style: none; margin: 8px 0 0; padding: 0; border-top: 1px solid var(--rule); }
+.entries li { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 2px 10px; padding: 8px 0; border-bottom: 1px solid var(--rule); font-size: 13px; }
+.entries li .t small { display: block; font: 400 10.5px var(--font-ui); color: var(--ink-3); line-height: 1.25; }
+.entries li .t.placed { font-style: italic; color: var(--ink-2); }
+.entries .who { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--ink-2); }
+.entries .who b { color: var(--ink); }
+.chip { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+.chip.us { background: var(--c1); } .chip.jp { background: var(--japan); } .chip.hit { background: var(--fire); }
+.entries .src { font-size: 11.5px; color: var(--ink-3); }
+.stage { position: sticky; top: 12px; height: calc(100vh - 24px); min-height: 460px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; }
+.stage-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; padding: 10px 14px 8px; border-bottom: 1px solid var(--rule); }
+.stage-head > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.clock { font: 700 15px var(--font-type); }
+.clock small { font: 400 12px var(--font-ui); color: var(--ink-3); margin-left: 6px; }
+.view-name { font-size: 12px; color: var(--ink-3); text-align: right; }
+.map-box { position: relative; min-height: 0; }
+#map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px 10px; border-top: 1px solid var(--rule); font-size: 12px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend svg { flex: none; overflow: visible; }
+
+.land { fill: var(--land); stroke: var(--coast); stroke-width: 0.8; vector-effect: non-scaling-stroke; }
+.grat { stroke: var(--sea-grid); stroke-width: 1; fill: none; vector-effect: non-scaling-stroke; }
+.grat-label { fill: var(--ink-3); font: 10.5px var(--font-type); }
+.place { fill: var(--ink-3); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; paint-order: stroke; stroke: var(--page); stroke-width: 3px; }
+.trk { fill: none; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
+.trk.us { stroke: var(--c1); }
+.trk.jp { stroke: var(--japan); stroke-dasharray: 6 3 1.5 3; stroke-width: 1.6; }
+.trk.assumed { stroke-dasharray: 2 4; stroke-width: 1.4; }
+.ring { fill: none; stroke: var(--c1); stroke-width: 1.2; stroke-dasharray: 3 4; opacity: 0.8; }
+.sq { fill: url(#hatch-jp); stroke: var(--japan); stroke-width: 1; }
+.sq.probable { stroke-dasharray: 4 3; }
+/* a grid code hovered in the text: its square shows (even outside its own step) and is drawn heavier */
+.mk.hot { opacity: 1 !important; pointer-events: auto !important; }
+.mk.hot .sq { stroke: var(--c2); stroke-width: 3; }
+.mk.hot .mk-label { fill: var(--c2); }
+.gref { border-bottom: 1.5px dotted var(--c2); cursor: help; border-radius: 2px; }
+.gref:hover, .gref:focus, .gref.hot { background: color-mix(in srgb, var(--c2) 18%, transparent); outline: none; }
+.mk { cursor: pointer; transition: opacity 250ms; }
+.mk.dim { opacity: 0.18; }
+.mk.off { opacity: 0; pointer-events: none; }
+.mk-label { font: 600 11px var(--font-ui); fill: var(--ink); paint-order: stroke; stroke: var(--page); stroke-width: 3.5px; pointer-events: none; }
+.mk-label.jp { fill: var(--ink-2); }
+.mk-label.small { font-weight: 400; font-size: 10.5px; fill: var(--ink-2); }
+.fill-us { fill: var(--c1); } .fill-jp { fill: var(--japan); } .fill-air { fill: var(--c3); } .fill-hit { fill: var(--fire); }
+.stroke-us { stroke: var(--c1); } .stroke-jp { stroke: var(--japan); } .stroke-air { stroke: var(--c3); } .stroke-hit { stroke: var(--fire); }
+.halo { fill: var(--surface); stroke: none; }
+.pulse { fill: none; stroke: var(--fire); stroke-width: 2; }
+.wx { fill: url(#hatch-wx); stroke: var(--ink-3); stroke-dasharray: 2 3; stroke-width: 1; }
+
+/* Plates below the story */
+.plates { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+.panel { padding: 12px 14px; display: grid; gap: 8px; align-content: start; }
+.panel svg { width: 100%; height: auto; display: block; }
+.panel .cap { font-size: 13px; color: var(--ink-2); }
+.panel .cap q { color: var(--ink); }
+.panel .num { font: 700 12px var(--font-type); color: var(--ink-3); }
+.schem-note { font-size: 12px; color: var(--ink-3); margin: 10px 0 0; max-width: 90ch; }
+.damage { padding: 14px; }
+.sub-h { margin: 26px 0 4px; }
+.path-card { padding: 12px 14px; display: grid; gap: 10px; }
+.path-ctl { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13px; color: var(--ink-2); }
+.path-ctl label { display: inline-flex; align-items: center; gap: 8px; }
+.path-ctl output { font: 700 13px var(--font-type); color: var(--ink); min-width: 52px; }
+.path-ctl select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 4px 8px; }
+.path-ctl input[type=range] { accent-color: var(--ink-2); width: 130px; }
+#pathmap, #scale100 { width: 100%; height: auto; display: block; }
+.path-read { display: flex; flex-wrap: wrap; gap: 4px 22px; font-size: 13px; color: var(--ink-2); }
+.path-read b { font: 700 14px var(--font-type); color: var(--ink); }
+.grid-ft { stroke: var(--sea-grid); stroke-width: 1; }
+.ruler line { stroke: var(--ink-3); } .ruler text { fill: var(--ink-3); font: 10px var(--font-type); }
+.ht-line { stroke: var(--ink-3); stroke-dasharray: 3 4; stroke-width: 1; }
+.ghost { fill: none; stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
+.ghost-us { fill: none; stroke: var(--c1); stroke-width: 1.4; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
+.jpath { fill: none; stroke: var(--japan); stroke-width: 1.8; stroke-dasharray: 6 3; }
+.tick-dot { fill: var(--japan); }
+.tick-lab { fill: var(--ink-2); font: 10px var(--font-type); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.damage svg { width: 100%; height: auto; display: block; }
+.sil { fill: var(--ink); }
+.sil.us { fill: var(--ink); }
+.frame-tick { stroke: var(--ink-3); stroke-width: 1; }
+.frame-lab { fill: var(--ink-3); font: 10px var(--font-type); }
+.dmg { fill: url(#hatch-fire); stroke: var(--fire); stroke-width: 1.5; }
+.callout { fill: var(--ink-2); font-size: 12px; }
+.callout.b { fill: var(--ink); font-weight: 650; }
+.leader { stroke: var(--ink-3); stroke-width: 1; fill: none; }
+.oob { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px 20px; margin-top: 18px; }
+.oob .plate { display: grid; gap: 2px; }
+.oob .plate svg { width: 100%; height: auto; }
+.oob .nm { font-weight: 650; font-size: 13px; }
+.oob .kd { font-size: 12px; color: var(--ink-3); line-height: 1.35; }
+.air-plates { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px 20px; margin-top: 18px; }
+.air-plates .plate { display: grid; gap: 2px; }
+.air-plates svg { width: 100%; height: auto; }
+.air-plates .nm { font-weight: 650; font-size: 13px; }
+.air-plates .kd { font-size: 12px; color: var(--ink-3); line-height: 1.35; }
+
+/* Evidence board */
+.board { display: grid; gap: 10px; }
+.q { padding: 12px 14px; display: grid; grid-template-columns: minmax(170px, 0.28fr) minmax(0, 1fr); gap: 10px 18px; }
+.q h3 { font-size: 14px; }
+.claims { display: flex; flex-wrap: wrap; gap: 8px; }
+.claim { border: 1px solid var(--rule); border-radius: 8px; padding: 7px 10px 8px; max-width: 360px; font-size: 13px; display: grid; gap: 3px; background: var(--page); }
+.claim .what { font-weight: 600; }
+.claim .wt { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.claim .wt i { width: 10px; height: 10px; display: inline-block; border: 1.5px solid var(--ink); border-radius: 2px; }
+.claim.record .wt i { background: var(--ink); }
+.claim.photo .wt i { background: var(--ink-3); border-color: var(--ink-3); }
+.claim.recollection .wt i { background: transparent; }
+.claim.inference .wt i { background: repeating-linear-gradient(45deg, var(--ink-2) 0 1.5px, transparent 1.5px 4px); }
+.claim.inference { border-style: dashed; }
+.claim .nt { color: var(--ink-2); font-size: 12px; }
+.claim .src { font-size: 11.5px; color: var(--ink-3); }
+.key { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 12px; font-size: 12px; color: var(--ink-2); }
+.key .claim { padding: 0; border: 0; background: none; }
+
+/* Both crews */
+.crews { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.crew { padding: 12px 14px; }
+.crew h3 { margin-bottom: 2px; }
+.crew .sub { font-size: 12.5px; color: var(--ink-3); margin: 0 0 8px; }
+.crew table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.crew th { text-align: left; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; padding: 6px 6px 4px 0; border-bottom: 1px solid var(--rule); }
+.crew td { padding: 6px 6px 6px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.crew tr.grp td { font-weight: 650; color: var(--ink-2); padding-top: 12px; font-size: 12px; letter-spacing: 0.04em; }
+.crew tr.him td { background: var(--wash); }
+.crew td .nt { display: block; color: var(--ink-3); font-size: 12px; }
+.sources { columns: 2 360px; column-gap: 28px; font-size: 13px; color: var(--ink-2); }
+.sources li { break-inside: avoid; margin-bottom: 6px; }
+
+#tip { position: fixed; z-index: 10; pointer-events: none; max-width: 320px; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-size: 12px; }
+#tip .v { font-weight: 650; font-size: 13px; }
+#tip .k { color: var(--ink-2); font-family: var(--font-type); }
+#tip .m { color: var(--ink-2); margin-top: 4px; }
+#tip .i { color: var(--ink-3); font-style: italic; margin-top: 4px; }
+
+@media (max-width: 900px) {
+  .story { grid-template-columns: minmax(0, 1fr); }
+  .stage { grid-row: 1; height: 52vh; min-height: 300px; top: 0; z-index: 2; border-radius: 0 0 10px 10px; }
+  .step { min-height: 60vh; }
+  .legend { display: none; }
+  .crews, .q { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  .wrap { padding-inline: 14px; }
+  h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html">Ship tracks</a><a href="army.html">Army map</a><a href="seabees.html">Seabees</a><a href="dives.html">Dive profile</a><a href="battle.html">Battles</a><a href="haynsworth.html" aria-current="page">Haynsworth</a><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a></nav>
+    <div class="eyebrow">USS Haynsworth (DD-700) · TF 58 picket line · Kikusui No. 1</div>
+    <h1>Twelve miles out: the kamikaze hit on USS Haynsworth, 6 April 1945</h1>
+    <p class="lede">On the first day of Japan's mass kamikaze offensive at Okinawa, a destroyer posted 12 miles out from Task Group 58.3's carriers was hit by a single dive bomber that came out of low cloud. Seven men died at once; five more died of their burns. This page puts her own reports beside the other ships of the group and the Japanese records of the planes sent against them.</p>
+    <p class="clocknote">All times are <b>Item</b> (zone −9), which is also Tokyo time: the US Navy and the Japanese Navy kept the same clock here, so a 1250 in Haynsworth's report and a 1250 in a Japanese report are the same minute. Every mark on the map and every entry links to the page it was read from. Anything placed by assumption is hatched or dotted and says so.</p>
+  </header>
+
+  <section class="story" aria-label="The day, step by step">
+    <div class="steps" id="steps"></div>
+    <div class="stage card">
+      <div class="stage-head"><div class="clock" id="clock"></div><div class="view-name" id="viewname"></div></div>
+      <div class="map-box"><svg id="map" role="img" aria-label="Map of the action, changing with the narrative"></svg></div>
+      <div class="legend" id="legend"></div>
+    </div>
+  </section>
+
+  <section class="sec" id="sequence">
+    <h2>1245 to 1250: the attack, as the action report tells it</h2>
+    <p class="intro">Haynsworth's action report (9 April 1945, p. 3) describes the last five minutes in order but gives only two times, 1245 and 1250. These panels follow its wording. They are schematic: the ship's heading (020°) and the directions are from the report, but the distances are not to scale and the aircraft's exact paths are not recorded.</p>
+    <div class="plates" id="panels"></div>
+    <p class="schem-note">Silhouettes: JUDY 33 from TAIC's plate (CINCPAC-CINCPOA Bulletin 105-45, July 1945); F4U from FM 30-30 (April 1943). Hull outline schematic.</p>
+
+    <h3 class="sub-h">To scale: 100 feet</h3>
+    <p class="intro">Irons has the Judy coming in at 100 ft and over 300 knots; the action report has it at 150 ft when the ship opened fire at 1,500 yards. Here are both heights beside Haynsworth, everything in feet at one scale, seen from her starboard beam, the side it hit. Head-on, as the starboard 40 mm crews saw it, the plane is drawn over the frame where it struck.</p>
+    <div class="card damage"><svg id="scale100" role="img" aria-label="Haynsworth in profile with a Judy drawn to the same scale at 100 and 150 feet"></svg></div>
+
+    <h3 class="sub-h">To scale: an estimated path for the last half-minute</h3>
+    <p class="intro">Seen from above, to scale. What is recorded: the ship on 020° at 25 knots; the Judy heading away from her when she opened fire at 1,500 yards; its turn to starboard; the bomb falling about 1,000 yards abeam; the hit on her starboard side abaft the bridge, wings banked 45°. What isn't: where the plane was relative to the ship, how fast it turned, and how tightly. Those are the controls below, and the path follows from them: a turn's radius is fixed by speed and bank (r = v² / g·tan bank).</p>
+    <div class="card path-card">
+      <div class="path-ctl">
+        <label>Speed in the turn <input type="range" id="p-vturn" min="150" max="320" step="10" value="220"> <output id="o-vturn"></output></label>
+        <label>Bank in the turn <select id="p-bank"><option value="45">45°</option><option value="60" selected>60°</option><option value="70">70°</option></select></label>
+        <label>Speed on the run in <input type="range" id="p-vfinal" min="200" max="360" step="10" value="300"> <output id="o-vfinal"></output></label>
+        <label>Where it was when fire opened <select id="p-start"><option value="90" selected>abeam (090° relative)</option><option value="60">on the starboard bow (060°)</option><option value="120">on the starboard quarter (120°)</option></select></label>
+      </div>
+      <svg id="pathmap" role="img" aria-label="Plan view, to scale, of an estimated path of the Judy from 1,500 yards to the hit"></svg>
+      <div class="path-read" id="p-read"></div>
+    </div>
+    <p class="schem-note" id="path-note"></p>
+  </section>
+
+  <section class="sec" id="damage">
+    <h2>Where she was hit</h2>
+    <p class="intro">The damage report (airmailgram 090010, action report pp. 7-9) and the war diary locate the hit by frame number: frames 65-88 of the main deckhouse, the radio transmitter room, Main Radio and CIC; the starboard bulwark at frames 70-79 "completely destroyed"; the twin 40 mm mount 41 "wrecked".</p>
+    <div class="card damage"><svg id="profile" role="img" aria-label="Profile of a Sumner-class destroyer with the damaged frames marked"></svg></div>
+    <p class="schem-note" id="frame-note"></p>
+    <h3 style="margin-top:22px">TG 58.3 and its pickets, as named in the 6 April records</h3>
+    <div class="oob" id="oob"></div>
+    <h3 style="margin-top:22px">The aircraft</h3>
+    <div class="air-plates" id="airplates"></div>
+  </section>
+
+  <section class="sec" id="evidence">
+    <h2>What the records agree on, and what they don't</h2>
+    <p class="intro">Each question below has more than one answer in the sources. They're kept side by side, marked by what kind of evidence each one is.</p>
+    <div class="key">
+      <span class="claim record"><span class="wt"><i></i>Record: written at the time</span></span>
+      <span class="claim photo"><span class="wt"><i></i>Photograph</span></span>
+      <span class="claim recollection"><span class="wt"><i></i>Recollection: told later</span></span>
+      <span class="claim inference"><span class="wt"><i></i>Inference: worked out here or by a historian</span></span>
+    </div>
+    <div class="board" id="board"></div>
+  </section>
+
+  <section class="sec">
+    <h2>Sources</h2>
+    <ul class="sources" id="sources"></ul>
+    <p class="schem-note">Data: <a href="https://github.com/erichutchins/wwii-unit-records/tree/main/engagements/haynsworth-1945-04-06"><code>records/engagements/haynsworth-1945-04-06/</code></a> (every entry, position and claim, each citing its page) and the ship's April 1945 track in <code>records/ships/dd-700-haynsworth/</code>.</p>
+  </section>
+</div>
+<div id="tip" hidden></div>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<script src="config.js"></script>
+<script src="silhouettes.js"></script>
+<script src="haynsworth.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>
