@@ -80,7 +80,6 @@ h1 { font: 400 clamp(40px, 5.8vw, 66px)/1.05 "Special Elite", var(--typed); marg
 .log .ja { display: block; font: 500 16px/1.7 var(--ja); color: var(--ink); }
 .log .tr { display: block; font: 15px/1.45 var(--serif); color: var(--ink-2); margin-top: 2px; }
 .log .src { font: 13px var(--serif); color: var(--ink-3); white-space: nowrap; margin-left: 4px; }
-.log li.old .t, .log li.old .said, .log li.old .ja, .log li.old .tr, .log li.old .who .what { color: var(--ink-3); }
 .log .none { color: var(--ink-3); font-style: italic; font-size: 15px; padding: 8px 0; }
 .clockbar { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; margin-top: 14px; }
 .clockbar button { font: 16px var(--serif); color: var(--ink); background: none; border: 1px solid var(--ink-3); border-radius: 999px; padding: 4px 16px; cursor: pointer; min-width: 84px; }
