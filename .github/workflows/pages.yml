@@ -30,6 +30,10 @@ jobs:
         run: |
           python3 tools/build_army.py
           git diff --exit-code records/army/army.json
+      - name: Every Seabee station checks out, and seabees.json is up to date
+        run: |
+          uv run tools/build_seabees.py
+          git diff --exit-code records/seabees/seabees.json
       - name: Every track passes the speed check
         run: |
           uv run tools/check_track.py all -q | tee /tmp/tracks.txt

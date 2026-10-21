@@ -301,6 +301,7 @@ caching off so edits show on reload.
 |---|---|
 | `patrols.html` + `patrols.js` | Map of every patrol, playback following the boat, course/speed gauge, patrol log, report-page viewer |
 | `army.html` + `army.js` | Map of one Army unit at a time (`records/army/army.json`): its stations as typed, routes and sea crossings, Battery D's engagements, playback, station log, page viewer |
+| `seabees.html` + `seabees.js` | Map of one Seabee battalion at a time (`records/seabees/seabees.json`): each part's line and where it was that day, ships along their logged positions, the day's weather, playback, station log, page viewer |
 | `dives.html` + `dives.js` | Dive profile: depth, temperature layers, weather strip, seafloor, moon phases, playback, and a day-and-night chart with one row per day |
 | `zones.html` + `zones.js` | Explainer: the Navy's lettered time zones over the Pacific, every position coloured by its typed zone, one moment on six clocks |
 | `grids.html` + `grids.js` | Explainer (Europe): the five map grids in the Army records, their lettered 100 km squares, a decoder, and every reference checked against its named town |

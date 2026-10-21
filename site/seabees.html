@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Seabee battalions in the Pacific</title>
+<link rel="stylesheet" href="viz.css">
+<style>
+  .map-card { display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 14px 6px; color: var(--text-secondary); font-size: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend svg { overflow: visible; }
+  .map-wrap { position: relative; min-height: 300px; }
+  #map { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+  #map:active { cursor: grabbing; }
+  .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .zoom-btns button { font: 16px system-ui; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+                      background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
+  .regions { position: absolute; left: 10px; top: 10px; display: flex; flex-wrap: wrap; gap: 4px; max-width: 70%; }
+  .regions button { font: 12px system-ui; padding: 4px 9px; border-radius: 6px; cursor: pointer;
+                    background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
+  .regions button:hover, .zoom-btns button:hover { background: var(--wash); }
+  .hint { position: absolute; left: 12px; bottom: 8px; color: var(--text-muted); font-size: 12px; pointer-events: none; }
+
+  .land { fill: var(--land); stroke: var(--coast); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
+  .graticule { fill: none; stroke: var(--grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .sea-label { fill: var(--text-muted); font-size: 11px; letter-spacing: 0.08em; pointer-events: none; }
+  .place-label { fill: var(--text-secondary); font-size: 11px; pointer-events: none;
+                 paint-order: stroke; stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round; }
+
+  .leg { fill: none; stroke: var(--series-track); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round;
+         vector-effect: non-scaling-stroke; }
+  .leg.assumed { stroke-dasharray: 5 4; }
+  .leg.ahead { stroke-opacity: 0.25; }
+  .mk circle, .who circle { vector-effect: non-scaling-stroke; }
+  .mk .ring { fill: none; stroke: var(--surface-1); stroke-width: 2; }
+  .mk .shape { fill: var(--series-track); }
+  .mk.assumed .shape { fill: var(--surface-1); stroke: var(--series-track); stroke-width: 2.5; }
+  .mk.future { opacity: 0.3; }
+  .mk.hover .shape { stroke: var(--text-primary); stroke-width: 2; }
+  .who circle.halo { fill: var(--series-track); opacity: 0.25; }
+  .who circle.core { fill: var(--series-track); stroke: var(--surface-1); stroke-width: 2; }
+  .who text { font-size: 12px; font-weight: 600; fill: var(--text-primary); paint-order: stroke;
+              stroke: var(--surface-1); stroke-width: 3px; }
+
+  .timeline { border-top: 1px solid var(--border); padding: 6px 14px 10px; display: grid;
+              grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; }
+  #play { font: inherit; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border);
+          background: var(--surface-1); color: var(--text-primary); cursor: pointer; grid-row: span 2; }
+  #strip { width: 100%; height: 64px; display: block; cursor: pointer; }
+  #strip .axis text { fill: var(--text-muted); font-size: 11px; }
+  #strip .axis line, #strip .axis path { stroke: var(--coast); }
+  #strip .seg-label { fill: var(--surface-1); font-size: 10px; font-weight: 600; pointer-events: none; }
+  #scrub { width: 100%; margin: 0; accent-color: var(--series-track); }
+  .now { grid-column: 2; display: flex; justify-content: space-between; color: var(--text-secondary); font-size: 12px; gap: 12px; }
+  .now b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .wx { grid-column: 2; color: var(--text-secondary); font-size: 12px; line-height: 1.45; min-height: 17px; }
+  .wx b { color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .wx .src { color: var(--text-muted); }
+  .wx a { color: var(--text-muted); }
+
+  .row .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; background: var(--series-track); }
+  .row .dot.assumed { background: none; border: 2px solid var(--series-track); }
+  .row .dot.none { background: none; border: 1.5px dashed var(--text-muted); }
+  .row .typed { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; }
+  .row .part { color: var(--text-muted); }
+  .row .links { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 2px; font-size: 12px; }
+  .row .links a { color: var(--text-secondary); }
+  .unit-note { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 13px; }
+  .scan-missing { padding: 24px; color: var(--text-secondary); }
+  /* a crossing's ships (voyages.csv), under the station where it arrived */
+  .row .ship { margin: 6px 0 4px; padding: 6px 9px; border-left: 3px solid var(--text-primary); background: var(--wash);
+               border-radius: 0 6px 6px 0; font-size: 12.5px; color: var(--text-secondary); display: grid; gap: 3px; }
+  .row .ship.planned, .row .ship.ordered, .row .ship.named, .row .ship.partial { border-left-style: dashed; border-left-color: var(--text-secondary); }
+  .row .ship.not-recorded { border-left: 3px dashed var(--text-muted); }
+  .row .ship .ship-head { color: var(--text-primary); font-weight: 600; }
+  .row .ship .ship-status { color: var(--text-muted); font-size: 12px; }
+  .row .ship .ship-voyage { color: var(--text-muted); }
+
+  @media (max-width: 900px) {
+    .app { height: auto; }
+    header { flex-direction: column; }
+    .nav { margin-left: 0; flex-wrap: wrap; }
+    .main { grid-template-columns: 1fr; }
+    .map-wrap { height: 60vh; }
+    .side { max-height: 60vh; }
+  }
+</style>
+</head>
+<body class="viz-root">
+<div class="app">
+  <header>
+    <div>
+      <h1>Seabee battalions in the Pacific, 1942–1945</h1>
+      <p>Where a naval construction battalion, and each part of it, was: from its muster rolls at the
+         <a href="https://catalog.archives.gov/id/594996" target="_blank" rel="noopener">National Archives</a>,
+         the Bureau of Yards and Docks' history sheets at the
+         <a href="https://www.history.navy.mil/content/history/museums/seabee/explore/seabee-unit-histories.html" target="_blank" rel="noopener">Navy Seabee Museum</a>,
+         the war diaries of the ships that carried it, and the Navy's and Marine Corps' histories of the bases and landings.
+         Choose a battalion; click any point to see the page it came from.</p>
+    </div>
+    <nav class="nav"><a href="index.html">Home</a><a href="patrols.html">Ship tracks</a><a href="army.html">Army map</a><a href="seabees.html" aria-current="page">Seabees</a><a href="dives.html">Dive profile</a><a href="battle.html">Battles</a><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a></nav>
+  </header>
+
+  <div class="filters">
+    <label class="pick">Battalion <select id="unit-pick"></select></label>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="main">
+    <div class="card map-card">
+      <div class="legend" id="legend"></div>
+      <div class="map-wrap">
+        <svg id="map" role="img" aria-label="Map of the battalion's stations"></svg>
+        <div class="regions" id="regions"></div>
+        <div class="zoom-btns">
+          <button id="zin" aria-label="Zoom in">+</button>
+          <button id="zout" aria-label="Zoom out">−</button>
+          <button id="zreset" aria-label="Show the whole track">⟲</button>
+        </div>
+        <div class="hint">Scroll or pinch to zoom · drag to pan · lines join the stations; where a ship logged its positions, they follow its track</div>
+      </div>
+      <div class="timeline">
+        <button id="play" aria-label="Play">▶</button>
+        <svg id="strip" aria-label="Timeline: the battalion and its parts; click to jump"></svg>
+        <input type="range" id="scrub" min="0" max="1000" value="1000" aria-label="Date">
+        <div class="now"><span id="now-date"></span><span id="now-where"></span></div>
+        <div class="wx" id="now-weather"></div>
+      </div>
+    </div>
+
+    <div class="card side">
+      <div class="side-head"><h2 id="side-title">Stations</h2></div>
+      <div class="list" id="list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="tip" role="tooltip"></div>
+
+<dialog id="scan">
+  <div class="dlg-head">
+    <div><b id="scan-title"></b> <a id="scan-link" target="_blank" rel="noopener"></a></div>
+    <button id="scan-close">Close</button>
+  </div>
+  <div class="dlg-body"><img id="scan-img" alt=""><div class="scan-missing" id="scan-missing" hidden></div></div>
+</dialog>
+
+<script src="config.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="seabees.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>
