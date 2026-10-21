@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Researching a relative: WWII research kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap">
+<link rel="stylesheet" href="home.css">
+</head>
+<body>
+<div class="page">
+  <nav class="top" aria-label="Elsewhere"><a href="index.html">WWII research kit</a><a href="index.html#yourself">Do this yourself</a><a href="https://github.com/erichutchins/wwii-unit-records">Records on GitHub</a></nav>
+
+  <header class="mast">
+    <h1>Researching a relative</h1>
+    <p class="lede">Most families start with a name, a serial number, and a unit or a ship. This kit follows units
+      and ships, not people: find his unit, and its own records say where he was, often day by day.</p>
+  </header>
+
+  <div class="guide">
+    <h2>Start from what the family has</h2>
+    <ul>
+      <li><b>Discharge papers</b> name the unit or ship. An Army discharge (WD AGO Form 53-55) gives his organization
+        when he left; a Navy Notice of Separation (NAVPERS 553) lists the ships and stations he served on.</li>
+      <li><b>The serial number</b> is the key to the Army's daily records: a morning report names a soldier, by
+        serial number, on every day his status changed.</li>
+      <li><b>Letters and envelopes</b> often carry an APO or FPO number, or a Navy number, which the units' records
+        can date and place.</li>
+    </ul>
+
+    <h2>His own service record</h2>
+    <p>Veterans and their next of kin can request a service record from the
+      <a href="https://www.archives.gov/veterans/military-service-records">National Personnel Records Center</a>.
+      Many Army records were lost in the
+      <a href="https://www.archives.gov/personnel-records-center/fire-1973">1973 fire</a> there: an estimated 80% of
+      those for men discharged between 1 November 1912 and 1 January 1960. When his own file is gone, his unit's
+      records are often the best that survive, and they are the ones this kit reads.</p>
+
+    <h2>His unit's or ship's records</h2>
+    <table class="records-table">
+      <thead><tr><th>If he was in</th><th>Its records</th><th>How the kit reads them</th></tr></thead>
+      <tbody>
+        <tr><td>A submarine</td><td class="where">War patrol reports, one per patrol, scanned in the National Archives catalog (<a href="https://catalog.archives.gov/id/305243">series 305243</a>)</td><td class="where"><a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/METHODS.md">Transcribing a war patrol report</a></td></tr>
+        <tr><td>A Navy ship</td><td class="where">War diaries and action reports (<a href="https://catalog.archives.gov/id/4697018">series 4697018</a>), many of them scanned</td><td class="where">As for a patrol report; see <a href="patrols.html?ship=haynsworth">USS Haynsworth</a> and <a href="patrols.html?ship=solar">USS Solar</a></td></tr>
+        <tr><td>An Army company, battery or detachment</td><td class="where">Morning reports (<a href="https://catalog.archives.gov/id/85713825">series 85713825</a>), online January 1940 to December 1944; 1945–46 on microfilm only, in St. Louis. Battalion histories and journals, often in a division museum</td><td class="where"><a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/MORNING-REPORTS.md">Army morning reports</a>; <code>morning_reports.py serial</code> finds every page that mentions a serial number</td></tr>
+        <tr><td>A Seabee battalion or other Navy shore unit</td><td class="where">Muster rolls (<a href="https://catalog.archives.gov/id/594996">series 594996</a>), quarter by quarter, with monthly reports of changes</td><td class="where"><a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/MUSTER-ROLLS.md">Navy muster rolls</a></td></tr>
+        <tr><td>A bomber or fighter crew that was lost</td><td class="where">Missing Air Crew Reports (<a href="https://catalog.archives.gov/id/305256">series 305256</a>), with the crew's and witnesses' statements</td><td class="where">See <a href="index.html#f-neuburg">Neuburg, 26 April 1945</a></td></tr>
+        <tr><td>Any of these, from the other side</td><td class="where">The Japanese Navy's records at the Japan Center for Asian Historical Records; German records still to find</td><td class="where"><a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/BATTLES.md">Building a battle from both sides</a></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Then on the map</h2>
+    <p>If his unit or ship is already in the kit, it's in the lists on the <a href="index.html">front page</a>, by
+      theater and date, and each mark on its map opens the page it was read from. If it isn't,
+      <a href="https://github.com/erichutchins/wwii-unit-records/issues/new?title=Lead%3A%20&amp;body=The%20ship%20or%20unit%3A%20%0AWhen%3A%20%0AWhat%20you%20have%20(a%20discharge%20paper%2C%20a%20letter%2C%20a%20cruise%20book)%20and%20what%20it%20says%3A%20">share it as a lead</a>
+      (a free GitHub account is needed), or <a href="index.html#yourself">do it yourself</a> with the kit's tools.</p>
+
+    <h2>What stays with your family</h2>
+    <p>The records here are the units', and they leave people out: no one's name, serial number, or own path through a
+      hospital or a replacement depot goes into them. Keep his story in your family's own notes, and use the kit's maps
+      underneath it.</p>
+  </div>
+  <div class="end"></div>
+</div>
+<script src="footer.js"></script>
+</body>
+</html>
