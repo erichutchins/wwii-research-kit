@@ -9,22 +9,22 @@
 <link rel="stylesheet" href="entry.css">
 <style>
   .map-card { display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
-  .legend { display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 14px 6px; color: var(--text-secondary); font-size: 12px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 14px 6px; color: var(--text-secondary); font-size: 14.5px; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .legend svg { overflow: visible; }
   .map-wrap { position: relative; min-height: 300px; }
   #map { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
   #map:active { cursor: grabbing; }
   .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
-  .zoom-btns button { font: 18px var(--serif); width: 30px; height: 30px; border-radius: 2px; cursor: pointer;
+  .zoom-btns button { font: 21.5px var(--serif); width: 30px; height: 30px; border-radius: 2px; cursor: pointer;
                       background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
-  .hint { position: absolute; left: 12px; bottom: 8px; color: var(--text-muted); font-size: 12px; pointer-events: none; }
+  .hint { position: absolute; left: 12px; bottom: 8px; color: var(--text-muted); font-size: 14.5px; pointer-events: none; }
 
   .land { fill: var(--land); stroke: var(--coast); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
   .border { fill: none; stroke: var(--coast); stroke-width: 0.6; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
   .graticule { fill: none; stroke: var(--grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
-  .place { fill: var(--text-muted); font-size: 11px; letter-spacing: 0.06em; pointer-events: none; }
-  .city-label { fill: var(--text-secondary); font-size: 11px; pointer-events: none;
+  .place { fill: var(--text-muted); font-size: 13px; letter-spacing: 0.06em; pointer-events: none; }
+  .city-label { fill: var(--text-secondary); font-size: 13px; pointer-events: none;
                 paint-order: stroke; stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round; }
   .city { pointer-events: none; }
   .city-dot { fill: var(--surface-1); stroke: var(--text-muted); stroke-width: 1.2; }
@@ -47,7 +47,7 @@
   .act.hover .shape { stroke-width: 3; }
   .who circle.halo { fill: var(--series-track); opacity: 0.25; }
   .who circle.core { fill: var(--text-primary); stroke: var(--surface-1); stroke-width: 2; }
-  .who text { font-size: 12px; font-weight: 600; fill: var(--text-primary); paint-order: stroke;
+  .who text { font-size: 14.5px; font-weight: 600; fill: var(--text-primary); paint-order: stroke;
               stroke: var(--surface-1); stroke-width: 3px; }
 
   /* Timeline */
@@ -56,10 +56,10 @@
   #play { font: inherit; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border);
           background: var(--surface-1); color: var(--text-primary); cursor: pointer; grid-row: span 2; }
   #strip { width: 100%; height: 64px; display: block; cursor: pointer; }
-  #strip .axis text { fill: var(--text-muted); font-size: 11px; }
+  #strip .axis text { fill: var(--text-muted); font-size: 13px; }
   #strip .axis line, #strip .axis path { stroke: var(--coast); }
   #scrub { width: 100%; margin: 0; accent-color: var(--series-track); }
-  .now { grid-column: 2; display: flex; justify-content: space-between; color: var(--text-secondary); font-size: 12px; gap: 12px; }
+  .now { grid-column: 2; display: flex; justify-content: space-between; color: var(--text-secondary); font-size: 14.5px; gap: 12px; }
   .now b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
 
   .row .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; background: var(--series-track); }
@@ -68,13 +68,13 @@
   .row .dot.act { border-radius: 1px; transform: rotate(45deg) scale(0.85); background: var(--series-attack);
                   outline: 1.5px solid var(--text-primary); }
   .row .dot.act.casualty { background: var(--surface-1); }
-  .row .typed { font-family: var(--typed); font-size: 13.5px; }
+  .row .typed { font-family: var(--typed); font-size: 16px; }
   .row.action .typed { font-family: inherit; }
-  .unit-note { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 13px; }
+  .unit-note { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 15.5px; }
   .scan-missing { padding: 24px; color: var(--text-secondary); }
   /* a sea crossing's ship (ships.csv), in the station list */
   .row .ship { margin: 6px 0 4px; padding: 6px 9px; border-left: 3px solid var(--text-muted); background: var(--wash);
-               border-radius: 0 6px 6px 0; font-size: 12.5px; color: var(--text-secondary); display: grid; gap: 4px; }
+               border-radius: 0 6px 6px 0; font-size: 15px; color: var(--text-secondary); display: grid; gap: 4px; }
   .row .ship.confirmed { border-left-color: var(--text-primary); }
   .row .ship.candidate, .row .ship.unknown, .row .ship.none { border-left-style: dashed; }
   .row .ship .ship-head { color: var(--text-primary); font-weight: 600; }

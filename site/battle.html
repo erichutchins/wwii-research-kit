@@ -39,23 +39,23 @@
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { background: var(--page); color: var(--ink); font: 14px/1.45 var(--font-ui); font-size-adjust: 0.47; }
+body { background: var(--page); color: var(--ink); font: 17px/1.45 var(--font-ui); font-size-adjust: 0.47; }
 .wrap { max-width: 1440px; margin: 0 auto; padding-inline: 20px; padding-block: 18px 28px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 
 header { display: grid; gap: 4px; }
-.nav { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 15px; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); font-size: 14.5px; }
+.nav { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 15px; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); font-size: 17.5px; }
 .nav a { white-space: nowrap; color: var(--ink-2); text-decoration: none; }
 .nav a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .nav a[aria-current="page"] { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
-.nav .home { color: var(--ink); font-size: 17px; margin-right: 6px; }
+.nav .home { color: var(--ink); font-size: 20.5px; margin-right: 6px; }
 .nav .grp { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
 .nav .grp + .grp, .nav .grp + a, .nav a.theater { padding-left: 15px; border-left: 1px solid var(--rule); }
-.eyebrow { font-size: 15px; font-style: italic; color: var(--ink-3); }
-h1 { font-size: 30px; line-height: 1.2; margin: 0; text-wrap: balance; font-weight: 400; }
+.eyebrow { font-size: 18px; font-style: italic; color: var(--ink-3); }
+h1 { font-size: 36px; line-height: 1.2; margin: 0; text-wrap: balance; font-weight: 400; }
 .lede { margin: 0; color: var(--ink-2); max-width: 75ch; }
 
 .controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
-.pick { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 13px; }
+.pick { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 15.5px; }
 .pick select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: 7px 10px; max-width: 100%; }
 .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; background: var(--surface); }
 .seg button { font: inherit; background: none; color: var(--ink-2); border: 0; border-right: 1px solid var(--rule); padding: 7px 14px; cursor: pointer; text-align: left; }
@@ -63,14 +63,14 @@ h1 { font-size: 30px; line-height: 1.2; margin: 0; text-wrap: balance; font-weig
 .seg button:hover { background: var(--wash); }
 .seg button[aria-pressed="true"] { color: var(--ink); background: var(--wash); }
 .seg button b { display: block; font-weight: 650; }
-.seg button span { font-size: 12px; color: var(--ink-3); }
+.seg button span { font-size: 14.5px; color: var(--ink-3); }
 button:focus-visible, input:focus-visible, a:focus-visible, .row:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
 
 .main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 400px); gap: 14px; }
 .card { background: var(--surface); border: 1px solid var(--rule); border-radius: 0; min-width: 0; }
 
 .map-card { display: grid; grid-template-rows: auto auto auto; overflow: hidden; }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 14px 8px; color: var(--ink-2); font-size: 12px; border-bottom: 1px solid var(--rule); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 14px 8px; color: var(--ink-2); font-size: 14.5px; border-bottom: 1px solid var(--rule); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend svg { overflow: visible; flex: none; }
 .legend .boat { color: var(--ink); font-weight: 600; }
@@ -80,10 +80,10 @@ button:focus-visible, input:focus-visible, a:focus-visible, .row:focus-visible {
 
 .land { fill: var(--land); stroke: var(--coast); stroke-width: 0.8; }
 .grat { stroke: var(--sea-grid); stroke-width: 1; fill: none; }
-.grat-label { fill: var(--ink-3); font: 11px var(--font-type); }
-.place { fill: var(--ink-3); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
+.grat-label { fill: var(--ink-3); font: 13px var(--font-type); }
+.place { fill: var(--ink-3); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; }
 .scale line { stroke: var(--ink-2); stroke-width: 1.5; }
-.scale text { fill: var(--ink-2); font: 11px var(--font-type); }
+.scale text { fill: var(--ink-2); font: 13px var(--font-type); }
 .trk { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .trk.ahead { stroke-opacity: 0.25; stroke-dasharray: 3 4; }
 .mk { cursor: pointer; transition: opacity 120ms; }
@@ -93,36 +93,36 @@ button:focus-visible, input:focus-visible, a:focus-visible, .row:focus-visible {
 .fire { fill: none; stroke: var(--fire); pointer-events: none; }
 .fire-core { fill: var(--fire); pointer-events: none; }
 .mk .ring { fill: var(--surface); }
-.mk-label { font: 700 11px var(--font-ui); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
+.mk-label { font: 700 13px var(--font-ui); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
 .mk-label.jp { font-weight: 600; fill: var(--ink-2); }
 /* moving boat names sit under the marks layer, so attack and ship labels stay readable as the boats pass */
-.now-name { font: 600 11px var(--font-ui); fill: var(--ink-2); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
+.now-name { font: 600 13px var(--font-ui); fill: var(--ink-2); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
 .mk.hot path, .mk.hot circle.shape { stroke: var(--ink); stroke-width: 2; }
 
 .time { border-top: 1px solid var(--rule); padding: 8px 14px 12px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; align-items: center; }
 #play { font: inherit; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); cursor: pointer; grid-row: span 3; }
-.readout { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; color: var(--ink-2); font-size: 12px; }
-.readout b { color: var(--ink); font: 700 15px var(--font-type); font-variant-numeric: tabular-nums; }
+.readout { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; color: var(--ink-2); font-size: 14.5px; }
+.readout b { color: var(--ink); font: 700 18px var(--font-type); font-variant-numeric: tabular-nums; }
 #lanes { width: 100%; height: 92px; display: block; cursor: pointer; }
-#lanes .lane-label { fill: var(--ink-2); font-size: 11px; font-weight: 600; }
+#lanes .lane-label { fill: var(--ink-2); font-size: 13px; font-weight: 600; }
 #lanes .lane-line { stroke: var(--rule); }
-#lanes .axis text { fill: var(--ink-3); font: 10px var(--font-type); }
+#lanes .axis text { fill: var(--ink-3); font: 12px var(--font-type); }
 #lanes .axis line { stroke: var(--rule); }
 #lanes .cursor { stroke: var(--ink); stroke-width: 1.5; }
 #scrub { width: 100%; margin: 0; accent-color: var(--ink-2); }
 
 /* The log card takes the map card's height (height 0, min-height 100% of the grid row) and scrolls inside */
 .side { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 0; min-height: 100%; overflow: hidden; }
-h2 { font-size: 16px; font-weight: 400; font-style: italic; color: var(--ink-2); margin: 0; padding: 12px 14px 6px; font-weight: 400; font-style: italic; }
+h2 { font-size: 19px; font-weight: 400; font-style: italic; color: var(--ink-2); margin: 0; padding: 12px 14px 6px; font-weight: 400; font-style: italic; }
 .side h2 { border-bottom: 1px solid var(--rule); padding-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
-.side h2 span { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-3); font-size: 12px; }
+.side h2 span { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-3); font-size: 14.5px; }
 .log { position: relative; overflow-y: auto; overscroll-behavior: contain; }
 
 .sil { display: block; flex: none; overflow: visible; }
 .oob-card { padding-bottom: 14px; }
-.oob { padding: 4px 14px 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr); gap: 14px 28px; font-size: 13px; }
-.oob h3 { font-size: 13px; margin: 0 0 8px; }
-.oob .muted { color: var(--ink-3); font-size: 12px; }
+.oob { padding: 4px 14px 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr); gap: 14px 28px; font-size: 15.5px; }
+.oob h3 { font-size: 15.5px; margin: 0 0 8px; }
+.oob .muted { color: var(--ink-3); font-size: 14.5px; }
 .plates { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px 14px; }
 .pack .plates { grid-template-columns: minmax(0, 1fr); }
 .plate { display: grid; gap: 3px; align-content: start; }
@@ -130,8 +130,8 @@ h2 { font-size: 16px; font-weight: 400; font-style: italic; color: var(--ink-2);
 .pack .plate { grid-template-columns: 150px minmax(0, 1fr); gap: 2px 12px; align-items: end; }
 .pack .plate .sil { grid-row: span 2; }
 .plate .nm { font-weight: 600; line-height: 1.25; }
-.plate .kd { color: var(--ink-3); font-size: 12px; line-height: 1.3; }
-.plate.sunk .nm::after { content: " ✕ sunk"; font-weight: 400; color: var(--ink-2); font-size: 12px; }
+.plate .kd { color: var(--ink-3); font-size: 14.5px; line-height: 1.3; }
+.plate.sunk .nm::after { content: " ✕ sunk"; font-weight: 400; color: var(--ink-2); font-size: 14.5px; }
 .oob .convoy-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: -4px 0 10px; }
 .oob .outcome { margin: 12px 0 0; max-width: 90ch; }
 /* log entries: entry.css; here only what the log adds (the clock's entry, entries still to come) */
@@ -143,11 +143,11 @@ h2 { font-size: 16px; font-weight: 400; font-style: italic; color: var(--ink-2);
 .row .who .sil { width: 40px; height: 8px; }
 .row .note b { font-weight: 700; color: var(--ink); }
 
-.notes { color: var(--ink-2); font-size: 13px; display: grid; gap: 6px; max-width: 95ch; }
+.notes { color: var(--ink-2); font-size: 15.5px; display: grid; gap: 6px; max-width: 95ch; }
 .notes p { margin: 0; }
 
-#tip { position: fixed; z-index: 10; pointer-events: none; max-width: 300px; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 3px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-size: 12px; }
-#tip .v { font-weight: 650; font-size: 13px; }
+#tip { position: fixed; z-index: 10; pointer-events: none; max-width: 300px; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 3px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-size: 14.5px; }
+#tip .v { font-weight: 650; font-size: 15.5px; }
 #tip .k { color: var(--ink-2); font-family: var(--font-type); }
 #tip .m { color: var(--ink-2); margin-top: 4px; }
 #tip .i { color: var(--ink-3); font-style: italic; margin-top: 4px; }
@@ -161,7 +161,7 @@ h2 { font-size: 16px; font-weight: 400; font-style: italic; color: var(--ink-2);
 }
 @media (max-width: 480px) {
   .wrap { padding-inline: 16px; }
-  h1 { font-size: 20px; }
+  h1 { font-size: 24px; }
   .seg button { padding: 6px 10px; }
   .pack .plate { grid-template-columns: 110px minmax(0, 1fr); }
   .plates { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }

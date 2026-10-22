@@ -507,7 +507,7 @@ function drawMain() {
     .sort((a, b) => b.e.depth_ft - a.e.depth_ft)
     .forEach(({ e, px, py }) => {
       aClip.append("circle").attr("class", "order").attr("cx", px).attr("cy", py).attr("r", 3.5);
-      if (e.depth_ft >= labelMin && placed.every(([qx, qy]) => Math.abs(qx - px) > 30 || Math.abs(qy - py) > 16)) {
+      if (e.depth_ft >= labelMin && placed.every(([qx, qy]) => Math.abs(qx - px) > 40 || Math.abs(qy - py) > 22)) {
         aClip.append("text").attr("class", "order-label").attr("x", px).attr("y", py + 15).attr("text-anchor", "middle").text(`${e.depth_ft}`);
         placed.push([px, py]);
       }

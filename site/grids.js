@@ -265,13 +265,13 @@ function render() {
 // Keep labels and markers the same size on screen as the map zooms
 function scaleMarks() {
   const g = svg.select("g");
-  g.selectAll(".sql").style("font-size", `${Math.min(20, 13 + 2 * k) / k}px`);
+  g.selectAll(".sql").style("font-size", `${Math.min(24, 16 + 2 * k) / k}px`);
   g.selectAll("circle.ref").attr("r", 4.5 / k).style("stroke-width", 1.5 / k);
   g.selectAll("circle.town").attr("r", 2 / k);
   g.selectAll("line.miss").style("stroke-width", 1 / k);
   g.selectAll(".sq").style("stroke-width", 1 / k);
   g.selectAll(".probe path").attr("d", d3.symbol(d3.symbolStar, 160 / k / k)()).style("stroke-width", 1.2 / k);
-  g.selectAll(".probe text").style("font-size", `${12 / k}px`).style("stroke-width", `${3 / k}px`);
+  g.selectAll(".probe text").style("font-size", `${14.5 / k}px`).style("stroke-width", `${3 / k}px`);
 }
 
 // The decoder's reference, read on every grid that can read it

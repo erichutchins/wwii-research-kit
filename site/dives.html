@@ -23,8 +23,8 @@
       --sky-day: #5b5747; --sky-twilight: #3a3f4d; --sky-night: #12151d; --sky-moon: #4a5266; --dn-sub: #3987e5; }
 
   .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-left: 12px; }
-  .chips .lbl { color: var(--text-muted); font-size: 12px; margin-right: 2px; }
-  .chip { font: inherit; font-size: 12px; background: var(--surface-1); color: var(--text-secondary); cursor: pointer;
+  .chips .lbl { color: var(--text-muted); font-size: 14.5px; margin-right: 2px; }
+  .chip { font: inherit; font-size: 14.5px; background: var(--surface-1); color: var(--text-secondary); cursor: pointer;
           border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; }
   .chip:hover { background: var(--wash); }
   .chip[aria-pressed="true"] { color: var(--text-primary); font-weight: 600; border-color: var(--text-muted); }
@@ -33,45 +33,45 @@
   .player { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 14px 0; }
   #play { font: inherit; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border);
           background: var(--surface-1); color: var(--text-primary); cursor: pointer; flex: none; }
-  .player .seg button { padding: 3px 8px; font-size: 12px; }
-  #readout { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-secondary); }
+  .player .seg button { padding: 3px 8px; font-size: 14.5px; }
+  #readout { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14.5px; color: var(--text-secondary); }
   #readout .ro { display: inline-flex; align-items: baseline; gap: 4px; }
   #readout .ro .k { color: var(--text-muted); }
   #readout .ro b { color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
   #readout .ro-moon { align-self: center; overflow: visible; }
-  .legend { display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 14px 4px; color: var(--text-secondary); font-size: 12px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 14px 4px; color: var(--text-secondary); font-size: 14.5px; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .legend svg { overflow: visible; }
   .chart-wrap { position: relative; min-height: 560px; }
   #chart { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
-  #chart .panel-title { fill: var(--text-secondary); font-size: 12px; font-weight: 600; }
-  #chart .panel-sub { fill: var(--text-muted); font-size: 11px; }
-  #chart .axis text { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  #chart .panel-title { fill: var(--text-secondary); font-size: 14.5px; font-weight: 600; }
+  #chart .panel-sub { fill: var(--text-muted); font-size: 13px; }
+  #chart .axis text { fill: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
   #chart .axis path, #chart .axis line { stroke: var(--coast); }
   #chart .grid line { stroke: var(--grid); }
   #chart .grid path { display: none; }
   #chart .night { fill: var(--night); }
   #chart .seafloor { fill: var(--seafloor); stroke: var(--seafloor-edge); stroke-width: 1; }
   #chart .bang-zone { fill: var(--bang-zone); }
-  #chart .bang-zone-label { fill: var(--series-track); font-size: 11px; }
+  #chart .bang-zone-label { fill: var(--series-track); font-size: 13px; }
   #chart .test-depth { stroke: var(--text-muted); stroke-dasharray: 5 4; stroke-width: 1; }
-  #chart .test-label { fill: var(--text-muted); font-size: 11px; }
+  #chart .test-label { fill: var(--text-muted); font-size: 13px; }
   #chart .profile { fill: none; stroke: var(--series-track); stroke-width: 2; stroke-linejoin: round; }
   #chart .order { fill: var(--series-track); stroke: var(--surface-1); stroke-width: 2; }
-  #chart .order-label { fill: var(--text-primary); font-size: 11px; font-weight: 600; paint-order: stroke;
+  #chart .order-label { fill: var(--text-primary); font-size: 13px; font-weight: 600; paint-order: stroke;
                         stroke: var(--surface-1); stroke-width: 3px; }
   #chart .charge { fill: var(--series-attack); stroke: var(--surface-1); stroke-width: 1.5; }
   #chart .note-mark { fill: var(--text-primary); stroke: var(--surface-1); stroke-width: 1.5; }
   #chart .routine { fill: url(#hatch); }
-  #chart .routine-label { fill: var(--text-muted); font-size: 11px; font-style: italic; }
+  #chart .routine-label { fill: var(--text-muted); font-size: 13px; font-style: italic; }
   .moon-dark { fill: var(--sky-night); }
   .moon-lit { fill: #f3efe2; }
   .moon-rim { fill: none; stroke: var(--text-muted); stroke-width: 0.8; }
-  #chart .moon-label { fill: var(--text-muted); font-size: 10px; }
+  #chart .moon-label { fill: var(--text-muted); font-size: 12px; }
   #chart .layer-band { fill: url(#layer-grad); }
   #chart .layer-top { stroke: var(--layer); stroke-width: 1.5; stroke-dasharray: 5 3; }
-  #chart .layer-label { fill: var(--layer); font-size: 11px; font-weight: 600; paint-order: stroke; stroke: var(--surface-1); stroke-width: 3px; }
+  #chart .layer-label { fill: var(--layer); font-size: 13px; font-weight: 600; paint-order: stroke; stroke: var(--surface-1); stroke-width: 3px; }
   .layer-top { stroke: var(--layer); stroke-width: 1.5; stroke-dasharray: 5 3; }
   .wind-area { fill: var(--wind); fill-opacity: 0.35; stroke: var(--wind); stroke-width: 1.2; }
   #chart .gust { fill: none; stroke: var(--wind); stroke-width: 1; stroke-dasharray: 2 2; }
@@ -89,21 +89,21 @@
   #chart .brush .selection { fill: var(--series-track); fill-opacity: 0.12; stroke: var(--series-track); stroke-opacity: 0.6; }
   #chart .hit { fill: transparent; cursor: crosshair; }
 
-  .row .badge { display: inline-block; font-size: 11px; color: var(--text-secondary); border: 1px solid var(--border);
+  .row .badge { display: inline-block; font-size: 13px; color: var(--text-secondary); border: 1px solid var(--border);
                 border-radius: 4px; padding: 0 5px; margin-left: 6px; font-weight: 400; }
-  .row a { color: var(--text-muted); font-size: 12px; margin-right: 10px; }
+  .row a { color: var(--text-muted); font-size: 14.5px; margin-right: 10px; }
   .row.current { background: var(--wash); box-shadow: inset 3px 0 0 var(--series-track); }
-  .row .context { color: var(--text-secondary); font-size: 12px; font-style: italic; border-left: 2px solid var(--border);
+  .row .context { color: var(--text-secondary); font-size: 14.5px; font-style: italic; border-left: 2px solid var(--border);
                   padding-left: 8px; margin: 4px 0; }
   .daynight { padding: 0 0 8px; }
   .daynight .side-head { flex-wrap: wrap; }
-  .dn-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--text-secondary); }
+  .dn-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 14.5px; color: var(--text-secondary); }
   .dn-legend span { display: inline-flex; align-items: center; gap: 5px; }
   .dn-legend i { display: inline-block; width: 16px; height: 10px; border-radius: 2px; border: 1px solid var(--border); }
   #daynight { display: block; width: 100%; padding: 0 0 0 0; }
-  #daynight .axis text { fill: var(--text-muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+  #daynight .axis text { fill: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
   #daynight .axis path, #daynight .axis line { stroke: var(--coast); }
-  #daynight .dn-date { fill: var(--text-secondary); font-size: 10px; font-variant-numeric: tabular-nums; }
+  #daynight .dn-date { fill: var(--text-secondary); font-size: 12px; font-variant-numeric: tabular-nums; }
   .sky-day { fill: var(--sky-day); } .sky-twilight { fill: var(--sky-twilight); }
   .sky-night { fill: var(--sky-night); } .sky-moon { fill: var(--sky-moon); }
   #daynight .dn-sub { fill: var(--dn-sub); }
@@ -113,14 +113,14 @@
   #daynight .dn-hit { fill: transparent; cursor: pointer; }
   #daynight .dn-sky { fill: none; stroke: var(--text-primary); stroke-width: 1.5; pointer-events: all; }
   #sky-notes { padding: 6px 14px 4px; border-top: 1px solid var(--border); margin-top: 6px; }
-  #sky-notes .sky-head { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
-  #sky-notes .sky-row { display: grid; grid-template-columns: 20px 1fr; gap: 8px; padding: 4px 0; font-size: 13px; }
+  #sky-notes .sky-head { font-weight: 600; font-size: 15.5px; margin-bottom: 4px; }
+  #sky-notes .sky-row { display: grid; grid-template-columns: 20px 1fr; gap: 8px; padding: 4px 0; font-size: 15.5px; }
   #sky-notes .sky-row svg { overflow: visible; margin-top: 1px; }
-  #sky-notes .sky-calc { color: var(--text-secondary); font-size: 12px; }
-  #sky-notes a { color: var(--text-muted); font-size: 12px; }
+  #sky-notes .sky-calc { color: var(--text-secondary); font-size: 14.5px; }
+  #sky-notes a { color: var(--text-muted); font-size: 14.5px; }
   #daynight .dn-cursor rect { fill: none; stroke: var(--series-attack); stroke-width: 1.5; rx: 2; }
   #daynight .dn-cursor line { stroke: var(--series-attack); stroke-width: 2; }
-  .note-src { color: var(--text-muted); font-size: 12px; padding: 8px 14px; border-top: 1px solid var(--border); }
+  .note-src { color: var(--text-muted); font-size: 14.5px; padding: 8px 14px; border-top: 1px solid var(--border); }
   .note-src a { color: inherit; }
   .side { grid-template-rows: auto 1fr auto; }
 

@@ -9,25 +9,25 @@
 <link rel="stylesheet" href="entry.css">
 <style>
   .map-card { display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
-  .legend { display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 14px 6px; color: var(--text-secondary); font-size: 12px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 14px 6px; color: var(--text-secondary); font-size: 14.5px; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .legend svg { overflow: visible; }
   .map-wrap { position: relative; min-height: 300px; }
   #map { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
   #map:active { cursor: grabbing; }
   .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
-  .zoom-btns button { font: 18px var(--serif); width: 30px; height: 30px; border-radius: 2px; cursor: pointer;
+  .zoom-btns button { font: 21.5px var(--serif); width: 30px; height: 30px; border-radius: 2px; cursor: pointer;
                       background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
   .regions { position: absolute; left: 10px; top: 10px; display: flex; flex-wrap: wrap; gap: 4px; max-width: 70%; }
-  .regions button { font: 13px var(--serif); padding: 4px 9px; border-radius: 2px; cursor: pointer;
+  .regions button { font: 15.5px var(--serif); padding: 4px 9px; border-radius: 2px; cursor: pointer;
                     background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
   .regions button:hover, .zoom-btns button:hover { background: var(--wash); }
-  .hint { position: absolute; left: 12px; bottom: 8px; color: var(--text-muted); font-size: 12px; pointer-events: none; }
+  .hint { position: absolute; left: 12px; bottom: 8px; color: var(--text-muted); font-size: 14.5px; pointer-events: none; }
 
   .land { fill: var(--land); stroke: var(--coast); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
   .graticule { fill: none; stroke: var(--grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
-  .sea-label { fill: var(--text-muted); font-size: 11px; letter-spacing: 0.08em; pointer-events: none; }
-  .place-label { fill: var(--text-secondary); font-size: 11px; pointer-events: none;
+  .sea-label { fill: var(--text-muted); font-size: 13px; letter-spacing: 0.03em; pointer-events: none; }
+  .place-label { fill: var(--text-secondary); font-size: 13px; pointer-events: none;
                  paint-order: stroke; stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round; }
 
   .leg { fill: none; stroke: var(--series-track); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round;
@@ -42,7 +42,7 @@
   .mk.hover .shape { stroke: var(--text-primary); stroke-width: 2; }
   .who circle.halo { fill: var(--series-track); opacity: 0.25; }
   .who circle.core { fill: var(--series-track); stroke: var(--surface-1); stroke-width: 2; }
-  .who text { font-size: 12px; font-weight: 600; fill: var(--text-primary); paint-order: stroke;
+  .who text { font-size: 14.5px; font-weight: 600; fill: var(--text-primary); paint-order: stroke;
               stroke: var(--surface-1); stroke-width: 3px; }
 
   .timeline { border-top: 1px solid var(--border); padding: 6px 14px 10px; display: grid;
@@ -50,13 +50,13 @@
   #play { font: inherit; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border);
           background: var(--surface-1); color: var(--text-primary); cursor: pointer; grid-row: span 2; }
   #strip { width: 100%; height: 64px; display: block; cursor: pointer; }
-  #strip .axis text { fill: var(--text-muted); font-size: 11px; }
+  #strip .axis text { fill: var(--text-muted); font-size: 13px; }
   #strip .axis line, #strip .axis path { stroke: var(--coast); }
-  #strip .seg-label { fill: var(--surface-1); font-size: 10px; font-weight: 600; pointer-events: none; }
+  #strip .seg-label { fill: var(--surface-1); font-size: 12px; font-weight: 600; pointer-events: none; }
   #scrub { width: 100%; margin: 0; accent-color: var(--series-track); }
-  .now { grid-column: 2; display: flex; justify-content: space-between; color: var(--text-secondary); font-size: 12px; gap: 12px; }
+  .now { grid-column: 2; display: flex; justify-content: space-between; color: var(--text-secondary); font-size: 14.5px; gap: 12px; }
   .now b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
-  .wx { grid-column: 2; color: var(--text-secondary); font-size: 12px; line-height: 1.45; min-height: 17px; }
+  .wx { grid-column: 2; color: var(--text-secondary); font-size: 14.5px; line-height: 1.45; min-height: 17px; }
   .wx b { color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
   .wx .src { color: var(--text-muted); }
   .wx a { color: var(--text-muted); }
@@ -64,19 +64,19 @@
   .row .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; background: var(--series-track); }
   .row .dot.assumed { background: none; border: 2px solid var(--series-track); }
   .row .dot.none { background: none; border: 1.5px dashed var(--text-muted); }
-  .row .typed { font-family: var(--typed); font-size: 13.5px; }
+  .row .typed { font-family: var(--typed); font-size: 16px; }
   .row .part { color: var(--text-muted); }
-  .row .links { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 2px; font-size: 12px; }
+  .row .links { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 2px; font-size: 14.5px; }
   .row .links a { color: var(--text-secondary); }
-  .unit-note { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 13px; }
+  .unit-note { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 15.5px; }
   .scan-missing { padding: 24px; color: var(--text-secondary); }
   /* a crossing's ships (voyages.csv), under the station where it arrived */
   .row .ship { margin: 6px 0 4px; padding: 6px 9px; border-left: 3px solid var(--text-primary); background: var(--wash);
-               border-radius: 0 6px 6px 0; font-size: 12.5px; color: var(--text-secondary); display: grid; gap: 3px; }
+               border-radius: 0 6px 6px 0; font-size: 15px; color: var(--text-secondary); display: grid; gap: 3px; }
   .row .ship.planned, .row .ship.ordered, .row .ship.named, .row .ship.partial { border-left-style: dashed; border-left-color: var(--text-secondary); }
   .row .ship.not-recorded { border-left: 3px dashed var(--text-muted); }
   .row .ship .ship-head { color: var(--text-primary); font-weight: 600; }
-  .row .ship .ship-status { color: var(--text-muted); font-size: 12px; }
+  .row .ship .ship-status { color: var(--text-muted); font-size: 14.5px; }
   .row .ship .ship-voyage { color: var(--text-muted); }
 
   @media (max-width: 900px) {

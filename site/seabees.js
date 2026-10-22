@@ -222,8 +222,8 @@ function rescale() {
   const k = state.k;
   g.selectAll(".mk .ring").attr("r", (R + 2) / k);
   g.selectAll(".mk .shape").attr("r", d => (d.hollow ? R - 1 : R) / k);
-  g.selectAll(".sea-label").style("font-size", `${11 / k}px`).attr("display", k > 12 ? "none" : null);
-  g.selectAll(".place-label").style("font-size", `${11 / k}px`).style("stroke-width", `${3 / k}px`);
+  g.selectAll(".sea-label").style("font-size", `${12 / k}px`).attr("display", k > 12 ? "none" : null);
+  g.selectAll(".place-label").style("font-size", `${12 / k}px`).style("stroke-width", `${3 / k}px`);
   drawWho();
 }
 
@@ -245,7 +245,7 @@ function placeLabels() {
   });
   g.select(".labels").selectAll("text").data(shown, d => d.place).join("text").attr("class", "place-label")
     .attr("transform", d => `translate(${proj(d.lonlat)})`).attr("x", 8 / k).attr("dy", "0.35em")
-    .style("font-size", `${11 / k}px`).style("stroke-width", `${3 / k}px`).text(d => d.place);
+    .style("font-size", `${12 / k}px`).style("stroke-width", `${3 / k}px`).text(d => d.place);
 }
 
 function fitBox(box) {
@@ -321,9 +321,9 @@ function drawWho(pos = active(state.t).filter(p => p.at)) {
     return w;
   });
   who.attr("transform", d => `translate(${proj(d.at)})`);
-  who.select(".halo").attr("r", 12 / k);
+  who.select(".halo").attr("r", 14.5 / k);
   who.select(".core").attr("r", 6 / k);
-  who.select("text").attr("x", 10 / k).attr("y", d => (-8 - 15 * d.lift) / k).style("font-size", `${12 / k}px`)
+  who.select("text").attr("x", 10 / k).attr("y", d => (-8 - 15 * d.lift) / k).style("font-size", `${14.5 / k}px`)
     .style("stroke-width", `${3 / k}px`).text(d => d.line.label);
 }
 

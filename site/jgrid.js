@@ -186,13 +186,13 @@ function scaleMarks() {
   const side = Math.abs(px) * k;
   g.selectAll(".land, .graticule").style("stroke-width", 0.6 / k);
   g.selectAll(".strip").style("stroke-width", 1 / k);
-  g.selectAll(".sl").style("font-size", `${Math.min(14, Math.max(8, side * 0.8)) / k}px`).style("stroke-width", `${3 / k}px`);
+  g.selectAll(".sl").style("font-size", `${Math.min(17, Math.max(10, side * 0.8)) / k}px`).style("stroke-width", `${3 / k}px`);
   g.selectAll(".sl.col").attr("dy", `${-0.4}em`);
   g.selectAll(".sl.row").attr("dx", `${-0.35}em`).attr("dy", "0.35em");
-  g.selectAll(".cl").style("display", side > 26 ? null : "none").style("font-size", `${Math.min(13, side * 0.32) / k}px`);
-  g.selectAll(".deg text").style("font-size", `${11 / k}px`);
+  g.selectAll(".cl").style("display", side > 26 ? null : "none").style("font-size", `${Math.min(16, side * 0.4) / k}px`);
+  g.selectAll(".deg text").style("font-size", `${13 / k}px`);
   g.selectAll(".base").attr("d", d3.symbol(d3.symbolTriangle, 70 / k / k)()).style("stroke-width", 1.2 / k);
-  g.selectAll(".base-label").style("font-size", `${11 / k}px`).attr("dx", `${0.8}em`).attr("dy", "0.35em").style("stroke-width", `${3 / k}px`);
+  g.selectAll(".base-label").style("font-size", `${13 / k}px`).attr("dx", `${0.8}em`).attr("dy", "0.35em").style("stroke-width", `${3 / k}px`);
   g.selectAll("circle.anchor").attr("r", 4.5 / k).style("stroke-width", 1.5 / k);
   g.selectAll("circle.flight").attr("r", 3 / k).style("stroke-width", 1.2 / k);
   g.selectAll("line.miss").style("stroke-width", 1.2 / k);
