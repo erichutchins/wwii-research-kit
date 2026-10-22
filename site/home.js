@@ -4,6 +4,7 @@
 //   the 20th Seabees' parts        seabees/seabees.json
 //   Solar and UGS 72               ships/de-221-solar/track.geojson
 //   Neuburg's five minutes         engagements/neuburg-1945-04-26/timeline.csv
+//   every ship's track             ships.json and each ship's track geojson
 //   what else, and what's wanted   ships.json, army/army.json, battles/index.json, inventory.yml
 
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -355,6 +356,65 @@ async function neuburg() {
   });
 }
 
+// ── Every ship's track: a small map of each vessel, opening its page on patrols.html ─────────────
+async function fleet() {
+  const [ships, world] = await Promise.all([d3.json(RECORDS + "ships.json"), d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json")]);
+  const land = topojsonFeature(world);
+  const withTracks = ships.filter(s => s.geojson);
+  const geos = await Promise.all(withTracks.map(s => d3.json(RECORDS + s.geojson)));
+  const hullNo = s => +/\d+/.exec(s.hull)[0];
+  const groups = [
+    ["Submarines: war patrol reports", withTracks.filter(s => s.kind === "submarine")],
+    ["Surface ships: war diaries", withTracks.filter(s => s.kind !== "submarine")],
+  ];
+  const host = d3.select("#fleet");
+  const W = 320, H = 200;
+  for (const [title, list] of groups) {
+    if (!list.length) continue;
+    host.append("h3").attr("class", "fleet-head").text(title);
+    const grid = host.append("div").attr("class", "fleet");
+    for (const s of list.sort((a, b) => hullNo(a) - hullNo(b))) {
+      const geo = geos[withTracks.indexOf(s)];
+      const lines = geo.features.filter(f => f.geometry.type === "LineString");
+      const points = geo.features.filter(f => f.geometry.type === "Point");
+      const attacks = points.filter(f => f.properties.kind === "attack");
+      const url = `patrols.html?ship=${s.alias}`;
+      const name = s.kind === "submarine" ? `USS ${s.name}` : (s.title || `USS ${s.name}`).replace(/\s*\(.*\)$/, "");
+      const card = grid.append("div").attr("class", "ship-card");
+
+      // the map: every track the ship's records give, fitted to them
+      const proj = d3.geoMercator().rotate([s.rotate ?? -160, 0])
+        .fitExtent([[14, 14], [W - 14, H - 14]], { type: "MultiPoint", coordinates: points.map(f => f.geometry.coordinates) })
+        .clipExtent([[0, 0], [W, H]]);
+      const path = d3.geoPath(proj);
+      const svg = card.append("a").attr("class", "thumb").attr("href", url)
+        .append("svg").attr("viewBox", [0, 0, W, H]).attr("role", "img").attr("aria-label", `Map of ${name}'s tracks`);
+      svg.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([10, 10])()));
+      svg.append("path").attr("class", "land").attr("d", path(land));
+      for (const f of lines) svg.append("path").attr("class", "trk").attr("d", path(f));
+      for (const f of attacks) {
+        const p = f.properties, xy = proj(f.geometry.coordinates);
+        svg.append("circle").attr("class", p.assumed ? "atk assumed" : "atk").attr("r", 3).attr("cx", xy[0]).attr("cy", xy[1])
+          .on("click", e => { e.preventDefault(); open(pageUrl(p.page)); })
+          .append("title").text(`${p.ref || "Attack"}, ${p.local}${p.assumed ? " (position assumed)" : ""}: ${p.page}`);
+      }
+
+      // what it is, when, and how much the records give
+      const per = s.periods, many = per.length > 1;
+      const span = many ? `${per.length} war patrols, ${d3.utcFormat("%b %Y")(d3.min(lines, f => Date.parse(f.properties.start)))} – ${d3.utcFormat("%b %Y")(d3.max(lines, f => Date.parse(f.properties.end)))}`
+        : `${per[0].name[0] + per[0].name.slice(1).toLowerCase()}, ${per[0].dates}`;
+      const nAtk = attacks.length;
+      card.append("h3").html(`<a href="${url}">${esc(name)}</a> <span class="hull">${esc(s.hull)}</span>`);
+      card.append("p").text(`${s.class}-class ${s.kind}`);
+      card.append("p").text(span);
+      if (!many && per[0].area) card.append("p").text(per[0].area);
+      card.append("p").text(`${points.length} positions${s.kind === "submarine" ? ` · ${nAtk} torpedo attack${nAtk === 1 ? "" : "s"}` : ""}`);
+      if (many) card.append("p").attr("class", "pn")
+        .html(`Patrol ${per.map(p => `<a href="${url}&amp;patrol=${p.n}" title="${esc(`${p.name}, ${p.dates}${p.area ? `: ${p.area}` : ""}`)}">${p.n}</a>`).join(" ")}`);
+    }
+  }
+}
+
 // ── What else is in each chapter, and what's still to find ──────────────────────────────────────
 async function lists() {
   const [ships, army, battles, invText] = await Promise.all([d3.json(RECORDS + "ships.json"), d3.json(RECORDS + "army/army.json"),
@@ -416,4 +476,4 @@ async function lists() {
   document.getElementById("wanted").innerHTML = wanted.map(w => `<li>${w}</li>`).join("");
 }
 
-replay(); haynsworth(); seabees(); solar(); neuburg(); lists();
+replay(); haynsworth(); seabees(); solar(); neuburg(); fleet(); lists();
