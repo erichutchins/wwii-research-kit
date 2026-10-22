@@ -3,9 +3,9 @@
 // tools/check_track.py builds; each point's "local" is the time and zone as typed.
 
 // Hours ahead of Greenwich, as in check_track.py's ZONES (K = zone description -10).
-const OFFSET = { Z: 0, A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, I: 9, IK: 9.5, K: 10, KL: 10.5, L: 11, M: 12,
+const OFFSET = { Z: 0, A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, I: 9, IK: 9.5, K: 10, KL: 10.5, L: 11, LM: 11.5, M: 12,
                  N: -1, O: -2, P: -3, Q: -4, R: -5, S: -6, T: -7, U: -8, UV: -8.5, V: -9, VW: -9.5,
-                 W: -10, WX: -10.5, X: -11, Y: -12 };
+                 W: -10, WX: -10.5, X: -11, XY: -11.5, Y: -12 };
 const BANDS = ["G", "H", "I", "K", "L", "M", "Y", "X", "W", "V", "U"];   // whole-hour zones drawn, west to east
 
 // The groups the page compares: BANG, the other submarines transcribed so far, and USS Haynsworth's
