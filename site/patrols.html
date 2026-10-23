@@ -83,6 +83,14 @@
     .map-wrap { height: 60vh; }
     .side { max-height: 60vh; }
   }
+  /* Phones: the gauge shrinks to a compact card so the map stays visible */
+  @media (max-width: 600px) {
+    .gauge { left: 8px; top: 8px; gap: 6px; padding: 4px 8px 4px 4px; border-radius: 8px; max-width: calc(100% - 70px); }
+    #compass { width: 46px; height: 46px; }
+    .g-label { font-size: 12px; }
+    .g-value { font-size: 16.5px; margin-bottom: 0; }
+    .g-leg { display: none; }
+  }
 </style>
 </head>
 <body class="viz-root">

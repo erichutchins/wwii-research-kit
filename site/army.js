@@ -532,7 +532,10 @@ function highlightRows(scroll) {
   const mine = rows.filter(r => !r.dataset.act);
   const cur = mine.filter(r => +r.dataset.t <= state.t).at(-1);
   mine.forEach(r => { r.classList.toggle("current", r === cur); r.classList.toggle("future", +r.dataset.t > state.t); });
-  if (cur && scroll) cur.scrollIntoView({ block: "nearest" });
+  // scroll the log's own list, never the window: scrollIntoView also scrolled the page on load
+  const list = document.getElementById("list");
+  if (cur && scroll && (cur.offsetTop < list.scrollTop || cur.offsetTop + cur.offsetHeight > list.scrollTop + list.clientHeight))
+    list.scrollTop = cur.offsetTop - list.clientHeight / 3;
   rows.filter(r => r.dataset.act).forEach(r => r.classList.toggle("future", +r.dataset.t > state.t));
 }
 
