@@ -133,6 +133,7 @@ function applyShip() {
   document.querySelector("header p").replaceChildren(SHIP.intro, a, SHIP.introEnd);
   document.getElementById("map").setAttribute("aria-label", `Map of ${SHIP.short}'s track`);
   document.getElementById("to-dives").hidden = !SHIP.dives;
+  document.getElementById("follow").nextSibling.textContent = ` Follow the ${SHIP.kind === "submarine" ? "boat" : "ship"} while playing`;
   document.getElementById("show-off").closest("label").hidden = !DATA.points.some(p => p.off);
   const pick = document.getElementById("ship-pick");
   SHIPS.forEach(s => {
