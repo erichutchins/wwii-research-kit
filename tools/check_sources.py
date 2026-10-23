@@ -36,6 +36,7 @@ CITES = {
     "layers.csv": ["page"],
     "japanese.csv": ["source"],
     "frupac.csv": ["map"],
+    "convoys/ships.csv": ["source"],
     "notes.csv": ["page"],
     "army/stations.csv": ["page"],
     "army/actions.csv": ["page"],
