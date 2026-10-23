@@ -74,7 +74,7 @@ h3 { font-size: 18px; margin: 0; font-weight: 650; }
 .step p { margin: 6px 0 10px; }
 .entries { margin: 8px 0 0; border-top: 1px solid var(--rule); }
 .entries .entry { --entry-t: 52px; }
-.stage { position: sticky; top: 12px; height: calc(100vh - 24px); min-height: 460px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; }
+.stage { position: sticky; top: 12px; height: calc(100vh - 24px); min-height: 460px; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; }
 .stage-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; padding: 10px 14px 8px; border-bottom: 1px solid var(--rule); }
 .stage-head > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .clock { font: 700 18px var(--font-type); }
@@ -207,6 +207,13 @@ h3 { font-size: 18px; margin: 0; font-weight: 650; }
   .step { min-height: 60vh; }
   .legend { display: none; }
   .crews, .q { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  /* nav: each group starts its own line; the dividing rules only make sense on one line */
+  nav.nav { font-size: 16.5px; gap: 2px 13px; margin-bottom: 12px; }
+  nav.nav .home { flex-basis: 100%; font-size: 18.5px; }
+  nav.nav .grp { flex-basis: 100%; gap: 2px 13px; }
+  nav.nav .grp + .grp, nav.nav .grp + a, nav.nav a.theater { border-left: 0; padding-left: 0; }
 }
 @media (max-width: 480px) {
   .wrap { padding-inline: 14px; }

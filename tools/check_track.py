@@ -26,7 +26,8 @@ Usage: uv run tools/check_track.py bang/1 [--geojson] [-q]     one patrol
        uv run tools/check_track.py all --geojson                every boat and ship
 
 --geojson writes each track.geojson, each boat's tracks.geojson (all its patrols, for the
-map page) and records/ships.json (every ship.yml, for the pages).
+map page) and records/ships.json (every ship.yml, for the pages; a ship's dates, heading and end of
+track that its ship.yml leaves out are filled in from its positions.csv).
 """
 import csv
 import json
@@ -192,6 +193,39 @@ def write_boat_tracks(key):
     print(f"wrote {rel(d / 'tracks.geojson')} ({len(features)} features)")
 
 
+def diary_span(d):
+    """A ship's first and last days in its positions.csv (a date_fix read over the typed date), or None."""
+    p = d / "positions.csv"
+    if not p.exists():
+        return None
+    days = sorted(r["date_fix"] or r["date"] for r in csv.DictReader(open(p)) if r["date_fix"] or r["date"])
+    return (datetime.fromisoformat(days[0]), datetime.fromisoformat(days[-1])) if days else None
+
+
+def span_words(a, b):
+    """'1 – 30 Apr 1945', '1 Feb – 30 Jun 1945', '1 Nov 1944 – 30 Jun 1945' for the dates;
+    'April 1945' or 'November 1944 to June 1945' for the heading."""
+    day = f"{b.day} {b:%b %Y}"
+    dates = (f"{a.day} – {day}" if (a.year, a.month) == (b.year, b.month) else
+             f"{a.day} {a:%b} – {day}" if a.year == b.year else f"{a.day} {a:%b %Y} – {day}")
+    months = f"{a:%B %Y}" if (a.year, a.month) == (b.year, b.month) else f"{a:%B %Y} to {b:%B %Y}"
+    return dates, months
+
+
+def ship_map(d, y):
+    """A ship's map: block, with what its ship.yml leaves out filled in from its positions, so a newly
+    transcribed diary moves the dates, the heading and the end of the track without a hand edit."""
+    m = dict(y.get("map", {}))
+    span = None if records.patrols(d.name) else diary_span(d)
+    if span:
+        dates, months = span_words(*span)
+        m.setdefault("heading", f"USS {y['name']} ({y['hull']}) — {months}")
+        m.setdefault("endText", f"End of the {span[1]:%B %Y} diary")
+        if len(m.get("periods", [])) == 1:
+            m["periods"] = [{"dates": dates, **m["periods"][0]}]
+    return m
+
+
 def write_ships_json():
     """records/ships.json: every ship.yml, with the track file the map page loads (none for a ship
     with no positions yet, which the map pages leave out)."""
@@ -200,7 +234,7 @@ def write_ships_json():
         y = records.load_yaml(d / "ship.yml")
         geojson = d / ("tracks.geojson" if records.patrols(d.name) else "track.geojson")
         out.append({"key": d.name, "alias": y["name"].lower(), **{k: v for k, v in y.items() if k != "map"},
-                    "geojson": str(geojson.relative_to(RECORDS)) if geojson.exists() else None, **y.get("map", {})})
+                    "geojson": str(geojson.relative_to(RECORDS)) if geojson.exists() else None, **ship_map(d, y)})
     records.write_json(RECORDS / "ships.json", out, indent=1, ensure_ascii=False)
     print(f"wrote {rel(RECORDS / 'ships.json')} ({len(out)} ships)")
 
