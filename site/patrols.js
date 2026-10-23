@@ -69,7 +69,7 @@ let DATA, LAND, proj, path, zoom, delaunay, hitPoints = [];
 const svg = d3.select("#map");
 const tip = document.getElementById("tip");
 const fmtDay = d3.utcFormat("%-d %b %Y");
-const fmtUTC = d3.utcFormat("%-d %b %Y · %H%M GCT");
+const fmtUTC = d3.utcFormat("%-d %b %Y · %H%M GMT");
 
 // ── Data ────────────────────────────────────────────────────────────────────
 d3.json(RECORDS + "ships.json").then(ships => {
@@ -692,13 +692,19 @@ function openScan(d) {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 // Scans live in the cache's nara/ folder when downloaded (tools/nara.py fetch); otherwise
 // load the same page from the National Archives (records/scans.json lists its URL).
+// If the archive's copy won't load either, the page's catalog link stands in for it.
 let SCANS = null;
 function setScanSrc(img, folder, page) {
-  const key = `${folder}/${page}`;
+  const key = `${folder}/${page}`, missing = document.getElementById("scan-missing");
+  const fail = () => {
+    img.hidden = true; missing.hidden = false;
+    const src = document.getElementById("scan-link");
+    missing.replaceChildren(Object.assign(el("a", null, src.textContent), { href: src.href, target: "_blank", rel: "noopener" }));
+  };
+  img.hidden = false; missing.hidden = true;
   img.onerror = async () => {
-    img.onerror = null;
     SCANS ??= await fetch(RECORDS + "scans.json").then(r => r.json()).catch(() => ({}));
-    if (SCANS[key]) img.src = SCANS[key];
+    if (SCANS[key]) { img.onerror = fail; img.src = SCANS[key]; } else fail();
   };
   img.src = `${CACHE}nara/${key}.jpg`;
 }

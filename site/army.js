@@ -220,7 +220,7 @@ function render() {
     .rotate([-(lo0 + lo1) / 2, 0])
     .fitExtent([[40, 30], [W - 40, H - 30]], { type: "MultiPoint", coordinates: coords });
   path = d3.geoPath(proj);
-  document.getElementById("hint").textContent = "Scroll or pinch to zoom · drag to pan · modern borders"
+  document.getElementById("hint").textContent = "Scroll or pinch to zoom · drag to pan · borders are today's"
     + (u.overseas && u.pts.some(r => r.lon < -30) ? " · zoom out for the United States" : "");
 
   const g = svg.append("g").attr("class", "zoomable");
@@ -388,7 +388,7 @@ function play() {
   if (state.t >= span()[1]) state.t = span()[0];
   state.playing = true;
   state.last = null;
-  document.getElementById("play").textContent = "❚❚";
+  Object.assign(document.getElementById("play"), { textContent: "❚❚", ariaLabel: "Pause" });
   requestAnimationFrame(tick);
 }
 function tick(now) {
@@ -400,7 +400,7 @@ function tick(now) {
 }
 function stop() {
   state.playing = false;
-  document.getElementById("play").textContent = "▶";
+  Object.assign(document.getElementById("play"), { textContent: "▶", ariaLabel: "Play" });
 }
 
 // Timeline strip: the unit's stations, a tick per station, each span hatched where the position
@@ -689,13 +689,13 @@ function openScan(d) {
   const id = folder.replace(/^(ok45th|rg64)-/, "");
   const where = {
     mr: { url: `https://catalog.archives.gov/id/${id}?objectPage=${n}`, link: "Open in National Archives catalog ↗",
-          src: `nara/${folder}/${page}.jpg`, missing: `or run: python3 tools/morning_reports.py fetch ${id} ${n}` },
+          src: `nara/${folder}/${page}.jpg`, fetch: `python3 tools/morning_reports.py fetch ${id} ${n}` },
     museum: { url: `${MUSEUM}${id}`, link: "Open at the 45th Infantry Division Museum ↗",
-              src: `45th-museum/${folder}/${page}.jpg`, missing: `The record is a PDF; this is its page ${n}` },
+              src: `45th-museum/${folder}/${page}.jpg`, note: `The record is a PDF there; this is its page ${n}.` },
     hist: { url: null, link: "894th AAA Bn History and Combat Diary, 1940–1945 (not online)",
-            src: `894th-history/${page}.jpg`, missing: "The history isn't online: a 2012 retyped copy (records/SOURCES.yml, hist894)" },
+            src: `894th-history/${page}.jpg`, note: "The kit read a retyped copy made in 2012 (hist894 in the records' SOURCES.yml)." },
     aar: { url: AAR_BOOK, link: "Third Army After Action Report, Vol. II, on Google Books ↗",
-           src: `googlebooks/pages/p${String(n).padStart(3, "0")}.png`, missing: `PDF page ${n} of the full-view download` },
+           src: `googlebooks/pages/p${String(n).padStart(3, "0")}.png`, note: `It's page ${n} of the book's full-view PDF.` },
   }[kind];
   document.getElementById("scan-title").textContent = `${d.station} · ${fmtDay(new Date(d.t))} · ${kind === "aar" ? "PDF " : ""}page ${n}`;
   const link = document.getElementById("scan-link");
@@ -707,9 +707,10 @@ function openScan(d) {
   img.hidden = false; missing.hidden = true;
   img.onerror = () => {
     img.hidden = true; missing.hidden = false;
-    const parts = [document.createTextNode("This page isn't in the local copy of the scans. ")];
-    if (where.url) parts.push(Object.assign(el("a", null, where.link), { href: where.url, target: "_blank", rel: "noopener" }));
-    parts.push(el("div", "fixnote", where.missing));
+    // the source, and on this machine, how to get the page into the cache
+    const parts = [where.url ? Object.assign(el("a", null, where.link), { href: where.url, target: "_blank", rel: "noopener" }) : el("span", null, where.link)];
+    if (where.note) parts.push(el("div", "fixnote", where.note));
+    if (LOCAL) parts.push(el("div", "fixnote", `Not in your local copy of the scans${where.fetch ? `: ${where.fetch}` : ""}`));
     missing.replaceChildren(...parts);
   };
   img.src = CACHE + where.src;

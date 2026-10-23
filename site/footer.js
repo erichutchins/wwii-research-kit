@@ -2,6 +2,8 @@
 // The deploy workflow (.github/workflows/pages.yml) overwrites build.json next to the pages with the build
 // time and each repository's commit and its date. The committed build.json is empty ({"built": null}),
 // so a local copy shows the links only.
+// It also puts a notice under the page's heading when the page's records fail to load, rather than leave
+// a blank map with no word of why.
 (() => {
   const KIT = "https://github.com/erichutchins/wwii-research-kit";
   const RECORDS_REPO = "https://github.com/erichutchins/wwii-unit-records";
@@ -14,7 +16,8 @@
   style.textContent = `.site-foot { max-width: 1080px; margin: 0 auto; padding: 14px 20px 22px; font: 14px/1.6 et-book, Palatino, Georgia, serif;
     color: inherit; opacity: 0.72; display: flex; flex-wrap: wrap; gap: 4px 18px; border-top: 1px solid currentColor;
     border-top-color: color-mix(in srgb, currentColor 18%, transparent); }
-    .site-foot a { color: inherit; }`;
+    .site-foot a { color: inherit; }
+    .load-failed { font-style: italic; }`;
   document.head.append(style);
 
   const foot = document.createElement("footer");
@@ -24,6 +27,15 @@
   const built = document.createElement("span");
   foot.append(repos, built);
   document.body.append(foot);
+
+  addEventListener("unhandledrejection", () => {
+    const head = document.querySelector("header");
+    if (!head || head.querySelector(".load-failed")) return;
+    const p = document.createElement("p");
+    p.className = "load-failed"; p.setAttribute("role", "alert");
+    p.textContent = "Some of this page's records didn't load, so parts of it may be blank. Reload the page to try again.";
+    (head.querySelector("h1")?.parentElement ?? head).append(p);
+  });
 
   fetch(new URL("build.json", document.currentScript.src)).then(r => r.ok ? r.json() : null).catch(() => null).then(b => {
     if (!b || !b.built) return;
