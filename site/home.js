@@ -476,4 +476,18 @@ async function lists() {
   document.getElementById("wanted").innerHTML = wanted.map(w => `<li>${w}</li>`).join("");
 }
 
-replay(); haynsworth(); seabees(); solar(); neuburg(); fleet(); lists();
+// A figure whose records don't load says so in its place instead of leaving a blank
+const failed = (sel, what) => err => {
+  console.error(err);
+  const p = document.createElement("p");
+  p.className = "readout";
+  p.textContent = `The records for this ${what} didn't load. Reload the page to try again.`;
+  document.querySelector(sel).replaceChildren(p);
+};
+replay().catch(failed("#replay", "replay"));
+haynsworth().catch(failed("#fig-haynsworth", "figure"));
+seabees().catch(failed("#fig-seabees", "figure"));
+solar().catch(failed("#fig-solar", "map"));
+neuburg().catch(failed("#fig-neuburg", "figure"));
+fleet().catch(failed("#fleet", "list"));
+lists().catch(failed("#wanted", "list"));

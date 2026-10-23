@@ -141,6 +141,8 @@ dialog::backdrop { background: rgba(0,0,0,0.55); }
 .dlg-body { overflow: auto; max-height: calc(92vh - 52px); }
 .dlg-body img { display: block; width: 100%; cursor: zoom-in; }
 .dlg-body img.full { width: auto; max-width: none; cursor: zoom-out; }
+.scan-missing { padding: 24px; color: var(--text-secondary); }
+.scan-missing .fixnote { margin-top: 8px; color: var(--text-muted); font-size: 14.5px; font-style: italic; }
 
 /* Page-to-page navigation: the same bar on every page, above the title (as on the front page) */
 header { display: block; }

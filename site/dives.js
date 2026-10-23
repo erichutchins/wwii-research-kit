@@ -567,7 +567,7 @@ function drawMain() {
   g.append("g").attr("class", "axis").attr("transform", `translate(0,${yAx})`)
     .call(d3.axisBottom(xl).ticks(Math.max(3, Math.floor(cw / 110))).tickFormat(fmt).tickSizeOuter(0));
   g.append("text").attr("class", "panel-sub").attr("x", W - M.right).attr("y", yAx + 32).attr("text-anchor", "end")
-    .text(`Times in zone ${zone} (GCT${offset >= 0 ? "+" : ""}${offset / HOUR}), the clock the report used here`);
+    .text(`Times in zone ${zone} (GMT${offset >= 0 ? "+" : ""}${offset / HOUR}), the clock the report used here`);
 
   // Playhead
   G.playhead = g.append("g").attr("class", "playhead").style("display", "none");
@@ -948,13 +948,19 @@ function updateMapLink() {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 // Scans live in the cache's nara/ folder when downloaded (tools/nara.py fetch); otherwise
 // load the same page from the National Archives (records/scans.json lists its URL).
+// If the archive's copy won't load either, the page's catalog link stands in for it.
 let SCANS = null;
 function setScanSrc(img, folder, page) {
-  const key = `${folder}/${page}`;
+  const key = `${folder}/${page}`, missing = document.getElementById("scan-missing");
+  const fail = () => {
+    img.hidden = true; missing.hidden = false;
+    const src = document.getElementById("scan-link");
+    missing.replaceChildren(Object.assign(el("a", null, src.textContent), { href: src.href, target: "_blank", rel: "noopener" }));
+  };
+  img.hidden = false; missing.hidden = true;
   img.onerror = async () => {
-    img.onerror = null;
     SCANS ??= await fetch(RECORDS + "scans.json").then(r => r.json()).catch(() => ({}));
-    if (SCANS[key]) img.src = SCANS[key];
+    if (SCANS[key]) { img.onerror = fail; img.src = SCANS[key]; } else fail();
   };
   img.src = `${CACHE}nara/${key}.jpg`;
 }

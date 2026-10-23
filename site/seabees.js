@@ -361,7 +361,7 @@ function togglePlay() { state.playing ? stop() : play(); }
 function play() {
   if (state.t >= U.t1 - DAY) setTime(U.t0);
   state.playing = true;
-  document.getElementById("play").textContent = "❚❚";
+  Object.assign(document.getElementById("play"), { textContent: "❚❚", ariaLabel: "Pause" });
   let last = performance.now();
   const tick = now => {
     if (!state.playing) return;
@@ -372,7 +372,7 @@ function play() {
   };
   requestAnimationFrame(tick);
 }
-function stop() { state.playing = false; document.getElementById("play").textContent = "▶"; }
+function stop() { state.playing = false; Object.assign(document.getElementById("play"), { textContent: "▶", ariaLabel: "Play" }); }
 
 // ── Timeline strip: the battalion and its parts, a row for each part on record at once, a tick per station ──
 let stripX = () => 0;
@@ -550,8 +550,8 @@ function openSource(l, r) {
   img.hidden = false; missing.hidden = true;
   img.onerror = () => {
     img.hidden = true; missing.hidden = false;
-    missing.replaceChildren(document.createTextNode("This page isn't in the local copy of the scans. "),
-      Object.assign(el("a", null, "See it at the archive ↗"), { href: l.url, target: "_blank", rel: "noopener" }));
+    missing.replaceChildren(Object.assign(el("a", null, `${l.label} ↗`), { href: l.url, target: "_blank", rel: "noopener" }),
+      ...LOCAL ? [el("div", "fixnote", "Not in your local copy of the scans")] : []);
   };
   img.src = CACHE + l.scan;
   img.alt = `Scan: ${l.label}`;
