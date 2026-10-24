@@ -31,8 +31,19 @@ a:hover { text-decoration-color: currentColor; }
 .typed { font-family: var(--typed); font-size: .88em; }
 .num { font-variant-numeric: tabular-nums lining-nums; }
 
-/* Masthead */
-.top { display: flex; justify-content: flex-end; gap: 22px; flex-wrap: wrap; padding: 20px 0 0; font-size: 18.5px; color: var(--ink-2); }
+/* The kit's navigation bar, the same on every page; then the masthead */
+.nav { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 15px; margin: 20px 0 0; padding-bottom: 8px;
+       border-bottom: 1px solid var(--rule); font-size: 17.5px; line-height: 1.45; }
+.nav a { white-space: nowrap; color: var(--ink-2); text-decoration: none; }
+.nav a:hover { color: var(--ink); text-decoration: underline; }
+.nav a[aria-current="page"] { color: var(--ink); text-decoration: underline; }
+.nav .home { color: var(--ink); font-size: 20.5px; margin-right: 6px; }
+.nav .grp { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
+.nav .grp + .grp, .nav .grp + a { padding-left: 15px; border-left: 1px solid var(--rule); }
+/* two lines at every width, broken between the groups (as in viz.css) */
+.nav::after { content: ""; flex-basis: 100%; order: 1; }
+.nav .grp + .grp, .nav .grp + .grp ~ a { order: 2; }
+.nav .grp + .grp { padding-left: 0; border-left: 0; }
 .mast { padding: 56px 0 8px; max-width: 760px; }
 h1 { font: 400 clamp(40px, 5.8vw, 66px)/1.05 "Special Elite", var(--typed); margin: 0 0 20px; letter-spacing: -.02em; }
 .lede { font-size: clamp(24px, 2.3vw, 28.5px); line-height: 1.4; margin: 0; color: var(--ink-2); }
@@ -104,6 +115,9 @@ h1 { font: 400 clamp(40px, 5.8vw, 66px)/1.05 "Special Elite", var(--typed); marg
 .span-bar { fill: var(--c2); }
 .track-faint { fill: none; stroke: var(--ink-3); stroke-width: .8; opacity: .6; }
 .track-hot { fill: none; stroke: var(--c1); stroke-width: 2; stroke-linejoin: round; }
+/* a zoomable map (mapzoom.js): lines keep their width at any zoom */
+.zoomable .grat, .zoomable .land, .zoomable .trail, .zoomable .trail-future, .zoomable .track-faint, .zoomable .track-hot { vector-effect: non-scaling-stroke; }
+.fig .zoom-box { position: relative; }
 .readout { min-height: 3em; font-size: 17px; color: var(--ink-2); margin: 8px 0 0; }
 .readout .typed { color: var(--ink); }
 
@@ -164,8 +178,15 @@ code { font: 17px var(--typed); color: var(--ink); }
 @media (max-width: 760px) {
   /* the figures keep a readable size and scroll sideways */
   .fig { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .fig svg { min-width: 700px; }
+  .fig svg, .fig .zoom-box { min-width: 700px; }
   .fig .readout { min-width: 0; }
+}
+@media (max-width: 600px) {
+  /* nav: each group starts its own line; the dividing rules only make sense on one line */
+  .nav { font-size: 16.5px; gap: 2px 13px; margin-top: 14px; }
+  .nav .home { flex-basis: 100%; font-size: 18.5px; }
+  .nav .grp { flex-basis: 100%; gap: 2px 13px; }
+  .nav .grp + .grp, .nav .grp + a { border-left: 0; padding-left: 0; }
 }
 @media (max-width: 560px) {
   .page { padding: 0 18px; }

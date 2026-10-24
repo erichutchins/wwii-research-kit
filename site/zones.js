@@ -51,6 +51,8 @@ const state = { ship: "bang", zone: "K", moment: 0 };
 const ALL = {};          // ship key -> points
 let LAND, proj, path;
 const svg = d3.select("#map");
+// zoom and pan: each change redraws the map through the projection, scaled to the reader's view (mapzoom.js)
+const view = mapZoom(svg.node(), document.querySelector(".map-wrap"), () => render(), { max: 12 });
 const tip = document.getElementById("tip");
 
 const fmtZone = z => {
@@ -136,6 +138,8 @@ function render() {
   svg.attr("viewBox", `0 0 ${W} ${H}`);
   proj = d3.geoMercator().rotate([-178, 0])
     .fitExtent([[10, 44], [W - 10, H - 10]], { type: "MultiPoint", coordinates: [[103, -2], [-147, 44]] });
+  view.bound(W, H);
+  mapZoom.scaled(proj, { scale: proj.scale(), translate: proj.translate() }, view.transform());
   path = d3.geoPath(proj);
   svg.selectAll("*").remove();
 
