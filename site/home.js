@@ -49,14 +49,23 @@ async function replay() {
   const path = d3.geoPath(proj);
   const svg = d3.select("#replay-map").append("svg").attr("viewBox", [0, 0, W, H])
     .attr("role", "img").attr("aria-label", "Map of the Luzon Strait with the three submarines' tracks and the convoy's losses");
-  svg.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([1, 1])()));
-  svg.append("path").attr("class", "land").attr("d", path({ type: "MultiPolygon", coordinates: act.land.map(r => [r]) }));
+  // the reader's zoom and pan (mapzoom.js) move the whole map; marks and labels are pinned to their point at their own size
+  const world = svg.append("g");
+  let K = 1;
+  const pin = xy => `translate(${xy}) scale(${1 / K})`;
+  world.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([1, 1])()));
+  world.append("path").attr("class", "land").attr("d", path({ type: "MultiPolygon", coordinates: act.land.map(r => [r]) }));
   for (const p of battle.places || []) {
     const xy = proj([p.lon, p.lat]);
     if (xy && xy[0] > 30 && xy[0] < W - 30 && xy[1] > 14 && xy[1] < H - 8)
-      svg.append("text").attr("class", "place").attr("x", xy[0]).attr("y", xy[1]).attr("text-anchor", "middle").text(p.name);
+      world.append("text").datum(xy).attr("class", "place pin").attr("transform", pin(xy)).attr("text-anchor", "middle").text(p.name);
   }
-  const gFuture = svg.append("g"), gTrail = svg.append("g"), gMarks = svg.append("g"), gBoats = svg.append("g");
+  const gFuture = world.append("g"), gTrail = world.append("g"), gMarks = world.append("g"), gBoats = world.append("g");
+  mapZoom(svg.node(), document.getElementById("replay-map"), t => {
+    world.attr("transform", t); K = t.k;
+    world.selectAll(".pin").attr("transform", pin);
+    set(+scrub.value);
+  }, { max: 8 }).bound(W, H);
   for (const b of boats) gFuture.append("path").attr("class", "trail-future").attr("stroke", b.color)
     .attr("d", d3.line(p => proj([p.lon, p.lat])[0], p => proj([p.lon, p.lat])[1])(tracks[b.id]));
   const trails = Object.fromEntries(boats.map(b => [b.id, gTrail.append("path").attr("class", "trail").attr("stroke", b.color)]));
@@ -129,20 +138,20 @@ async function replay() {
       const done = tr.filter(q => q.t <= t).map(q => proj([q.lon, q.lat]));
       if (p && !p.before && !p.after) done.push(p.xy);
       trails[b.id].attr("d", done.length > 1 ? d3.line()(done) : null);
-      boatG[b.id].attr("transform", p ? `translate(${p.xy})` : null).attr("opacity", !p || p.before || p.after ? .35 : 1);
+      boatG[b.id].attr("transform", p ? pin(p.xy) : null).attr("opacity", !p || p.before || p.after ? .35 : 1);
     }
     gMarks.selectAll("*").remove();
     for (const c of contacts.filter(c => c.t <= t && t - c.t < 3 * 3600e3))
-      gMarks.append("path").attr("class", "convoy").attr("d", d3.symbol(d3.symbolCross, 30)()).attr("transform", `translate(${c.xy}) rotate(45)`)
+      gMarks.append("path").attr("class", "convoy").attr("d", d3.symbol(d3.symbolCross, 30)()).attr("transform", `${pin(c.xy)} rotate(45)`)
         .append("title").text(`${c.f.ref}: the convoy as ${c.f.boat.toUpperCase()} reported it, ${c.f.raw}`);
     for (const a of attacks.filter(a => T(a.p.utc) <= t))
       gMarks.append("path").attr("d", d3.symbol(d3.symbolTriangle, 46)()).attr("fill", a.b.color)
-        .attr("transform", `translate(${a.xy})`).append("title").text(`${a.b.name} ${a.p.ref}`);
+        .attr("transform", pin(a.xy)).append("title").text(`${a.b.name} ${a.p.ref}`);
     for (const h of hits.filter(h => h.e.t <= t)) {
-      gMarks.append("circle").attr("class", "hit").attr("r", 5).attr("cx", h.xy[0]).attr("cy", h.xy[1])
+      gMarks.append("circle").attr("class", "hit").attr("r", 5).attr("transform", pin(h.xy))
         .style("cursor", "pointer").on("click", () => open(pageUrl(h.e.page, h.e.scan)))
         .append("title").text(`${h.e.title}: ${h.e.text}`);
-      if (t - h.e.t < 40 * 60e3) gMarks.append("circle").attr("class", "hit-ring").attr("r", 12).attr("cx", h.xy[0]).attr("cy", h.xy[1]);
+      if (t - h.e.t < 40 * 60e3) gMarks.append("circle").attr("class", "hit-ring").attr("r", 12).attr("transform", pin(h.xy));
     }
     const lastUS = us.filter(e => e.t <= t).slice(-3).reverse(), lastJP = jp.filter(e => e.t <= t).slice(-2).reverse();
     logUS.innerHTML = lastUS.length ? lastUS.map((e, i) => entry(e, i > 0)).join("") : `<li class="none">Nothing yet.</li>`;
@@ -282,26 +291,32 @@ async function solar() {
   const proj = d3.geoMercator().rotate([35, 0]).fitExtent([[10, 10], [W - 10, H - 10]], { type: "MultiPoint", coordinates: pts.map(p => p.ll) });
   const path = d3.geoPath(proj);
   const host = d3.select("#fig-solar");
-  const svg = host.append("svg").attr("viewBox", [0, 0, W, H]).attr("role", "img").attr("aria-label", "USS Solar's war diary positions, September 1944 to October 1945, with convoy UGS 72 in colour");
+  const box = host.append("div").attr("class", "zoom-box");
+  const svg = box.append("svg").attr("viewBox", [0, 0, W, H]).attr("role", "img").attr("aria-label", "USS Solar's war diary positions, September 1944 to October 1945, with convoy UGS 72 in colour");
   svg.append("defs").append("clipPath").attr("id", "solar-clip").append("rect").attr("width", W).attr("height", H);
-  const g = svg.append("g").attr("clip-path", "url(#solar-clip)");
+  // the reader's zoom and pan (mapzoom.js) move the map inside the clip; the hit and its labels keep their size
+  const g = svg.append("g").attr("clip-path", "url(#solar-clip)").append("g");
+  const pinned = (xy, k = 1) => `translate(${xy}) scale(${1 / k})`;
+  mapZoom(svg.node(), box.node(), t => { g.attr("transform", t); g.selectAll(".pin").attr("transform", d => pinned(d, t.k)); }, { max: 12, at: "top-left", row: true }).bound(W, H);
   g.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([10, 10])()));
   g.append("path").attr("class", "land").attr("d", path(land));
   g.append("path").attr("class", "track-faint").attr("d", path({ type: "LineString", coordinates: pts.map(p => p.ll) }));
   g.append("path").attr("class", "track-hot").attr("d", path({ type: "LineString", coordinates: leg.map(p => p.ll) }));
   for (const f of hits) {
     const [hx, hy] = proj(f.geometry.coordinates), p = f.properties;
-    g.append("circle").attr("class", "hit").attr("r", 6).attr("cx", hx).attr("cy", hy).style("cursor", "pointer")
+    const at = g.append("g").datum([hx, hy]).attr("class", "pin").attr("transform", pinned([hx, hy]));
+    at.append("path").attr("class", "leader").attr("d", "M0,0L-40,-60L-60,-60");
+    at.append("circle").attr("class", "hit").attr("r", 6).style("cursor", "pointer")
       .on("click", () => open(pageUrl(p.page))).append("title").text(p.note);
-    g.append("path").attr("class", "leader").attr("d", `M${hx},${hy}L${hx - 40},${hy - 60}L${hx - 60},${hy - 60}`);
-    g.append("text").attr("class", "lab").attr("x", hx - 64).attr("y", hy - 56).attr("text-anchor", "end").text("17 February 1945");
-    g.append("text").attr("class", "lab-2").attr("x", hx - 64).attr("y", hy - 38).attr("text-anchor", "end").text("two ships in the convoy hit");
+    at.append("text").attr("class", "lab").attr("x", -64).attr("y", -56).attr("text-anchor", "end").text("17 February 1945");
+    at.append("text").attr("class", "lab-2").attr("x", -64).attr("y", -38).attr("text-anchor", "end").text("two ships in the convoy hit");
     document.getElementById("solar-side").innerHTML = `<p class="typed">“${esc(p.note)}”</p>
       <p>War diary, <a href="${esc(pageUrl(p.page))}" target="_blank" rel="noopener">${esc(p.page)}</a>. The diary
       says “torpedo or mine”; the other side's record of that morning is still to find.</p>`;
   }
   const a = proj(leg[0].ll);
-  g.append("text").attr("class", "lab-2").attr("x", a[0] + 8).attr("y", a[1] + 18).text("UGS 72 sails, 2 February");
+  g.append("g").datum(a).attr("class", "pin").attr("transform", pinned(a))
+    .append("text").attr("class", "lab-2").attr("x", 8).attr("y", 18).text("UGS 72 sails, 2 February");
   host.append("p").attr("class", "readout").text("Grey: every position in her war diaries, September 1944 to October 1945. Blue: convoy UGS 72, 2 to 17 February 1945.");
 }
 // world-atlas's land, without loading topojson-client for one call

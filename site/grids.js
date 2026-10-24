@@ -139,7 +139,7 @@ const km = (a, b) => d3.geoDistance(a, b) * 6371;
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 const state = { grid: "all", probe: null };
-let LAND, BORDERS, REFS = [], SQUARES = {}, proj, path, zoom, k = 1;
+let LAND, BORDERS, REFS = [], SQUARES = {}, proj, path, zoom, k = 1, labelBase = 11;
 const svg = d3.select("#map"), tip = document.getElementById("tip");
 const UNIT = { "106aaa-d": "Btry D, 106th AAA", "62ca-c": "Btry C, 62nd CA", "67ca-med": "Med Det, 67th CA / 894th AAA",
                "313inf-b": "Co B, 313th Infantry", "128aaa-hq": "HQ Btry, 128th AAA" };
@@ -199,6 +199,7 @@ function squares(g) {
     for (let i = 10; i >= 0; i--) ring.push([x + i * 1e4, y + 1e5]);
     for (let i = 10; i >= 0; i--) ring.push([x, y + i * 1e4]);
     out.push({ g, label: squareLabel(g, x + 5e4, y + 5e4), centre: [clon, clat],
+               nw: g.proj.inv([x, y + 1e5]), ne: g.proj.inv([x + 1e5, y + 1e5]),
                geo: { type: "Polygon", coordinates: [ring.map(p => g.proj.inv(p)).reverse()] } });
   }
   return out;
@@ -208,6 +209,10 @@ function buildControls() {
   const opts = [{ key: "all", short: "All grids" }, ...GRIDS];
   d3.select("#grid-seg").selectAll("button").data(opts).join("button").text(d => d.short)
     .on("click", (e, d) => { state.grid = d.key; render(); });
+  d3.select("#refs-btn").on("click", e => {
+    const off = document.querySelector(".map-card").classList.toggle("no-refs");
+    e.currentTarget.setAttribute("aria-pressed", !off); hideTip();
+  });
   d3.select("#zin").on("click", () => svg.transition().call(zoom.scaleBy, 1.6));
   d3.select("#zout").on("click", () => svg.transition().call(zoom.scaleBy, 1 / 1.6));
   d3.select("#zreset").on("click", () => svg.transition().call(zoom.transform, d3.zoomIdentity));
@@ -232,18 +237,26 @@ function render() {
     const s = sq.append("g").attr("class", `sqs ${gr.key}`).style("--c", gr.color);
     s.selectAll("path").data(SQUARES[gr.key]).join("path").attr("class", "sq").attr("d", d => path(d.geo))
       .attr("stroke-dasharray", gr.dash || null);
-    s.selectAll("text").data(SQUARES[gr.key]).join("text").attr("class", "sql")
-      .attr("x", d => proj(d.centre)[0]).attr("y", d => proj(d.centre)[1] + 5).text(d => d.label);
+    // the 500 km block letter (r, w, V…) in front of the square's own, fainter
+    s.selectAll("text").data(SQUARES[gr.key]).join("text").attr("class", "sql").each(function (d) {
+      const t = d3.select(this);
+      if (d.label.length > 1) t.append("tspan").attr("class", "blk").text(d.label.slice(0, -1));
+      t.append("tspan").text(d.label.at(-1));
+    });
   }
+  // Label size follows how big a 100 km square is on screen, so it never outgrows its square
+  const first = SQUARES[shown[0].key][0], cell = Math.hypot(...[0, 1].map(i => proj(first.ne)[i] - proj(first.nw)[i]));
+  labelBase = Math.max(14, Math.min(20, cell * 0.45));
 
   // Each reference: a line from where its grid puts it to the town the entry names
   const refs = REFS.filter(r => r.lonlat && (state.grid === "all" || r.key === state.grid));
-  g.append("g").selectAll("line").data(refs.filter(r => r.town)).join("line").attr("class", "miss")
+  const rg = g.append("g").attr("class", "refs");
+  rg.append("g").selectAll("line").data(refs.filter(r => r.town)).join("line").attr("class", "miss")
     .attr("x1", d => proj(d.lonlat)[0]).attr("y1", d => proj(d.lonlat)[1])
     .attr("x2", d => proj(d.town)[0]).attr("y2", d => proj(d.town)[1]);
-  g.append("g").selectAll("circle.town").data(refs.filter(r => r.town)).join("circle").attr("class", "town")
+  rg.append("g").selectAll("circle.town").data(refs.filter(r => r.town)).join("circle").attr("class", "town")
     .attr("cx", d => proj(d.town)[0]).attr("cy", d => proj(d.town)[1]).attr("r", 2);
-  g.append("g").selectAll("circle.ref").data(refs).join("circle")
+  rg.append("g").selectAll("circle.ref").data(refs).join("circle")
     .attr("class", d => `ref${d.inferred ? " inferred" : ""}`).style("--c", d => BY_KEY[d.key].color)
     .attr("cx", d => proj(d.lonlat)[0]).attr("cy", d => proj(d.lonlat)[1]).attr("r", 4.5)
     .on("mousemove", (e, d) => showTip(e, d)).on("mouseleave", hideTip)
@@ -265,7 +278,9 @@ function render() {
 // Keep labels and markers the same size on screen as the map zooms
 function scaleMarks() {
   const g = svg.select("g");
-  g.selectAll(".sql").style("font-size", `${Math.min(24, 16 + 2 * k) / k}px`);
+  const fs = Math.min(labelBase + 5, labelBase + 0.5 * (k - 1));
+  g.selectAll(".sql").style("font-size", `${fs / k}px`)
+    .attr("x", d => proj(d.nw)[0] + 5 / k).attr("y", d => proj(d.nw)[1] + (0.8 * fs + 4) / k);
   g.selectAll("circle.ref").attr("r", 4.5 / k).style("stroke-width", 1.5 / k);
   g.selectAll("circle.town").attr("r", 2 / k);
   g.selectAll("line.miss").style("stroke-width", 1 / k);

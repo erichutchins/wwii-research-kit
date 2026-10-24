@@ -227,6 +227,17 @@ function buildMap(world, positions, P, hayTrack) {
 
   let T = { k: 1, x: 0, y: 0 };
   const xy = ll => { const p = proj(ll); return [T.x + T.k * p[0], T.y + T.k * p[1]]; };
+  // The reader's own zoom and pan (mapzoom.js) moves the same view the story's steps set; the next step takes it back,
+  // and ⟲ returns to the step's view. The view is kept in d3's zoom state too (sync), so a drag starts where the step left it.
+  let syncing = false;
+  const setView = t => { T = { k: t.k, x: t.x, y: t.y }; gWorld.attr("transform", `translate(${T.x},${T.y}) scale(${T.k})`); render(); };
+  const view = mapZoom(svg.node(), svg.node().parentNode, t => {
+    if (syncing) return;
+    d3.select(gWorld.node()).interrupt(); clearTimeout(zoomTo.late);
+    setView(t);
+  }, { min: 0.5, max: 80 });
+  view.reset = () => { if (lastView) zoomTo(lastView); };
+  const sync = () => { syncing = true; view.set(d3.zoomIdentity.translate(T.x, T.y).scale(T.k)); syncing = false; };
 
   // ---- overlay items: each has draw(sel) using xy(), and a set of ids/layers for show()
   const items = [];
@@ -422,7 +433,7 @@ function buildMap(world, positions, P, hayTrack) {
   function zoomTo(view, animate = true) {
     const target = targetFor(view);
     const from = [(W / 2 - T.x) / T.k, (H / 2 - T.y) / T.k, W / T.k];
-    const set = ([cx, cy, w]) => { const k = W / w; T = { k, x: W / 2 - k * cx, y: H / 2 - k * cy }; gWorld.attr("transform", `translate(${T.x},${T.y}) scale(${T.k})`); render(); };
+    const set = ([cx, cy, w]) => { const k = W / w; setView({ k, x: W / 2 - k * cx, y: H / 2 - k * cy }); sync(); };
     if (!animate || matchMedia("(prefers-reduced-motion: reduce)").matches) { set(target); return; }
     const interp = d3.interpolateZoom(from, target);
     const ms = Math.min(1600, Math.max(500, interp.duration * 0.6));
@@ -447,7 +458,7 @@ function buildMap(world, positions, P, hayTrack) {
     W = b.width; H = b.height; proj.fitExtent([[0, 0], [W, H]], outline);
     gWorld.selectAll("path").attr("d", path);
     d3.select(gWorld.node()).interrupt(); clearTimeout(zoomTo.late);
-    T = { k: 1, x: 0, y: 0 };
+    T = { k: 1, x: 0, y: 0 }; sync();
     if (lastView) zoomTo(lastView, false);
     return true;
   }

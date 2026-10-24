@@ -14,7 +14,7 @@
 </head>
 <body>
 <div class="page">
-  <nav class="top" aria-label="Elsewhere"><a href="relatives.html">Researching a relative</a><a href="#yourself">Do this yourself</a><a href="https://github.com/erichutchins/wwii-research-kit">Kit on GitHub</a><a href="https://github.com/erichutchins/wwii-unit-records">Records on GitHub</a></nav>
+  <nav class="nav" aria-label="The kit"><a class="home" href="index.html" aria-current="page">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="battle.html">Battles</a><a href="haynsworth.html">Haynsworth</a><a href="seabees.html">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
 
   <header class="mast">
     <h1>Charting WWII History</h1>
@@ -28,7 +28,7 @@
 
     <article class="feature" id="f-luzon">
       <h3>Submarines attacking a Japanese convoy in the Luzon Strait, 29–30 April 1944</h3>
-      <p class="dek">BANG, PARCHE and TINOSA hunted convoy TAMA-17 through the Luzon Strait as a wolfpack. Their three
+      <p class="dek"><a href="patrols.html?ship=bang&amp;patrol=1">BANG</a>, <a href="patrols.html?ship=parche&amp;patrol=1">PARCHE</a> and <a href="patrols.html?ship=tinosa&amp;patrol=6">TINOSA</a> hunted convoy TAMA-17 through the Luzon Strait as a wolfpack. Their three
         patrol reports kept three different clocks, and the convoy's own record kept Tokyo time. Put on one clock, they
         tell the same night from both sides.</p>
       <div class="side" id="luzon-side"></div>
@@ -49,7 +49,7 @@
 
     <article class="feature" id="f-haynsworth">
       <h3>A destroyer on radar picket duty off Okinawa: USS Haynsworth, 6 April 1945</h3>
-      <p class="dek">On the first day of the mass kamikaze attacks at Okinawa, a single dive bomber hit a destroyer on
+      <p class="dek">On the first day of the mass kamikaze attacks at Okinawa, a single dive bomber hit <a href="haynsworth.html">a destroyer</a> on
         picket duty twelve miles out from the carriers. Seven men died at once. Her radio was wrecked, so the records
         around her logged the hit when the news reached them.</p>
       <div class="side"><p>Times are Item (zone −9), which was also Tokyo time: the two navies' 1250s are the same minute.</p>
@@ -60,7 +60,7 @@
 
     <article class="feature" id="f-seabees">
       <h3>Construction across the Pacific: the 20th Seabees, 1942–1945</h3>
-      <p class="dek">A construction battalion rarely stayed in one place. The 20th crossed the Pacific in two waves,
+      <p class="dek">A construction battalion rarely stayed in one place. The <a href="seabees.html">20th</a> crossed the Pacific in two waves,
         split into echelons and detached companies across the Solomons and New Guinea, and came together again on
         Saipan and Okinawa. Its muster rolls follow every part.</p>
       <div class="side"><p>Blue lines are parts of the battalion; the black line is the battalion together. Point at a
@@ -162,6 +162,7 @@
 <script src="config.js"></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
+<script src="mapzoom.js"></script>
 <script src="home.js"></script>
 <script src="footer.js"></script>
 </body>
