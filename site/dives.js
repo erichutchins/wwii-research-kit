@@ -42,7 +42,8 @@ d3.json(RECORDS + "boats/ss-385-bang/dives.json").then(data => {
   const qp = +q.get("patrol");
   const t = q.get("t") ? Date.parse(q.get("t")) : null;
   select(DATA.patrols.some(p => p.patrol === qp) ? qp : 2, t);
-  new ResizeObserver(() => { render(); renderDayNight(); }).observe(document.querySelector(".chart-wrap"));
+  // redrawing inside the observer resizes the box it watches; a frame later, the browser has settled
+  new ResizeObserver(() => requestAnimationFrame(() => { render(); renderDayNight(); })).observe(document.querySelector(".chart-wrap"));
 });
 
 // ── Model ───────────────────────────────────────────────────────────────────

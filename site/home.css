@@ -6,7 +6,7 @@
    A correction is in blue pencil. Figures are drawn by home.js from the records. */
 :root {
   color-scheme: light;
-  --paper: #fcfcf9; --ink: #1d1d1b; --ink-2: #57564f; --ink-3: #85847b; --rule: #e1dfd5; --wash: rgba(29,29,27,.05);
+  --paper: #fcfcf9; --ink: #1d1d1b; --ink-2: #57564f; --ink-3: #6c6b66; --rule: #e1dfd5; --wash: rgba(29,29,27,.05);
   --land: #ebeae2; --coast: #c4c2b6;
   --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --fire: #d42a3c; --pencil: #2253a3;
   --serif: et-book, Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
@@ -15,7 +15,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root { color-scheme: dark;
-    --paper: #131312; --ink: #ecebe5; --ink-2: #b3b1a7; --ink-3: #7d7b73; --rule: #2d2c28; --wash: rgba(255,255,255,.06);
+    --paper: #131312; --ink: #ecebe5; --ink-2: #b3b1a7; --ink-3: #9d9c95; --rule: #2d2c28; --wash: rgba(255,255,255,.06);
     --land: #2a2a26; --coast: #4b4a44;
     --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --pencil: #86aaf0; }
 }
@@ -26,6 +26,7 @@ body { margin: 0; color: var(--ink); font: 22px/1.55 var(--serif); }
 a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: var(--ink-3); }
 a:hover { text-decoration-color: currentColor; }
 :focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--c1) 24%, transparent); }
 .page { max-width: 1180px; margin: 0 auto; padding: 0 32px; }
 .typed { font-family: var(--typed); font-size: .88em; }
 .num { font-variant-numeric: tabular-nums lining-nums; }

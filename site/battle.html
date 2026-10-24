@@ -19,7 +19,7 @@
    order (--c1..--c3); the Japanese side is ink. */
 :root {
   --page: #fcfcf9; --surface: #fcfcf9; --land: #e6e5df; --coast: #b7b6ab; --sea-grid: #ecebe6;
-  --ink: #1d1d1b; --ink-2: #57564f; --ink-3: #6f6e69; --rule: #e1dfd5; --wash: rgba(29,29,27,0.05);
+  --ink: #1d1d1b; --ink-2: #57564f; --ink-3: #6c6b66; --rule: #e1dfd5; --wash: rgba(29,29,27,0.05);
   --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --fire: #d42a3c; --japan: #1d1d1b;
   --font-ui: et-book, Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
   --font-type: "TT2020E", "Courier New", Courier, monospace;
@@ -50,6 +50,10 @@ header { display: grid; gap: 4px; }
 .nav .home { color: var(--ink); font-size: 20.5px; margin-right: 6px; }
 .nav .grp { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
 .nav .grp + .grp, .nav .grp + a, .nav a.theater { padding-left: 15px; border-left: 1px solid var(--rule); }
+/* two lines at every width, broken between the groups (as in viz.css) */
+.nav::after { content: ""; flex-basis: 100%; order: 1; }
+.nav .grp + .grp, .nav .grp + .grp ~ a { order: 2; }
+.nav .grp + .grp { padding-left: 0; border-left: 0; }
 .eyebrow { font-size: 18px; font-style: italic; color: var(--ink-3); }
 h1 { font-size: 36px; line-height: 1.2; margin: 0; text-wrap: balance; font-weight: 400; }
 .lede { margin: 0; color: var(--ink-2); max-width: 75ch; }
@@ -65,6 +69,7 @@ h1 { font-size: 36px; line-height: 1.2; margin: 0; text-wrap: balance; font-weig
 .seg button b { display: block; font-weight: 650; }
 .seg button span { font-size: 14.5px; color: var(--ink-3); }
 button:focus-visible, input:focus-visible, a:focus-visible, .row:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--c1) 24%, transparent); }
 
 .main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 400px); gap: 14px; }
 .card { background: var(--surface); border: 1px solid var(--rule); border-radius: 0; min-width: 0; }
@@ -158,6 +163,13 @@ h2 { font-size: 19px; font-weight: 400; font-style: italic; color: var(--ink-2);
   .map-box { height: 58vh; }
   #inset { width: 96px; height: 96px; }
   .oob { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  /* nav: each group starts its own line; the dividing rules only make sense on one line */
+  nav.nav { font-size: 16.5px; gap: 2px 13px; margin-bottom: 12px; }
+  nav.nav .home { flex-basis: 100%; font-size: 18.5px; }
+  nav.nav .grp { flex-basis: 100%; gap: 2px 13px; }
+  nav.nav .grp + .grp, nav.nav .grp + a, nav.nav a.theater { border-left: 0; padding-left: 0; }
 }
 @media (max-width: 480px) {
   .wrap { padding-inline: 16px; }

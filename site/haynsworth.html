@@ -19,7 +19,7 @@
    US aircraft slot 3, the Japanese side is ink, the hit is --fire. Anything assumed is hatched and says so. */
 :root {
   --page: #fcfcf9; --surface: #fcfcf9; --land: #e6e5df; --coast: #b7b6ab; --sea-grid: #ecebe6;
-  --ink: #1d1d1b; --ink-2: #57564f; --ink-3: #6f6e69; --rule: #e1dfd5; --wash: rgba(29,29,27,0.05);
+  --ink: #1d1d1b; --ink-2: #57564f; --ink-3: #6c6b66; --rule: #e1dfd5; --wash: rgba(29,29,27,0.05);
   --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --fire: #d42a3c; --japan: #1d1d1b;
   --font-ui: et-book, Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
   --font-type: "TT2020E", "Courier New", Courier, monospace;
@@ -43,6 +43,7 @@ body { margin: 0; background: var(--page); color: var(--ink); font: 18px/1.55 va
 a { color: inherit; text-decoration-color: var(--ink-3); text-underline-offset: 2px; }
 a:hover { text-decoration-color: var(--ink); }
 a:focus-visible, button:focus-visible, .mk:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--c1) 24%, transparent); }
 .wrap { max-width: 1440px; margin: 0 auto; padding: 18px 20px 40px; }
 header { display: grid; gap: 4px; }
 .nav { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 15px; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); font-size: 17.5px; }
@@ -52,6 +53,10 @@ header { display: grid; gap: 4px; }
 .nav .home { color: var(--ink); font-size: 20.5px; margin-right: 6px; }
 .nav .grp { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
 .nav .grp + .grp, .nav .grp + a, .nav a.theater { padding-left: 15px; border-left: 1px solid var(--rule); }
+/* two lines at every width, broken between the groups (as in viz.css) */
+.nav::after { content: ""; flex-basis: 100%; order: 1; }
+.nav .grp + .grp, .nav .grp + .grp ~ a { order: 2; }
+.nav .grp + .grp { padding-left: 0; border-left: 0; }
 .eyebrow { font-size: 18px; font-style: italic; color: var(--ink-3); }
 h1 { font-size: 36px; line-height: 1.15; margin: 0; text-wrap: balance; font-weight: 400; max-width: 30ch; }
 .lede { margin: 4px 0 0; color: var(--ink-2); max-width: 78ch; font-size: 19px; }
@@ -203,7 +208,7 @@ h3 { font-size: 18px; margin: 0; font-weight: 650; }
 
 @media (max-width: 900px) {
   .story { grid-template-columns: minmax(0, 1fr); }
-  .stage { grid-row: 1; height: 52vh; min-height: 300px; top: 0; z-index: 2; border-radius: 0 0 10px 10px; }
+  .stage { grid-row: 1; height: 52vh; min-height: 300px; top: 0; z-index: 2; }
   .step { min-height: 60vh; }
   .legend { display: none; }
   .crews, .q { grid-template-columns: minmax(0, 1fr); }
