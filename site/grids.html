@@ -11,14 +11,20 @@
   .border { fill: none; stroke: var(--coast); stroke-width: 0.6; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
   #map { cursor: grab; }
   #map:active { cursor: grabbing; }
-  .sq { fill: none; stroke: var(--c); stroke-opacity: 0.8; }
-  .sql { fill: var(--c); font-weight: 700; text-anchor: middle; pointer-events: none;
-         paint-order: stroke; stroke: var(--surface-1); stroke-width: 0.25em; stroke-linejoin: round; }
-  .ref { fill: var(--c); stroke: var(--surface-1); cursor: pointer; }
-  .ref.inferred { fill: var(--surface-1); stroke: var(--c); }
-  .ref:hover { stroke: var(--text-primary); }
-  .town { fill: var(--text-primary); pointer-events: none; }
-  .miss { stroke: var(--text-primary); stroke-opacity: 0.5; pointer-events: none; }
+  .sq { fill: none; stroke: var(--c); stroke-opacity: 0.55; }
+  /* A square's letter is the records' own: set in the typed face, small, in the square's north-west corner
+     (as on a printed sheet), so the dots plotted inside the square stay clear of it. grids.js sizes and places it. */
+  .sql { fill: var(--c); font-family: var(--typed); font-weight: 400; font-size-adjust: none; text-anchor: start;
+         pointer-events: none; paint-order: stroke; stroke: var(--surface-1); stroke-opacity: 0.85;
+         stroke-width: 0.22em; stroke-linejoin: round; }
+  .sql .blk { fill-opacity: 0.65; }
+  /* the references sit behind the squares' letters: faint until hovered, or hidden with the toggle */
+  .ref { fill: var(--c); fill-opacity: 0.5; stroke: var(--surface-1); stroke-opacity: 0.6; cursor: pointer; }
+  .ref.inferred { fill: var(--surface-1); fill-opacity: 1; stroke: var(--c); stroke-opacity: 0.65; }
+  .ref:hover { fill-opacity: 1; stroke: var(--text-primary); stroke-opacity: 1; }
+  .town { fill: var(--text-primary); fill-opacity: 0.45; pointer-events: none; }
+  .miss { stroke: var(--text-primary); stroke-opacity: 0.3; pointer-events: none; }
+  .map-card.no-refs .refs, .map-card.no-refs .refs-key { display: none; }
   .probe path { fill: var(--c); stroke: var(--text-primary); }
   .probe text { font-size: 14.5px; font-weight: 600; fill: var(--text-primary); paint-order: stroke;
                 stroke: var(--surface-1); stroke-width: 3px; pointer-events: none; }
@@ -72,12 +78,13 @@
     Naples, Montélimar or the Spessart, depending on the grid. The map sheet named its grid in the margin. The
     typist didn't, so the grid has to be worked out from the date and the towns.</p>
 
-  <div class="filters"><div class="seg" id="grid-seg" role="group" aria-label="Grid"></div></div>
+  <div class="filters"><div class="seg" id="grid-seg" role="group" aria-label="Grid"></div>
+    <div class="seg" role="group" aria-label="References"><button id="refs-btn" aria-pressed="true">References on the map</button></div></div>
   <div class="card map-card">
     <div class="legend">
-      <span><svg width="14" height="14"><circle cx="7" cy="7" r="4.5" fill="var(--series-track)"/></svg>Reference, decoded on its grid</span>
-      <span><svg width="14" height="14"><circle cx="7" cy="7" r="4" fill="var(--surface-1)" stroke="var(--series-attack)" stroke-width="1.5"/></svg>No square letter typed: square assumed from the town</span>
-      <span><svg width="30" height="12"><circle cx="4" cy="6" r="2" fill="var(--text-primary)"/><line x1="4" y1="6" x2="26" y2="6" stroke="var(--text-primary)" stroke-opacity="0.5"/></svg>Line to the place the same entry names</span>
+      <span class="refs-key"><svg width="14" height="14"><circle cx="7" cy="7" r="4.5" fill="var(--series-track)"/></svg>Reference, decoded on its grid</span>
+      <span class="refs-key"><svg width="14" height="14"><circle cx="7" cy="7" r="4" fill="var(--surface-1)" stroke="var(--series-attack)" stroke-width="1.5"/></svg>No square letter typed: square assumed from the town</span>
+      <span class="refs-key"><svg width="30" height="12"><circle cx="4" cy="6" r="2" fill="var(--text-primary)"/><line x1="4" y1="6" x2="26" y2="6" stroke="var(--text-primary)" stroke-opacity="0.5"/></svg>Line to the place the same entry names</span>
       <span><svg width="14" height="14"><rect x="1" y="1" width="12" height="12" fill="none" stroke="var(--series-track)"/></svg>Nord de Guerre squares</span>
       <span><svg width="14" height="14"><rect x="1" y="1" width="12" height="12" fill="none" stroke="var(--series-attack)"/></svg>Lambert I and II (solid), III (dashed)</span>
       <span><svg width="14" height="14"><rect x="1" y="1" width="12" height="12" fill="none" stroke="var(--series-air)"/></svg>South Italy (solid), North Italy (dashed)</span>

@@ -66,7 +66,8 @@ h1 { font: 400 clamp(40px, 5.8vw, 66px)/1.05 "Special Elite", var(--typed); marg
 
 /* The one-clock replay */
 .replay { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 0 28px; }
-.replay .map { position: relative; border: 1px solid var(--rule); background: var(--paper); }
+/* align-self: the grid row is as tall as the log beside it; stretched, the box ran on below the map */
+.replay .map { position: relative; align-self: start; border: 1px solid var(--rule); background: var(--paper); }
 .replay .map svg { display: block; width: 100%; height: auto; }
 .land { fill: var(--land); stroke: var(--coast); stroke-width: .7; }
 .grat { fill: none; stroke: var(--rule); stroke-width: .8; }
