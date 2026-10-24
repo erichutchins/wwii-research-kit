@@ -46,19 +46,19 @@ const STEPS = [
     on: ["kokubu", "aim-210", "aim-252a", "aim-252b", "sq-metsu"], layers: ["route210", "squares", "formation"] },
   { id: "s4", until: "1200", when: "1056-1200", view: "approach", title: "The fighters meet them",
     body: "The task group's combat air patrol met the raids to the north and north-east, on Haynsworth's side of the formation. Essex's fighters shot down two Judys at 1140, 35 miles out on 035°, and another at 1159, 20 miles due north. The 210th's escort, over Amami at 1140, fought Hellcats ten minutes later. At noon Haynsworth was at 26-55N 129-31E. Between 1130 and 1420 the scouts reported four carrier groups, two of them at メキ三ツ and スキ三ツ (the second a probable reading); TG 58.3 at noon was 25-40 miles south of both.",
-    on: ["k-1056", "k-1140", "k-1149", "k-1159", "esc-1150", "hay-1200", "centre", "st-hay", "st-weeks", "st-walker", "sq-meki", "sq-suki"], layers: ["kills", "formation", "ring", "haytrack", "squares"] },
+    on: ["k-1056", "k-1140", "k-1149", "k-1159", "esc-1150", "hay-1200", "centre", "st-hay", "st-weeks", "st-walker", "sq-meki", "sq-suki"], layers: ["kills", "formation", "ring", "squares"] },
   { id: "s5", until: "1227", when: "1201-1227", view: "picket", title: "Into the formation",
     body: "Seven Zekes were caught 15 miles north at 1201. Under cover of that fight a Judy slipped into the formation and dived on Cabot at 1226; its bomb missed by 100 yards and the plane fell off her bow. Bunker Hill's Marine Corsairs came home from the melee one short: 1st Lt. J. H. Carpenter was last seen diving on an enemy plane.",
-    on: ["k-1201", "k-1223", "cabot-1226", "centre", "st-hay", "st-weeks", "st-walker"], layers: ["kills", "formation", "ring", "haytrack"] },
+    on: ["k-1201", "k-1223", "cabot-1226", "centre", "st-hay", "st-weeks", "st-walker"], layers: ["kills", "formation", "ring"] },
   { id: "s6", until: "1245", when: "1230-1245", view: "picket", title: "Bogey at 22 miles",
     body: "The 210th's report presumes all seven of its Suisei dived into the carrier force between 1230 and 1300. At 1232 Haynsworth's SC-3 radar had a bogey bearing 010°, 22 miles; she turned to 020° and the fighters were vectored onto it. At 1245 her crew heard a dog-fight and machine-gun fire to port, and a plane was splashed 1,500 yards off the port quarter.",
-    on: ["bogey-1232", "st-hay", "hay-1200", "centre"], layers: ["ring", "haytrack", "formation"] },
+    on: ["bogey-1232", "st-hay", "hay-1200", "centre"], layers: ["ring", "formation"] },
   { id: "s7", until: "1250", when: "1245-1250", view: "close", title: "1250 Item",
     body: "A Judy came out of the low cloud in a steep dive with a Corsair on either side. All three pulled out short of the water, and the Judy flattened out and headed away. Haynsworth opened fire at 1,500 yards; the Judy turned to starboard, winged over and came back. Its bomb fell 1,000 yards abeam. The plane struck at the twin 40 mm mount 41, abaft the bridge, at 1250. The panels below the map follow the report step by step.",
-    on: ["hit", "st-hay", "hay-1200"], layers: ["hit", "ring", "haytrack"] },
+    on: ["hit", "st-hay", "hay-1200"], layers: ["hit", "ring"] },
   { id: "s8", until: "1337", when: "1250-1337", view: "picket", title: "Fire",
     body: "A gasoline fireball went through Main Radio, the 40 mm platform, CIC and plot. Seven men were dead. The fire was under control in about ten minutes and out in about fifty-five. With her radio and radar gone she couldn't report: the squadron diary logs the hit at 1318 and South Dakota at 1321, when word reached them. Ten minutes after the hit, a suicide Zeke clipped Cabot's radar, and a friendly 5-inch shell killed three men on North Carolina.",
-    on: ["hit", "cabot-1302", "centre", "st-hay", "st-weeks", "st-walker"], layers: ["hit", "formation", "ring", "haytrack"] },
+    on: ["hit", "cabot-1302", "centre", "st-hay", "st-weeks", "st-walker"], layers: ["hit", "formation", "ring"] },
   { id: "s9", until: "2000", when: "1400-2000", view: "theater", title: "The afternoon",
     body: "The 210th sent two more Suisei at 1400. One plane's track chart survives, the only Japanese track for this day: it reached its farthest point at 1535 under rain cloud, ten-tenths at 500-900 metres, somewhere east-southeast of Amami and close to the task group, saw nothing, and flew home past the Tokara islands. It is the clearest record of the weather the morning's attackers used. Haynsworth was at 27-23N 130-05E at 2000.",
     on: ["t2-1410", "t2-1535", "t2-1603", "t2-1702", "t2-1722", "t2-1750", "hay-2000", "kokubu"], layers: ["track2", "wx", "haytrack", "formation"] },
@@ -310,7 +310,7 @@ function buildMap(world, positions, P, hayTrack) {
     g.append("text").attr("class", "mk-label jp").attr("x", m[0] + 16).attr("y", m[1]).text("210th, 11 Suisei, 1020 (route assumed)");
   });
   // CAP kills: the Japanese type, crossed out, in the US aircraft colour
-  const killType = { "k-1056": null, "k-1140": "judy", "k-1149": "zeke", "k-1159": "judy", "k-1201": "zeke", "k-1223": "zeke" };
+  const killType = { "k-1056": "dinah", "k-1140": "judy", "k-1149": "zeke", "k-1159": "judy", "k-1201": "zeke", "k-1223": "zeke" };
   positions.filter(p => p.kind === "kill").forEach(p => add("kills", [p.id], g => {
     g.selectAll("*").remove();
     const [x, y] = xy(p.ll);
@@ -750,12 +750,13 @@ function buildOOB() {
   const ah = d3.select("#airplates");
   [["judy", "Haynsworth's attacker, as her crew identified it. The 210th Air Group flew 9 Model 33s and 2 Model 12s that morning"],
    ["zeke", "About 30 bomb-carrying Zeros went at TF 58 with the Suisei. A Zeke 52 has the same two-row radial engine type and Type 97 guns"],
-   ["corsair", "Two Corsairs were on the Judy's tail as it came out of the cloud"]].forEach(([k, kd]) => {
+   ["corsair", "Two Corsairs were on the Judy's tail as it came out of the cloud"],
+   ["dinah", "The group's CAP splashed a Dinah at 1056, 29 miles out on 330° (Essex chronology, p. 34). The model isn't recorded; this is the plate's Dinah 43"]].forEach(([k, kd]) => {
     const a = AIRCRAFT[k], sc = a.span / 41;
     const p = ah.append("div").attr("class", "plate");
-    const svg = p.append("svg").attr("viewBox", "0 0 200 110").attr("role", "img").attr("aria-label", a.name);
-    svg.append("path").attr("d", a.plan.d).attr("class", "sil").attr("transform", `translate(${50 - 50 * sc * 0.9},${4}) scale(${0.9 * sc})`);
-    if (a.profile) svg.append("path").attr("d", a.profile.d).attr("class", "sil").attr("transform", `translate(${108},${44}) scale(${0.88 * a.length / 33.6})`);
+    const svg = p.append("svg").attr("viewBox", "0 0 230 110").attr("role", "img").attr("aria-label", a.name);
+    svg.append("path").attr("d", a.plan.d).attr("class", "sil").attr("transform", `translate(${56 - 50 * sc * 0.9},${4}) scale(${0.9 * sc})`);
+    if (a.profile) svg.append("path").attr("d", a.profile.d).attr("class", "sil").attr("transform", `translate(${118},${44}) scale(${0.88 * a.length / 33.6})`);
     p.append("div").attr("class", "nm").text(a.name + " · " + a.type);
     p.append("div").attr("class", "kd").text(`${a.dims} (as printed on the plate). ${kd}. Silhouette: ${a.source}.`);
   });
