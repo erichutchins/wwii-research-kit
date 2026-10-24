@@ -310,7 +310,7 @@ function buildMap(world, positions, P, hayTrack) {
     g.append("text").attr("class", "mk-label jp").attr("x", m[0] + 16).attr("y", m[1]).text("210th, 11 Suisei, 1020 (route assumed)");
   });
   // CAP kills: the Japanese type, crossed out, in the US aircraft colour
-  const killType = { "k-1056": null, "k-1140": "judy", "k-1149": "zeke", "k-1159": "judy", "k-1201": "zeke", "k-1223": "zeke" };
+  const killType = { "k-1056": "dinah", "k-1140": "judy", "k-1149": "zeke", "k-1159": "judy", "k-1201": "zeke", "k-1223": "zeke" };
   positions.filter(p => p.kind === "kill").forEach(p => add("kills", [p.id], g => {
     g.selectAll("*").remove();
     const [x, y] = xy(p.ll);
@@ -750,12 +750,13 @@ function buildOOB() {
   const ah = d3.select("#airplates");
   [["judy", "Haynsworth's attacker, as her crew identified it. The 210th Air Group flew 9 Model 33s and 2 Model 12s that morning"],
    ["zeke", "About 30 bomb-carrying Zeros went at TF 58 with the Suisei. A Zeke 52 has the same two-row radial engine type and Type 97 guns"],
-   ["corsair", "Two Corsairs were on the Judy's tail as it came out of the cloud"]].forEach(([k, kd]) => {
+   ["corsair", "Two Corsairs were on the Judy's tail as it came out of the cloud"],
+   ["dinah", "The group's CAP splashed a Dinah at 1056, 29 miles out on 330° (Essex chronology, p. 34). The model isn't recorded; this is the plate's Dinah 43"]].forEach(([k, kd]) => {
     const a = AIRCRAFT[k], sc = a.span / 41;
     const p = ah.append("div").attr("class", "plate");
-    const svg = p.append("svg").attr("viewBox", "0 0 200 110").attr("role", "img").attr("aria-label", a.name);
-    svg.append("path").attr("d", a.plan.d).attr("class", "sil").attr("transform", `translate(${50 - 50 * sc * 0.9},${4}) scale(${0.9 * sc})`);
-    if (a.profile) svg.append("path").attr("d", a.profile.d).attr("class", "sil").attr("transform", `translate(${108},${44}) scale(${0.88 * a.length / 33.6})`);
+    const svg = p.append("svg").attr("viewBox", "0 0 230 110").attr("role", "img").attr("aria-label", a.name);
+    svg.append("path").attr("d", a.plan.d).attr("class", "sil").attr("transform", `translate(${56 - 50 * sc * 0.9},${4}) scale(${0.9 * sc})`);
+    if (a.profile) svg.append("path").attr("d", a.profile.d).attr("class", "sil").attr("transform", `translate(${118},${44}) scale(${0.88 * a.length / 33.6})`);
     p.append("div").attr("class", "nm").text(a.name + " · " + a.type);
     p.append("div").attr("class", "kd").text(`${a.dims} (as printed on the plate). ${kd}. Silhouette: ${a.source}.`);
   });
