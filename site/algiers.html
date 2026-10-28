@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Algiers under the night bombers, May–June 1943</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="entry.css">
+<style>
+/* Three raid nights on Algiers told from both sides' records: Battery C, 62nd CA (AA), 4 mi west of the city; No. 153
+   Squadron RAF's Beaufighters at Maison Blanche; the German Naval Staff's war diary; the Italian and German bulletins;
+   L'Écho d'Alger. Data: records/engagements/algiers-1943/*.csv (hand-edited). Silhouettes: records/silhouettes/,
+   loaded by silhouettes.js. Layout as haynsworth.html (a scrolling narrative beside a map that stays put; then the
+   nights side by side, the evidence board, the sources). Colours are the project's checked palette: the battery takes
+   slot 1 (blue), the RAF night fighters slot 3, the Axis side is ink, the press is grey (ink-3). Anything placed by
+   assumption is hatched or dashed and says so. */
+:root {
+  --page: #fcfcf9; --surface: #fcfcf9; --land: #e6e5df; --coast: #b7b6ab; --sea-grid: #ecebe6;
+  --ink: #1d1d1b; --ink-2: #57564f; --ink-3: #6c6b66; --rule: #e1dfd5; --wash: rgba(29,29,27,0.05);
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --fire: #d42a3c; --axis: #1d1d1b;
+  --font-ui: et-book, Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --font-type: "TT2020E", "Courier New", Courier, monospace;
+  --serif: var(--font-ui); --typed: var(--font-type); --ja: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif; --pencil: #2253a3;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #131312; --surface: #131312; --land: #33332f; --coast: #5f5f57; --sea-grid: #242422;
+    --ink: #ecebe5; --ink-2: #b3b1a7; --ink-3: #9d9c95; --rule: #2d2c28; --wash: rgba(255,255,255,0.06);
+    --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --axis: #ecebe5; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #131312; --surface: #131312; --land: #33332f; --coast: #5f5f57; --sea-grid: #242422;
+  --ink: #ecebe5; --ink-2: #b3b1a7; --ink-3: #9d9c95; --rule: #2d2c28; --wash: rgba(255,255,255,0.06);
+  --c1: #3987e5; --c2: #d95926; --c3: #199e70; --fire: #ff5c63; --axis: #ecebe5; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 18px/1.55 var(--font-ui); font-size-adjust: 0.47; }
+a { color: inherit; text-decoration-color: var(--ink-3); text-underline-offset: 2px; }
+a:hover { text-decoration-color: var(--ink); }
+a:focus-visible, button:focus-visible, .mk:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--c1) 24%, transparent); }
+.wrap { max-width: 1440px; margin: 0 auto; padding: 18px 20px 40px; }
+header { display: grid; gap: 4px; }
+.nav { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 15px; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); font-size: 17.5px; }
+.nav a { white-space: nowrap; color: var(--ink-2); text-decoration: none; }
+.nav a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.nav a[aria-current="page"] { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.nav .home { color: var(--ink); font-size: 20.5px; margin-right: 6px; }
+.nav .grp { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
+.nav .grp + .grp, .nav .grp + a, .nav a.theater { padding-left: 15px; border-left: 1px solid var(--rule); }
+/* two lines at every width, broken between the groups (as in viz.css) */
+.nav::after { content: ""; flex-basis: 100%; order: 1; }
+.nav .grp + .grp, .nav .grp + .grp ~ a { order: 2; }
+.nav .grp + .grp { padding-left: 0; border-left: 0; }
+.eyebrow { font-size: 18px; font-style: italic; color: var(--ink-3); }
+h1 { font-size: 36px; line-height: 1.15; margin: 0; text-wrap: balance; font-weight: 400; max-width: 30ch; }
+.lede { margin: 4px 0 0; color: var(--ink-2); max-width: 78ch; font-size: 19px; }
+.clocknote { margin: 6px 0 0; color: var(--ink-3); font-size: 15.5px; max-width: 90ch; }
+h2 { font-size: 24px; line-height: 1.25; margin: 0 0 4px; font-weight: 400; font-style: italic; }
+h3 { font-size: 18px; margin: 0; font-weight: 650; }
+.sec { margin-top: 56px; }
+.sec > .intro { color: var(--ink-2); max-width: 80ch; margin: 0 0 16px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 0; }
+.t { font: 700 15.5px var(--font-type); font-variant-numeric: tabular-nums; }
+.muted { color: var(--ink-3); }
+
+/* Scrolling narrative: steps on the left, the map sticks on the right */
+.story { display: grid; grid-template-columns: minmax(300px, 0.8fr) minmax(0, 1.2fr); gap: 24px; align-items: start; }
+.steps { display: grid; gap: 0; padding-bottom: 30vh; }
+.step { min-height: 78vh; padding: 18px 0; display: flex; align-items: center; }
+.step .card { padding: 16px 18px 12px; width: 100%; opacity: 0.45; transition: opacity 200ms; }
+.step.active .card { opacity: 1; box-shadow: inset 3px 0 0 var(--ink); }
+.step .when { font: 700 15.5px var(--font-type); color: var(--ink-2); margin-bottom: 4px; }
+.step p { margin: 6px 0 10px; }
+.entries { margin: 8px 0 0; border-top: 1px solid var(--rule); }
+.entries .entry { --entry-t: 52px; }
+.stage { position: sticky; top: 12px; height: calc(100vh - 24px); min-height: 460px; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; }
+.stage-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; padding: 10px 14px 8px; border-bottom: 1px solid var(--rule); }
+.stage-head > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.clock { font: 700 18px var(--font-type); }
+.clock small { font: 400 14.5px var(--font-ui); color: var(--ink-3); margin-left: 6px; }
+.view-name { font-size: 14.5px; color: var(--ink-3); text-align: right; }
+.map-box { position: relative; min-height: 0; }
+#map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px 10px; border-top: 1px solid var(--rule); font-size: 14.5px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend svg { flex: none; overflow: visible; }
+
+.land { fill: var(--land); stroke: var(--coast); stroke-width: 0.8; vector-effect: non-scaling-stroke; }
+.grat { stroke: var(--sea-grid); stroke-width: 1; fill: none; vector-effect: non-scaling-stroke; }
+.grat-label { fill: var(--ink-3); font: 12.5px var(--font-type); }
+.place { fill: var(--ink-3); font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; paint-order: stroke; stroke: var(--page); stroke-width: 3px; }
+.trk { fill: none; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
+.trk.us { stroke: var(--c1); }
+.trk.ax { stroke: var(--axis); stroke-dasharray: 6 3 1.5 3; stroke-width: 1.6; }
+.trk.assumed { stroke-dasharray: 2 4; stroke-width: 1.4; }
+.ring { fill: none; stroke: var(--c1); stroke-width: 1.2; stroke-dasharray: 3 4; opacity: 0.8; }
+.sq { fill: url(#hatch-ax); stroke: var(--axis); stroke-width: 1; }
+.sq.probable { stroke-dasharray: 4 3; }
+/* a grid code hovered in the text: its square shows (even outside its own step) and is drawn heavier */
+.mk.hot { opacity: 1 !important; pointer-events: auto !important; }
+.mk.hot .sq { stroke: var(--c2); stroke-width: 3; }
+.mk.hot .mk-label { fill: var(--c2); }
+.gref { border-bottom: 1.5px dotted var(--c2); cursor: help; border-radius: 2px; }
+.gref:hover, .gref:focus, .gref.hot { background: color-mix(in srgb, var(--c2) 18%, transparent); outline: none; }
+.mk { cursor: pointer; transition: opacity 250ms; }
+.mk.dim { opacity: 0.18; }
+.mk.off { opacity: 0; pointer-events: none; }
+.mk-label { font: 600 13px var(--font-ui); fill: var(--ink); paint-order: stroke; stroke: var(--page); stroke-width: 3.5px; pointer-events: none; }
+.mk-label.ax { fill: var(--ink-2); }
+.mk-label.small { font-weight: 400; font-size: 12.5px; fill: var(--ink-2); }
+.fill-us { fill: var(--c1); } .fill-ax { fill: var(--axis); } .fill-air { fill: var(--c3); } .fill-hit { fill: var(--fire); }
+.stroke-us { stroke: var(--c1); } .stroke-ax { stroke: var(--axis); } .stroke-air { stroke: var(--c3); } .stroke-hit { stroke: var(--fire); }
+.halo { fill: var(--surface); stroke: none; }
+.pulse { fill: none; stroke: var(--fire); stroke-width: 2; }
+.wx { fill: url(#hatch-wx); stroke: var(--ink-3); stroke-dasharray: 2 3; stroke-width: 1; }
+
+/* Evidence board */
+.board { display: grid; gap: 10px; }
+.q { padding: 12px 14px; display: grid; grid-template-columns: minmax(170px, 0.28fr) minmax(0, 1fr); gap: 10px 18px; }
+.q h3 { font-size: 17px; }
+.claims { display: flex; flex-wrap: wrap; gap: 8px; }
+.claim { border: 1px solid var(--rule); border-radius: 3px; padding: 7px 10px 8px; max-width: 360px; font-size: 15.5px; display: grid; gap: 3px; background: var(--page); }
+.claim .what { font-weight: 600; }
+.claim .wt { font-size: 15.5px; font-style: italic; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.claim .wt i { width: 10px; height: 10px; display: inline-block; border: 1.5px solid var(--ink); border-radius: 2px; }
+.claim.record .wt i { background: var(--ink); }
+.claim.photo .wt i { background: var(--ink-3); border-color: var(--ink-3); }
+.claim.recollection .wt i { background: transparent; }
+.claim.inference .wt i { background: repeating-linear-gradient(45deg, var(--ink-2) 0 1.5px, transparent 1.5px 4px); }
+.claim.inference { border-style: dashed; }
+.claim .nt { color: var(--ink-2); font-size: 14.5px; }
+.claim .src { font-size: 14px; color: var(--ink-3); }
+.key { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 12px; font-size: 14.5px; color: var(--ink-2); }
+.key .claim { padding: 0; border: 0; background: none; }
+
+.sources { columns: 2 360px; column-gap: 28px; font-size: 15.5px; color: var(--ink-2); }
+.sources li { break-inside: avoid; margin-bottom: 6px; }
+
+#tip { position: fixed; z-index: 10; pointer-events: none; max-width: 320px; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 3px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-size: 14.5px; }
+#tip .v { font-weight: 650; font-size: 15.5px; }
+#tip .k { color: var(--ink-2); font-family: var(--font-type); }
+#tip .m { color: var(--ink-2); margin-top: 4px; }
+#tip .i { color: var(--ink-3); font-style: italic; margin-top: 4px; }
+
+@media (max-width: 900px) {
+  .story { grid-template-columns: minmax(0, 1fr); }
+  .stage { grid-row: 1; height: 52vh; min-height: 300px; top: 0; z-index: 2; }
+  .step { min-height: 60vh; }
+  .legend { display: none; }
+  .crews, .q { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  /* nav: each group starts its own line; the dividing rules only make sense on one line */
+  nav.nav { font-size: 16.5px; gap: 2px 13px; margin-bottom: 12px; }
+  nav.nav .home { flex-basis: 100%; font-size: 18.5px; }
+  nav.nav .grp { flex-basis: 100%; gap: 2px 13px; }
+  nav.nav .grp + .grp, nav.nav .grp + a, nav.nav a.theater { border-left: 0; padding-left: 0; }
+}
+@media (max-width: 480px) {
+  .wrap { padding-inline: 14px; }
+  h1 { font-size: 26.5px; }
+}
+
+/* this page's own marks */
+.unc { fill: url(#hatch-us); stroke: var(--c1); stroke-width: 1.1; stroke-dasharray: 3 3; }
+.unc.ax { fill: url(#hatch-ax); stroke: var(--axis); }
+.relief-sea { fill: var(--page); }
+.road { fill: none; stroke: var(--ink-3); stroke-opacity: .5; stroke-width: 1.1; stroke-linejoin: round; vector-effect: non-scaling-stroke; pointer-events: none; }
+.relief-land { fill: var(--land); }
+.relief-shade { opacity: .9; pointer-events: none; }
+@media (prefers-color-scheme: dark) { .relief-shade { opacity: .75; } }
+.lm { fill: var(--surface); stroke: var(--ink-2); stroke-width: 1.1; }
+.lm.fix { fill: var(--ink-2); }
+.lm-label { font: italic 12px var(--font-ui); fill: var(--ink-2); paint-order: stroke; stroke: var(--page); stroke-width: 3px; pointer-events: none; }
+.reach { fill: none; stroke: var(--c1); stroke-width: 1.2; stroke-dasharray: 8 4; opacity: .75; pointer-events: stroke; cursor: pointer; }
+.reach-label { fill: var(--c1); }
+.dist { stroke: var(--ink-2); stroke-width: 1.4; stroke-dasharray: 5 3; }
+.approx { fill: none; stroke: var(--ink-2); stroke-width: 1.4; stroke-dasharray: 2 2; }
+.ctx { fill: url(#hatch-ax); stroke: var(--axis); stroke-width: 1; stroke-dasharray: 4 3; opacity: 0.7; }
+.ctx-label { font: italic 13px var(--font-ui); fill: var(--ink-2); paint-order: stroke; stroke: var(--page); stroke-width: 3.5px; pointer-events: none; }
+.place { text-transform: none; letter-spacing: 0.02em; font-style: italic; font-size: 13.5px; }
+.schem-note { font-size: 14.5px; color: var(--ink-3); margin: 10px 0 0; max-width: 90ch; }
+.entry .who .what.seq { font-style: italic; color: var(--ink-3); }
+/* the three nights side by side */
+.tl { display: grid; gap: 0; }
+.tl-head, .tl-row { display: grid; grid-template-columns: 110px repeat(3, minmax(0, 1fr)); gap: 0 16px; }
+.tl-head { font-style: italic; color: var(--ink-3); font-size: 15.5px; border-bottom: 1px solid var(--rule); padding: 0 0 6px; }
+.tl-row { border-bottom: 1px solid var(--rule); padding: 10px 0; }
+.tl-row .day { font: 700 15.5px var(--font-type); color: var(--ink-2); padding-top: 10px; }
+.tl-row .col .entry:first-child { padding-top: 0; }
+.tl-row .col:empty::after { content: "nothing recorded"; font-style: italic; color: var(--ink-3); font-size: 15px; }
+@media (max-width: 900px) {
+  .tl-head { display: none; }
+  .tl-row { grid-template-columns: minmax(0, 1fr); }
+  .tl-row .col[data-side]::before { content: attr(data-side); display: block; font-style: italic; color: var(--ink-3); font-size: 15px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="battle.html">Battles</a><a href="haynsworth.html">Haynsworth</a><a href="algiers.html" aria-current="page">Algiers</a><a href="seabees.html">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
+    <div class="eyebrow">Battery C, 62nd Coast Artillery (AA) · No. 153 Squadron RAF · Luftflotte 2</div>
+    <h1>Algiers under the night bombers, May–June 1943</h1>
+    <p class="lede">Three evenings when an American anti-aircraft battery four miles west of Algiers fired on raiders: 12 May, 13 May and 4 June 1943. This page puts the battery's morning reports beside the record book of the RAF night fighters flying from Maison Blanche, the city's newspaper, the Allied communiqués, and the attackers' side: the German Naval Staff's war diary and the Italian and German bulletins.</p>
+    <p class="clocknote">Times are <b>as written</b>. Neither the battery's reports nor the squadron's record book gives a time zone, so a 2050 in one and a 2050 in the other may not be the same minute (see the evidence below). Entries whose time isn't recorded are placed by the order of the account and say <i>time not recorded</i>. The records show the battery firing on these evenings, not what it hit. Every mark on the map and every entry links to the page it was read from; anything placed by assumption is hatched or dashed and says so.</p>
+  </header>
+
+  <section class="story" aria-label="The three nights, step by step">
+    <div class="steps" id="steps"></div>
+    <div class="stage card">
+      <div class="stage-head"><div class="clock" id="clock"></div><div class="view-name" id="viewname"></div></div>
+      <div class="map-box"><svg id="map" role="img" aria-label="Map of Algiers and its bay, changing with the narrative"></svg></div>
+      <div class="legend" id="legend"></div>
+    </div>
+  </section>
+
+  <section class="sec" id="nights">
+    <h2>The nights side by side</h2>
+    <p class="intro">Every dated entry, by the day it is dated, in three columns: the defenders (the battery, the night fighters, Allied Force HQ), the attackers (the German Naval Staff's war diary, the Italian and German bulletins), and the city's newspaper. Each links to its page.</p>
+    <div class="tl" id="timeline"></div>
+  </section>
+
+  <section class="sec" id="evidence">
+    <h2>What the records leave open</h2>
+    <p class="intro">Each question below is one the records don't settle. The answers are kept side by side, marked by what kind of evidence each one is.</p>
+    <div class="key">
+      <span class="claim record"><span class="wt"><i></i>Record: written at the time</span></span>
+      <span class="claim inference"><span class="wt"><i></i>Inference: worked out here</span></span>
+    </div>
+    <div class="board" id="board"></div>
+  </section>
+
+  <section class="sec">
+    <h2>Sources</h2>
+    <ul class="sources" id="sources"></ul>
+    <p class="schem-note" id="sil-note"></p>
+    <p class="schem-note">Data: <a href="https://github.com/erichutchins/wwii-unit-records/tree/main/engagements/algiers-1943"><code>records/engagements/algiers-1943/</code></a> (every entry, position and claim, each citing its page). Relief and the coastline round the bay: today's elevation, from the AWS Terrain Tiles (<code>records/relief/algiers/</code>, made by <code>tools/build_relief.py</code>): SRTM and GMTED2010 terrain data courtesy of the U.S. Geological Survey; ETOPO1 courtesy of NOAA NCEI. It is today's ground: the harbour's later works show as land. Further out, Natural Earth 1:10m land (world-atlas). Roads: the primary roads of OSS Map 967, <a href="https://purl.stanford.edu/vs189tm5539"><i>Algeria and Tunisia: Principal Highways and Landing Places</i></a> (22 August 1942; Stanford University Libraries), traced (<code>records/roads/</code>): good to a few km, so for context. Landmarks: the names on the Army Map Service's <a href="https://maps.princeton.edu/catalog/princeton-bk128c659">Alger and vicinity, sheet 3 of 7 (1942)</a> (Princeton University Library), placed at today's sites, except Mon Rouge, placed by the sheet's own grid reference.</p>
+  </section>
+</div>
+<div id="tip" hidden></div>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<script src="config.js"></script>
+<script src="silhouettes.js"></script>
+<script src="mapzoom.js"></script>
+<script src="algiers.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>

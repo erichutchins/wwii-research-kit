@@ -41,6 +41,7 @@ CITES = {
     "army/stations.csv": ["page"],
     "army/actions.csv": ["page"],
     "army/places.csv": ["source"],
+    "roads/oss967-gcps.csv": ["source"],
     "army/ships.csv": ["links"],
     "army/relations.csv": ["page"],
     "comsubpac/disposition.csv": ["page"],
@@ -66,7 +67,7 @@ UNCITED = {
     "army/units.csv": "unit names and lineage; the stations give the pages",
     "seabees/parts.csv": "the battalions' parts and when they existed; each note cites its source",
     "seabees/units.csv": "battalion names and outlines, citing the stations' sources in the note",
-    "army/routes.csv": "sea legs the reports don't trace, drawn approximately; each note says so",
+    "army/routes.csv": "legs the reports don't trace (sea crossings, road moves), drawn as assumed; each note says how and from what",
     "jgrid/keys.csv": "letters worked out from the anchors (anchors.csv), named in the evidence column",
 }
 

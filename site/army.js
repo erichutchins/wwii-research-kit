@@ -74,7 +74,7 @@ const CITIES = [
 const TIER_PX_PER_DEG = { 0: 0, 1: 0, 2: 35, 3: 80 };   // zoom needed before a tier shows
 
 const state = { unit: null, t: null, playing: false, k: 1, acts: true };
-let DATA, LAND, BORDERS, proj, path, zoom, hitPoints = [];
+let DATA, LAND, BORDERS, ROADS, proj, path, zoom, hitPoints = [];
 
 const svg = d3.select("#map");
 const tip = document.getElementById("tip");
@@ -86,7 +86,9 @@ const parseDay = s => Date.parse(`${s}T12:00Z`);
 Promise.all([
   d3.json(RECORDS + "army/army.json"),
   d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json"),
-]).then(([data, world]) => {
+  d3.json(RECORDS + "roads/oss967-primary.geojson").catch(() => null),   // the primary roads of 1942 (OSS Map 967): faint context
+]).then(([data, world, roads]) => {
+  ROADS = roads;
   LAND = topojson.feature(world, world.objects.land);
   BORDERS = topojson.mesh(world, world.objects.countries, (a, b) => a !== b);
   DATA = prepare(data);
@@ -227,6 +229,8 @@ function render() {
   g.append("path").datum(d3.geoGraticule().step([2, 2])()).attr("class", "graticule").attr("d", path);
   g.append("path").datum(LAND).attr("class", "land").attr("d", path);
   g.append("path").datum(BORDERS).attr("class", "border").attr("d", path);
+  if (ROADS) g.append("path").datum(ROADS).attr("class", "road").attr("d", path)
+    .append("title").text("Primary roads, 1942, as OSS Map 967 drew them (traced; ± about 4 km)");
 
   const labels = g.append("g");
   // country and sea names: placed before the cities, centred, and hidden on overlap too
@@ -608,7 +612,7 @@ function renderStats() {
   const assumed = u.rows.filter(r => r.bn).length;
   tile("Own position", `${u.rows.length - assumed} of ${u.rows.length}`,
        assumed ? `${assumed} assumed from a headquarters' or division's position` : "every station from the unit's own records");
-  if (u.acts.length) tile("Actions", u.acts.length, "from the battalion's monthly histories");
+  if (u.acts.length) tile("Actions", u.acts.length, "from the unit's own records");
   // the sources this unit's stations cite, most-cited first
   const cited = d3.rollups(u.rows, v => v.length, kindOf).sort((a, b) => b[1] - a[1]).map(([k]) => SOURCE_TITLE[k]);
   tile(cited.length > 1 ? "Sources" : "Source", cited[0], cited.slice(1).join("; ") || " ");
@@ -632,11 +636,12 @@ function renderLegend() {
     item(g => g.append("circle").attr("r", 3.5).attr("fill", "var(--surface-1)").attr("stroke", "var(--series-track)").attr("stroke-width", 2),
          "A headquarters' or division's position: the unit's own assumed, legs dashed");
   item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("stroke", "var(--series-track)")
-    .attr("stroke-width", 2).attr("stroke-dasharray", "5 4"), "Route assumed (at sea, en route, no position given)");
+    .attr("stroke-width", 2).attr("stroke-dasharray", "5 4"), "Route assumed: at sea, or along a 1942 road (no position given)");
+  if (ROADS) item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("class", "road"), "Primary roads of 1942 (OSS Map 967, traced)");
   if (actsOf(u).length)
     item(g => g.append("path").attr("d", "M0,-5L5,0L0,5L-5,0Z").attr("fill", "var(--series-attack)")
                 .attr("stroke", "var(--text-primary)").attr("stroke-width", 1.2),
-         "Battery D in action, from the battalion's histories (hollow: casualty)");
+         "In action, from the unit's own records (hollow: casualty)");
   item(g => { g.append("rect").attr("x", -10).attr("y", -5).attr("width", 20).attr("height", 10).attr("fill", "var(--series-track)");
               [-12, -6, 0, 6].forEach(x0 => g.append("line").attr("x1", x0).attr("y1", 5).attr("x2", x0 + 10).attr("y2", -5)
                 .attr("stroke", "var(--surface-1)").attr("stroke-width", 2));

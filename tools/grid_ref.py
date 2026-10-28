@@ -20,6 +20,14 @@ against the town the same entry names (grids.html shows the checks):
   lambert1  Lambert Zone I (Nord): origin 49.5 N (55 grad), scale 0.99987734, same false
             origin. Its 100 km letters sit in a block from 0 km E, 0 km N, lettered V
             (Normandy, June-July 1944: Co. B, 313th Infantry typed "VT 1099" at Le Valdecie).
+  nwa       British "North West Africa" Grid (Tunisia, Algeria, Morocco, 1942-43). Lambert, Clarke 1880,
+            origin 34 N on the Greenwich meridian, false E 1,000 km, N 500 km, metres, as printed on AMS
+            "Alger and vicinity" (1942) sheet 3 of 7 (princeton-amsalger); scale 0.9994 from sigterritoires.fr.
+            The 100 km letters, A-Z without I, five a row from the north-west, repeat in every 500 km block
+            from 0 km N: give a town, and the block nearest it is used. Fixed by the same sheet's worked
+            example, Mon Rouge (Algiers) = H743072 (block from 1000 km E, 500 km N; full northing 807 km, as
+            the sheet's small figures say), and Battery C, 62nd CA's July 1943 J references at Lake Bizerte
+            (the next block east). Whether a block letter was ever prefixed is not known.
   ndg       Lambert "Nord de Guerre" (tools/ndg_grid.py): letters in the block from
             400 km E, 100 km N.
   ndg-w     The same grid's western block, from -100 km E, 100 km N (lettered V: the 894th AAA medical detachment's
@@ -48,6 +56,7 @@ GRIDS = {
     "lambert1": ("Lambert Zone I", "clarke1880", 49.5, PARIS, 0.99987734, 600000, 200000, (0, 0), "V"),
     "lambert3": ("Lambert Zone III", "clarke1880", 44.1, PARIS, 0.99987750, 600000, 200000, (500000, 0), None),
     "lambert2": ("Lambert Zone II", "clarke1880", 46.8, PARIS, 0.99987742, 600000, 200000, (500000, 0), None),
+    "nwa":      ("British N.W. Africa Grid", "clarke1880", 34.0, 0.0, 0.9994, 1000000, 500000, "repeat", None),
     "ndg":      ("Nord de Guerre", "clarke1880", 49.5, PARIS + 5.4, 0.99950908, 500000, 300000, (400000, 100000), None),
     "ndg-w":    ("Nord de Guerre (western block)", "clarke1880", 49.5, PARIS + 5.4, 0.99950908, 500000, 300000, (-100000, 100000), "V"),
 }
@@ -102,6 +111,8 @@ def square_origin(system, letter, major):
     g = GRIDS[system]
     i = MINOR.index(letter)
     row, col = divmod(i, 5)
+    if g[7] == "repeat":   # the letters repeat in every 500 km block; decode() picks the block nearest the town
+        return col * 100000, (4 - row) * 100000
     if g[7] == "major":
         j = MAJOR.index(major or "R")
         return (j % 5) * 500000 + col * 100000, (j // 5) * 500000 + (4 - row) * 100000
@@ -123,6 +134,12 @@ def decode(system, ref, near=None):
             raise ValueError(f"no 100 km square {letters[-1]}")
         x0, y0 = square_origin(system, letters[-1], letters[0] if len(letters) == 2 else None)
         x, y = x0 + dx, y0 + dy
+        if GRIDS[system][7] == "repeat":
+            if near is None:
+                raise ValueError(f"{system}: square letters repeat every 500 km; give a town near {ref!r}")
+            tx, ty = proj.fwd(*near)
+            x, y = min(((x + i * 500000, y + j * 500000) for i in range(-1, 6) for j in range(-1, 3)),
+                       key=lambda c: math.hypot(c[0] - tx, c[1] - ty))
     else:
         if near is None:
             raise ValueError(f"{ref!r} has no square letter; give a town near it")

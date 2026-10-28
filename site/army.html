@@ -22,6 +22,8 @@
 
   .land { fill: var(--land); stroke: var(--coast); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
   .border { fill: none; stroke: var(--coast); stroke-width: 0.6; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
+  .road { fill: none; stroke: var(--text-muted); stroke-opacity: 0.45; stroke-width: 0.9; stroke-linejoin: round; vector-effect: non-scaling-stroke; pointer-events: none; }
+  @media (prefers-color-scheme: dark) { .road { stroke-opacity: 0.4; } }
   .graticule { fill: none; stroke: var(--grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
   .place { fill: var(--text-muted); font-size: 13px; letter-spacing: 0.06em; pointer-events: none; }
   .city-label { fill: var(--text-secondary); font-size: 13px; pointer-events: none;
@@ -93,7 +95,7 @@
 <body class="viz-root">
 <div class="app">
   <header>
-    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="battle.html">Battles</a><a href="haynsworth.html">Haynsworth</a><a href="seabees.html">Seabees</a><a href="army.html" aria-current="page">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="battle.html">Battles</a><a href="haynsworth.html">Haynsworth</a><a href="algiers.html">Algiers</a><a href="seabees.html">Seabees</a><a href="army.html" aria-current="page">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
     <div>
       <h1>Army units: North Africa, the Mediterranean and Europe, 1942–1945</h1>
       <p>Where each Army unit was, day by day, from its own records: the STATION line of each
