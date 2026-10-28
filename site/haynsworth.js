@@ -28,13 +28,16 @@ const NM = 1852;
 // Map views, as [[west, south], [east, north]]
 const VIEWS = {
   theater: { name: "Kyushu to Okinawa", b: [[127.55, 25.95], [131.45, 31.95]] },
-  charts: { name: "Kyushu to Okinawa, with Izumi", b: [[127.4, 25.7], [131.5, 32.25]] },
+  charts: { name: "Kyushu to Okinawa, with Izumi and TG 58.4", b: [[127.2, 23.2], [132.3, 32.25]] },
   approach: { name: "The Ryukyus, Amami to Okinawa", b: [[128.55, 26.2], [130.75, 27.95]] },
   picket: { name: "TG 58.3 and its pickets, about 50 nm across", b: [[128.95, 26.38], [129.98, 27.22]] },
   close: { name: "Haynsworth's station", b: [[129.36, 26.62], [129.86, 27.04]] },
 };
 
 // What each step shows. `on`: position ids drawn at full strength (others dim); `layers`: extra layers.
+// the other carrier task groups' guides on 6 April, from their own diaries (L49); a ship whose file is missing is skipped
+const TF58_SHIPS = [["Hornet (TG 58.1)", "cv-12-hornet"], ["Intrepid (TG 58.4)", "cv-11-intrepid"], ["Bunker Hill (TG 58.3)", "cv-17-bunker-hill"], ["Hancock (TG 58.3)", "cv-19-hancock"], ["Bennington (TG 58.1)", "cv-20-bennington"]];
+const TF58 = [];
 const STEPS = [
   { id: "s1", until: "0530", when: "5 April, 1700, to 6 April, 0530", view: "picket", title: "The picket line",
     body: "Fast carrier Task Group 58.3 (Essex, Bunker Hill, Hancock, Cabot, three battleships and their screen) was east of the Ryukyus, launching strikes on Okinawa and the islands to its north. Three destroyers were posted 12 miles out from the formation as radar pickets, to see raids coming and to put the fighters on them before they reached the carriers. Haynsworth took station #1, bearing 060° from the group, at 1700 on 5 April.",
@@ -64,7 +67,7 @@ const STEPS = [
     body: "The 210th sent two more Suisei at 1400. One plane's track chart survives: it reached its farthest point at 1535 under rain cloud, ten-tenths at 500-900 metres, somewhere east-southeast of Amami and close to the task group, saw nothing, and flew home past the Tokara islands. It is the clearest record of the weather the morning's attackers used. Haynsworth was at 27-23N 130-05E at 2000.",
     on: ["t2-1410", "t2-1535", "t2-1603", "t2-1702", "t2-1722", "t2-1750", "hay-2000", "kokubu"], layers: ["track2", "wx", "haytrack", "formation"] },
   { id: "s9b", until: "2000", when: "6 April, the other charts", view: "charts", title: "The other Japanese charts",
-    body: "Three more units drew the day, and the scouts drew where they saw the carriers. The clock runs through the afternoon; each plane shows only its last forty minutes. The 252nd Air Group's attack chart has two routes from Kokubu: west of the Tokara islands to Yokoate-jima, then three legs fanning south before turning west into the Okinawa anchorage, and east to Amami and back. Its crews who came down on Kikai-jima met Grummans off Amami at 1430. The Izumi Zeros flew down the west side of the islands to Tokunoshima, saw an escort carrier group and turned back without a fight. A Kushira torpedo Tenzan staged through Kikai-jima that evening. The circles are the carrier groups the T11 scouts reported, shown in their hours (1130-1420 and 1505-1535), placed from the war history's sketch to about 15 miles. Where a chart gives no times, the planes move at an assumed 150 knots from their recorded take-off: the 252nd's routes and the Izumi Zeros' outbound leg are timed that way, and the chart doesn't say whether the 252nd's legs are the plan or the flight.",
+    body: "Three more units drew the day, and the scouts drew where they saw the carriers. The clock runs through the day; each plane and ship shows only its last forty minutes. Blue: Haynsworth, and the carriers whose diaries give their 0800, 1200 and 2000 positions: Bunker Hill and Hancock of her own Task Group 58.3, Hornet and Bennington of 58.1 a few miles east, and Intrepid of 58.4, fuelling and rearming two hundred miles to the south-east. The 252nd Air Group's attack chart has two routes from Kokubu: west of the Tokara islands to Yokoate-jima, then three legs fanning south before turning west into the Okinawa anchorage, and east to Amami and back. Its crews who came down on Kikai-jima met Grummans off Amami at 1430. The Izumi Zeros flew down the west side of the islands to Tokunoshima, saw an escort carrier group and turned back without a fight. A Kushira torpedo Tenzan staged through Kikai-jima that evening. The circles are the carrier groups the T11 scouts reported, shown in their hours (1130-1420 and 1505-1535), placed from the war history's sketch to about 15 miles. Where a chart gives no times, the planes move at an assumed 150 knots from their recorded take-off: the 252nd's routes and the Izumi Zeros' outbound leg are timed that way, and the chart doesn't say whether the 252nd's legs are the plan or the flight.",
     on: ["kokubu"], layers: ["jptracks"] },
   { id: "s10", until: "2000", when: "6-9 April", view: "approach", title: "Afterwards",
     body: "Eleven of the wounded went across to South Dakota that day and three more on the 7th; five of them died aboard her, bringing the dead to twelve. According to Irons' history, the men killed outright were buried at sea on the evening of the 7th. On 9 April she left the group with the damaged Hancock and Cabot for Ulithi, Pearl Harbor and Mare Island.",
@@ -115,8 +118,10 @@ Promise.all([
   EXTRA ? d3.csv(EXTRA.dir + "people.csv") : none, EXTRA ? d3.csv(EXTRA.dir + "notes.csv") : none,
   EXTRA ? d3.csv(EXTRA.dir + "extra_claims.csv") : none,
   d3.csv(RECORDS + "ships/dd-700-haynsworth/positions.csv"),
+  // the other task groups' guides on 6 April (L49): name, file
+  Promise.all(TF58_SHIPS.map(([, dir]) => d3.csv(RECORDS + "ships/" + dir + "/positions.csv").catch(() => []))),
   d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/land-10m.json"), SILHOUETTES,
-]).then(([timeline, positions, claims, people, notes, extraClaims, hay, world]) => {
+]).then(([timeline, positions, claims, people, notes, extraClaims, hay, others, world]) => {
   for (const rows of [timeline, positions, claims, extraClaims]) rows.forEach(r => { r.ref = refUrl(r.ref); });
   overlay(timeline, "timeline", notes, r => `${r.date} ${r.time} ${r.kind}`);
   overlay(claims, "claims", notes, r => `${r.question}|${r.claim}`);
@@ -140,6 +145,12 @@ Promise.all([
   const hayTrack = hay.filter(r => r.source === "diary" && r.on_track === "yes" && r.date >= "1945-04-05" && r.date <= "1945-04-06")
     .filter(r => !(r.date === "1945-04-05" && r.time < "2000"))
     .map(r => ({ date: r.date, time: r.time, ll: [dm(r.lon_fix || r.lon_raw), dm(r.lat_fix || r.lat_raw)], page: r.page }));
+
+  // the other groups' 6 April fixes, for the animated step
+  TF58.push(...TF58_SHIPS.map(([name, , page], k) => ({ name, page, pts: (others[k] || [])
+    .filter(r => r.source === "diary" && r.on_track === "yes" && r.date === "1945-04-06")
+    .map(r => ({ time: r.time, ll: [dm(r.lon_fix || r.lon_raw), dm(r.lat_fix || r.lat_raw)], page: r.page })) }))
+    .filter(s => s.pts.length > 1));
 
   buildSteps(timeline);
   const map = buildMap(world, positions, P, hayTrack);
@@ -420,6 +431,8 @@ function buildMap(world, positions, P, hayTrack) {
     const east3 = spread(route([["kokubu", "1305"], ["c252-am", "1430"], ["c252-3d", null], ["c252-am", null], ["kikai-ref", "1550"]]), 1, 4);
     movers = [
       { name: "Haynsworth", us: true, pts: hayTrack.filter(p => p.date === "1945-04-06").map(p => ({ ll: p.ll, t: mins(p.time) })) },
+      // one label per task group (its ships steam within a few miles of each other at this scale)
+      ...TF58.map((s, k) => ({ name: TF58.findIndex(o => o.name.slice(-9) === s.name.slice(-9)) === k ? s.name.match(/TG 58\.\d/)[0] : "", us: true, pts: s.pts.map(q => ({ ll: q.ll, t: mins(q.time) })) })),
       { name: "210th No. 2", pts: timed("t2-") },
       { name: "Kushira Tenzan", pts: timed("tz-") },
       { name: "Izumi Zeros", pts: route([["iz-0900", "0900"], ["iz-turn", null]]) },
@@ -461,7 +474,7 @@ function buildMap(world, positions, P, hayTrack) {
         }
         const [x, y] = xy(head);
         g.append("circle").attr("cx", x).attr("cy", y).attr("r", 3.5).attr("class", m.us ? "fill-us" : "fill-jp");
-        if (labelled.some(([a, b]) => Math.hypot(a - x, b - y) < 14)) return;   // one label where heads coincide
+        if (!m.name || labelled.some(([a, b]) => Math.hypot(a - x, b - y) < 14)) return;   // one label where heads coincide
         labelled.push([x, y]);
         g.append("text").attr("class", "mk-label small" + (m.us ? "" : " jp")).attr("x", x + 6).attr("y", y - 5).text(m.name + (assumed ? " (times assumed)" : ""));
       });
