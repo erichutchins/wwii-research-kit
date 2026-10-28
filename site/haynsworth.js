@@ -38,6 +38,37 @@ const VIEWS = {
 // the other carrier task groups' guides on 6 April, from their own diaries (L49); a ship whose file is missing is skipped
 const TF58_SHIPS = [["Hornet (TG 58.1)", "cv-12-hornet"], ["Intrepid (TG 58.4)", "cv-11-intrepid"], ["Bunker Hill (TG 58.3)", "cv-17-bunker-hill"], ["Hancock (TG 58.3)", "cv-19-hancock"], ["Bennington (TG 58.1)", "cv-20-bennington"], ["Yorktown (TG 58.4)", "cv-10-yorktown"], ["Belleau Wood (TG 58.1)", "cvl-24-belleau-wood"], ["San Jacinto (TG 58.1)", "cvl-30-san-jacinto"], ["South Dakota (TG 58.3)", "bb-57-south-dakota"], ["Essex (TG 58.3)", "cv-9-essex"], ["Washington (TG 58.3)", "bb-56-washington"], ["North Carolina (TG 58.3)", "bb-55-north-carolina"], ["Missouri (TG 58.4)", "bb-63-missouri"], ["Wisconsin (TG 58.4)", "bb-64-wisconsin"], ["Cabot (TG 58.3)", "cvl-28-cabot"], ["Springfield (TG 58.3)", "cl-66-springfield"], ["Astoria (TG 58.3)", "cl-90-astoria"], ["Wilkes-Barre (TG 58.3)", "cl-103-wilkes-barre"]];
 const TF58 = [];
+// The day told as a story in step s9b. Each beat starts at its time (Item) and sets the camera (a VIEW) and the clock's
+// pace (minutes of the day per second, so the run-up to the hit slows nearly to real time); `pause` stops the clock
+// there; `layers` adds context layers (the picket ring, the formation) while the beat lasts. The words are ours; `rows` name the timeline entries (time and kind) each beat rests on, and the caption
+// links to their pages.
+const BEATS = [
+  { t: "0900", view: "charts", pace: 24, title: "Morning: the raids leave Kyushu",
+    text: "Thirteen Zeros leave Izumi at 0900. From 1015 Fifth Air Fleet sends 30 bomb-carrying Zeros and 23 Suisei south, one after another; the 210th's eleven Suisei leave First Kokubu at 1020.",
+    rows: ["1015 launch", "1020 launch"] },
+  { t: "1050", view: "approach", pace: 8, title: "Spotted: the fighters meet them",
+    text: "The task groups' combat air patrols catch the raids north of the formation, on Haynsworth's side: a Dinah at 1056, two Judys 35 miles out at 1140, a Zeke at 1149, a Judy 20 miles north at 1159.",
+    rows: ["1056 cap", "1140 cap", "1159 cap"] },
+  { t: "1200", view: "picket", pace: 4, layers: ["ring", "formation"], title: "Into the formation",
+    text: "At 1201 seven Zekes are caught 15 miles north; at 1211 two large groups are closing. Under cover of the fight a Judy slips into the formation and dives on Cabot at 1226; its bomb misses.",
+    rows: ["1201 cap", "1211 radar", "1226 attack"] },
+  { t: "1230", view: "picket", pace: 1.5, layers: ["ring", "formation"], title: "Bogey at 22 miles",
+    text: "1232: Haynsworth's SC-3 radar has a bogey at 010°, 22 miles. She changes course to 020°, and the task group's fighters are vectored out; on the scope they merge with it.",
+    rows: ["1232 radar"] },
+  { t: "1244", view: "close", pace: 0.4, layers: ["ring"], title: "Out of the clouds",
+    text: "1245: a dogfight is heard to port; speed is increased to 25 knots. 1246: a Judy comes out of the clouds in a steep dive, a Corsair on either side. 1248: she opens fire at 1,500 yards; the Judy turns to starboard, wings over and comes back.",
+    rows: ["1245 fight", "1246 attack", "1248 attack"] },
+  { t: "1250", view: "close", pause: true, layers: ["ring"], title: "The hit",
+    text: "The Judy strikes at the twin 40 mm mount 41, abaft the bridge. Seven men are killed outright.",
+    rows: ["1250 hit", "1250 casualty"] },
+  { t: "1251", view: "picket", pace: 3, layers: ["ring", "formation"], title: "Fire, and the rest of the raid",
+    text: "The fire is under control in about ten minutes. At 1302 a suicide Zeke clips Cabot's radar; at 1305 a friendly 5-inch shell hits North Carolina. With her radio gone, word of the hit reaches the squadron at 1318.",
+    rows: ["1300 damage", "1302 attack", "1305 damage", "1318 report"] },
+  { t: "1330", view: "charts", pace: 24, title: "The afternoon",
+    text: "The 252nd's second wave and the 210th's two Suisei go out from 1310 and 1400; the 252nd's crews come down on Kikai-jima. Haynsworth steams north-east with the group; at 2000 she is at 27-23N 130-05E.",
+    rows: ["1400 launch"] },
+];
+let TIMELINE = [];
 const STEPS = [
   { id: "s1", until: "0530", when: "5 April, 1700, to 6 April, 0530", view: "picket", title: "The picket line",
     body: "Fast carrier Task Group 58.3 (Essex, Bunker Hill, Hancock, Cabot, three battleships and their screen) was east of the Ryukyus, launching strikes on Okinawa and the islands to its north. Three destroyers were posted 12 miles out from the formation as radar pickets, to see raids coming and to put the fighters on them before they reached the carriers. Haynsworth took station #1, bearing 060° from the group, at 1700 on 5 April.",
@@ -66,8 +97,8 @@ const STEPS = [
   { id: "s9", until: "2000", when: "1400-2000", view: "theater", title: "The afternoon",
     body: "The 210th sent two more Suisei at 1400. One plane's track chart survives: it reached its farthest point at 1535 under rain cloud, ten-tenths at 500-900 metres, somewhere east-southeast of Amami and close to the task group, saw nothing, and flew home past the Tokara islands. It is the clearest record of the weather the morning's attackers used. Haynsworth was at 27-23N 130-05E at 2000.",
     on: ["t2-1410", "t2-1535", "t2-1603", "t2-1702", "t2-1722", "t2-1750", "hay-2000", "kokubu"], layers: ["track2", "wx", "haytrack", "formation"] },
-  { id: "s9b", until: "2000", when: "6 April, the other charts", view: "charts", title: "The other Japanese charts",
-    body: "Three more units drew the day, and the scouts drew where they saw the carriers. The clock runs through the day; each plane and ship shows only its last forty minutes. Blue: Haynsworth, and the ships whose diaries give their 0800, 1200 and 2000 positions, labelled by task group: Essex (her guide), Bunker Hill, Hancock, South Dakota, Washington, North Carolina, the cruisers Springfield, Astoria and Wilkes-Barre, and Cabot (from her two anti-aircraft action forms, 1227 and 1305) of her own Task Group 58.3; Hornet, Bennington, Belleau Wood and San Jacinto of 58.1, a few miles east; Yorktown, Intrepid, Missouri and Wisconsin of 58.4, fuelling and rearming two hundred miles to the south-east. The 252nd Air Group's attack chart has two routes from Kokubu: west of the Tokara islands to Yokoate-jima, then three legs fanning south before turning west into the Okinawa anchorage, and east to Amami and back. Its crews who came down on Kikai-jima met Grummans off Amami at 1430. The Izumi Zeros flew down the west side of the islands to Tokunoshima, saw an escort carrier group and turned back without a fight. A Kushira torpedo Tenzan staged through Kikai-jima that evening. The circles are the carrier groups the T11 scouts reported, shown in their hours (1130-1420 and 1505-1535), placed from the war history's sketch to about 15 miles. Where a chart gives no times, the planes move at an assumed 150 knots from their recorded take-off: the 252nd's routes and the Izumi Zeros' outbound leg are timed that way, and the chart doesn't say whether the 252nd's legs are the plan or the flight.",
+  { id: "s9b", until: "2000", when: "6 April, 0900-2000", view: "charts", title: "The day, from both sides",
+    body: "Play the day: the clock runs from 0900, slowing as the raid closes on the picket line and stopping at 1250, when the Judy hit. The caption gives each moment and the pages it comes from; use the bar under the map to pause, step from moment to moment, scrub or speed up. Each plane and ship shows only its last forty minutes. The other ships' positions are recorded only at 0800, 1200 and 2000 and drawn on straight lines between, so they are dimmed on the picket line and left out of the close-up; Haynsworth's own hit position is recorded. Blue: Haynsworth, and the ships whose diaries give their 0800, 1200 and 2000 positions, labelled by task group: Essex (her guide), Bunker Hill, Hancock, South Dakota, Washington, North Carolina, the cruisers Springfield, Astoria and Wilkes-Barre, and Cabot (from her two anti-aircraft action forms, 1227 and 1305) of her own Task Group 58.3; Hornet, Bennington, Belleau Wood and San Jacinto of 58.1, a few miles east; Yorktown, Intrepid, Missouri and Wisconsin of 58.4, fuelling and rearming two hundred miles to the south-east. The 252nd Air Group's attack chart has two routes from Kokubu: west of the Tokara islands to Yokoate-jima, then three legs fanning south before turning west into the Okinawa anchorage, and east to Amami and back. Its crews who came down on Kikai-jima met Grummans off Amami at 1430. The Izumi Zeros flew down the west side of the islands to Tokunoshima, saw an escort carrier group and turned back without a fight. A Kushira torpedo Tenzan staged through Kikai-jima that evening. The circles are the carrier groups the T11 scouts reported, shown in their hours (1130-1420 and 1505-1535), placed from the war history's sketch to about 15 miles. Where a chart gives no times, the planes move at an assumed 150 knots from their recorded take-off: the 252nd's routes and the Izumi Zeros' outbound leg are timed that way, and the chart doesn't say whether the 252nd's legs are the plan or the flight.",
     on: ["kokubu"], layers: ["jptracks"] },
   { id: "s10", until: "2000", when: "6-9 April", view: "approach", title: "Afterwards",
     body: "Eleven of the wounded went across to South Dakota that day and three more on the 7th; five of them died aboard her, bringing the dead to twelve. According to Irons' history, the men killed outright were buried at sea on the evening of the 7th. On 9 April she left the group with the damaged Hancock and Cabot for Ulithi, Pearl Harbor and Mare Island.",
@@ -122,6 +153,7 @@ Promise.all([
   Promise.all(TF58_SHIPS.map(([, dir]) => d3.csv(RECORDS + "ships/" + dir + "/positions.csv").catch(() => []))),
   d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/land-10m.json"), SILHOUETTES,
 ]).then(([timeline, positions, claims, people, notes, extraClaims, hay, others, world]) => {
+  TIMELINE = timeline;
   for (const rows of [timeline, positions, claims, extraClaims]) rows.forEach(r => { r.ref = refUrl(r.ref); });
   overlay(timeline, "timeline", notes, r => `${r.date} ${r.time} ${r.kind}`);
   overlay(claims, "claims", notes, r => `${r.question}|${r.claim}`);
@@ -430,9 +462,11 @@ function buildMap(world, positions, P, hayTrack) {
       .sort((a, b) => a.time.localeCompare(b.time)).map(p => ({ ll: p.ll, t: mins(p.time) }));
     const east3 = spread(route([["kokubu", "1305"], ["c252-am", "1430"], ["c252-3d", null], ["c252-am", null], ["kikai-ref", "1550"]]), 1, 4);
     movers = [
-      { name: "Haynsworth", us: true, pts: hayTrack.filter(p => p.date === "1945-04-06").map(p => ({ ll: p.ll, t: mins(p.time) })) },
+      // Haynsworth: her diary fixes, and the hit's own position at 1250
+      { name: "Haynsworth", us: true, pts: [...hayTrack.filter(p => p.date === "1945-04-06").map(p => ({ ll: p.ll, t: mins(p.time) })),
+        ...(P.get("hit") && P.get("hit").ll ? [{ ll: P.get("hit").ll, t: mins("1250") }] : [])].sort((a, b) => a.t - b.t) },
       // one label per task group (its ships steam within a few miles of each other at this scale)
-      ...TF58.map((s, k) => ({ name: TF58.findIndex(o => o.name.slice(-9) === s.name.slice(-9)) === k ? s.name.match(/TG 58\.\d/)[0] : "", us: true, pts: s.pts.map(q => ({ ll: q.ll, t: mins(q.time) })) })),
+      ...TF58.map((s, k) => ({ fleet: true, name: TF58.findIndex(o => o.name.slice(-9) === s.name.slice(-9)) === k ? s.name.match(/TG 58\.\d/)[0] : "", us: true, pts: s.pts.map(q => ({ ll: q.ll, t: mins(q.time) })) })),
       { name: "210th No. 2", pts: timed("t2-") },
       { name: "Kushira Tenzan", pts: timed("tz-") },
       { name: "Izumi Zeros", pts: route([["iz-0900", "0900"], ["iz-turn", null]]) },
@@ -458,11 +492,12 @@ function buildMap(world, positions, P, hayTrack) {
   add("jptracks", jpIds, g => {
     if (!movers) buildMovers();
     g.selectAll("*").remove();
-    if (still) {
-      movers.forEach(m => g.append("path").attr("class", "trk " + (m.us ? "us" : "jp")).style("opacity", 0.35).attr("d", d3.line()(m.pts.map(q => xy(q.ll)))));
-    } else {
+    {
       const labelled = [];
+      // the other ships have fixes 4-8 hours apart, drawn on straight lines between them: good for the day's picture,
+      // not for where each was at a given minute, so they are dimmed at the picket view and left out close in
       movers.forEach(m => {
+        if (m.fleet && lastView === "close") return;
         const head = at(m.pts, clock); if (!head) return;
         const assumed = m.pts.some(q => q.assumed);
         // the streak: STREAK minutes in short pieces, fading toward the tail
@@ -470,10 +505,10 @@ function buildMap(world, positions, P, hayTrack) {
         for (let k = 0; k < n; k++) {
           const ta = clock - STREAK * (k + 1) / n, tb = clock - STREAK * k / n;
           const a = at(m.pts, Math.max(ta, m.pts[0].t)), b = at(m.pts, Math.max(tb, m.pts[0].t));
-          if (a && b) g.append("path").attr("class", "trk " + (m.us ? "us" : "jp")).style("opacity", 1 - k / n).style("stroke-dasharray", assumed ? "4 3" : "none").attr("d", d3.line()([xy(a), xy(b)]));
+          if (a && b) g.append("path").attr("class", "trk " + (m.us ? "us" : "jp")).style("opacity", (1 - k / n) * (m.fleet && lastView === "picket" ? 0.4 : 1)).style("stroke-dasharray", assumed ? "4 3" : "none").attr("d", d3.line()([xy(a), xy(b)]));
         }
         const [x, y] = xy(head);
-        g.append("circle").attr("cx", x).attr("cy", y).attr("r", 3.5).attr("class", m.us ? "fill-us" : "fill-jp");
+        g.append("circle").attr("cx", x).attr("cy", y).attr("r", 3.5).attr("class", m.us ? "fill-us" : "fill-jp").style("opacity", m.fleet && lastView === "picket" ? 0.4 : 1);
         if (!m.name || labelled.some(([a, b]) => Math.hypot(a - x, b - y) < 14)) return;   // one label where heads coincide
         labelled.push([x, y]);
         g.append("text").attr("class", "mk-label small" + (m.us ? "" : " jp")).attr("x", x + 6).attr("y", y - 5).text(m.name + (assumed ? " (times assumed)" : ""));
@@ -482,28 +517,119 @@ function buildMap(world, positions, P, hayTrack) {
     // the scouts' carrier groups, in their windows (always, when still)
     positions.filter(p => p.id.startsWith("fig32-") && windows[p.id] && p.ll).forEach(p => {
       const [w0, w1] = windows[p.id];
-      if (!still && (clock < w0 - 10 || clock > w1 + 10)) return;
+      if (clock < w0 - 10 || clock > w1 + 10) return;
       const [x, y] = xy(p.ll); const c = g.append("g");
       c.append("circle").attr("cx", x).attr("cy", y).attr("r", 6).attr("fill", "none").attr("stroke", "var(--japan)");
       c.append("text").attr("class", "mk-label small").attr("x", x + 8).attr("y", y + 4).text(p.label.replace("T11 sketch: ", ""));
       tipFor(c, p);
     });
+    // the day's events from the timeline, each shown for EVENT_MIN minutes after its time, where it has a position
+    TIMELINE.filter(r => r.date === "1945-04-06" && r.pos && P.get(r.pos) && P.get(r.pos).ll && r.kind !== "position").forEach(r => {
+      const t = mins(r.time); if (clock < t || clock > t + EVENT_MIN) return;
+      const [x, y] = xy(P.get(r.pos).ll), fade = 1 - (clock - t) / EVENT_MIN, c = g.append("g").style("opacity", 0.25 + 0.75 * fade);
+      const cls = r.kind === "hit" ? "fill-hit" : r.side === "jp" ? "stroke-jp" : "stroke-us";
+      if (r.kind === "hit") c.append("circle").attr("cx", x).attr("cy", y).attr("r", 7).attr("class", cls);
+      else if (r.kind === "cap") c.append("path").attr("d", `M${x - 5},${y - 5}L${x + 5},${y + 5}M${x - 5},${y + 5}L${x + 5},${y - 5}`).attr("class", "stroke-air").attr("stroke-width", 2.2);
+      else c.append("circle").attr("cx", x).attr("cy", y).attr("r", 5 + 10 * (1 - fade)).attr("fill", "none").attr("class", cls).attr("stroke-width", 1.6);
+      c.append("text").attr("class", "mk-label small").attr("x", x + 9).attr("y", y + 14).text(r.time);
+      c.attr("tabindex", 0).on("mousemove", e => showTip(e, `<div class="v">${esc(r.time)} Item · ${esc(r.kind)}</div><div class="m">${esc(r.text)}</div><div class="i">${esc(r.source)}${r.ref ? " · click for the page" : ""}</div>`))
+        .on("mouseleave", hideTip).on("click", () => openRef(r.ref));
+    });
     // the bases stay put
     ["kokubu", "iz-0900"].forEach(id => { const p = P.get(id); if (!p || !p.ll) return; const [x, y] = xy(p.ll);
       const c = g.append("g"); c.append("rect").attr("x", x - 3).attr("y", y - 3).attr("width", 6).attr("height", 6).attr("class", "fill-jp"); tipFor(c, p); });
   });
-  // the clock: about 40 seconds for the day, a pause at 2000, then again; runs only while the step is showing
+  // ---- the player: the clock runs through BEATS at their pace (times the speed button), moving the camera as each beat
+  // starts and pausing where a beat says so; play/pause, a scrubber marked with the beats, speed, and the beat's caption
+  // with its sources. It plays by itself when the step comes up, except with reduced motion.
+  const EVENT_MIN = 12;
+  const beatAt = t => { let k = 0; BEATS.forEach((b, i) => { if (mins(b.t) <= t) k = i; }); return k; };
+  let playing = false, speed = 1, beat = -1, pausedAt = new Set(), ui = null;
+  const rowsFor = b => b.rows.map(key => { const [t, kind] = key.split(" "); return TIMELINE.find(r => r.date === "1945-04-06" && r.time === t && r.kind === kind); }).filter(Boolean);
+  const buildUI = () => {
+    if (!document.getElementById("player-css")) d3.select("head").append("style").attr("id", "player-css").text(`
+      .beatcap { position: absolute; left: 10px; top: 10px; max-width: min(420px, 70%); background: var(--surface, #fff); border: 1px solid var(--rule, #ccc);
+        border-radius: 3px; padding: 8px 10px; font-size: 14.5px; line-height: 1.35; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+      .beatcap b { display: block; font-size: 15.5px; margin-bottom: 2px; }
+      .beatcap .src { margin-top: 4px; font-size: 13px; color: var(--ink-3, #666); }
+      .beatcap .src a { color: inherit; margin-right: 8px; }
+      .beatcap .held { margin-top: 4px; font-style: italic; color: var(--ink-3, #666); }
+      .player { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; gap: 8px; align-items: center;
+        background: var(--surface, #fff); border: 1px solid var(--rule, #ccc); border-radius: 3px; padding: 5px 8px; font-size: 14px; }
+      .player button { font: inherit; background: none; color: inherit; border: 1px solid var(--rule, #ccc); border-radius: 3px; padding: 2px 9px; cursor: pointer; }
+      .player button[aria-pressed="true"] { font-weight: 700; background: var(--wash, rgba(0,0,0,.05)); }
+      .player .scrub { position: relative; flex: 1; min-width: 80px; }
+      .player input[type=range] { width: 100%; margin: 0; }
+      .player .tick { position: absolute; top: -3px; width: 2px; height: 6px; background: var(--ink-3, #888); pointer-events: none; }
+      .player .tick.hit { background: var(--hit, #c33); height: 9px; top: -5px; }
+      .player .t { font-family: var(--font-type, monospace); min-width: 3.5em; text-align: right; }
+      .beatcap[hidden], .player[hidden] { display: none; }`);
+    const box = d3.select(svg.node().parentNode);
+    const cap = box.append("div").attr("class", "beatcap").attr("aria-live", "polite").attr("hidden", true);
+    const bar = box.append("div").attr("class", "player").attr("hidden", true);
+    const play = bar.append("button").attr("type", "button").attr("aria-label", "Play").on("click", () => (playing ? pause() : start()));
+    bar.append("button").attr("type", "button").attr("aria-label", "Back to the start of this beat").text("⏮")
+      .on("click", () => { const k = beatAt(clock - 0.01); seek(mins(BEATS[clock - mins(BEATS[k].t) < 0.5 && k > 0 ? k - 1 : k].t)); });
+    bar.append("button").attr("type", "button").attr("aria-label", "Next beat").text("⏭")
+      .on("click", () => { const k = beatAt(clock); if (k + 1 < BEATS.length) seek(mins(BEATS[k + 1].t)); });
+    const scrub = bar.append("div").attr("class", "scrub");
+    const range = scrub.append("input").attr("type", "range").attr("min", T0).attr("max", T1).attr("step", 1).attr("aria-label", "Time of day")
+      .on("input", function () { const v = +this.value; playing = false; seek(v); });
+    BEATS.forEach(b => scrub.append("div").attr("class", "tick" + (b.pause ? " hit" : "")).attr("title", `${b.t} ${b.title}`)
+      .style("left", `calc(${((mins(b.t) - T0) / (T1 - T0)) * 100}% - 1px)`));
+    const tlab = bar.append("span").attr("class", "t");
+    const sp = bar.append("span").attr("class", "seg");
+    [1, 2, 4].forEach(v => sp.append("button").attr("type", "button").attr("aria-pressed", v === 1).text("×" + v)
+      .on("click", function () { speed = v; const me = this; sp.selectAll("button").attr("aria-pressed", function () { return this === me; }); }));
+    ui = { cap, bar, play, range, tlab };
+  };
+  const showBeat = (k, animate) => {
+    const b = BEATS[k];
+    if (b.view !== lastView) { lastView = b.view; zoomTo(b.view, animate); d3.select("#viewname").text(VIEWS[b.view].name); }
+    if (k === beat) return;
+    beat = k;
+    current.layers = ["jptracks", ...(b.layers || [])]; applyVisibility();
+    const rows = rowsFor(b);
+    ui.cap.html(`<b>${esc(b.t)} · ${esc(b.title)}</b>${esc(b.text)}<div class="src">${rows.map(r => r.ref ? `<a href="${esc(r.ref)}" target="_blank" rel="noopener">${esc(r.time)} ${esc(r.source)}</a>` : `${esc(r.time)} ${esc(r.source)}`).join("")}</div><div class="held"></div>`);
+  };
+  const paint = () => {
+    const t = Math.min(clock, T1);
+    d3.select("#clock").html(`6 April, ${fmt(t)}<small>Item</small>`);
+    ui.range.property("value", t); ui.tlab.text(fmt(t));
+    ui.play.text(playing ? "❚❚" : "▶").attr("aria-label", playing ? "Pause" : "Play");
+    ui.cap.select(".held").text(!playing && BEATS[beat] && BEATS[beat].pause && Math.abs(clock - mins(BEATS[beat].t)) < 0.5 ? "Paused at the hit. ▶ to go on." : "");
+    const it = items.find(o => o.layer === "jptracks"); if (it) it.draw(it.g);
+  };
+  const seek = t => { clock = Math.max(T0, Math.min(T1, t)); pausedAt = new Set([...pausedAt].filter(x => x < clock)); showBeat(beatAt(clock), false); paint(); };
+  const pause = () => { playing = false; paint(); };
+  const start = () => { if (clock >= T1) seek(T0); playing = true; lastFrame = null; paint(); if (raf === null) raf = requestAnimationFrame(tick); };
   const tick = now => {
     raf = null;
-    if (!current || current.id !== "s9b") { lastFrame = null; return; }
-    if (lastFrame !== null) clock += (now - lastFrame) / 1000 * ((T1 - T0) / 40);
+    if (!current || current.id !== "s9b") { lastFrame = null; playing = false; return; }
+    if (!playing) { lastFrame = null; return; }
+    if (lastFrame !== null) {
+      const k = beatAt(clock), next = BEATS[k + 1] ? mins(BEATS[k + 1].t) : T1;
+      clock = Math.min(next, clock + (now - lastFrame) / 1000 * (BEATS[k].pace || 1) * speed);
+      if (clock >= next && BEATS[k + 1]) {
+        showBeat(k + 1, true);
+        if (BEATS[k + 1].pause && !pausedAt.has(next)) { pausedAt.add(next); playing = false; }
+      }
+      if (clock >= T1) playing = false;
+    }
     lastFrame = now;
-    if (clock > T1 + 60) clock = T0;   // the extra hour holds the end on screen before it starts again
-    d3.select("#clock").html(`6 April, ${fmt(Math.min(clock, T1))}<small>Item</small>`);
-    const it = items.find(o => o.layer === "jptracks"); if (it) it.draw(it.g);
-    raf = requestAnimationFrame(tick);
+    paint();
+    if (playing) raf = requestAnimationFrame(tick);
   };
-  const startClock = () => { if (!still && raf === null && current && current.id === "s9b") { lastFrame = null; raf = requestAnimationFrame(tick); } };
+  // called by show(): the player appears with step s9b and starts the day (or carries on where it was left)
+  const startClock = () => {
+    if (!ui) buildUI();
+    const on = current && current.id === "s9b";
+    ui.cap.attr("hidden", on ? null : true); ui.bar.attr("hidden", on ? null : true);
+    if (!on) { playing = false; beat = -1; return; }
+    if (clock >= T1) { clock = T0; pausedAt = new Set(); }
+    beat = -1; showBeat(beatAt(clock), true); paint();
+    if (!still) start();
+  };
   add("wx", ["t2-1535"], g => {
     g.selectAll("*").remove();
     const c = P.get("t2-1535").ll; const ring = d3.range(0, 361, 15).map(b => xy(dest(c, b, 18 + 4 * Math.sin(b * 0.07))));
