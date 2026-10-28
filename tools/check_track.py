@@ -49,12 +49,12 @@ DR_TOL = 30     # nm of dead-reckoning disagreement allowed between fixes
 
 
 def parse_coord(s):
-    """'26-42.5N' -> 26.708, '157-58W' -> -157.967"""
+    """'26-42.5N' -> 26.708, '157-58W' -> -157.967, '26-56-15N' (with seconds, as some diaries type) -> 26.938"""
     if not s or "?" in s:  # blank, or illegible in the scan
         return None
     hemi = s[-1]
-    deg, minutes = s[:-1].split("-")
-    v = int(deg) + float(minutes) / 60
+    deg, minutes, *sec = s[:-1].split("-")
+    v = int(deg) + float(minutes) / 60 + (float(sec[0]) / 3600 if sec else 0)
     return -v if hemi in "SW" else v
 
 
