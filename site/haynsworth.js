@@ -28,6 +28,8 @@ const NM = 1852;
 // Map views, as [[west, south], [east, north]]
 const VIEWS = {
   theater: { name: "Kyushu to Okinawa", b: [[127.55, 25.95], [131.45, 31.95]] },
+  wounded: { name: "6-7 April: Haynsworth and South Dakota", b: [[128.45, 26.35], [131.0, 27.65]] },
+  ulithi: { name: "Okinawa to Ulithi", b: [[127.0, 9.6], [141.0, 27.8]] },
   charts: { name: "Kyushu to Okinawa, with Izumi and TG 58.4", b: [[127.2, 23.2], [132.3, 32.25]] },
   approach: { name: "The Ryukyus, Amami to Okinawa", b: [[128.55, 26.2], [130.75, 27.95]] },
   picket: { name: "TG 58.3 and its pickets, about 50 nm across", b: [[128.95, 26.38], [129.98, 27.22]] },
@@ -38,6 +40,7 @@ const VIEWS = {
 // the other carrier task groups' guides on 6 April, from their own diaries (L49); a ship whose file is missing is skipped
 const TF58_SHIPS = [["Hornet (TG 58.1)", "cv-12-hornet"], ["Intrepid (TG 58.4)", "cv-11-intrepid"], ["Bunker Hill (TG 58.3)", "cv-17-bunker-hill"], ["Hancock (TG 58.3)", "cv-19-hancock"], ["Bennington (TG 58.1)", "cv-20-bennington"], ["Yorktown (TG 58.4)", "cv-10-yorktown"], ["Belleau Wood (TG 58.1)", "cvl-24-belleau-wood"], ["San Jacinto (TG 58.1)", "cvl-30-san-jacinto"], ["South Dakota (TG 58.3)", "bb-57-south-dakota"], ["Essex (TG 58.3)", "cv-9-essex"], ["Washington (TG 58.3)", "bb-56-washington"], ["North Carolina (TG 58.3)", "bb-55-north-carolina"], ["Missouri (TG 58.4)", "bb-63-missouri"], ["Wisconsin (TG 58.4)", "bb-64-wisconsin"], ["Cabot (TG 58.3)", "cvl-28-cabot"], ["Springfield (TG 58.3)", "cl-66-springfield"], ["Astoria (TG 58.3)", "cl-90-astoria"], ["Wilkes-Barre (TG 58.3)", "cl-103-wilkes-barre"]];
 const TF58 = [];
+const AFTER = { hay: [], sd: [] };
 // The day told as a story in step s9b. Each beat starts at its time (Item) and sets the camera (a VIEW) and the clock's
 // pace (minutes of the day per second, so the run-up to the hit slows nearly to real time); `pause` stops the clock
 // there; `layers` adds context layers (the picket ring, the formation) while the beat lasts. The words are ours; `rows` name the timeline entries (time and kind) each beat rests on, and the caption
@@ -76,33 +79,36 @@ const STEPS = [
   { id: "s2", until: "0800", when: "6 April, 0700-0800", view: "approach", title: "Found",
     body: "At 0800 a Saiun scout of Reconnaissance Squadron 11 reported four carriers at メツ三ス. The Japanese Navy gave positions as a kana code for a square 20 minutes of latitude by 20 of longitude, about 20 miles across. The squares on the map are our decoding of those codes from other Japanese reports, not a Japanese chart. If the scout's navigation had been exact, the carriers it saw would be inside its square. TG 58.3 was about 20 miles west of it at 0800. So either the scout saw TG 58.3 and was 20-30 miles out, which is ordinary for a plane navigating by dead reckoning over open sea, or it saw another of TF 58's carrier groups. Either way, this square is where the morning's Suisei were sent.",
     centre: "centre-0800", on: ["sq-metsu", "hay-0800", "centre-0800"], layers: ["squares", "haytrack", "formation", "ring"] },
-  { id: "s3", until: "1020", when: "1015-1020", view: "theater", title: "Launch from Kyushu",
+  { id: "s3", until: "1020", when: "6 April, 1015-1020", view: "theater", title: "Launch from Kyushu",
     body: "Fifth Air Fleet sent 30 bomb-carrying Zeros and 23 Suisei dive bombers (US code name Judy) off one after another from 1015. The 210th Air Group's eleven Suisei left First Kokubu at 1020. The line drawn is the straight course to their aiming point, about 300 miles: their actual route isn't recorded, and none of the seven that didn't return left a track chart.",
     on: ["kokubu", "aim-210", "aim-252a", "aim-252b", "sq-metsu"], layers: ["route210", "squares", "formation"] },
-  { id: "s4", until: "1200", when: "1056-1200", view: "approach", title: "The fighters meet them",
+  { id: "s4", until: "1200", when: "6 April, 1056-1200", view: "approach", title: "The fighters meet them",
     body: "The task group's combat air patrol met the raids to the north and north-east, on Haynsworth's side of the formation. Essex's fighters shot down two Judys at 1140, 35 miles out on 035°, and another at 1159, 20 miles due north. The 210th's escort, over Amami at 1140, fought Hellcats ten minutes later. At noon Haynsworth was at 26-55N 129-31E. Between 1130 and 1420 the scouts reported four carrier groups, two of them at メキ三ツ and スキ三ツ (the second a probable reading); TG 58.3 at noon was 25-40 miles south of both.",
     on: ["k-1056", "k-1140", "k-1149", "k-1159", "esc-1150", "hay-1200", "centre", "st-hay", "st-weeks", "st-walker", "sq-meki", "sq-suki"], layers: ["kills", "formation", "ring", "squares"] },
-  { id: "s5", until: "1227", when: "1201-1227", view: "picket", title: "Into the formation",
+  { id: "s5", until: "1227", when: "6 April, 1201-1227", view: "picket", title: "Into the formation",
     body: "Seven Zekes were caught 15 miles north at 1201. Under cover of that fight a Judy slipped into the formation and dived on Cabot at 1226; its bomb missed by 100 yards and the plane fell off her bow. Bunker Hill's Marine Corsairs came home from the melee one short: 1st Lt. J. H. Carpenter was last seen diving on an enemy plane.",
     on: ["k-1201", "k-1223", "cabot-1226", "centre", "st-hay", "st-weeks", "st-walker"], layers: ["kills", "formation", "ring"] },
-  { id: "s6", until: "1245", when: "1230-1245", view: "picket", title: "Bogey at 22 miles",
-    body: "The 210th's report presumes all seven of its Suisei dived into the carrier force between 1230 and 1300. At 1232 Haynsworth's SC-3 radar had a bogey bearing 010°, 22 miles; she turned to 020° and the fighters were vectored onto it. At 1245 her crew heard a dog-fight and machine-gun fire to port, and a plane was splashed 1,500 yards off the port quarter.",
-    on: ["bogey-1232", "st-hay", "hay-1200", "centre"], layers: ["ring", "formation"] },
-  { id: "s7", until: "1250", when: "1245-1250", view: "close", title: "1250 Item",
+  { id: "s6", until: "1245", when: "6 April, 1230-1245", view: "picket", title: "Bogey at 22 miles",
+    body: "The 210th's report presumes all seven of its Suisei dived into the carrier force between 1230 and 1300. At 1232 Haynsworth's SC-3 radar had a bogey bearing 010°, 22 miles; she turned to 020° and the fighters were vectored onto it. At 1245 her crew heard a dog-fight and machine-gun fire to port, and a plane was splashed 1,500 yards off the port quarter. The map puts her where her diary does, at her noon fix, 26-55N 129-31E, and plots the bogey from there. The picket station shown in the other steps is where she was ordered to be, 12 miles 060° from the formation's centre, which no record gives; it lies about 9 miles from her fix, within the error of a dead-reckoned position.",
+    on: ["bogey-1232", "hay-1200"], layers: ["haytrack"] },
+  { id: "s7", until: "1250", when: "6 April, 1245-1250", view: "close", title: "1250 Item",
     body: "A Judy came out of the low cloud in a steep dive with a Corsair on either side. All three pulled out short of the water, and the Judy flattened out and headed away. Haynsworth opened fire at 1,500 yards; the Judy turned to starboard, winged over and came back. Its bomb fell 1,000 yards abeam. The plane struck at the twin 40 mm mount 41, abaft the bridge, at 1250. The panels below the map follow the report step by step.",
     on: ["hit", "st-hay", "hay-1200"], layers: ["hit", "ring"] },
-  { id: "s8", until: "1337", when: "1250-1337", view: "picket", title: "Fire",
+  { id: "s8", until: "1337", when: "6 April, 1250-1337", view: "picket", title: "Fire",
     body: "A gasoline fireball went through Main Radio, the 40 mm platform, CIC and plot. Seven men were dead. The fire was under control in about ten minutes and out in about fifty-five. With her radio and radar gone she couldn't report: the squadron diary logs the hit at 1318 and South Dakota at 1321, when word reached them. Ten minutes after the hit, a suicide Zeke clipped Cabot's radar, and a friendly 5-inch shell killed three men on North Carolina.",
     on: ["hit", "cabot-1302", "centre", "st-hay", "st-weeks", "st-walker"], layers: ["hit", "formation", "ring"] },
-  { id: "s9", until: "2000", when: "1400-2000", view: "theater", title: "The afternoon",
-    body: "The 210th sent two more Suisei at 1400. One plane's track chart survives: it reached its farthest point at 1535 under rain cloud, ten-tenths at 500-900 metres, somewhere east-southeast of Amami and close to the task group, saw nothing, and flew home past the Tokara islands. It is the clearest record of the weather the morning's attackers used. Haynsworth was at 27-23N 130-05E at 2000.",
+  { id: "s9", until: "2000", when: "6 April, 1400-2000", view: "theater", title: "The afternoon",
+    body: "The raid on TG 58.3 was over by 1337, but the planes kept coming. The 252nd sent its second wave at 1555, and its crews who came down on Kikai-jima met Grummans off Amami; the 601st's four Suisei went out at 1645. The 210th sent two more Suisei at 1400. One plane's track chart survives: it reached its farthest point at 1535, somewhere east-southeast of Amami and close to the task group, under rain cloud, ten-tenths at 500-900 metres with 20 km visibility, saw nothing, and flew home past the Tokara islands. The weather differed by place and hour, and three records give it: on the Japanese route west of the islands that morning, ten-tenths cloud at 4,000 metres with heavy mist beneath and 10 km visibility (the Izumi fighters); over the task force, scattered to broken low cloud, the ceiling generally unlimited, visibility unrestricted, northerly winds of 8 to 16 knots (Bennington's diary, TG 58.1, a few miles east), cloud enough for a Judy to come out of it; and that afternoon's rain to the north-east. Haynsworth was at 27-23N 130-05E at 2000.",
     on: ["t2-1410", "t2-1535", "t2-1603", "t2-1702", "t2-1722", "t2-1750", "hay-2000", "kokubu"], layers: ["track2", "wx", "haytrack", "formation"] },
-  { id: "s9b", until: "2000", when: "6 April, 0900-2000", view: "charts", title: "The day, from both sides",
-    body: "Play the day: the clock runs from 0900, slowing as the raid closes on the picket line and stopping at 1250, when the Judy hit. The caption gives each moment and the pages it comes from; use the bar under the map to pause, step from moment to moment, scrub or speed up. Each plane and ship shows only its last forty minutes. The other ships' positions are recorded only at 0800, 1200 and 2000 and drawn on straight lines between, so they are dimmed on the picket line and left out of the close-up; Haynsworth's own hit position is recorded. Blue: Haynsworth, and the ships whose diaries give their 0800, 1200 and 2000 positions, labelled by task group: Essex (her guide), Bunker Hill, Hancock, South Dakota, Washington, North Carolina, the cruisers Springfield, Astoria and Wilkes-Barre, and Cabot (from her two anti-aircraft action forms, 1227 and 1305) of her own Task Group 58.3; Hornet, Bennington, Belleau Wood and San Jacinto of 58.1, a few miles east; Yorktown, Intrepid, Missouri and Wisconsin of 58.4, fuelling and rearming two hundred miles to the south-east. The 252nd Air Group's attack chart has two routes from Kokubu: west of the Tokara islands to Yokoate-jima, then three legs fanning south before turning west into the Okinawa anchorage, and east to Amami and back. Its crews who came down on Kikai-jima met Grummans off Amami at 1430. The Izumi Zeros flew down the west side of the islands to Tokunoshima, saw an escort carrier group and turned back without a fight. A Kushira torpedo Tenzan staged through Kikai-jima that evening. The circles are the carrier groups the T11 scouts reported, shown in their hours (1130-1420 and 1505-1535), placed from the war history's sketch to about 15 miles. Where a chart gives no times, the planes move at an assumed 150 knots from their recorded take-off: the 252nd's routes and the Izumi Zeros' outbound leg are timed that way, and the chart doesn't say whether the 252nd's legs are the plan or the flight.",
+  { id: "s9b", feature: "Play the day", until: "2000", when: "6 April, 0900-2000", view: "charts", title: "The day, from both sides",
+    body: "Play the day: the clock runs from 0900, slowing as the raid closes on the picket line and stopping at 1250, when the Judy hit. The caption gives each moment and the pages it comes from; use the bar under the map to pause, step from moment to moment, scrub or speed up. Each plane and ship shows only its last forty minutes. The other ships' positions are recorded only at 0800, 1200 and 2000 and drawn on straight lines between, so they are dimmed on the picket line and left out of the close-up; Haynsworth's track runs from her noon fix to the hit, which is drawn on her picket station: her position at 1250 is not recorded. Blue: Haynsworth, and the ships whose diaries give their 0800, 1200 and 2000 positions, labelled by task group: Essex (her guide), Bunker Hill, Hancock, South Dakota, Washington, North Carolina, the cruisers Springfield, Astoria and Wilkes-Barre, and Cabot (from her two anti-aircraft action forms, 1227 and 1305) of her own Task Group 58.3; Hornet, Bennington, Belleau Wood and San Jacinto of 58.1, a few miles east; Yorktown, Intrepid, Missouri and Wisconsin of 58.4, fuelling and rearming two hundred miles to the south-east. The 252nd Air Group's attack chart has two routes from Kokubu: west of the Tokara islands to Yokoate-jima, then three legs fanning south before turning west into the Okinawa anchorage, and east to Amami and back. Its crews who came down on Kikai-jima met Grummans off Amami at 1430. The Izumi Zeros flew down the west side of the islands to Tokunoshima, saw an escort carrier group and turned back without a fight. A Kushira torpedo Tenzan staged through Kikai-jima that evening. The circles are the carrier groups the T11 scouts reported, shown in their hours (1130-1420 and 1505-1535), placed from the war history's sketch to about 15 miles. Where a chart gives no times, the planes move at an assumed 150 knots from their recorded take-off: the 252nd's routes and the Izumi Zeros' outbound leg are timed that way, and the chart doesn't say whether the 252nd's legs are the plan or the flight.",
     on: ["kokubu"], layers: ["jptracks"] },
-  { id: "s10", until: "2000", when: "6-9 April", view: "approach", title: "Afterwards",
-    body: "Eleven of the wounded went across to South Dakota that day and three more on the 7th; five of them died aboard her, bringing the dead to twelve. According to Irons' history, the men killed outright were buried at sea on the evening of the 7th. On 9 April she left the group with the damaged Hancock and Cabot for Ulithi, Pearl Harbor and Mare Island.",
-    on: ["hay-2000", "centre"], layers: ["haytrack", "formation"] },
+  { id: "s10", until: "2000", when: "6-7 April", view: "wounded", title: "The wounded, and the dead",
+    body: "Of the twenty-seven wounded, eleven went across to South Dakota for treatment on the 6th, and three more \"who were failing to respond to treatment\" on the 7th; by the 9th five of them had died aboard her, bringing the dead to twelve (the action report). Neither ship's diary gives the time or place of the transfers: the two tracks on the map are the days they steamed together. On the 7th, with no radar of her own, Haynsworth dropped astern with four other destroyers after Hancock was hit at 1210, and picked up eight of her men blown into the water, four of them injured, while a pair of low-flying Zekes made a pass at the rescue group. The men killed outright were buried at sea at 1816 that evening, according to Irons' history, from the crew's accounts; no war diary or report records it. The burial mark is placed on her track between her 0800 and 2000 fixes, so its position is ours, not a record's; her 1200 fix that day is typed some 55 miles west of the ships she was steaming with, so it is left off the track.",
+    on: [], layers: ["after"] },
+  { id: "s11", until: "2000", when: "9-17 April", view: "ulithi", title: "Afterwards",
+    body: "On the 9th, while the group refuelled, Haynsworth, Hancock and Cabot were detached \"to return to the rear area for repairs and overhaul\". At 1315 she joined Task Unit 58.3.10, the carriers in column 1,500 yards apart and Stembel and Haynsworth screening ahead, Captain Smith in Cabot in tactical command. Task Group 58.3 refuelled and stood north again, to give direct air support to the troops fighting on Okinawa, where the landings had been made on 1 April. The unit entered Ulithi lagoon at 1355 on the 11th; Haynsworth went alongside the tender Yosemite, and on the 17th sailed for Pearl Harbor by way of Eniwetok, then Mare Island for repairs.",
+    on: [], layers: ["after"] },
 ];
 
 const tip = document.getElementById("tip");
@@ -162,6 +168,7 @@ Promise.all([
     claims.splice(i < 0 ? claims.length : i + 1, 0, c);
   }
   for (const [id, body] of Object.entries(EXTRA?.steps ?? {})) STEPS.find(s => s.id === id).body = body;
+  for (const [id, more] of Object.entries(EXTRA?.stepsAfter ?? {})) STEPS.find(s => s.id === id).body += " " + more;   // the family's sentence after the kit's
   // resolve positions (some are bearing and distance from another)
   const P = new Map(positions.map(p => [p.id, p]));
   const resolve = (p, depth = 0) => {
@@ -178,6 +185,15 @@ Promise.all([
     .filter(r => !(r.date === "1945-04-05" && r.time < "2000"))
     .map(r => ({ date: r.date, time: r.time, ll: [dm(r.lon_fix || r.lon_raw), dm(r.lat_fix || r.lat_raw)], page: r.page }));
 
+  // after the hit: Haynsworth to Ulithi (6 Apr 2000 to 11 Apr), and South Dakota 6-9 April, for steps s10-s11
+  const ll = r => [dm(r.lon_fix || r.lon_raw), dm(r.lat_fix || r.lat_raw)];
+  AFTER.hay = hay.filter(r => r.on_track === "yes" && (r.source === "diary" || r.source === "narrative") && r.lat_raw &&
+    ((r.date === "1945-04-06" && r.time >= "2000") || (r.date > "1945-04-06" && r.date <= "1945-04-11")))
+    .map(r => ({ date: r.date, time: r.time.padStart(4, "0"), ll: ll(r), page: r.page }))
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const sdRows = others[TF58_SHIPS.findIndex(([, d]) => d === "bb-57-south-dakota")] || [];
+  AFTER.sd = sdRows.filter(r => r.on_track === "yes" && r.source === "diary" && r.date >= "1945-04-06" && r.date <= "1945-04-09")
+    .map(r => ({ date: r.date, time: r.time, ll: ll(r), page: r.page }));
   // the other groups' 6 April fixes, for the animated step
   TF58.push(...TF58_SHIPS.map(([name, , page], k) => ({ name, page, pts: (others[k] || [])
     .filter(r => (r.source === "diary" || r.source === "action") && r.on_track === "yes" && r.date === "1945-04-06")
@@ -201,9 +217,18 @@ Promise.all([
 // ---------- narrative ----------
 function buildSteps(timeline) {
   const host = d3.select("#steps");
+  if (!document.getElementById("feature-css")) d3.select("head").append("style").attr("id", "feature-css").text(`
+    .feature-head { margin: 40px 0 0; padding: 22px 0 6px; border-top: 3px double var(--ink, #222); }
+    .feature-head span { font: 700 15.5px var(--font-type, monospace); color: var(--ink-2, #555); }
+    .feature-head h2 { font-size: 34px; font-style: normal; margin: 4px 0 6px; }
+    .feature-head p { margin: 0; color: var(--ink-3, #666); font-style: italic; }
+    .step.feature { min-height: 90vh; border-bottom: 3px double var(--ink, #222); margin-bottom: 30px; }
+    .step.feature .card { border: 2px solid var(--ink, #222); }`);
   STEPS.forEach((s, i) => {
     const rows = timeline.filter(r => r.step === s.id);
-    const el = host.append("div").attr("class", "step").attr("data-i", i);
+    // a feature step gets its own heading and frame: it puts the steps before it together
+    if (s.feature) host.append("div").attr("class", "feature-head").html(`<span>${esc(s.when)}</span><h2>${esc(s.feature)}</h2><p>Everything above, from both sides, on one clock.</p>`);
+    const el = host.append("div").attr("class", "step" + (s.feature ? " feature" : "")).attr("data-i", i);
     const c = el.append("div").attr("class", "card");
     c.append("div").attr("class", "when").text(s.when);
     c.append("h3").text(s.title);
@@ -427,6 +452,43 @@ function buildMap(world, positions, P, hayTrack) {
     });
     const m = xy(P.get("t2-1535").ll);
     g.append("text").attr("class", "mk-label jp").attr("x", m[0] + 10).attr("y", m[1] + 18).text("210th second attack, No. 2 plane (track chart)");
+  });
+  // after the hit (steps s10-s11): Haynsworth's track to Ulithi with her fixes dated, South Dakota's 6-9 April (dashed),
+  // and the burial mark, placed by us between her 7 April 1200 and 2000 fixes (hatched: an inference)
+  add("after", [], g => {
+    g.selectAll("*").remove();
+    if (!AFTER.hay.length) return;
+    const lab = d => `${+d.date.slice(8)} Apr ${d.time}`;
+    // the wounded step: only the two days the ships steamed together; Afterwards: the whole run to Ulithi
+    const s10 = current && current.id === "s10", s11 = current && current.id === "s11";
+    const inWin = p => s10 ? (p.date + p.time) >= "1945-04-061200" && (p.date + p.time) <= "1945-04-072000" : !s11 || (p.date + p.time) >= "1945-04-082000";
+    const hayPts = AFTER.hay.filter(inWin), sdPts = s11 ? [] : AFTER.sd.filter(inWin);
+    if (sdPts.length) g.append("path").attr("class", "trk us").attr("stroke-dasharray", "5 4").style("opacity", 0.6).attr("d", d3.line()(sdPts.map(p => xy(p.ll))));
+    sdPts.forEach((p, i) => { if (i === sdPts.length - 1) { const [x, y] = xy(p.ll); g.append("text").attr("class", "mk-label small").attr("x", x + 6).attr("y", y - 10).text("South Dakota (dashed)"); } });
+    g.append("path").attr("class", "trk us").attr("d", d3.line()(hayPts.map(p => xy(p.ll))));
+    hayPts.forEach(p => {
+      const [x, y] = xy(p.ll);
+      g.append("circle").attr("cx", x).attr("cy", y).attr("r", 3).attr("class", "fill-us").style("stroke", "var(--surface)").style("stroke-width", 1)
+        .on("mousemove", e => showTip(e, `<div class="v">Haynsworth, ${lab(p)}</div><div class="k">diary</div><div class="i">Click for the page</div>`))
+        .on("mouseleave", hideTip).on("click", () => openPage(p.page));
+      if (current && current.id === "s11" && p.time === "1200") g.append("text").attr("class", "mk-label small").attr("x", x + 6).attr("y", y + 4).text(lab(p));
+    });
+    // between the on-track fixes either side of 1816 (her 7 April 1200 fix is off the track: see its note)
+    const a = AFTER.hay.find(p => p.date === "1945-04-07" && p.time === "0800"), b = AFTER.hay.find(p => p.date === "1945-04-07" && p.time === "2000");
+    if (a && b && (!current || current.id === "s10")) {
+      const f = (18 * 60 + 16 - 8 * 60) / (12 * 60), q = [a.ll[0] + (b.ll[0] - a.ll[0]) * f, a.ll[1] + (b.ll[1] - a.ll[1]) * f], [x, y] = xy(q);
+      g.append("circle").attr("cx", x).attr("cy", y).attr("r", 7).attr("fill", "url(#hatch-us)").attr("class", "stroke-us").attr("stroke-width", 1.4)
+        .on("mousemove", e => showTip(e, `<div class="v">Burial at sea, 7 April, 1816</div><div class="k">time: Irons' history, from the crew's accounts · place: assumed, on her track between the 0800 and 2000 fixes</div>`)).on("mouseleave", hideTip);
+      g.append("text").attr("class", "mk-label").attr("text-anchor", "middle").attr("x", x).attr("y", y + 26).text("7 Apr 1816: burial at sea (place assumed)");
+      [["1945-04-06", "2000", "6 Apr 2000: eleven wounded went to South Dakota that day", "end"], ["1945-04-07", "0800", "7 Apr 0800 (Hancock's men picked up 1240-1345)", "endbelow"]].forEach(([d, t, txt, side]) => {
+        const p = AFTER.hay.find(r => r.date === d && r.time === t); if (!p) return; const [x2, y2] = xy(p.ll);
+        g.append("text").attr("class", "mk-label small").attr("text-anchor", side === "start" ? "start" : "end").attr("x", x2 + (side === "start" ? 8 : -8)).attr("y", y2 + (side === "endbelow" ? 18 : -8)).text(txt);
+      });
+    }
+    if (!current || current.id === "s11") {
+      const u = AFTER.hay[AFTER.hay.length - 1], [x, y] = xy(u.ll);
+      g.append("text").attr("class", "mk-label").attr("x", x + 8).attr("y", y + 4).text("Ulithi, 11 Apr 1355");
+    }
   });
   // the other Japanese charts of the day, animated: a clock runs 0900-2000 and each plane (and Haynsworth) shows only a
   // fading streak of its last STREAK minutes. Times are the charts' where they give them; elsewhere planes move at an
