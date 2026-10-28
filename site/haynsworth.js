@@ -28,6 +28,7 @@ const NM = 1852;
 // Map views, as [[west, south], [east, north]]
 const VIEWS = {
   theater: { name: "Kyushu to Okinawa", b: [[127.55, 25.95], [131.45, 31.95]] },
+  charts: { name: "Kyushu to Okinawa, with Izumi", b: [[127.4, 25.7], [131.5, 32.25]] },
   approach: { name: "The Ryukyus, Amami to Okinawa", b: [[128.55, 26.2], [130.75, 27.95]] },
   picket: { name: "TG 58.3 and its pickets, about 50 nm across", b: [[128.95, 26.38], [129.98, 27.22]] },
   close: { name: "Haynsworth's station", b: [[129.36, 26.62], [129.86, 27.04]] },
@@ -60,8 +61,11 @@ const STEPS = [
     body: "A gasoline fireball went through Main Radio, the 40 mm platform, CIC and plot. Seven men were dead. The fire was under control in about ten minutes and out in about fifty-five. With her radio and radar gone she couldn't report: the squadron diary logs the hit at 1318 and South Dakota at 1321, when word reached them. Ten minutes after the hit, a suicide Zeke clipped Cabot's radar, and a friendly 5-inch shell killed three men on North Carolina.",
     on: ["hit", "cabot-1302", "centre", "st-hay", "st-weeks", "st-walker"], layers: ["hit", "formation", "ring"] },
   { id: "s9", until: "2000", when: "1400-2000", view: "theater", title: "The afternoon",
-    body: "The 210th sent two more Suisei at 1400. One plane's track chart survives, the only Japanese track for this day: it reached its farthest point at 1535 under rain cloud, ten-tenths at 500-900 metres, somewhere east-southeast of Amami and close to the task group, saw nothing, and flew home past the Tokara islands. It is the clearest record of the weather the morning's attackers used. Haynsworth was at 27-23N 130-05E at 2000.",
+    body: "The 210th sent two more Suisei at 1400. One plane's track chart survives: it reached its farthest point at 1535 under rain cloud, ten-tenths at 500-900 metres, somewhere east-southeast of Amami and close to the task group, saw nothing, and flew home past the Tokara islands. It is the clearest record of the weather the morning's attackers used. Haynsworth was at 27-23N 130-05E at 2000.",
     on: ["t2-1410", "t2-1535", "t2-1603", "t2-1702", "t2-1722", "t2-1750", "hay-2000", "kokubu"], layers: ["track2", "wx", "haytrack", "formation"] },
+  { id: "s9b", until: "2000", when: "6 April, the other charts", view: "charts", title: "The other Japanese charts",
+    body: "Three more units drew the day, and the scouts drew where they saw the carriers. The clock runs through the afternoon; each plane shows only its last forty minutes. The 252nd Air Group's attack chart has two routes from Kokubu: west of the Tokara islands to Yokoate-jima, then three legs fanning south before turning west into the Okinawa anchorage, and east to Amami and back. Its crews who came down on Kikai-jima met Grummans off Amami at 1430. The Izumi Zeros flew down the west side of the islands to Tokunoshima, saw an escort carrier group and turned back without a fight. A Kushira torpedo Tenzan staged through Kikai-jima that evening. The circles are the carrier groups the T11 scouts reported, shown in their hours (1130-1420 and 1505-1535), placed from the war history's sketch to about 15 miles. Where a chart gives no times, the planes move at an assumed 150 knots from their recorded take-off: the 252nd's routes and the Izumi Zeros' outbound leg are timed that way, and the chart doesn't say whether the 252nd's legs are the plan or the flight.",
+    on: ["kokubu"], layers: ["jptracks"] },
   { id: "s10", until: "2000", when: "6-9 April", view: "approach", title: "Afterwards",
     body: "Eleven of the wounded went across to South Dakota that day and three more on the 7th; five of them died aboard her, bringing the dead to twelve. According to Irons' history, the men killed outright were buried at sea on the evening of the 7th. On 9 April she left the group with the damaged Hancock and Cabot for Ulithi, Pearl Harbor and Mare Island.",
     on: ["hay-2000", "centre"], layers: ["haytrack", "formation"] },
@@ -321,7 +325,7 @@ function buildMap(world, positions, P, hayTrack) {
   }));
   // generic point marks
   const pointKinds = { fix: "us", reported: "us", station: "us", base: "jp", aim: "jp", fight: "jp", attack: "us", radar: "us" };
-  positions.filter(p => pointKinds[p.kind] && p.ll && !p.id.startsWith("hay-")).forEach(p => add(null, [p.id], g => {
+  positions.filter(p => pointKinds[p.kind] && p.ll && !p.id.startsWith("hay-") && !/^(tz-|iz-|c252-|fig32-)/.test(p.id)).forEach(p => add(null, [p.id], g => {
     g.selectAll("*").remove();
     const [x, y] = xy(p.ll); const side = pointKinds[p.kind];
     if (p.kind === "station") {
@@ -369,7 +373,7 @@ function buildMap(world, positions, P, hayTrack) {
   // the second attack's track (p12)
   add("track2", ["t2-1410", "t2-1535", "t2-1603", "t2-1702", "t2-1722", "t2-1750"], g => {
     g.selectAll("*").remove();
-    const pts = positions.filter(p => p.kind === "track").sort((a, b) => a.time.localeCompare(b.time));
+    const pts = positions.filter(p => p.kind === "track" && p.id.startsWith("t2-")).sort((a, b) => a.time.localeCompare(b.time));
     g.append("path").attr("class", "trk jp").attr("d", d3.line()(pts.map(p => xy(p.ll))));
     pts.forEach(p => {
       const [x, y] = xy(p.ll);
@@ -381,6 +385,112 @@ function buildMap(world, positions, P, hayTrack) {
     const m = xy(P.get("t2-1535").ll);
     g.append("text").attr("class", "mk-label jp").attr("x", m[0] + 10).attr("y", m[1] + 18).text("210th second attack, No. 2 plane (track chart)");
   });
+  // the other Japanese charts of the day, animated: a clock runs 0900-2000 and each plane (and Haynsworth) shows only a
+  // fading streak of its last STREAK minutes. Times are the charts' where they give them; elsewhere planes move at an
+  // assumed ASSUMED_KT from their recorded take-off (labelled on the page). The scouts' carrier groups (fig32) show only
+  // in their reported windows. With reduced motion, the paths are drawn faint and still.
+  const STREAK = 40, ASSUMED_KT = 150, T0 = 9 * 60, T1 = 20 * 60;
+  const jpIds = positions.filter(p => /^(tz-|iz-|c252-|fig32-)/.test(p.id) && p.ll).map(p => p.id);
+  STEPS.find(st => st.id === "s9b").on.push(...jpIds);   // the step lights every point of these charts
+  const mins = hhmm => +hhmm.slice(0, 2) * 60 + +hhmm.slice(2, 4);
+  const nmBetween = (a, b) => {
+    const r = Math.PI / 180, [l1, p1, l2, p2] = [a[0] * r, a[1] * r, b[0] * r, b[1] * r];
+    return 2 * Math.asin(Math.sqrt(Math.sin((p2 - p1) / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin((l2 - l1) / 2) ** 2)) * 3440.065;
+  };
+  // a route: [id or ll, time "HHMM" or null]; untimed points get times at ASSUMED_KT from the last timed one
+  const route = legs => {
+    const pts = legs.map(([at, t]) => ({ ll: typeof at === "string" ? P.get(at) && P.get(at).ll : at, t: t ? mins(t) : null }))
+      .filter(q => q.ll);
+    for (let k = 1; k < pts.length; k++) if (pts[k].t === null) {
+      pts[k].t = pts[k - 1].t + nmBetween(pts[k - 1].ll, pts[k].ll) / ASSUMED_KT * 60; pts[k].assumed = true;
+    }
+    return pts;
+  };
+  // between two timed points with untimed ones in between, spread the time by distance (no assumed speed)
+  const spread = (pts, a, b) => {
+    let d = 0; const cum = [0];
+    for (let k = a + 1; k <= b; k++) { d += nmBetween(pts[k - 1].ll, pts[k].ll); cum.push(d); }
+    for (let k = a + 1; k < b; k++) { pts[k].t = pts[a].t + (pts[b].t - pts[a].t) * cum[k - a] / d; pts[k].assumed = true; }
+    return pts;
+  };
+  let movers = null;
+  const buildMovers = () => {
+    const timed = pre => positions.filter(p => p.id.startsWith(pre) && p.ll && p.kind === "track" && p.time && p.date === "1945-04-06")
+      .sort((a, b) => a.time.localeCompare(b.time)).map(p => ({ ll: p.ll, t: mins(p.time) }));
+    const east3 = spread(route([["kokubu", "1305"], ["c252-am", "1430"], ["c252-3d", null], ["c252-am", null], ["kikai-ref", "1550"]]), 1, 4);
+    movers = [
+      { name: "Haynsworth", us: true, pts: hayTrack.filter(p => p.date === "1945-04-06").map(p => ({ ll: p.ll, t: mins(p.time) })) },
+      { name: "210th No. 2", pts: timed("t2-") },
+      { name: "Kushira Tenzan", pts: timed("tz-") },
+      { name: "Izumi Zeros", pts: route([["iz-0900", "0900"], ["iz-turn", null]]) },
+      { name: "252nd 3D", pts: east3 },
+      { name: "252nd 2D", pts: route([["kokubu", "1310"], ["kikai-ref", null], ["c252-2d", null], ["kikai-ref", null]]) },
+      { name: "252nd 1-2/34D", pts: route([["kokubu", "1310"], ["c252-yw", null], ["c252-34a", null], ["c252-oki", null]]) },
+      { name: "252nd 3-4/34D", pts: route([["kokubu", "1310"], ["c252-yw", null], ["c252-34b", null], ["c252-oki", null]]) },
+      { name: "252nd 33D", pts: route([["kokubu", "1310"], ["c252-yw", null], ["c252-33", null], ["c252-oki", null]]) },
+    ].filter(m => m.pts.length > 1);
+  };
+  const at = (pts, t) => {   // position at time t, or null outside the route's times
+    if (t < pts[0].t || t > pts[pts.length - 1].t) return null;
+    for (let k = 1; k < pts.length; k++) if (t <= pts[k].t) {
+      const a = pts[k - 1], b = pts[k], f = b.t === a.t ? 1 : (t - a.t) / (b.t - a.t);
+      return [a.ll[0] + (b.ll[0] - a.ll[0]) * f, a.ll[1] + (b.ll[1] - a.ll[1]) * f];
+    }
+    return null;
+  };
+  const windows = { "fig32-a2b2": [905, 935], "fig32-a3b4": [905, 935], "fig32-1130a": [690, 860], "fig32-1130b": [690, 860], "fig32-1130c": [690, 860] };
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let clock = T0, lastFrame = null, raf = null;
+  const fmt = t => String(Math.floor(t / 60)).padStart(2, "0") + String(Math.floor(t % 60)).padStart(2, "0");
+  add("jptracks", jpIds, g => {
+    if (!movers) buildMovers();
+    g.selectAll("*").remove();
+    if (still) {
+      movers.forEach(m => g.append("path").attr("class", "trk " + (m.us ? "us" : "jp")).style("opacity", 0.35).attr("d", d3.line()(m.pts.map(q => xy(q.ll)))));
+    } else {
+      const labelled = [];
+      movers.forEach(m => {
+        const head = at(m.pts, clock); if (!head) return;
+        const assumed = m.pts.some(q => q.assumed);
+        // the streak: STREAK minutes in short pieces, fading toward the tail
+        const n = 8;
+        for (let k = 0; k < n; k++) {
+          const ta = clock - STREAK * (k + 1) / n, tb = clock - STREAK * k / n;
+          const a = at(m.pts, Math.max(ta, m.pts[0].t)), b = at(m.pts, Math.max(tb, m.pts[0].t));
+          if (a && b) g.append("path").attr("class", "trk " + (m.us ? "us" : "jp")).style("opacity", 1 - k / n).style("stroke-dasharray", assumed ? "4 3" : "none").attr("d", d3.line()([xy(a), xy(b)]));
+        }
+        const [x, y] = xy(head);
+        g.append("circle").attr("cx", x).attr("cy", y).attr("r", 3.5).attr("class", m.us ? "fill-us" : "fill-jp");
+        if (labelled.some(([a, b]) => Math.hypot(a - x, b - y) < 14)) return;   // one label where heads coincide
+        labelled.push([x, y]);
+        g.append("text").attr("class", "mk-label small" + (m.us ? "" : " jp")).attr("x", x + 6).attr("y", y - 5).text(m.name + (assumed ? " (times assumed)" : ""));
+      });
+    }
+    // the scouts' carrier groups, in their windows (always, when still)
+    positions.filter(p => p.id.startsWith("fig32-") && windows[p.id] && p.ll).forEach(p => {
+      const [w0, w1] = windows[p.id];
+      if (!still && (clock < w0 - 10 || clock > w1 + 10)) return;
+      const [x, y] = xy(p.ll); const c = g.append("g");
+      c.append("circle").attr("cx", x).attr("cy", y).attr("r", 6).attr("fill", "none").attr("stroke", "var(--japan)");
+      c.append("text").attr("class", "mk-label small").attr("x", x + 8).attr("y", y + 4).text(p.label.replace("T11 sketch: ", ""));
+      tipFor(c, p);
+    });
+    // the bases stay put
+    ["kokubu", "iz-0900"].forEach(id => { const p = P.get(id); if (!p || !p.ll) return; const [x, y] = xy(p.ll);
+      const c = g.append("g"); c.append("rect").attr("x", x - 3).attr("y", y - 3).attr("width", 6).attr("height", 6).attr("class", "fill-jp"); tipFor(c, p); });
+  });
+  // the clock: about 40 seconds for the day, a pause at 2000, then again; runs only while the step is showing
+  const tick = now => {
+    raf = null;
+    if (!current || current.id !== "s9b") { lastFrame = null; return; }
+    if (lastFrame !== null) clock += (now - lastFrame) / 1000 * ((T1 - T0) / 40);
+    lastFrame = now;
+    if (clock > T1 + 60) clock = T0;   // the extra hour holds the end on screen before it starts again
+    d3.select("#clock").html(`6 April, ${fmt(Math.min(clock, T1))}<small>Item</small>`);
+    const it = items.find(o => o.layer === "jptracks"); if (it) it.draw(it.g);
+    raf = requestAnimationFrame(tick);
+  };
+  const startClock = () => { if (!still && raf === null && current && current.id === "s9b") { lastFrame = null; raf = requestAnimationFrame(tick); } };
   add("wx", ["t2-1535"], g => {
     g.selectAll("*").remove();
     const c = P.get("t2-1535").ll; const ring = d3.range(0, 361, 15).map(b => xy(dest(c, b, 18 + 4 * Math.sin(b * 0.07))));
@@ -450,6 +560,7 @@ function buildMap(world, positions, P, hayTrack) {
     d3.select("#viewname").text(VIEWS[step.view].name);
     if (step.view !== lastView) { const first = lastView === null; lastView = step.view; zoomTo(step.view, !first); }
     render();
+    startClock();
   }
   // refit when the stage's size changes (it isn't laid out yet when the map is built)
   function measure() {
