@@ -334,7 +334,7 @@ function buildMap(world, positions, P, hayTrack) {
       g.append("text").attr("class", "mk-label jp").attr("x", x + 8).attr("y", y + 12).text(p.label.replace(/ aiming point/, ""));
     } else if (p.kind === "base") {
       g.append("rect").attr("x", x - 4).attr("y", y - 4).attr("width", 8).attr("height", 8).attr("class", "fill-jp");
-      g.append("text").attr("class", "mk-label jp").attr("x", x + 8).attr("y", y + 4).text("First Kokubu");
+      g.append("text").attr("class", "mk-label jp").attr("x", x + 8).attr("y", y + 4).text(p.label.replace(/ airfield.*$/, ""));
     } else if (p.kind === "radar") {
       const h = P.get("hay-1200").ll; const a = xy(h);
       g.append("path").attr("d", `M${a[0]},${a[1]}L${x},${y}`).attr("class", "stroke-us").attr("stroke-dasharray", "1 4").attr("stroke-width", 1.6);
