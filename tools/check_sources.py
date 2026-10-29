@@ -42,6 +42,7 @@ CITES = {
     "army/actions.csv": ["page"],
     "army/places.csv": ["source"],
     "roads/oss967-gcps.csv": ["source"],
+    "roads/oss967-landings.csv": ["source"],
     "army/ships.csv": ["links"],
     "army/relations.csv": ["page"],
     "comsubpac/disposition.csv": ["page"],

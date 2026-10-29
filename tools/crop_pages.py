@@ -13,7 +13,16 @@ contact sheets to find which pages hold which tables.
 
   uv run --with pillow python3 tools/crop_pages.py heads 578447414 918 953 960
       -> /tmp/bang/heads_578447414_1.jpg ... (Army morning reports, rg64-<roll>:
-         the date / STATION / ORGANIZATION strip of each page, 6 to an image)
+         the date / STATION / ORGANIZATION strip of each page, 6 to an image; pages as
+         "918 953" or "918-930,953"; add `tall` for the book-type forms of 1940 - mid-1943,
+         whose ORGANIZATION line sits lower)
+
+  uv run --with pillow python3 tools/crop_pages.py thumbs 427179736 700-760
+      -> /tmp/bang/thumbs_427179736_1.jpg ... (Army morning reports: 32 labelled page
+         thumbnails per sheet, to tell fronts, sideways panels and backs apart at a glance)
+  uv run --with pillow python3 tools/crop_pages.py panel 427179736 709 [ccw]
+      -> /tmp/bang/panel_427179736_p0709_a.jpg, _b.jpg (a sideways "Station and record of
+         events" panel turned upright (clockwise by default) and cut into two readable halves)
 
 Output goes to $CROP_DIR (default /tmp/bang).
 """
@@ -31,7 +40,7 @@ def scan(na_id, page):
     return Image.open(CACHE / "nara" / f"rg367-{na_id}" / f"p{int(page):02d}.jpg")
 
 
-def heads(roll, pages, per=6, width=1400):
+def heads(roll, pages, per=6, width=1400, bottom=0.17):
     """Morning-report header strips stacked for quick reading. The 1943-44
     form fills the frame, so the header sits in the top ~16% of the scan."""
     folder = CACHE / "nara" / f"rg64-{roll}"
@@ -40,7 +49,7 @@ def heads(roll, pages, per=6, width=1400):
         for p in pages[s:s + per]:
             img = Image.open(folder / f"p{int(p):04d}.jpg")
             w, h = img.size
-            strip = ImageOps.autocontrast(img.crop((0, int(h * 0.02), w, int(h * 0.17))).convert("L"), cutoff=1)
+            strip = ImageOps.autocontrast(img.crop((0, int(h * 0.02), w, int(h * bottom))).convert("L"), cutoff=1)
             strips.append((p, fit(strip, width)))
         canvas = Image.new("L", (width, sum(st.height + 26 for _, st in strips)), 255)
         draw = ImageDraw.Draw(canvas)
@@ -51,6 +60,53 @@ def heads(roll, pages, per=6, width=1400):
             y += st.height + 26
         path = OUT / f"heads_{roll}_{s // per + 1}.jpg"
         canvas.save(path, quality=88)
+        print(path)
+
+
+def rg64_pages(roll, spec):
+    out = []
+    for part in spec:
+        for piece in str(part).split(","):
+            a, _, b = piece.partition("-")
+            out += range(int(a), int(b or a) + 1)
+    folder = CACHE / "nara" / f"rg64-{roll}"
+    have = [p for p in out if (folder / f"p{p:04d}.jpg").exists()]
+    if len(have) < len(out):
+        print(f"not fetched (morning_reports.py fetch {roll} ...): "
+              f"{','.join(str(p) for p in out if p not in have)}", file=sys.stderr)
+    return folder, have
+
+
+def thumbs(roll, spec, per=32, cols=8, thumb=(240, 320)):
+    folder, pages = rg64_pages(roll, spec)
+    for s in range(0, len(pages), per):
+        batch = pages[s:s + per]
+        rows = (len(batch) + cols - 1) // cols
+        canvas = Image.new("L", (cols * (thumb[0] + 6), rows * (thumb[1] + 24)), 255)
+        draw = ImageDraw.Draw(canvas)
+        for i, p in enumerate(batch):
+            t = ImageOps.autocontrast(Image.open(folder / f"p{p:04d}.jpg").convert("L"), cutoff=1)
+            t.thumbnail(thumb)
+            x, y = (i % cols) * (thumb[0] + 6), (i // cols) * (thumb[1] + 24)
+            canvas.paste(t, (x, y + 20))
+            draw.text((x + 4, y + 4), f"p{p:04d}", fill=0)
+        path = OUT / f"thumbs_{roll}_{s // per + 1}.jpg"
+        canvas.save(path, quality=85)
+        print(path)
+
+
+def panel(roll, page, turn="cw", width=1700):
+    """The book-type reports' "Station and record of events" panel is filmed sideways:
+    turn the page upright and cut it into overlapping halves along the lines."""
+    folder, pages = rg64_pages(roll, [page])
+    if not pages:
+        return
+    img = Image.open(folder / f"p{pages[0]:04d}.jpg").convert("L")
+    img = ImageOps.autocontrast(img.rotate(-90 if turn == "cw" else 90, expand=True), cutoff=1)
+    w, h = img.size
+    for tag, x0 in (("a", 0), ("b", int(w * 0.40))):
+        path = OUT / f"panel_{roll}_p{pages[0]:04d}_{tag}.jpg"
+        fit(img.crop((x0, 0, min(w, x0 + int(w * 0.60)), h)), width).save(path, quality=90)
         print(path)
 
 
@@ -103,7 +159,13 @@ if __name__ == "__main__":
     elif cmd == "sheet":
         sheet(args[0])
     elif cmd == "heads":
-        heads(args[0], args[1:])
+        tall = "tall" in args[1:]
+        _, pages = rg64_pages(args[0], [a for a in args[1:] if a != "tall"])
+        heads(args[0], pages, per=4 if tall else 6, bottom=0.32 if tall else 0.17)
+    elif cmd == "thumbs" and len(args) >= 2:
+        thumbs(args[0], args[1:])
+    elif cmd == "panel" and len(args) >= 2:
+        panel(args[0], args[1], args[2] if len(args) > 2 else "cw")
     elif cmd == "zoom" and len(args) == 6:
         zoom(args[0], args[1], *map(int, args[2:]))
     else:

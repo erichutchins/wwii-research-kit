@@ -57,6 +57,40 @@ Only **changes** of station are recorded; a unit stays where its last row puts i
 another source (a battalion's command post from its journal, a division's position) say so in
 `source` and are drawn as assumed.
 
+## Book-type rolls (1940 – mid-1943)
+
+Before the printed WD AGO form 1 came into use in mid-1943, a unit's reports were a bound book, filmed page by page,
+and each roll part holds many units' 1940–43 books one after another, separated by a filmer's **SPACER** target. The
+OCR is thin (on some rolls, none at all) and catches mostly the backs: name entries, rosters, specialist and ration
+tables. A wartime month's station is on one **"Station and record of events"** panel, often printed sideways, in day
+ranges ("1-10 Billeting Area ... 10-20 ... 21-31 ..."), and the unit's name is on the month's first page. So:
+
+- `morning_reports.py classify <roll> <range> "<regex>"`: each page's kind from its OCR (`spacer`, `form`, `panel`,
+  `entries`, `specialists`, `ration`, `noocr`), its date and unit as far as the OCR goes, and `*` where the regex
+  matches. Spacers bound a unit's book; panels are the pages to read.
+- `crop_pages.py thumbs <roll> <range>`: 32 page thumbnails to a sheet, for the `noocr` pages and to see a run's
+  edges (panels and spacers are easy to spot).
+- `crop_pages.py panel <roll> <page> [ccw]`: the panel turned upright, in two readable halves.
+
+## Reading at scale
+
+Reading pages is the slow part and it is repetitive, so it can be shared out. The kit has a subagent for it,
+`.claude/agents/morning-report-reader.md`: one job is one unit in one roll part (a page range or months), and it
+returns a **draft**, never rows. The calling session:
+
+1. **Maps the rolls once**: `search` for the unit family's designation, then `pages <roll> "<text>"` and `classify` to
+   list each unit's runs (roll, pages, months). Keep that table in the research note.
+2. **Cuts jobs**: one per unit run, each with the unit's key, its name as the clerk types it (a regex), the roll, the
+   range, and the draft's path, `sources/drafts/mr-<unit>-<roll>.csv`.
+3. **Runs them in parallel**, a few at a time (each about 40 tool calls).
+4. **Checks each draft**: `morning_reports.py checkdraft sources/drafts/mr-*.csv` (columns
+   `unit,roll,page,kind,month,days,station,org,read,note`; every page fetched, `read` = `scan`, months and days well
+   formed). Then spot-reads a few of each reader's pages on the scan, above all the `org` that ties a page to the unit.
+5. **Enters the rows** in `records/army/stations.csv` (only changes of station), with `units.csv`, `places.csv` and
+   `inventory.yml`, then runs `build_army.py` and `check_sources.py`.
+
+A draft is a reader's work, not data: nothing from it is cited until step 4 is done.
+
 ## Pitfalls seen so far
 
 - A typist can keep the old 100 km square letter after crossing into the next square; a

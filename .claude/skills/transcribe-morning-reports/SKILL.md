@@ -32,6 +32,11 @@ and the pitfalls. Formats are in `records/army/README.md`.
    slipped digit: place the row at the town and say so.
 7. **Check.** `uv run tools/check_sources.py` must pass. Add the unit to `records/inventory.yml`.
 
+**Book-type rolls (1940 – mid-1943) and many units**: `morning_reports.py classify` finds the panels and spacers,
+`crop_pages.py thumbs` and `panel` read them; to share the reading out, one unit-run per
+`.claude/agents/morning-report-reader.md` job, each returning a draft that `morning_reports.py checkdraft` checks
+(`guides/MORNING-REPORTS.md`, "Book-type rolls" and "Reading at scale").
+
 ## Rules
 
 - Cite every page. Other sources (a battalion journal, a division history, an after action

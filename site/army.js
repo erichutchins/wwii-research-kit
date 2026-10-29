@@ -75,7 +75,7 @@ const CITIES = [
 const TIER_PX_PER_DEG = { 0: 0, 1: 0, 2: 35, 3: 80 };   // zoom needed before a tier shows
 
 const state = { unit: null, t: null, playing: false, k: 1, acts: true };
-let DATA, LAND, BORDERS, ROADS, proj, path, zoom, hitPoints = [];
+let DATA, LAND, BORDERS, ROADS, LANDINGS, proj, path, zoom, hitPoints = [];
 
 const svg = d3.select("#map");
 const tip = document.getElementById("tip");
@@ -88,8 +88,10 @@ Promise.all([
   d3.json(RECORDS + "army/army.json"),
   d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json"),
   d3.json(RECORDS + "roads/oss967-primary.geojson").catch(() => null),   // the primary roads of 1942 (OSS Map 967): faint context
-]).then(([data, world, roads]) => {
+  d3.csv(RECORDS + "roads/oss967-landings.csv").catch(() => null),      // and its landing places (beaches), the same map
+]).then(([data, world, roads, landings]) => {
   ROADS = roads;
+  LANDINGS = landings;
   LAND = topojson.feature(world, world.objects.land);
   BORDERS = topojson.mesh(world, world.objects.countries, (a, b) => a !== b);
   DATA = prepare(data);
@@ -232,6 +234,14 @@ function render() {
   g.append("path").datum(BORDERS).attr("class", "border").attr("d", path);
   if (ROADS) g.append("path").datum(ROADS).attr("class", "road").attr("d", path)
     .append("title").text("Primary roads, 1942, as OSS Map 967 drew them (traced; ± about 4 km)");
+  // OSS Map 967's landing places (Aug 1942, before Torch): the point of each arrow, as the map drew it
+  if (LANDINGS) for (const l of LANDINGS) {
+    const xy = proj([+l.lon, +l.lat]);
+    if (!xy) continue;
+    g.append("g").attr("class", "mk landing").datum(xy)
+      .append("path").attr("d", "M0,3L-3.5,-3L3.5,-3Z").attr("class", l.kind === "minor" ? "minor" : "extensive")
+      .append("title").text(`${l.kind === "minor" ? "Minor beach or landing place" : l.kind === "extensive" ? "Extensive beach" : "End of \"Sandy coastline with extensive beaches\""}, as OSS Map 967 marked it (22 Aug 1942; ± about ${l.fit_km} km)`);
+  }
 
   const labels = g.append("g");
   // country and sea names: placed before the cities, centred, and hidden on overlap too
@@ -642,6 +652,9 @@ function renderLegend() {
   item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("stroke", "var(--series-track)")
     .attr("stroke-width", 2).attr("stroke-dasharray", "5 4"), "Route assumed: at sea, or along a 1942 road (no position given)");
   if (ROADS) item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("class", "road"), "Primary roads of 1942 (OSS Map 967, traced)");
+  if (LANDINGS) item(g => { g.append("path").attr("d", "M-5,3L-8.5,-3L-1.5,-3Z").attr("class", "landing minor");
+                            g.append("path").attr("d", "M5,3L1.5,-3L8.5,-3Z").attr("class", "landing extensive"); },
+       "Beaches and landing places on OSS Map 967, Aug 1942 (solid: minor; hollow: extensive)");
   if (actsOf(u).length)
     item(g => g.append("path").attr("d", "M0,-5L5,0L0,5L-5,0Z").attr("fill", "var(--series-attack)")
                 .attr("stroke", "var(--text-primary)").attr("stroke-width", 1.2),

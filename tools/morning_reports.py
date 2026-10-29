@@ -27,6 +27,12 @@ Commands:
   text <roll> <pages>                print cached/fetched OCR, e.g. 918-966,970
   changes <draft.csv> [skip-roll...] pages where the OCR'd station changes (read these on the scan)
   fetch <roll> <pages>               download scans -> sources/nara/rg64-<roll>/pNNNN.jpg
+  classify <roll> <pages> ["<regex>"] each page's kind from its OCR (spacer, form, panel,
+                                     entries, specialists, ration, noocr), with its date and unit as
+                                     far as OCR goes, and * where the regex matches: the
+                                     triage for 1940 - mid-1943 book-type rolls
+  checkdraft <draft.csv> [...]       check a reader's draft (guides/MORNING-REPORTS.md,
+                                     "Reading at scale") before its rows go to records/army/
 
 OCR text and scans are cached in sources/nara/rg64-<roll>/ (git-ignored).
 Search hits are OCR matches: always confirm on the scan. A soldier only
@@ -383,6 +389,80 @@ def fetch(roll, pages):
     print(f"{rec['title']}: {len(pages)} pages -> {rel(d)}")
 
 
+# -- Book-type rolls (1940 - mid-1943) ---------------------------------------
+# These reports were bound books: a wartime month may be one sideways "Station and
+# record of events" panel, the unit's name on the month's first page, and between
+# them name entries, rosters, and specialist and ration tables. The OCR finds some
+# of it; `classify` says what each page is, so a reader fetches only the pages that
+# matter. Kinds, from the OCR text: a guide, not a reading (a panel whose heading the OCR
+# missed shows as `entries`, and OCR dates are often wrong), so confirm on the thumbnails:
+KINDS = [
+    ("spacer", r"SPACER|AG\s+RAC\s*M"),  # the filmer's target between units: a run's edge
+    ("panel", r"STATION\s+AND\s+RECORD"),
+    ("form", r"MORNING\s+REPORT"),
+    ("specialists", r"Specialists\s+Present"),
+    ("ration", r"RATION\s+(ACCOUNT|RETURN)|Messing\s+with"),
+]
+
+
+def kind(text):
+    if len(text.strip()) < 25:
+        return "noocr"
+    for k, rx in KINDS:
+        if re.search(rx, text, re.I):
+            return k
+    return "entries"
+
+
+def classify(roll, pages, pattern=None):
+    rx = re.compile(pattern, re.I) if pattern else None
+    print(f"{record(roll)['title']}")
+    print("page   kind         date        match  unit (OCR) | first words")
+    for n, t in ocr_many(roll, pages).items():
+        date, org, _ = header(t)
+        first = " ".join(t.split())[:60]
+        hit = "*" if rx and rx.search(t) else ""
+        print(f"p{n:04d}  {kind(t):12} {date or '-':11} {hit:6} {org or '-'} | {first}")
+
+
+DRAFT_COLS = ["unit", "roll", "page", "kind", "month", "days", "station", "org", "read", "note"]
+
+
+def checkdraft(paths):
+    """A reader's draft: one row per station read, its page, as typed. Problems
+    are printed; the exit status is the count, so a script can gate on it."""
+    import csv
+    bad = 0
+    for path in paths:
+        rows = list(csv.DictReader(open(path, encoding="utf-8")))
+        cols = list(rows[0].keys()) if rows else []
+        if None in cols:
+            print(f"{path}: a row has more fields than the header: quote any field with a comma in it"); bad += 1
+            continue
+        if cols != DRAFT_COLS:
+            print(f"{path}: columns {cols} != {DRAFT_COLS}"); bad += 1
+            continue
+        for i, r in enumerate(rows, 2):
+            where = f"{path}:{i}"
+            def err(msg):
+                nonlocal bad
+                print(f"{where}: {msg}"); bad += 1
+            if not re.fullmatch(r"\d{6,12}", r["roll"]): err(f"roll {r['roll']!r}")
+            if not re.fullmatch(r"\d{1,4}", r["page"]): err(f"page {r['page']!r}")
+            elif not (NARA / f"rg64-{r['roll']}" / f"p{int(r['page']):04d}.jpg").exists():
+                err(f"page not fetched (read it on the scan): rg64-{r['roll']}/p{int(r['page']):04d}")
+            if r["kind"] not in ("form", "panel", "entries"): err(f"kind {r['kind']!r}")
+            if not re.fullmatch(r"194\d-(0[1-9]|1[0-2])", r["month"]): err(f"month {r['month']!r} (YYYY-MM)")
+            if r["days"] and not re.fullmatch(r"\d{1,2}(-\d{1,2})?", r["days"]): err(f"days {r['days']!r}")
+            if None in r or None in r.values():
+                err("wrong number of fields: quote any field with a comma in it"); continue
+            if r["read"] not in ("scan", "scan; org ocr"):
+                err("read must be 'scan' (or 'scan; org ocr' when only the unit's name is from the OCR)")
+            if not r["station"].strip(): err("no station: leave out a page that gives none")
+        print(f"{path}: {len(rows)} rows")
+    return bad
+
+
 if __name__ == "__main__":
     cmd, args = (sys.argv[1], sys.argv[2:]) if len(sys.argv) > 1 else ("", [])
     if cmd == "search" and args:
@@ -406,5 +486,11 @@ if __name__ == "__main__":
             print(roll, ",".join(map(str, pages)))
     elif cmd == "fetch" and len(args) == 2:
         fetch(args[0], parse_pages(args[1]))
+    elif cmd == "classify" and len(args) >= 2:
+        classify(args[0], parse_pages(args[1]), args[2] if len(args) > 2 else None)
+    elif cmd == "checkdraft" and args:
+        n = checkdraft(args)
+        print(f"{n} problem(s)")
+        sys.exit(min(n, 99))
     else:
         sys.exit(__doc__)
