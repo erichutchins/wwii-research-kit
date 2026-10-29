@@ -85,6 +85,35 @@
   .row .ship .ship-voyage { color: var(--text-muted); }
   .row .ship a { color: var(--text-secondary); justify-self: start; }
 
+  /* How they travelled: the sea crossings (ship, silhouette; the seafloor under an LST crossing) and the train journeys */
+  .viz-root { --seafloor: #d9d4c7; --seafloor-edge: #a9a291; }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root { --seafloor: #3d3a33; --seafloor-edge: #6b665a; }
+  }
+  :root[data-theme="dark"] .viz-root { --seafloor: #3d3a33; --seafloor-edge: #6b665a; }
+  .travel { border-bottom: 1px solid var(--border); padding: 8px 14px 10px; font-size: 15px; color: var(--text-secondary); }
+  .travel > summary { cursor: pointer; color: var(--text-primary); font-weight: 600; font-size: 16px; padding: 2px 0; }
+  .travel .leg { margin: 8px 0 0; padding: 7px 9px; border-left: 3px solid var(--text-muted); background: var(--wash);
+                 border-radius: 0 3px 3px 0; display: grid; gap: 4px; cursor: pointer; }
+  .travel .leg:focus-visible { outline: 2px solid var(--series-track); }
+  .travel .leg.sea { border-left-color: var(--series-track); }
+  .travel .leg-head { color: var(--text-primary); }
+  .travel .leg-head b { font-weight: 600; }
+  .travel .ship-line { display: flex; align-items: center; gap: 8px; color: var(--text-primary); }
+  .travel .ship-line svg { flex: none; }
+  .travel .ship-line .st { color: var(--text-muted); }
+  .travel .sil { fill: var(--text-primary); }
+  .travel .depth { display: block; width: 100%; height: 104px; overflow: visible; }
+  .travel .depth .water { fill: var(--series-track); fill-opacity: 0.08; }
+  .travel .depth .floor { fill: var(--seafloor); stroke: var(--seafloor-edge); stroke-width: 1; }
+  .travel .depth .surface { stroke: var(--coast); stroke-width: 1; }
+  .travel .depth text { fill: var(--text-muted); font-size: 12.5px; }
+  .travel .depth .deep-label { fill: var(--text-secondary); }
+  .travel .depth .deep { fill: var(--text-primary); }
+  .travel .depth .cross { stroke: var(--text-secondary); stroke-width: 1; }
+  .travel .cap { color: var(--text-muted); font-size: 14px; }
+  .travel .others { margin-top: 8px; color: var(--text-muted); font-size: 14px; }
+
   @media (max-width: 900px) {
     .app { height: auto; }
     header { flex-direction: column; }
@@ -157,6 +186,7 @@
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script src="scalebar.js"></script>
+<script src="silhouettes.js"></script>
 <script src="army.js"></script>
 <script src="footer.js"></script>
 </body>

@@ -65,6 +65,8 @@ PLACED = ("grid", "place", "station")
 # ships.csv `status`: confirmed (the ship is identified), candidate (a possible identification),
 # unknown (the typed name or number doesn't identify a ship), none (the crossing isn't recorded)
 SHIP_STATUS = ("confirmed", "candidate", "unknown", "none")
+# ships.csv `silhouette`: a ship profile in silhouettes.yml, read from its built silhouettes.json
+SILHOUETTE_SHIPS = set(json.loads((RECORDS / "silhouettes" / "silhouettes.json").read_text())["ships"])
 BEARINGS = {"N": 0, "NNE": 22.5, "NE": 45, "ENE": 67.5, "E": 90, "ESE": 112.5, "SE": 135, "SSE": 157.5,
             "S": 180, "SSW": 202.5, "SW": 225, "WSW": 247.5, "W": 270, "WNW": 292.5, "NW": 315, "NNW": 337.5}
 
@@ -177,6 +179,10 @@ def place(rows, page=PAGE):
             continue
         info = {k: r[k] for k in ("as_typed", "ship", "status", "voyage", "about")}
         info["links"] = r["links"].split()
+        if r.get("silhouette"):
+            if r["silhouette"] not in SILHOUETTE_SHIPS:
+                problems.append(f"{where} silhouette {r['silhouette']!r} is not a ship in silhouettes.yml")
+            info["silhouette"] = r["silhouette"]
         st[at[0]].setdefault("ships", []).append(info)
         landing = [x for x in st if x["date"] == r["landed"] and x["lat"] is not None]
         if not landing:

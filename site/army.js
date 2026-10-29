@@ -89,12 +89,14 @@ Promise.all([
   d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json"),
   d3.json(RECORDS + "roads/oss967-primary.geojson").catch(() => null),   // the primary roads of 1942 (OSS Map 967): faint context
   d3.csv(RECORDS + "roads/oss967-landings.csv").catch(() => null),      // and its landing places (beaches), the same map
-]).then(([data, world, roads, landings]) => {
+  d3.csv(RECORDS + "army/seafloor.csv", d3.autoType).catch(() => []),   // ETOPO1 under each sea crossing (tools/army_seafloor.py)
+  typeof SILHOUETTES === "undefined" ? null : SILHOUETTES.catch(() => null),   // ship profiles for the crossings
+]).then(([data, world, roads, landings, seafloor]) => {
   ROADS = roads;
   LANDINGS = landings;
   LAND = topojson.feature(world, world.objects.land);
   BORDERS = topojson.mesh(world, world.objects.countries, (a, b) => a !== b);
-  DATA = prepare(data);
+  DATA = prepare(data, seafloor);
   buildControls();
   new ResizeObserver(() => render()).observe(document.querySelector(".map-wrap"));
   // deep link: army.html?unit=106aaa-d&t=1944-08-15
@@ -103,7 +105,13 @@ Promise.all([
   if (q.get("t")) setTime(parseDay(q.get("t")));
 });
 
-function prepare(data) {
+// A leg is a sea crossing when routes.csv says `by: sea`, when a ship (ships.csv) is on a station row from
+// its start up to its end or landed the unit at its end, or when a row between says "at sea" or "aboard"
+// (as tools/army_seafloor.py decides, which samples the seafloor under the same legs)
+const AT_SEA = /\b(at sea|aboard|on board)\b/i;
+
+function prepare(data, seafloor = []) {
+  const floors = d3.group(seafloor, d => `${d.unit} ${d.from instanceof Date ? d3.utcFormat("%Y-%m-%d")(d.from) : d.from} ${d.to instanceof Date ? d3.utcFormat("%Y-%m-%d")(d.to) : d.to}`);
   const units = data.units.map(u => {
     const rows = u.stations.map(r => ({
       ...r, unit: u.unit, unitName: u.name, t: parseDay(r.date), plotted: r.lat !== null,
@@ -132,7 +140,13 @@ function prepare(data) {
       if (route) b.routeNote = route.note;
       // also dashed when the arriving row says the route is assumed (a crossing the reports don't
       // date) and when either end is a headquarters' or division's position rather than the unit's
-      legs.push({ from: a, to: b, coords, times, gap, by: route?.by || "",
+      const by = route?.by || "";
+      const between = rows.filter(r => r.t >= a.t && r.t < b.t);
+      const ships = [...between.flatMap(r => r.ships || []), ...(b.arrived_by || [])]
+        .filter((sh, k, all) => all.findIndex(x => x.ship === sh.ship && x.as_typed === sh.as_typed) === k);
+      const sea = by === "sea" || (!by && (ships.length > 0 || gap.some(r => AT_SEA.test(r.station))));
+      const floor = sea ? (floors.get(`${u.unit} ${a.date} ${b.date}`) || []).map(d => ({ nm: d.nm, m: d.seafloor_m, lat: d.lat, lon: d.lon })) : [];
+      legs.push({ from: a, to: b, coords, times, gap, by: sea ? "sea" : by, ships, floor,
                   assumed: gap.length > 0 || !!route || /route assumed/i.test(b.note) || a.bn || b.bn });
     });
     const km = d3.sum(legs, l => d3.sum(l.coords.slice(1), (c, j) => d3.geoDistance(l.coords[j], c)) * 6371);
@@ -471,6 +485,8 @@ function renderSide() {
   list.replaceChildren();
   const u = chosen();
   list.append(el("div", "unit-note", u.note));
+  const travel = travelSection(u);
+  if (travel) list.append(travel);
   const rows = [...u.rows, ...actsOf(u)].sort((a, b) => a.t - b.t || (a.act ? 1 : 0) - (b.act ? 1 : 0));
   const nActs = rows.filter(r => r.act).length;
   document.getElementById("side-title").textContent =
@@ -615,6 +631,116 @@ const pageLabel = r => kindOf(r) === "linked" ? `${LINKED[r.page][1]} ↗`
   : `${SOURCE_NAME[kindOf(r)]}, ${kindOf(r) === "aar" ? "PDF " : ""}page ${pageNo(r)} ↗`;
 const clickText = d => kindOf(d) === "linked" ? `Click to open ${LINKED[d.page][1]} ↗`
   : `Click to view ${SOURCE_NAME[kindOf(d)].replace(/^Morning/, "morning")} ${kindOf(d) === "aar" ? "PDF " : ""}page ${pageNo(d)}`;
+
+// ── How they travelled: the sea crossings (each with its ship, the ship's class silhouette and, for an LST
+// crossing, the seafloor under the line the map draws) and the train journeys; the other moves only counted ─
+const fmtDays = (a, b) => {
+  const s = new Date(a), e = new Date(b), same = d3.utcFormat("%Y")(s) === d3.utcFormat("%Y")(e);
+  return `${d3.utcFormat(same ? "%-d %b" : "%-d %b %Y")(s)} – ${fmtDay(e)}`;
+};
+function travelSection(u) {
+  const sea = u.legs.filter(l => l.by === "sea"), rail = u.legs.filter(l => l.by === "rail");
+  if (!sea.length && !rail.length) return null;
+  const road = u.legs.filter(l => l.by === "road").length, other = u.legs.length - sea.length - rail.length - road;
+  const box = el("details", "travel");
+  box.open = true;
+  const n = (k, one, many) => k ? `${k} ${k === 1 ? one : many}` : null;
+  box.append(el("summary", null, `How they travelled: ${[n(sea.length, "sea crossing", "sea crossings"),
+    n(rail.length, "train journey", "train journeys")].filter(Boolean).join(", ")}`));
+  [...sea, ...rail].sort((a, b) => a.from.t - b.from.t).forEach(l => box.append(travelLeg(l)));
+  const rest = [road && `${road} by road, drawn along the roads routes.csv gives`,
+                other && `${other} drawn straight between stations (how they went is in each station's note, where the report says)`];
+  if (rest.some(Boolean)) box.append(el("div", "others", `Other moves: ${rest.filter(Boolean).join("; ")}.`));
+  return box;
+}
+
+function travelLeg(l) {
+  const item = el("div", `leg ${l.by}`);
+  item.tabIndex = 0;
+  item.setAttribute("role", "button");
+  const head = el("div", "leg-head");
+  head.append(el("b", null, l.by === "sea" ? "By sea" : "By train"), ` · ${fmtDays(l.from.t, l.to.t)}`);
+  item.append(head, el("div", null, `${l.from.place} → ${l.to.place}`));
+  if (l.by === "sea") {
+    if (!l.ships.length) item.append(el("div", "cap", "No ship recorded for this crossing (records/army/ships.csv)."));
+    l.ships.forEach(sh => item.append(shipLine(sh)));
+    item.append(...depthProfile(l));
+  } else if (l.to.routeNote) item.append(el("div", "cap", l.to.routeNote));
+  const go = () => { stop(); setTime(l.from.t, { fromList: true }); flyTo(l.from); };
+  item.addEventListener("click", go);
+  item.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+  return item;
+}
+
+// The ship, with its class's profile from silhouettes.yml when ships.csv names one, at one scale for every
+// ship on the page (0.3 px to the foot)
+function shipLine(sh) {
+  const line = el("div", "ship-line");
+  const prof = sh.silhouette && window.SHIPS?.[sh.silhouette];
+  if (prof) {
+    const k = 0.3, h = 160 * k;
+    const s = d3.create("svg").attr("width", prof.length * k + 2).attr("height", h)
+      .attr("viewBox", `0 ${-h + 1} ${prof.length * k + 2} ${h}`).attr("role", "img").attr("aria-label", prof.name);
+    s.append("path").attr("class", "sil").attr("d", prof.d).attr("transform", `translate(1,0) scale(${k})`);
+    s.append("title").text(`${prof.name}: ${prof.plate}`);
+    line.append(s.node());
+  }
+  const txt = el("span", null, shipName(sh));
+  line.append(txt, el("span", "st", `· ${SHIP_STATUS[sh.status].toLowerCase()}`));
+  return line;
+}
+
+// The seafloor under the drawn line of an LST crossing (ETOPO1, 2 nm steps; army_seafloor.py samples only those): depth downward from the surface, the deepest
+// point labelled, a crosshair with distance and depth on hover. A line that crosses land for much of its
+// length (no route drawn, a port not named) gets no profile: its depths would not be the convoy's.
+function depthProfile(l) {
+  const f = l.floor;
+  if (!f.length) return [];
+  const wet = f.map((d, k) => d.m <= 0 ? k : -1).filter(k => k >= 0);
+  const inner = wet.length ? f.slice(wet[0], wet.at(-1) + 1) : f;
+  const landNm = d3.sum(inner.slice(1), (d, k) => d.m > 0 ? d.nm - inner[k].nm : 0), total = f.at(-1).nm;
+  if (landNm > 0.2 * (inner.at(-1).nm - inner[0].nm))
+    return [el("div", "cap", "No seafloor profile: the line the map draws here runs over land (the route isn't recorded), so its depths wouldn't be the ship's.")];
+  const W = 300, H = 104, m = { l: 46, r: 8, t: 6, b: 18 };
+  const deepest = d3.least(f, d => d.m), maxD = -deepest.m;
+  const x = d3.scaleLinear([0, total], [m.l, W - m.r]), y = d3.scaleLinear([0, maxD * 1.05], [m.t, H - m.b]);
+  const depth = d => Math.max(0, -d.m);
+  const s = d3.create("svg").attr("class", "depth").attr("viewBox", `0 0 ${W} ${H}`).attr("preserveAspectRatio", "none")
+    .attr("role", "img").attr("aria-label", `Seafloor along the crossing, deepest about ${d3.format(",")(Math.round(maxD / 100) * 100)} m`);
+  s.append("rect").attr("class", "water").attr("x", m.l).attr("y", y(0)).attr("width", W - m.r - m.l).attr("height", H - m.b - y(0));
+  s.append("path").attr("class", "floor").attr("d", d3.area().x(d => x(d.nm)).y0(H - m.b).y1(d => y(depth(d)))(f));
+  s.append("line").attr("class", "surface").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y(0)).attr("y2", y(0));
+  const ft = mm => d3.format(",")(Math.round(mm * 3.28084 / 100) * 100);
+  const round = mm => d3.format(",")(mm >= 1000 ? Math.round(mm / 100) * 100 : Math.round(mm / 10) * 10);
+  s.append("text").attr("x", m.l - 5).attr("y", y(0) + 4).attr("text-anchor", "end").text("0 m");
+  s.append("text").attr("x", m.l - 5).attr("y", y(maxD)).attr("text-anchor", "end").text(`${round(maxD)} m`);
+  s.append("text").attr("x", m.l).attr("y", H - 4).text("0 nm");
+  s.append("text").attr("x", W - m.r).attr("y", H - 4).attr("text-anchor", "end").text(`${d3.format(",")(Math.round(total))} nm`);
+  s.append("circle").attr("class", "deep").attr("cx", x(deepest.nm)).attr("cy", y(maxD)).attr("r", 4);
+  const right = x(deepest.nm) > W * 0.6;
+  s.append("text").attr("class", "deep-label").attr("x", x(deepest.nm) + (right ? -7 : 7)).attr("y", y(maxD) - 6)
+    .attr("text-anchor", right ? "end" : "start").text(`deepest ${round(maxD)} m`);
+  const cross = s.append("line").attr("class", "cross").attr("y1", m.t).attr("y2", H - m.b).style("display", "none");
+  const dot = s.append("circle").attr("class", "deep").attr("r", 3.5).style("display", "none");
+  s.append("rect").attr("x", m.l).attr("y", 0).attr("width", W - m.r - m.l).attr("height", H).attr("fill", "transparent")
+    .on("click", ev => ev.stopPropagation())
+    .on("mousemove", ev => {
+      const nmAt = x.invert(d3.pointer(ev)[0]), d = f[Math.min(f.length - 1, d3.bisector(e => e.nm).center(f, nmAt))];
+      cross.style("display", null).attr("x1", x(d.nm)).attr("x2", x(d.nm));
+      dot.style("display", null).attr("cx", x(d.nm)).attr("cy", y(depth(d)));
+      const c = el("div");
+      c.append(el("div", "v", d.m > 0 ? "Over land" : `${round(-d.m)} m (${ft(-d.m)} ft)`),
+               el("div", "k", `${d3.format(",")(Math.round(d.nm))} nm from ${l.from.place}`),
+               el("div", "m", `${d3.format(".2f")(d.lat)}°, ${d3.format(".2f")(d.lon)}° · ETOPO1 seafloor under the drawn line`));
+      showTip(ev, c);
+    })
+    .on("mouseleave", () => { cross.style("display", "none"); dot.style("display", "none"); hideTip(); });
+  const cap = `Deepest water under the line the map draws: about ${round(maxD)} m (${ft(maxD)} ft), ` +
+    `${d3.format(",")(Math.round(deepest.nm))} nm from ${l.from.place}. The ship's own course isn't recorded` +
+    `${l.to.routeNote ? " (the line follows the route drawn, itself approximate)" : " (the line is straight)"}; seafloor from NOAA's ETOPO1, 1 arc-minute.` +
+    (landNm > 0 ? ` The drawn line crosses land for about ${d3.format(",")(Math.round(landNm))} nm, shown as no depth.` : "");
+  return [s.node(), el("div", "cap", cap)];
+}
 
 // ── Stats & legend ──────────────────────────────────────────────────────────
 function renderStats() {

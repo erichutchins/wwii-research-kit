@@ -64,9 +64,14 @@ function plate(host, drawing, name, ...lines) {
   host.append(p);
 }
 
-Promise.all([SILHOUETTES, fetch(RECORDS + "ships.json").then(r => r.json())]).then(([s, vessels]) => {
-  // which vessels each ship profile draws (each ship.yml names its class's silhouette)
-  const usedBy = k => vessels.filter(v => v.silhouette === k).map(v => `USS ${v.name} (${v.hull})`);
+Promise.all([SILHOUETTES, fetch(RECORDS + "ships.json").then(r => r.json()),
+             fetch(RECORDS + "army/army.json").then(r => r.json())]).then(([s, vessels, army]) => {
+  // which vessels each ship profile draws: each ship.yml names its class's silhouette, and so does each
+  // sea crossing in records/army/ships.csv (the ship, and the unit it carried)
+  const crossings = army.units.flatMap(u => u.stations.flatMap(t => (t.ships || [])
+    .filter(sh => sh.silhouette).map(sh => ({ k: sh.silhouette, label: `${sh.ship} (${u.short}, ${t.date})` }))));
+  const usedBy = k => [...vessels.filter(v => v.silhouette === k).map(v => `USS ${v.name} (${v.hull})`),
+                       ...crossings.filter(c => c.k === k).map(c => c.label)];
   // aircraft: plan view left, profile and head-on right, all scaled by real span (largest = 100 units wide)
   const maxSpan = Math.max(...Object.values(s.aircraft).map(a => a.span));
   for (const a of Object.values(s.aircraft)) {
