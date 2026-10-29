@@ -132,7 +132,7 @@ function prepare(data) {
       if (route) b.routeNote = route.note;
       // also dashed when the arriving row says the route is assumed (a crossing the reports don't
       // date) and when either end is a headquarters' or division's position rather than the unit's
-      legs.push({ from: a, to: b, coords, times, gap,
+      legs.push({ from: a, to: b, coords, times, gap, by: route?.by || "",
                   assumed: gap.length > 0 || !!route || /route assumed/i.test(b.note) || a.bn || b.bn });
     });
     const km = d3.sum(legs, l => d3.sum(l.coords.slice(1), (c, j) => d3.geoDistance(l.coords[j], c)) * 6371);
@@ -260,9 +260,10 @@ function render() {
 
   const tg = g.append("g");
   u.legs.forEach(l => tg.append("path").datum({ type: "LineString", coordinates: l.coords })
-    .attr("class", `track ahead${l.assumed ? " assumed" : ""}`).attr("d", path));
+    .attr("class", `track ahead${l.assumed ? " assumed" : ""}${l.by === "rail" ? " rail" : ""}`).attr("d", path));
   u.pastPath = tg.append("path").attr("class", "track past");
   u.pastAssumed = tg.append("path").attr("class", "track past assumed");
+  u.pastRail = tg.append("path").attr("class", "track past assumed rail");
 
   const mg = g.append("g");
   hitPoints = [];
@@ -384,15 +385,16 @@ function setTime(t, { fromList = false } = {}) {
     if (pos) u.marker.datum(proj(pos));
   }
   // track covered so far: solid for known legs, dashed for assumed ones
-  const solid = [], dashed = [];
+  const solid = [], dashed = [], rail = [];
   u.legs.forEach(l => {
     if (l.from.t > state.t) return;
     const done = l.coords.filter((c, j) => l.times[j] <= state.t);
     const line = l.to.t <= state.t ? l.coords : [l.coords[0], ...done.slice(1), positionAt(u, state.t)];
-    (l.assumed ? dashed : solid).push(line);
+    (l.by === "rail" ? rail : l.assumed ? dashed : solid).push(line);
   });
   u.pastPath?.attr("d", path({ type: "MultiLineString", coordinates: solid }));
   u.pastAssumed?.attr("d", path({ type: "MultiLineString", coordinates: dashed }));
+  u.pastRail?.attr("d", path({ type: "MultiLineString", coordinates: rail }));
   u.pts.forEach(d => d.node?.classList.toggle("future", d.t > state.t));
   u.acts.forEach(d => d.node?.classList.toggle("future", d.t > state.t));
   rescale();
@@ -651,6 +653,9 @@ function renderLegend() {
          "A headquarters' or division's position: the unit's own assumed, legs dashed");
   item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("stroke", "var(--series-track)")
     .attr("stroke-width", 2).attr("stroke-dasharray", "5 4"), "Route assumed: at sea, or along a 1942 road (no position given)");
+  if (u.legs.some(l => l.by === "rail"))
+    item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("stroke", "var(--series-track)")
+      .attr("stroke-width", 2).attr("stroke-dasharray", "10 3 2 3"), "By train, through the line's stations (route assumed)");
   if (ROADS) item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("class", "road"), "Primary roads of 1942 (OSS Map 967, traced)");
   if (LANDINGS) item(g => { g.append("path").attr("d", "M-5,3L-8.5,-3L-1.5,-3Z").attr("class", "landing minor");
                             g.append("path").attr("d", "M5,3L1.5,-3L8.5,-3Z").attr("class", "landing extensive"); },

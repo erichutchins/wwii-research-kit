@@ -190,6 +190,7 @@ def place(rows, page=PAGE):
         rt = routes.setdefault(key, {"unit": r["unit"], "from": r["from_date"], "to": r["to_date"], "points": [], "note": ""})
         rt["points"].append((int(r["seq"]), [float(r["lon"]), float(r["lat"])]))
         rt["note"] = rt["note"] or r["note"]
+        rt["by"] = rt.get("by") or r.get("by", "")
     for (u, f, t), rt in routes.items():
         rt["points"] = [pt for _, pt in sorted(rt["points"])]
         dates = {x["date"] for x in stations.get(u, []) if x["lat"] is not None}
