@@ -12,11 +12,13 @@ const RELIEFS = ["algiers", "algiers-town"].map(n => RECORDS + "relief/" + n + "
 const refUrl = ref => ref in REF_LINKS ? REF_LINKS[ref] : ref;
 const isUrl = u => /^https?:/.test(u || "");
 const NM = 1852;
-// The battery's reach. Its guns aren't recorded (3-inch or 90 mm: a gun battery of the 62nd CA (AA), whose 1st Bn became
-// the 62nd AAA Gun Bn), so both candidates are drawn: maximum horizontal range "as limited by fuze or tracer",
-// FM 4-155 (1940) table A, printed p. 8 (checked on the page image); FM 4-110 (1942) para 4 gives the same figures.
+// The battery's reach. Its own reports don't name its guns; its sister gun batteries of the 1st Bn, 62nd CA (AA), name
+// 90 mm: Battery A at Algiers in the same raids, "went into action w/ 90mm Guns" (12 May 1943) and "fired 453 rds 90mm"
+// (13 May; rg64-427180737/p0633), Battery B at Oran "Fired 35 rounds of 90MM" (20 Jan 1943; rg64-427181738/p0557). So
+// the 90 mm is drawn, labelled inferred: maximum horizontal range "as limited by fuze or tracer", FM 4-155 (1940)
+// table A, printed p. 8 (checked on the page image); FM 4-110 (1942) para 4 gives the same figure (3-inch: 11,100 yd).
 const YD = 0.9144;
-const GUNS = [["3-inch", 11100], ["90 mm", 12600]];
+const GUNS = [["90 mm (inferred)", 12600]];
 const RANGE_REF = "https://archive.org/details/FM_4_155_S_A_A_A_R_D_1940";
 // great-circle distance in metres
 function metres([lon1, lat1], [lon2, lat2]) {
@@ -238,7 +240,7 @@ function buildMap(world, positions, P, reliefs, roads) {
       .on("mouseleave", hideTip).on("click", () => openRef("https://archive.org/details/wardiarygermann451943germ"));
   });
 
-  // the battery's reach: both candidate guns' maximum horizontal range, and the distance to each reported aircraft
+  // the battery's reach: the 90 mm gun's maximum horizontal range (inferred), and the distance to each reported aircraft
   add("range", [], g => {
     g.selectAll("*").remove();
     const b = P.get("battery-c"); if (!b?.ll || T.k <= 6) return;
@@ -258,9 +260,9 @@ function buildMap(world, positions, P, reliefs, roads) {
       const short = m < 9000;   // a short line: put the label under the battery's own
       g.append("text").attr("class", "mk-label small").attr("text-anchor", short ? (bx < 260 ? "start" : "middle") : "start")
         .attr("x", short ? (bx < 260 ? Math.max(8, bx - 40) : bx) : (bx + qx) / 2 + 6).attr("y", short ? by + nmPx(b.ll, 0.87) + 34 : (by + qy) / 2)
-        .text(`${short ? "to the turn: " : ""}${fmtDist(m)} from the battery${out ? ": beyond either gun's range" : ", within either gun's range"}`);
+        .text(`${short ? "to the turn: " : ""}${fmtDist(m)} from the battery${out ? ": beyond a 90 mm gun's range" : ", within a 90 mm gun's range"}`);
     });
-    g.selectAll("circle.reach").on("mousemove", e => showTip(e, `<div class="v">Battery C's reach</div><div class="m">Maximum horizontal range, "as limited by fuze or tracer": 3-inch gun 11,100 yd, 90 mm gun 12,600 yd (FM 4-155, 1940, table A, p. 8; the same in FM 4-110, 1942). Which gun the battery had is not recorded, so both are drawn. Against aircraft at height the reach along the ground is shorter.</div><div class="i">FM 4-155 · click to open</div>`))
+    g.selectAll("circle.reach").on("mousemove", e => showTip(e, `<div class="v">Battery C's reach</div><div class="m">A 90 mm gun's maximum horizontal range, "as limited by fuze or tracer": 12,600 yd (FM 4-155, 1940, table A, p. 8; the same in FM 4-110, 1942). <b>Inferred</b>: Battery C's own reports don't name its guns, but Battery A of the same battalion fired 90 mm guns in these raids at Algiers (12–13 May 1943), and Battery B fired 90 mm at Oran in January. A 3-inch gun would reach 11,100 yd. Against aircraft at height the reach along the ground is shorter.</div><div class="i">FM 4-155 · click to open</div>`))
       .on("mouseleave", hideTip).on("click", () => openRef(RANGE_REF));
   });
 
@@ -332,7 +334,7 @@ function buildMap(world, positions, P, reliefs, roads) {
   sw(`<rect x="8" y="4" width="6" height="6" class="lm"/>`, "Landmark named on the AMS 1942 Alger sheet (today's site)");
   if (roads) sw(`<line x1="1" y1="7" x2="21" y2="7" class="road"/>`, "Primary roads of 1942 (OSS Map 967, traced, ± about 4 km)");
   sw(`<rect x="2" y="2" width="18" height="10" class="relief-land"/><rect x="2" y="2" width="18" height="10" fill="url(#hatch-ax)" opacity=".25"/>`, "Relief and coast: today's elevation (SRTM, USGS)");
-  sw(`<circle cx="11" cy="7" r="6" class="reach"/>`, "Battery C's maximum range, 3-inch or 90 mm (FM 4-155)");
+  sw(`<circle cx="11" cy="7" r="6" class="reach"/>`, "Battery C's maximum range, 90 mm gun (inferred from its sister batteries; FM 4-155)");
   sw(`<circle cx="11" cy="7" r="6" class="unc ax"/><path d="M5,1L17,13M5,13L17,1" class="stroke-air" stroke-width="2.2" fill="none"/>`, "Ju 88 claimed by a Beaufighter, reported (ring assumed)");
   sw(`<circle cx="11" cy="7" r="5" class="approx" style="stroke:var(--axis)"/>`, "Placed by hand or geocoded (approx)");
   sw(`<rect x="2" y="2" width="18" height="10" class="ctx"/>`, "Context only, not recorded");
