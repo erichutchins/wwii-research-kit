@@ -61,11 +61,15 @@ async function replay() {
       world.append("text").datum(xy).attr("class", "place pin").attr("transform", pin(xy)).attr("text-anchor", "middle").text(p.name);
   }
   const gFuture = world.append("g"), gTrail = world.append("g"), gMarks = world.append("g"), gBoats = world.append("g");
+  const replayRuler = scaleBar(document.getElementById("replay-map"), { units: ["nm"] });
+  const toBox = (el, [x, y]) => [x * W / el.clientWidth, y * H / el.clientHeight];   // screen px to viewBox units
+  const replayZoom = t => replayRuler.update(p => proj.invert(t.invert(toBox(svg.node(), p))));
   mapZoom(svg.node(), document.getElementById("replay-map"), t => {
-    world.attr("transform", t); K = t.k;
+    world.attr("transform", t); K = t.k; replayZoom(t);
     world.selectAll(".pin").attr("transform", pin);
     set(+scrub.value);
   }, { max: 8 }).bound(W, H);
+  requestAnimationFrame(() => replayZoom(d3.zoomIdentity));
   for (const b of boats) gFuture.append("path").attr("class", "trail-future").attr("stroke", b.color)
     .attr("d", d3.line(p => proj([p.lon, p.lat])[0], p => proj([p.lon, p.lat])[1])(tracks[b.id]));
   const trails = Object.fromEntries(boats.map(b => [b.id, gTrail.append("path").attr("class", "trail").attr("stroke", b.color)]));
@@ -297,7 +301,10 @@ async function solar() {
   // the reader's zoom and pan (mapzoom.js) move the map inside the clip; the hit and its labels keep their size
   const g = svg.append("g").attr("clip-path", "url(#solar-clip)").append("g");
   const pinned = (xy, k = 1) => `translate(${xy}) scale(${1 / k})`;
-  mapZoom(svg.node(), box.node(), t => { g.attr("transform", t); g.selectAll(".pin").attr("transform", d => pinned(d, t.k)); }, { max: 12, at: "top-left", row: true }).bound(W, H);
+  const solarRuler = scaleBar(box.node(), { units: ["nm"], at: "bottom-right" });
+  const solarZoom = t => solarRuler.update(([x, y]) => proj.invert(t.invert([x * W / svg.node().clientWidth, y * H / svg.node().clientHeight])));
+  mapZoom(svg.node(), box.node(), t => { g.attr("transform", t); g.selectAll(".pin").attr("transform", d => pinned(d, t.k)); solarZoom(t); }, { max: 12, at: "top-left", row: true }).bound(W, H);
+  requestAnimationFrame(() => solarZoom(d3.zoomIdentity));
   g.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([10, 10])()));
   g.append("path").attr("class", "land").attr("d", path(land));
   g.append("path").attr("class", "track-faint").attr("d", path({ type: "LineString", coordinates: pts.map(p => p.ll) }));

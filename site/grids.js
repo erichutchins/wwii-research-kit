@@ -3,6 +3,7 @@
 // actions.csv decoded on its grid and compared with the town the same entry names.
 // The Lambert maths is tools/ndg_grid.py's, generalised to the other zones.
 
+let RULER = null;   // scalebar.js
 const ELLIPSOIDS = {
   clarke1880: { a: 6378249.2, f: 1 / 293.4660213 },   // Clarke 1880 (IGN): the French grids
   bessel: { a: 6377397.155, f: 1 / 299.1528128 },     // Bessel 1841: the Italian grids
@@ -267,11 +268,13 @@ function render() {
 
   k = 1;
   zoom = d3.zoom().scaleExtent([1, 24]).on("zoom", e => {
+    (RULER = RULER || scaleBar(svg.node().parentNode, { units: ["km", "mi"] })).update(p => proj.invert(e.transform.invert(p)));   // the distance ruler
     k = e.transform.k;
     g.attr("transform", e.transform);
     scaleMarks();
   });
   svg.call(zoom);
+  (RULER = RULER || scaleBar(svg.node().parentNode, { units: ["km", "mi"] })).update(p => proj.invert(d3.zoomTransform(svg.node()).invert(p)));   // on load
   scaleMarks();
 }
 

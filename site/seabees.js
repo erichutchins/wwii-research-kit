@@ -3,6 +3,7 @@
 // CSVs in records/seabees/ (stations, parts, places, voyages and the ships' logged positions, and the
 // day's weather from tools/fetch_station_weather.py).
 
+let RULER = null;   // scalebar.js
 const DAY = 864e5;
 const DAYS_PER_SECOND = 20;    // playback speed
 const KM_PER_DAY = 550;        // pace of a moving marker between stations (a transport, ~12 knots)
@@ -195,6 +196,7 @@ function render() {
   mks.append("circle").attr("class", "shape");
   g.append("g").attr("class", "who-g");
   zoom = d3.zoom().scaleExtent([1, 600]).on("zoom", ev => {
+    (RULER = RULER || scaleBar(svg.node().parentNode, { units: ["nm"] })).update(p => proj.invert(ev.transform.invert(p)));   // the distance ruler
     g.attr("transform", ev.transform);
     state.k = ev.transform.k;
     rescale();

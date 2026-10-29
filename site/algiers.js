@@ -204,7 +204,9 @@ function buildMap(world, positions, P, reliefs, roads) {
   const xy = ll => { const p = proj(ll); return [T.x + T.k * p[0], T.y + T.k * p[1]]; };
   const nmPx = (ll, nm) => Math.abs(xy(dest(ll, 90, nm))[0] - xy(ll)[0]);
   let syncing = false;
-  const setView = t => { T = { k: t.k, x: t.x, y: t.y }; gWorld.attr("transform", `translate(${T.x},${T.y}) scale(${T.k})`); render(); };
+  const setView = t => { T = { k: t.k, x: t.x, y: t.y }; gWorld.attr("transform", `translate(${T.x},${T.y}) scale(${T.k})`); render();
+    ruler.update(([x, y]) => proj.invert([(x - T.x) / T.k, (y - T.y) / T.k])); };
+  const ruler = scaleBar(svg.node().parentNode, { units: ["km", "mi"] });
   const view = mapZoom(svg.node(), svg.node().parentNode, t => {
     if (syncing) return;
     d3.select(gWorld.node()).interrupt(); clearTimeout(zoomTo.late);

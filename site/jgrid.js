@@ -2,6 +2,7 @@
 // the 20' column and row strips each key's letters name, with the anchors that placed them
 // (reference/jgrid/anchors.csv). The decoding is tools/jgrid.py's; method and evidence in guides/JAPANESE-GRID.md.
 
+let RULER = null;   // scalebar.js
 const SIDE = 1 / 3;  // degrees: a square is 20' x 20'
 const KEYS = [
   { key: "formosa-1944", name: "Formosa 1944", suffix: "へ", color: "var(--series-track)",
@@ -175,8 +176,12 @@ function render() {
   drawProbe();
 
   k = 1;
-  zoom = d3.zoom().scaleExtent([1, 30]).on("zoom", e => { k = e.transform.k; g.attr("transform", e.transform); scaleMarks(); });
+  zoom = d3.zoom().scaleExtent([1, 30]).on("zoom", e => {
+    (RULER = RULER || scaleBar(svg.node().parentNode, { units: ["nm"] })).update(p => proj.invert(e.transform.invert(p)));   // the distance ruler
+    k = e.transform.k; g.attr("transform", e.transform); scaleMarks();
+  });
   svg.call(zoom);
+  (RULER = RULER || scaleBar(svg.node().parentNode, { units: ["nm"] })).update(p => proj.invert(d3.zoomTransform(svg.node()).invert(p)));   // on load
   scaleMarks();
 }
 

@@ -3,6 +3,7 @@
 // the hand-transcribed CSVs in records/army/ (each station as typed, placed at its town, offset
 // or grid reference, with its page).
 
+let RULER = null;   // scalebar.js
 const DAY = 864e5;
 const DAYS_PER_SECOND = 8;     // playback speed
 const HIT_PX = 14;             // hover radius around a station (24px+ target)
@@ -287,7 +288,10 @@ function render() {
   u.marker = w;
 
   zoom = d3.zoom().scaleExtent([0.25, 60]).translateExtent([[-4 * W, -2 * H], [3 * W, 3 * H]])
-    .on("zoom", ev => { g.attr("transform", ev.transform); state.k = ev.transform.k; rescale(); });
+    .on("zoom", ev => {
+    (RULER = RULER || scaleBar(svg.node().parentNode, { units: ["km", "mi"] })).update(p => proj.invert(ev.transform.invert(p)));   // the distance ruler
+    g.attr("transform", ev.transform); state.k = ev.transform.k; rescale();
+  });
   svg.call(zoom).on("dblclick.zoom", null);
   svg.call(zoom.transform, d3.zoomIdentity);
   svg.on("pointermove", onHover).on("pointerleave", () => setHover(null))

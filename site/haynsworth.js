@@ -100,8 +100,8 @@ const STEPS = [
   { id: "s9", until: "2000", when: "6 April, 1400-2000", view: "theater", title: "The afternoon",
     body: "The raid on TG 58.3 was over by 1337, but the planes kept coming. The 252nd sent its second wave at 1555, and its crews who came down on Kikai-jima met Grummans off Amami; the 601st's four Suisei went out at 1645. The 210th sent two more Suisei at 1400. One plane's track chart survives: it reached its farthest point at 1535, somewhere east-southeast of Amami and close to the task group, under rain cloud, ten-tenths at 500-900 metres with 20 km visibility, saw nothing, and flew home past the Tokara islands. The weather differed by place and hour, and three records give it: on the Japanese route west of the islands that morning, ten-tenths cloud at 4,000 metres with heavy mist beneath and 10 km visibility (the Izumi fighters); over the task force, scattered to broken low cloud, the ceiling generally unlimited, visibility unrestricted, northerly winds of 8 to 16 knots (Bennington's diary, TG 58.1, a few miles east), cloud enough for a Judy to come out of it; and that afternoon's rain to the north-east. Haynsworth was at 27-23N 130-05E at 2000.",
     on: ["t2-1410", "t2-1535", "t2-1603", "t2-1702", "t2-1722", "t2-1750", "hay-2000", "kokubu"], layers: ["track2", "wx", "haytrack", "formation"] },
-  { id: "s9b", feature: "Play the day", until: "2000", when: "6 April, 0900-2000", view: "charts", title: "The day, from both sides",
-    body: "Play the day: the clock runs from 0900, slowing as the raid closes on the picket line and stopping at 1250, when the Judy hit. The caption gives each moment and the pages it comes from; use the bar under the map to pause, step from moment to moment, scrub or speed up. Each plane and ship shows only its last forty minutes. The other ships' positions are recorded only at 0800, 1200 and 2000 and drawn on straight lines between, so they are dimmed on the picket line and left out of the close-up; Haynsworth's track runs from her noon fix to the hit, which is drawn on her picket station: her position at 1250 is not recorded. Blue: Haynsworth, and the ships whose diaries give their 0800, 1200 and 2000 positions, labelled by task group: Essex (her guide), Bunker Hill, Hancock, South Dakota, Washington, North Carolina, the cruisers Springfield, Astoria and Wilkes-Barre, and Cabot (from her two anti-aircraft action forms, 1227 and 1305) of her own Task Group 58.3; Hornet, Bennington, Belleau Wood and San Jacinto of 58.1, a few miles east; Yorktown, Intrepid, Missouri and Wisconsin of 58.4, fuelling and rearming two hundred miles to the south-east. The 252nd Air Group's attack chart has two routes from Kokubu: west of the Tokara islands to Yokoate-jima, then three legs fanning south before turning west into the Okinawa anchorage, and east to Amami and back. Its crews who came down on Kikai-jima met Grummans off Amami at 1430. The Izumi Zeros flew down the west side of the islands to Tokunoshima, saw an escort carrier group and turned back without a fight. A Kushira torpedo Tenzan staged through Kikai-jima that evening. The circles are the carrier groups the T11 scouts reported, shown in their hours (1130-1420 and 1505-1535), placed from the war history's sketch to about 15 miles. Where a chart gives no times, the planes move at an assumed 150 knots from their recorded take-off: the 252nd's routes and the Izumi Zeros' outbound leg are timed that way, and the chart doesn't say whether the 252nd's legs are the plan or the flight.",
+  { id: "s9b", feature: "6 April in motion", until: "2000", when: "6 April, 0900-2000", view: "charts", title: "The day, from both sides",
+    body: "Press play to run the clock from 0900, slowing as the raid closes on the picket line and stopping at 1250, when the Judy hit. The caption gives each moment and the pages it comes from; use the bar under the map to pause, step from moment to moment, scrub or speed up. Each plane and ship shows only its last forty minutes. The other ships' positions are recorded only at 0800, 1200 and 2000 and drawn on straight lines between, so they are dimmed on the picket line and left out of the close-up; Haynsworth's track runs from her noon fix to the hit, which is drawn on her picket station: her position at 1250 is not recorded. Blue: Haynsworth, and the ships whose diaries give their 0800, 1200 and 2000 positions, labelled by task group: Essex (her guide), Bunker Hill, Hancock, South Dakota, Washington, North Carolina, the cruisers Springfield, Astoria and Wilkes-Barre, and Cabot (from her two anti-aircraft action forms, 1227 and 1305) of her own Task Group 58.3; Hornet, Bennington, Belleau Wood and San Jacinto of 58.1, a few miles east; Yorktown, Intrepid, Missouri and Wisconsin of 58.4, fuelling and rearming two hundred miles to the south-east. The 252nd Air Group's attack chart has two routes from Kokubu: west of the Tokara islands to Yokoate-jima, then three legs fanning south before turning west into the Okinawa anchorage, and east to Amami and back. Its crews who came down on Kikai-jima met Grummans off Amami at 1430. The Izumi Zeros flew down the west side of the islands to Tokunoshima, saw an escort carrier group and turned back without a fight. A Kushira torpedo Tenzan staged through Kikai-jima that evening. The circles are the carrier groups the T11 scouts reported, shown in their hours (1130-1420 and 1505-1535), placed from the war history's sketch to about 15 miles. Where a chart gives no times, the planes move at an assumed 150 knots from their recorded take-off: the 252nd's routes and the Izumi Zeros' outbound leg are timed that way, and the chart doesn't say whether the 252nd's legs are the plan or the flight.",
     on: ["kokubu"], layers: ["jptracks"] },
   { id: "s10", until: "2000", when: "6-7 April", view: "wounded", title: "The wounded, and the dead",
     body: "Of the twenty-seven wounded, eleven went across to South Dakota for treatment on the 6th, and three more \"who were failing to respond to treatment\" on the 7th; by the 9th five of them had died aboard her, bringing the dead to twelve (the action report). Neither ship's diary gives the time or place of the transfers: the two tracks on the map are the days they steamed together. On the 7th, with no radar of her own, Haynsworth dropped astern with four other destroyers after Hancock was hit at 1210, and picked up eight of her men blown into the water, four of them injured, while a pair of low-flying Zekes made a pass at the rescue group. The men killed outright were buried at sea at 1816 that evening, according to Irons' history, from the crew's accounts; no war diary or report records it. The burial mark is placed on her track between her 0800 and 2000 fixes, so its position is ours, not a record's; her 1200 fix that day is typed some 55 miles west of the ships she was steaming with, so it is left off the track.",
@@ -286,13 +286,15 @@ function buildMap(world, positions, P, hayTrack) {
   const proj = d3.geoMercator().fitExtent([[0, 0], [W, H]], outline);
   const path = d3.geoPath(proj);
   // only the land polygons near the theatre (clipping the world polygon inverts it)
-  const near = ring => ring.some(([x, y]) => x > 124 && x < 135 && y > 22 && y < 35);
+  const near = ring => ring.some(([x, y]) => x > 122 && x < 146 && y > 6 && y < 35);   // Kyushu to Ulithi
   const landAll = topojson.feature(world, world.objects.land);
   const polys = (landAll.features || [landAll]).flatMap(f => f.geometry.type === "MultiPolygon" ? f.geometry.coordinates : [f.geometry.coordinates]);
   const land = { type: "MultiPolygon", coordinates: polys.filter(poly => near(poly[0])) };
 
   const gWorld = svg.append("g");
   gWorld.append("path").datum(d3.geoGraticule().step([0.5, 0.5]).extent([[126, 24], [133, 33]])()).attr("class", "grat").attr("d", path);
+  // south of the Ryukyus (the run to Ulithi) a coarser grid, so it doesn't crowd the wide view
+  gWorld.append("path").datum(d3.geoGraticule().step([2, 2]).extent([[122, 6], [146, 24]])()).attr("class", "grat").attr("d", path);
   gWorld.append("path").datum(land).attr("class", "land").attr("d", path);
   const gOver = svg.append("g");
   const gLab = svg.append("g");
@@ -302,12 +304,14 @@ function buildMap(world, positions, P, hayTrack) {
   // The reader's own zoom and pan (mapzoom.js) moves the same view the story's steps set; the next step takes it back,
   // and ⟲ returns to the step's view. The view is kept in d3's zoom state too (sync), so a drag starts where the step left it.
   let syncing = false;
-  const setView = t => { T = { k: t.k, x: t.x, y: t.y }; gWorld.attr("transform", `translate(${T.x},${T.y}) scale(${T.k})`); render(); };
+  const setView = t => { T = { k: t.k, x: t.x, y: t.y }; gWorld.attr("transform", `translate(${T.x},${T.y}) scale(${T.k})`); render();
+    ruler.update(([x, y]) => proj.invert([(x - T.x) / T.k, (y - T.y) / T.k])); };
+  const ruler = scaleBar(svg.node().parentNode, { units: ["nm"] });
   const view = mapZoom(svg.node(), svg.node().parentNode, t => {
     if (syncing) return;
     d3.select(gWorld.node()).interrupt(); clearTimeout(zoomTo.late);
     setView(t);
-  }, { min: 0.5, max: 80 });
+  }, { min: 0.2, max: 80 });
   view.reset = () => { if (lastView) zoomTo(lastView); };
   const sync = () => { syncing = true; view.set(d3.zoomIdentity.translate(T.x, T.y).scale(T.k)); syncing = false; };
 
@@ -687,6 +691,7 @@ function buildMap(world, positions, P, hayTrack) {
     if (!ui) buildUI();
     const on = current && current.id === "s9b";
     ui.cap.attr("hidden", on ? null : true); ui.bar.attr("hidden", on ? null : true);
+    svg.node().parentNode.style.setProperty("--scalebar-bottom", on ? "58px" : "10px");
     if (!on) { playing = false; beat = -1; return; }
     if (clock >= T1) { clock = T0; pausedAt = new Set(); }
     beat = -1; showBeat(beatAt(clock), true); paint();

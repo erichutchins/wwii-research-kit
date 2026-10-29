@@ -228,6 +228,7 @@ h2 { font-size: 19px; font-weight: 400; font-style: italic; color: var(--ink-2);
 <script type="application/json" id="data"></script>
 <script src="config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="scalebar.js"></script>
 <script src="mapzoom.js"></script>
 <script>
 (async () => {
@@ -323,6 +324,7 @@ h2 { font-size: 19px; font-weight: 400; font-style: italic; color: var(--ink-2);
   let quiet = false;
   const view = mapZoom(svg.node(), document.querySelector(".map-box"), () => { if (proj && !quiet) { drawStatic(); drawFrame(); } },
                        { capture: true, max: 12, at: "bottom-right" });
+  const ruler = scaleBar(document.querySelector(".map-box"), { units: ["nm"] });
   const tip = document.getElementById("tip");
 
   const PLACES = D.places;
@@ -337,6 +339,7 @@ h2 { font-size: 19px; font-weight: 400; font-style: italic; color: var(--ink-2);
     proj = d3.geoMercator().fitExtent([[m, 26], [W - m, H - 34]], corners);
     view.bound(W, H);
     mapZoom.scaled(proj, { scale: proj.scale(), translate: proj.translate() }, view.transform());
+    ruler.update(p => proj.invert(p));   // the distance ruler (scalebar.js)
     const ringPath = r => "M" + r.map(p => proj(p).map(v => v.toFixed(1)).join(",")).join("L") + "Z";
     gLand.selectAll("path").data([0]).join("path").attr("class", "land").attr("fill-rule", "evenodd")
       .attr("d", N().land.map(ringPath).join(""));

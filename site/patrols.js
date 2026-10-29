@@ -4,6 +4,7 @@
 // records/ships.json. RECORDS and CACHE are set in config.js.
 
 // What a ship.yml leaves out, by kind of vessel. A submarine's page reads as a set of war patrols.
+let RULER = null;   // scalebar.js
 const DEFAULTS = {
   submarine: {
     listTitle: "War patrols", daysLabel: "Days at sea", endText: "End of patrol",
@@ -279,6 +280,7 @@ function render() {
   state.W = W; state.H = H;
   zoom = d3.zoom().scaleExtent([1, 80]).translateExtent([[-W, -H], [2 * W, 2 * H]])
     .on("zoom", ev => {
+    (RULER = RULER || scaleBar(svg.node().parentNode, { units: ["nm"] })).update(p => proj.invert(ev.transform.invert(p)));   // the distance ruler
       g.attr("transform", ev.transform); state.k = ev.transform.k; rescale();
       // dragging the map while following hands control back to the reader (wheel zoom keeps following)
       if (state.playing && state.follow && /move/.test(ev.sourceEvent?.type)) setFollow(false);

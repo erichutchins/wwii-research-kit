@@ -24,9 +24,25 @@ CACHE = Path(os.environ.get("WWII_CACHE") or KIT / "sources")
 
 
 def load_yaml(path):
+    """Load a records YAML file, refusing a key given twice in one mapping: PyYAML would keep the last silently, but
+    the pages' js-yaml rejects the whole file, so a duplicate breaks the site while every tool still passes."""
     import yaml  # PyYAML; the scripts that read YAML declare it for `uv run`
+
+    class Strict(yaml.SafeLoader):
+        pass
+
+    def mapping(loader, node, deep=False):
+        seen = set()
+        for k, _ in node.value:
+            key = loader.construct_object(k, deep=deep)
+            if key in seen:
+                raise yaml.constructor.ConstructorError(None, None, f"duplicate key {key!r} in {path}", k.start_mark)
+            seen.add(key)
+        return yaml.SafeLoader.construct_mapping(loader, node, deep)
+
+    Strict.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, mapping)
     with open(path, encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        return yaml.load(f, Loader=Strict)
 
 
 def vessels():
