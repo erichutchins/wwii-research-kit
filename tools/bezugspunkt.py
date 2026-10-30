@@ -13,8 +13,11 @@ reference/bezugspunkte/ausgabe4.csv; the evidence in anchors.csv (guide: guides/
   python3 tools/bezugspunkt.py check                     anchors.csv: decoded vs expected place
   --edition 4 (default; the only edition read so far)
 
-Positions are provisional: the sections were fitted to towns with an affine transformation
-(rms about 0.4 km), so a decoded point is good to about half a kilometre.
+Accuracy: Section 6 (f0002) is fitted to the map's own printed km grid (Gauss-Krueger, central
+meridian 15E, Bessel, scale 1.0, false easting 3,500 km; lines fitted to about 0.1 km), but against
+17 independent towns (OSM) a decoded point is off by rms 0.44 km (median 0.34 km): the old 1:100,000
+base and the town positions, not the grid. Section 5 (f0003) still uses a fit to towns (rms 0.46 km).
+Take a decoded point as good to about 0.4-0.5 km (guide: "Georeferencing").
 """
 import csv
 import math

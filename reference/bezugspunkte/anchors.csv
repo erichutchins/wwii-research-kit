@@ -1,9 +1,9 @@
 code,place_as_written,document,source,date,edition,expected_lat,expected_lon,decoded_lat,decoded_lon,error_km,note
 71 35,Sonnino,"Bezugspunktkarte 1:100000, 4. Ausgabe (Zusammendruck Gaeta), name printed beside the circle",t312-0090/f0003,undated (filmed with A.O.K. 10 KTB Anlagen of March 1944),4,41.4143,13.2415,41.41454,13.23499,0.55,"map anchor; Sonnino was also one of the towns the fit used, so not an independent test"
 48 19,Terracina,"same map, name printed beside the circle",t312-0090/f0003,undated,4,41.2871,13.2492,41.28671,13.25616,0.58,map anchor; block 48 by the block lines (to confirm); used in the fit
-42 85,S. Pietro Infine,"same map, Section 6",t312-0090/f0002,undated,4,41.4459,13.9615,41.44755,13.96745,0.53,map anchor; used in the fit
-42 57,Mignano,"same map, Section 6 (circle on the town and station)",t312-0090/f0002,undated,4,41.4046,13.9829,41.40756,13.98403,0.34,map anchor; NOT used in the fit: an independent check of the georeferencing
-61 27,Lenola,"same map, Section 6",t312-0090/f0002,undated,4,41.4061,13.4594,41.4088,13.46422,0.5,map anchor; used in the fit
+42 85,S. Pietro Infine,"same map, Section 6",t312-0090/f0002,undated,4,41.4459,13.9615,41.44729,13.97070,0.78,map anchor; independent of the km-grid fit (no towns used); expected position from OSM Nominatim
+42 57,Mignano,"same map, Section 6 (circle on the town and station)",t312-0090/f0002,undated,4,41.4046,13.9829,41.40738,13.98717,0.47,map anchor; independent of the km-grid fit (no towns used); expected position from OSM Nominatim
+61 27,Lenola,"same map, Section 6",t312-0090/f0002,undated,4,41.4061,13.4594,41.40915,13.46464,0.55,map anchor; independent of the km-grid fit (no towns used); expected position from OSM Nominatim
 60 22,"Fdl. Spähtrupps wurden 2 km südwestl. 60 22 und 1,5 km nordostw. 60 ...","Gruppe Hauck, Tagesmeldung",t312-0092/f0006,1944-05-11,4 (inferred),,,,,,"report anchor: block 60 is on the Zusammendruck Pescara sheet (f0007, Section 1), not georeferenced yet; place not named Page 6 of T-312 roll 92 (naId 333531002), read from its OCR only, not yet on the scan."
 XXIII 68,Caira,XIV Pz.K. report,t314-0544/f0361,1944-02,earlier (Roman block numerals),,,,,,report anchor for an earlier edition: the 4th edition does not decode it
 V 37,NO Corigliano,XIV Pz.K. Ic report,t314-0547/f0289,1944-01,earlier (lettered blocks),,,,,,report anchor for an earlier edition: the 4th edition does not decode it
