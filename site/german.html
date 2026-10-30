@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>German grids: the Kriegsmarine's naval squares and the Army's reference points</title>
+<link rel="stylesheet" href="viz.css">
+<style>
+  .land { fill: var(--land); stroke: var(--coast); }
+  .graticule { fill: none; stroke: var(--coast); stroke-opacity: 0.45; }
+  .map-wrap svg { cursor: grab; }
+  .map-wrap svg:active { cursor: grabbing; }
+  .deg text { fill: var(--text-muted); pointer-events: none; }
+  /* naval blocks: one hue; how each was obtained is the line and the pattern, not the colour */
+  .blk { stroke: var(--series-track); fill: var(--series-track); fill-opacity: 0.08; }
+  .blk.measured-lon { fill: url(#hatch-lon); fill-opacity: 1; }
+  .blk.read { fill-opacity: 0.03; }
+  .blk.assumed { fill: url(#hatch-assumed); fill-opacity: 1; }
+  a:hover > .blk { stroke: var(--text-primary); }
+  .sq2 { fill: none; stroke: var(--series-track); stroke-opacity: 0.35; pointer-events: none; }
+  .bl, .sl2, .lsq, .ptl, .bkl, .town { font-family: var(--typed); pointer-events: none; paint-order: stroke;
+         stroke: var(--surface-1); stroke-linejoin: round; }
+  .bl { fill: var(--series-track); }
+  .sl2 { fill: var(--series-track); fill-opacity: 0.75; text-anchor: middle; dominant-baseline: central; }
+  .lsq { fill: var(--series-track); fill-opacity: 0.35; text-anchor: middle; dominant-baseline: central; font-weight: 700; stroke: none; }
+  .stated { fill: var(--text-primary); }
+  .cell { fill: var(--series-attack); fill-opacity: 0.35; stroke: var(--series-attack); }
+  .miss { stroke: var(--text-primary); stroke-opacity: 0.6; pointer-events: none; }
+  a:hover > .stated, a:hover > .cell, a:hover > .pt { stroke: var(--text-primary); }
+  .probe .lvl { fill: var(--series-air); fill-opacity: 0.08; stroke: var(--series-air); pointer-events: none; }
+  .probe .lvl.last { fill-opacity: 0.45; }
+  .probe .ctr { fill: var(--surface-1); stroke: var(--text-primary); pointer-events: none; }
+  .probe .crn { fill: var(--text-primary); pointer-events: none; }
+  .probe text { font-size: 14.5px; font-weight: 600; fill: var(--text-primary); paint-order: stroke;
+                stroke: var(--surface-1); pointer-events: none; }
+  .probe .arrow { stroke: var(--text-primary); fill: none; pointer-events: none; }
+  /* reference points: every position provisional, so each carries its ~0.4 km ring, dashed */
+  .pt { fill: var(--c); stroke: var(--surface-1); }
+  .pt.uncertain { fill: var(--surface-1); stroke: var(--c); }
+  .ring { fill: var(--c); fill-opacity: 0.05; stroke: var(--c); stroke-opacity: 0.5; pointer-events: none; }
+  .ptl { fill: var(--c); text-anchor: start; }
+  .bkl { fill: var(--c); fill-opacity: 0.7; text-anchor: middle; font-weight: 700; }
+  .town { fill: var(--text-primary); font-family: var(--serif); font-style: italic; }
+  .expect { fill: var(--text-primary); stroke: var(--surface-1); }
+  .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .zoom-btns button { font: 21.5px var(--serif); width: 30px; height: 30px; border-radius: 2px; cursor: pointer;
+                      background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
+  .hint { position: absolute; left: 12px; top: 8px; color: var(--text-muted); font-size: 14.5px; pointer-events: none; }
+  .anatomy { font: 29px var(--typed); letter-spacing: 0.04em; margin: 6px 0 2px; }
+  .anatomy .a { color: var(--series-track); font-weight: 700; }
+  .anatomy .b { color: var(--series-attack); }
+  .anatomy .c { color: var(--series-air); }
+  .anatomy .muted { color: var(--text-muted); }
+  .decoder input { font: 19px var(--typed); padding: 6px 10px; width: 22ch;
+                   border: 1px solid var(--border); border-radius: 3px; background: var(--page); color: var(--text-primary); }
+  .decoder select { font: inherit; padding: 5px 6px; border: 1px solid var(--border); border-radius: 3px;
+                    background: var(--page); color: var(--text-primary); margin-left: 6px; }
+  .decoder .try { font: inherit; font-size: 15px; background: none; border: 1px solid var(--border); border-radius: 3px;
+                  color: var(--text-secondary); padding: 3px 8px; cursor: pointer; margin: 4px 4px 0 0; }
+  .decoder .out { margin-top: 8px; }
+  .decoder .err { color: var(--text-secondary); font-style: italic; }
+  .keypad { display: inline-grid; grid-template-columns: repeat(3, 34px); gap: 2px; margin: 4px 18px 4px 0; vertical-align: middle; }
+  .keypad span { font: 17px var(--typed); text-align: center; padding: 4px 0; border: 1px solid var(--border); }
+  .keypad span.on { border-color: var(--series-air); color: var(--series-air); font-weight: 700; }
+  .titleblock { font-family: var(--typed); font-size: 16px; line-height: 1.6; }
+  .titleblock .tr { font-family: var(--serif); font-size: 17px; color: var(--text-secondary); font-style: italic; }
+  .typed { font-size: 15px; }
+  td .typed { font-size: 14.5px; }
+  .doc h3 { font-size: 19px; font-weight: 400; font-style: italic; margin: 22px 0 4px; }
+  .doc table.wide { max-width: 100%; }
+  .prov { font-style: italic; color: var(--text-secondary); }
+</style>
+</head>
+<body class="viz-root">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- legend copies of the map's patterns (the map's own are rescaled as it zooms) -->
+    <pattern id="key-lon" patternUnits="userSpaceOnUse" width="5" height="5"><path d="M2.5,0V5" stroke="var(--series-track)" stroke-width="1" stroke-opacity="0.35"/></pattern>
+    <pattern id="key-assumed" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><path d="M2.5,0V5" stroke="var(--series-track)" stroke-width="1" stroke-opacity="0.35"/></pattern>
+  </defs>
+</svg>
+<div class="doc">
+  <header>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="battle.html">Battles</a><a href="haynsworth.html">Haynsworth</a><a href="algiers.html">Algiers</a><a href="seabees.html">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="german.html" aria-current="page">German grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
+    <div>
+      <h1>German grids: the Kriegsmarine's naval squares and the Army's reference points</h1>
+      <p class="lede">The German records rarely give a latitude or a map reference. The Naval Staff's diary puts a ship
+        in a naval square, <span class="mono">CJ 9472</span>. The Army's reports from the Cassino front put a tank on the
+        north edge of <span class="mono">XXIII 89</span>. Both are codes that only mean a place with the right chart or
+        map in hand. These are being rebuilt from the charts and maps the Germans used, captured and filmed after the
+        war, and tested on places the same records name.</p>
+    </div>
+  </header>
+
+  <h2>The Kriegsmarine's naval grid</h2>
+  <div class="callout">
+    <div class="anatomy"><span class="a">CJ</span> <span class="b">94</span><span class="c">72</span></div>
+    <p style="margin:0">The Naval Staff's war diary, 27 March 1944: <span class="typed">"three destroyers heading north in
+      CJ 9^72 at the northern coast of Sicily"</span> (<a id="ex-n-src" target="_blank" rel="noopener">skl:55/p397</a>;
+      the translator's <span class="mono">9^72</span> read as 9472).
+      <span style="color:var(--series-track);font-weight:700">CJ</span> is the large square (<i>Großquadrat</i>), the central
+      Mediterranean. <span style="color:var(--series-attack)">94</span> is a square printed large on the chart: block 9 of CJ,
+      then its part 4. <span style="color:var(--series-air)">72</span> splits that square twice more, down to a cell about
+      6 nautical miles across. <span id="ex-n-out"></span></p>
+  </div>
+  <p><span class="keypad" aria-label="Keypad numbering"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span>
+    Every digit after the letters splits the square before it three by three, numbered like a telephone keypad:
+    1 north-west, 5 the centre, 9 south-east. A regular large square is 486 nautical miles on a side, so four digits come
+    down to about 6 nm. A trailing 0 means the digit wasn't given. The grid is laid on a Mercator chart in whole minutes:
+    in this part of the Mediterranean the smallest cell is 6′ of latitude by 8′ of longitude, and a block (the first digit)
+    is 2°42′ by 3°36′.</p>
+  <p>In the open ocean the squares are regular and can be computed. In the Mediterranean they are not: CH and CJ were
+    bent to follow the coasts, CJ's Sardinian column sits one row lower than the rest, and CN 11–13 don't exist. So each
+    block here was measured or read off the wartime charts themselves (NARA microfilm T-1022, roll 2099: the U-boat
+    section's Mediterranean operation charts, drawn on the OKM's charts 1890 G, 1891 G and 1892 G).</p>
+
+  <div class="card map-card">
+    <div class="legend" id="nlegend"></div>
+    <div class="map-wrap" id="nwrap">
+      <svg id="nmap" role="img" aria-label="Map of the Mediterranean with the naval grid's blocks digitized so far, and the diary positions that test them"></svg>
+      <div class="zoom-btns">
+        <button data-z="in" aria-label="Zoom in">+</button>
+        <button data-z="out" aria-label="Zoom out">−</button>
+        <button data-z="reset" aria-label="Reset view">⟲</button>
+      </div>
+      <div class="hint">Scroll or pinch to zoom · drag to pan · zoom in for the two-digit squares</div>
+    </div>
+    <div class="caption">Each rectangle is a block, one large square's first digit, with its nine two-digit squares inside.
+      Each links to the chart frame it was measured or read on. Where the diary also names a place, the dot is that place,
+      the orange cell is where the code decodes, and the line joins them.</div>
+  </div>
+
+  <h3>Try one</h3>
+  <div class="callout decoder">
+    <label>Naval square <input id="nprobe" value="CJ 9472" spellcheck="false" autocomplete="off"></label>
+    <div><button class="try" data-for="nprobe" data-v="CJ 9472">CJ 9472</button><button class="try" data-for="nprobe" data-v="CN 3282">CN 3282</button><button class="try" data-for="nprobe" data-v="CO 3381">CO 3381</button><button class="try" data-for="nprobe" data-v="CH 8376">CH 8376</button><button class="try" data-for="nprobe" data-v="CJ 94">CJ 94</button></div>
+    <div class="out" id="nprobe-out"></div>
+  </div>
+
+  <h3>The anchors: diary squares with a place named</h3>
+  <p>A square can be checked where the diary names a place beside it. "15 miles southeast of Syracuse" gives a point;
+    "off Algier" gives only a side of the coast. The loose ones test the layout of the blocks, not their edges.</p>
+  <table id="nanchors" class="wide"></table>
+
+  <h3>What isn't known yet</h3>
+  <ul>
+    <li><b>CH and CJ's outer edges.</b> The blocks are placed; the large squares' stepped outlines along the coasts of
+      Spain and Algeria are not drawn.</li>
+    <li><b>North of 45°36′N</b> (BH, BJ, the top of the Adriatic) the cells are 10′ wide, not 8′: not in the decoder yet.</li>
+    <li><b>CK's rows</b> rest on the lattice measured farther west and south, not on a latitude scale of their own.</li>
+  </ul>
+
+  <h2>The Army's reference points (Bezugspunkte)</h2>
+  <p>On the Cassino and Garigliano front in 1944 the German Army's reports name few places. They give codes:
+    <span class="mono">"71 35"</span>, <span class="mono">"2 km südwestl. 60 22"</span>,
+    <span class="mono">"61 t Panzer am Nordrand XXIII 89"</span>. These aren't grid references. They are numbered points on
+    a secret overprint of the 1:100,000 map, issued so that a report sent by wire or radio gave nothing away without it.</p>
+
+  <h3>What the map was</h3>
+  <div class="callout titleblock">
+    <div>Geheim! / Italien 1 : 100 000 / Zusammendruck Gaeta / Maßstab 1:100000 (1 cm der Karte = 1 km der Natur) /
+      Bezugspunktkarte 1:100000 / 4. Ausgabe / Achtung! Diese Karte darf nicht in die vordere Linie mitgenommen werden. /
+      … / Bearbeitung u. Druck: Verm.u.Kart.Abt. (mot) 573</div>
+    <div class="tr">Secret! Italy 1:100,000, combined sheet Gaeta. Scale 1:100,000 (1 cm on the map = 1 km on the ground).
+      Reference-point map 1:100,000, 4th edition. Caution! This map must not be taken into the front line. Prepared and
+      printed by Survey and Mapping Battalion (motorized) 573.</div>
+    <div class="tr" style="margin-top:4px;font-style:normal">The title block of Section 5, as printed:
+      <a id="tb-src" target="_blank" rel="noopener">t312-0090/f0003</a> (NARA T-312 roll 90, Tenth Army's
+      attachments for March 1944).</div>
+  </div>
+  <p>The map cuts the ground into irregular blocks, each 15–25 km across with a large block number, and inside each block
+    draws small circles on towns, summits, crossroads and bridges, numbered from about 11 upward. The block numbers are
+    scrambled on the ground: 61, 59 and 42 lie side by side. The warning is the point of it: the key stayed at the staffs,
+    and a report could be read only there.</p>
+
+  <h3>How a code reads</h3>
+  <div class="callout">
+    <div class="anatomy"><span class="a">XXIII</span> <span class="b">68</span> <span class="muted">=</span> <span class="a">8Z</span> <span class="b">57</span></div>
+    <p style="margin:0">The 5th Mountain Division's daily report of 14 February 1944, in the XIV Panzer Corps' files: <span class="typed">"25 Pz. von ostw. XXIII 69 in Richtung Caira (XXIII 68)"</span> (25 tanks from east of XXIII 69 toward Caira)
+      (<a id="ex-a-src" target="_blank" rel="noopener">t314-0544/f0361</a>). The February edition's blocks were printed
+      as a digit and a letter. Tenth Army's situation maps carry a Roman numeral written by hand beside some of them,
+      <span class="mono">XXIII</span> beside <span class="mono">8Z</span>, and beside two others <span class="mono">"+ 11"</span>:
+      the reports gave the block by its cover name and added 11 to the point's printed number. So
+      <span class="mono">XXIII 68</span> is printed point <span class="mono">57</span> of block <span class="mono">8Z</span>,
+      the circle on Caira. <span id="ex-a-out"></span></p>
+  </div>
+  <p>Offsets are measured from a point (<span class="mono">"2 km südwestl. 60 22"</span>, <span class="mono">"600 m NW XXIII 72"</span>),
+    and <span class="mono">"Nordrand"</span> is the north edge of the town at the point. The decoder moves a point by a
+    distance along the eight compass directions; it reports an edge but doesn't move for it.</p>
+
+  <h3>The editions</h3>
+  <p>The blocks were renumbered with each edition, so a code means a place only on its own edition.</p>
+  <table id="editions">
+    <thead><tr><th>Edition</th><th>Codes look like</th><th>In use</th><th>Decoded</th></tr></thead>
+    <tbody>
+      <tr><td>January 1944</td><td><span class="mono">V 37</span> (a letter and two digits)</td>
+        <td>January 1944 (<a data-src="t314-0547/f0289" target="_blank" rel="noopener">t314-0547/f0289</a>: "NO Corigliano")</td>
+        <td>No: the key isn't found</td></tr>
+      <tr><td>February 1944</td><td><span class="mono">XXIII 68</span>, <span class="mono">8 Z 18</span> (printed blocks a digit
+        and a letter; Roman cover names, point + 11)</td>
+        <td>to between 21 and 28 February 1944 (the map of 21 Feb still has the digit-and-letter blocks:
+        <a data-src="t312-0090/f0113" target="_blank" rel="noopener">f0113</a>)</td>
+        <td>Block 8Z (Cassino to the Liri): <span id="n-feb"></span> points; the cover names of eight more blocks read</td></tr>
+      <tr><td>4th edition</td><td><span class="mono">71 35</span> (two-digit Arabic blocks)</td>
+        <td>from about 1 March to May 1944 (the map of 28–29 Feb is on it: <a data-src="t312-0090/f0083" target="_blank" rel="noopener">f0083</a>)</td>
+        <td>Sections 6 and 5 of the Gaeta sheet: <span id="n-a4"></span> points in <span id="n-a4b"></span> blocks</td></tr>
+    </tbody>
+  </table>
+
+  <div class="filters"><div class="seg" id="ed-seg" role="group" aria-label="Edition"></div></div>
+  <div class="card map-card">
+    <div class="legend" id="alegend"></div>
+    <div class="map-wrap" id="awrap">
+      <svg id="amap" role="img" aria-label="Map of the Garigliano, Cassino and Venafro front with the reference points read so far"></svg>
+      <div class="zoom-btns">
+        <button data-z="in" aria-label="Zoom in">+</button>
+        <button data-z="out" aria-label="Zoom out">−</button>
+        <button data-z="reset" aria-label="Reset view">⟲</button>
+      </div>
+      <div class="hint">Scroll or pinch to zoom · drag to pan · zoom in for the point numbers</div>
+    </div>
+    <div class="caption"><b>Every position here is provisional, good to about 0.4 km</b>: the dashed ring around each point.
+      The frames were fitted to the map's own printed kilometre grid (Gauss-Krüger, an inference from its margin figures),
+      then tested on towns; the error left is in the 1940s base map and in matching its towns to modern ones. Each point links
+      to the frame it was read on. An open circle is a number read with doubt.</div>
+  </div>
+
+  <h3>Try one</h3>
+  <div class="callout decoder">
+    <label>Code <input id="aprobe" value="2 km südwestl. 42 57" spellcheck="false" autocomplete="off"></label>
+    <select id="aprobe-ed" aria-label="Edition, if the block doesn't say">
+      <option value="4">4th edition (Mar–May 1944)</option>
+      <option value="feb1944">February 1944</option>
+    </select>
+    <div><button class="try" data-for="aprobe" data-v="XXIII 68">XXIII 68</button><button class="try" data-for="aprobe" data-v="88 50">88 50</button><button class="try" data-for="aprobe" data-v="2 km südwestl. 42 57">2 km südwestl. 42 57</button><button class="try" data-for="aprobe" data-v="Nordrand XXIII 89">Nordrand XXIII 89</button><button class="try" data-for="aprobe" data-v="600 m NW XXIII 72">600 m NW XXIII 72</button><button class="try" data-for="aprobe" data-v="71 35">71 35</button></div>
+    <div class="out" id="aprobe-out"></div>
+  </div>
+  <p class="muted">A Roman numeral or a digit-and-letter block picks the February edition by itself; two-digit blocks are
+    read on the edition chosen. The cover names other than XXIII are read on the maps but their blocks' points aren't
+    read yet.</p>
+
+  <h3>The anchors</h3>
+  <p>Points whose place is printed on the map, and codes in the reports whose place is named or can be inferred. The error
+    is between the decoded point and the place's modern position.</p>
+  <table id="aanchors" class="wide"></table>
+
+  <h2>Sources</h2>
+  <ul>
+    <li><b>The naval charts</b>: NARA T-1022 roll 2099, the Naval Staff U-boat section's operation charts, Arctic and
+      Mediterranean, 1942–44 (<a href="https://catalog.archives.gov/id/337684135" target="_blank" rel="noopener">NAID 337684135</a>).
+      Frame <a href="https://catalog.archives.gov/id/337684135?objectPage=200" target="_blank" rel="noopener">200</a> is a full
+      1890 G sheet, "Mittelmeer westlicher Teil", where the lattice was measured; frames
+      <a href="https://catalog.archives.gov/id/337684135?objectPage=74" target="_blank" rel="noopener">74</a>,
+      <a href="https://catalog.archives.gov/id/337684135?objectPage=91" target="_blank" rel="noopener">91</a> and
+      <a href="https://catalog.archives.gov/id/337684135?objectPage=348" target="_blank" rel="noopener">348</a> are 1892 G.</li>
+    <li><b>The Naval Staff's war diary</b>: <i>War Diary, German Naval Staff Operations Division</i> (the US Navy's
+      translation of the Kriegstagebuch der Seekriegsleitung, Teil A), 1943 and 1944, on the Internet Archive, e.g.
+      <a href="https://archive.org/details/wardiarygermann551944germ" target="_blank" rel="noopener">volume 55</a>.</li>
+    <li><b>The naval grid's structure</b>: Ulrich Schmidt, <i>Die Marinequadratsysteme der deutschen Seestreitkräfte. Ein
+      Werkstattbericht aus den Archiven</i> (19 September 2026),
+      <a href="https://doi.org/10.5281/zenodo.22848807" target="_blank" rel="noopener">doi:10.5281/zenodo.22848807</a>
+      (CC BY-NC-ND: cited here, his figures not copied); and the method page of the
+      <a href="https://navalgrid.com" target="_blank" rel="noopener">Naval Grid Calculator</a> (navalgrid.com).</li>
+    <li><b>The Bezugspunktkarten</b>: NARA T-312 roll 90, Tenth Army's KTB attachments (the 4th edition, frames 2–12; the
+      February situation maps, frames 71–296), in <i>Records of German Field Commands, Armies</i>
+      (<a href="https://catalog.archives.gov/id/12007587" target="_blank" rel="noopener">T-312</a>).</li>
+    <li><b>The reports</b>: XIV Panzer Corps' records, NARA T-314 rolls 544–547
+      (<a href="https://catalog.archives.gov/id/12004195" target="_blank" rel="noopener">T-314</a>); Tenth Army's May 1944
+      traffic, T-312 roll 92.</li>
+    <li><b>The method, every block and point, and what's left</b>: the kit's guides
+      <a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/NAVAL-GRID.md" target="_blank" rel="noopener">NAVAL-GRID.md</a>
+      and <a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/BEZUGSPUNKTE.md" target="_blank" rel="noopener">BEZUGSPUNKTE.md</a>.
+      The data are <span class="mono">reference/naval-grid/</span> and <span class="mono">reference/bezugspunkte/</span>, and
+      <span class="mono">tools/naval_grid.py</span> and <span class="mono">tools/bezugspunkt.py</span> decode and check them.</li>
+  </ul>
+</div>
+
+<div id="tip" role="tooltip"></div>
+
+<script src="config.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="scalebar.js"></script>
+<script src="german.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>
