@@ -60,6 +60,7 @@ CITES = {
     "bezugspunkte/anchors.csv": ["source"],
     "bezugspunkte/ausgabe4.csv": ["section_frame"],
     "bezugspunkte/feb1944.csv": ["frame"],
+    "bezugspunkte/jan1944.csv": ["frame"],
     "engagements/timeline.csv": ["ref"],
     "engagements/claims.csv": ["ref"],
     "engagements/positions.csv": ["ref"],

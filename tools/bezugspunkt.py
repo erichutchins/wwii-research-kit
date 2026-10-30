@@ -11,13 +11,19 @@ reference/bezugspunkte/ausgabe4.csv; the evidence in anchors.csv (guide: guides/
   python3 tools/bezugspunkt.py decode "2 km südwestl. 60 22"   nördl. südostw. ..., "Nordrand 61 27"
   python3 tools/bezugspunkt.py block 59                  the points read in a block
   python3 tools/bezugspunkt.py check                     anchors.csv: decoded vs expected place (both editions)
-  --edition 4 (default) or --edition feb1944
+  --edition 4 (default), feb1944 or jan1944; or --date YYYY-MM-DD (the report's date) to pick the
+  edition in use that day (January 1944: jan1944; February: feb1944; from March: the 4th edition)
 
 February 1944 (feb1944.csv): an earlier Bezugspunktkarte whose printed blocks are a digit and a
 letter (8Z, 8P, 6X ...). The XIV Panzer Corps' reports write a Roman numeral for the block (a cover
 name written by hand beside it on Tenth Army's maps: 8Z "XXIII") and add 11 to the printed point
 number ("XXIII 68" = printed 8Z 57, Caira; "XXIII+11" is written beside 9N on t312-0090/f0250).
-Roman numerals and digit+letter blocks select this edition by themselves:
+January 1944 (jan1944.csv): another edition, with one printed letter per block (C, D, H, M, V, X ...)
+and points numbered from 01 ("M 28" = Vallerotonda, "V 37" = by Corigliano), filmed on T-312 roll 84.
+A single letter other than I, V, X, L selects it by itself; V, X, I and L are also February's Roman
+cover names, so give --date or --edition for those.
+
+Roman numerals and digit+letter blocks select the February edition by themselves:
   python3 tools/bezugspunkt.py decode "XXIII 68"         Roman cover name: point minus 11
   python3 tools/bezugspunkt.py decode "8Z 57"            printed block and number (also "8 Z 57")
   python3 tools/bezugspunkt.py block 8Z --edition feb1944
@@ -67,14 +73,25 @@ COVER_OFFSET = 11
 
 
 def edition_of(block):
+    if re.fullmatch(r"[A-Z]", block) and block not in "IVXL":
+        return "jan1944"
     if re.fullmatch(r"[IVXL]+", block) or re.fullmatch(r"\d[A-Z]", block):
         return "feb1944"
     return None
 
 
+def edition_for_date(date):
+    """The edition in use on a report's date (the changes: about 1 Feb and 21-28 Feb 1944, guide)."""
+    if date < "1944-02-01":
+        return "jan1944"
+    if date < "1944-03-01":
+        return "feb1944"
+    return "4"
+
+
 def load(edition="4"):
     pts = {}
-    name = "feb1944.csv" if edition == "feb1944" else f"ausgabe{edition}.csv"
+    name = f"{edition}.csv" if edition in ("feb1944", "jan1944") else f"ausgabe{edition}.csv"
     with open(DATA / name, encoding="utf-8") as f:
         for r in csv.DictReader(f):
             pts.setdefault((r["block"], r["point"]), []).append(r)
@@ -90,7 +107,7 @@ def offset(lat, lon, km, bearing):
 def parse(text):
     """-> (block, point, km, bearing, edge, words) from '71 35', '2 km SW 60 22', 'Nordrand 61 27'."""
     t = text.strip()
-    m = re.search(r"\b([IVXL]+|\d\s?[A-Z]|\d{1,3})\s*[ /-]?\s*(\d{1,3})\s*$", t)
+    m = re.search(r"\b([IVXL]+|\d\s?[A-Z]|[A-Z]|\d{1,3})\s*[ /-]?\s*(\d{1,3})\s*$", t)
     if not m:
         raise ValueError(f"no block and point in {text!r}")
     block, point, rest = m.group(1).replace(" ", ""), m.group(2), t[:m.start()].strip().lower()
@@ -114,17 +131,24 @@ def parse(text):
     return block, point, km, bearing, edge, rest
 
 
-def decode(text, edition="4"):
+def decode(text, edition="4", explicit=False):
     block, point, km, bearing, edge, words = parse(text)
-    edition = edition_of(block) or edition
+    if not explicit:
+        edition = edition_of(block) or edition
     pre = []
+    if edition == "jan1944":
+        if not re.fullmatch(r"[A-Z]", block):
+            return None, f"block {block} is not in the January 1944 edition (one letter per block)"
+        point = f"{int(point):02d}"
+        if block == "D":
+            pre.append("block letter D inferred (not printed on the frames read)")
     if edition == "feb1944" and re.fullmatch(r"[IVXL]+", block):
         if block not in COVER:
             return None, f"cover name {block}: not read beside any block yet (Feb 1944 edition)"
         pre.append(f"{block} = block {COVER[block]}" + ("" if block in COVER_SURE else " (tentative)")
                    + f", point {point} - {COVER_OFFSET} = printed {int(point) - COVER_OFFSET}")
         block, point = COVER[block], str(int(point) - COVER_OFFSET)
-    elif edition != "feb1944" and not block.isdigit():
+    elif edition not in ("feb1944", "jan1944") and not block.isdigit():
         return None, f"block {block} is not in edition {edition}"
     rows = load(edition).get((block, point))
     if not rows:
@@ -146,14 +170,16 @@ def decode(text, edition="4"):
 
 
 def main(argv):
-    edition = "4"
+    edition, explicit = "4", False
     if "--edition" in argv:
-        i = argv.index("--edition"); edition = argv[i + 1]; del argv[i:i + 2]
+        i = argv.index("--edition"); edition = argv[i + 1]; del argv[i:i + 2]; explicit = True
+    if "--date" in argv:
+        i = argv.index("--date"); edition = edition_for_date(argv[i + 1]); del argv[i:i + 2]; explicit = True
     if not argv or argv[0] in ("-h", "--help"):
         print(__doc__); return 0
     cmd = argv[0]
     if cmd == "decode":
-        pos, note = decode(" ".join(argv[1:]), edition)
+        pos, note = decode(" ".join(argv[1:]), edition, explicit)
         print(f"{pos[0]:.5f} {pos[1]:.5f}  {note}" if pos else note)
         return 0 if pos else 1
     if cmd == "block":
@@ -168,10 +194,10 @@ def main(argv):
                 if not a["expected_lat"]:
                     print(f"{a['code']:10} {a['source']:28} not testable: {a['note']}")
                     continue
-                ed = {"4": "4", "Feb 1944": "feb1944"}.get(a["edition"])
+                ed = {"4": "4", "Feb 1944": "feb1944", "Jan 1944": "jan1944"}.get(a["edition"])
                 if ed is None:
                     print(f"{a['code']:10} edition {a['edition']}: skipped"); continue
-                pos, note = decode(a["code"], ed)
+                pos, note = decode(a["code"], ed, True)
                 if not pos:
                     print(f"{a['code']:10} {note}"); continue
                 la, lo = float(a["expected_lat"]), float(a["expected_lon"])

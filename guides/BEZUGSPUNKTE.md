@@ -57,7 +57,17 @@ At this size 1 km on the ground is about 83 px.
 - **February 1944** (to about 21-28 Feb): an earlier edition whose printed blocks are **a digit and a letter** (8Z, 8P,
   6X ...). The reports write a **Roman numeral** for the block and **add 11** to the point number: "XXIII 68" = Caira =
   printed **8Z 57**. Decoded by `feb1944.csv`; see "The February 1944 edition" below.
-- **January 1944**: a letter and two digits ("V 37" = "NO Corigliano", `t314-0547/f0289`). Probably another edition.
+- **January 1944**: a separate edition with **one printed letter per block** and points numbered from 01 ("V 37" = "NO
+  Corigliano", `t314-0547/f0289`; circle 37 of block V is about 1 km NE of the printed Corigliano, `t312-0084/f0470`). No
+  Roman cover names and no +11. Its numbers are unrelated to February's (Caira is D 43 in January, 8Z 57 in February).
+  The maps are A.O.K. 10's January Lagekarten on **T-312 roll 84**, filmed in reverse (1-10 Jan f0436-f0502). Blocks M
+  (Venafro, Filignano, Acquafondata, Vallerotonda, Viticuso, Cervaro), D (S. Elia, Cassino; the letter isn't printed on the
+  frames read, so D is inferred by elimination), C (the Mainarde) and H (Atina, Belmonte) are keyed from section 6
+  (`f0440`) into `jan1944.csv`: 87 points, the frame's 2-km grid fitted (about 80 m) with no towns used. Test: 23 towns
+  printed beside their circles against OSM place nodes, median 0.30 km, rms 0.55 km; M and D within 0.04-0.38 km, but
+  block C's north-east corner 1.0-1.3 km off (Castelnuovo, Scapoli, Castel S. Vincenzo): treat C as good to about 1.3 km.
+  The XIV Pz.K.'s reports of 12 Jan 1944 decode on it: M 28 Vallerotonda, M 30 Cervaro, D 12 S. Elia, C 10 M. Marrone.
+  **V, X, I and L** are both January letters and February cover names: give the report's date (`--date`).
 - **"8 Z 18"** (XIV Pz.K. Ia, 1 Feb 1944, `t314-0546/f0838-0848`): the February edition by its printed block name.
   Printed 8Z 18 is a circle near Castrocielo (f0203), a plausible command post; whether the Ia's numbers are printed
   ones (no +11) is an **inference** from that one case.
