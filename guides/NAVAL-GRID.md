@@ -62,7 +62,13 @@ python3 tools/naval_grid.py blocks                             # what is digitiz
   - **f0091** (section D): the bottom of 1892 G at full scale, with CN's east column, CO, CP and the top row of CQ; a
     bottom scale 17°-41°E (imprint "Herausgegeben vom Oberkommando der Kriegsmarine, Berlin 1937"; a sheet join at
     28°E). No latitude scale on the frame. **CO's and CP's columns are measured here.**
-  - Saved at full resolution: `sources/t1022/2099/full/f0200.jpg`, `f0074.jpg`, `f0091.jpg`. The 2400-px views are in
+  - **f0348** (and f0335, f0352): the east end of the same 1892 G sheet at full scale, with CM 9, CP 3, 6, 9 and
+    CQ 2, and the sheet's **right-hand latitude scale, 28° to 40°N, at 42°E** (10′ bars, minute boxes), a bottom
+    scale 36°-42°E, and the imprints "Berichtigt 1943, I" and "Gedruckt im Oberkommando der Kriegsmarine". Charts of
+    the series PG/33377 (frames 319-360; card on f0329). **CO's and CP's rows are measured on f0348.** f0335 is the
+    same view with the margin curled (below); f0352's margin is folded and was not measured.
+  - Saved at full resolution: `sources/t1022/2099/full/f0200.jpg`, `f0074.jpg`, `f0091.jpg`, `f0335.jpg`,
+    `f0348.jpg`, `f0352.jpg`. The scripts and measurements of the rows are in `sources/drafts/naval-grid-rows/`. The 2400-px views are in
     `sources/t1022/2099/`. The roll is described in `sources/drafts/naval-grid-med.md`.
 - **The structure**: Ulrich Schmidt, *Die Marinequadratsysteme der deutschen Seestreitkräfte. Ein Werkstattbericht
   aus den Archiven* (Stand 19.09.2026), Zenodo, https://doi.org/10.5281/zenodo.22848807, CC BY-NC-ND 4.0. It is cited
@@ -102,8 +108,8 @@ python3 tools/naval_grid.py blocks                             # what is digitiz
   carried on the measured lattice: `method` = `read` in `squares.csv`. The CK and CO blocks not seen at all are
   placed as regular blocks: `method` = `assumed` (none left: f0074 and f0091 show them). Not tested against a
   graticule:
-  - the rows east of 13°E: no latitude scale on f0074 or f0091, so CK, CO, CP and CQ rows are carried on the 54′
-    lattice measured on f0200 (CO's top at 37°30′N, CK's top at 45°36′N, where the 10′ columns begin);
+  - CK's rows north of 39°48′N (its top at 45°36′N, where the 10′ columns begin): the rows east of 13°E are now
+    measured on f0348 from 28°44′ to 39°48′N (below), but no sheet with a latitude scale beside CK 1-6 has been found;
   - that it holds west of about 3°20′E (CH 1, 2, 4, 5, 7 and 8 are computed out to 4°18′W);
   - the partial jump line at 34°N that Schmidt mentions. The 8′ spacing was measured at about 34°N on f0200 between
     3°20′ and 12°50′E, so if the jump exists it lies elsewhere.
@@ -133,6 +139,31 @@ the scale. Only longitudes could be measured: neither frame shows a latitude sca
   45°36′. The edges in `squares.csv` for CK, CO, CP and CQ are snapped to the lattice; `method` = `measured-lon`
   marks a block whose columns were measured but whose rows are carried on the 54′ lattice.
 
+## How well: the rows east of 13°E (1892 G, f0348)
+
+Measured 30 Oct 2026. The 1892 G sheet's east end (f0348, 9696 × 7088 px) shows its right-hand margin: a latitude
+scale from 28° to 40°N beside the land east of CP (Syria, Iraq), about 1,100 px east of CP's east edge (38°54′E).
+- **The method.** The 10′ bars of the scale were located by image analysis, following the scale's border line down
+  the frame. Each bar edge was given its minutes from the printed labels (36° read on a crop; the rest by a Mercator
+  fit to the unbroken run of bars, rounded to 10′; 4 of 46 edges, at gaps in the bars, dropped). Each row line was
+  found in two bands 500 px apart inside CP 3, 6 and 9, extended along its own slope to the scale, and read against
+  it by interpolation between bar edges in Mercator ordinate.
+- **The rows lie on the same lattice as f0200's.** 99 row lines from 29°24′ to 39°48′N fall on whole 6′ at **mean
+  −0.1′, 0.56′ rms, 1.8′ max**. A free stretch doesn't improve the fit (factor 0.9985). The 8 lines south of 29°24′
+  (to 28°44′N, CQ's top row) read +2.3′, where the scale runs into a fold near the sheet's corner.
+- **The large-square rows break where the decoder puts them.** The two heaviest lines are at **37°30′N (+0.9′)** and
+  **29°24′N (+0.9′)**: CO's and CP's top and bottom edges (and CQ's top). The lines of the third digit (every 18′)
+  are drawn heavier than the rest (mean line darkness 151 against 113), and they fall on whole multiples of 18′. So the
+  two-digit squares sit on 36′ (mod 54′), the same phase as f0200 (inference from the line weights; the dashed
+  block edges at 34°48′ and 32°06′ were not picked up).
+- **f0335 is a warning.** On the same view filmed for an earlier chart (f0335), the margin is curled and wavy: the
+  rows read against it drift by up to ±3′ (2.2′ rms) and the scale itself departs from a Mercator fit by up to 4′ at
+  its ends. A curled margin can't test the rows to better than half a cell; f0348's flat margin can.
+- **What this covers.** The rows were measured at 38°-39°E. They run straight across the sheet from CP into CO
+  (f0091), so `squares.csv` now marks CO 1-9 and CP 1-9 `measured` in both directions; CQ keeps `measured-lon` (its
+  top edge is measured, the rows below its top row aren't seen). The band 37°30′-39°48′N is CK 7-9's band too, but it
+  was measured in CM 9, east of CK, so CK stays `measured-lon`.
+
 ## How well: the anchors (`check`)
 
 | id | code | as written | error to the stated place |
@@ -147,18 +178,27 @@ the scale. Only longitudes could be measured: neither frame shows a latitude sca
 
 What the anchors show:
 - The two anchors with a stated distance (N1, N2) are where the code has to be right. N1 confirms the lattice and the
-  CN layout east of f0200 to within the cell. N2 confirms CO's position to about two cells. Its 11 nm north of the
-  stated place could be the boat's reckoning or the diarist's rounding ("60 miles"). It is not CO's column width:
-  f0091 measures 8′ there. The offset is mostly north (11 nm), and CO's rows are not yet measured.
+  CN layout east of f0200 to within the cell. N2 confirms CO's position to about two cells. Its 11 nm offset is
+  mostly north, and it is not the grid: CO's columns are 8′ (f0091) and its rows lie on the lattice at 33°N to
+  within 0.4′ (f0348). The likelier reason is the stated place itself: a point 60 nm due west of Derna (32°46′N
+  21°27′E) is on land, a few miles south of the Cyrenaican coast (which runs from about 32°54′N at Apollonia to 32°43′N
+  at Tolmeita: approximate, not checked on a chart here), while CO 5721 is the cell just off that coast. So "60 miles
+  west of Derna" reads as a description of the boat's stretch of coast, not a bearing.
 - The loose ones (N3-N6) fall in the right sea and on the right side of the named place, but 11-49 nm from it. They
   test the block layout, not the edges.
 
 ## Not done (where to resume)
 
-1. **Rows east of 13°E.** Find a full-scale 1892 G or 1891 G section with a side margin (the A and C sections of
-   the charts at f0074-f0110, or the U-boat track charts drawn "aufzulegen auf 1891 G / 1892 G" in rolls 2838,
-   2889-2892, 3074, 3375-3396) and measure the row lines, to test CO's top at 37°30′N and N2's 11 nm northward
-   offset. A full-scale 1891 G was not looked for this session (frames 100-230 and 318-450 of roll 2099 remain).
+1. **Rows north of 40°N east of 13°E** (CK 1-6, and CK's top at 45°36′N). Done south of 39°48′N (f0348, above).
+   Searched 30 Oct 2026 on reduced views of frames 111-229 and 319-728 (read from the TIFFs by byte ranges, every
+   20th row and column; scripts in `sources/drafts/naval-grid-rows/`): 168-206 are 1890 G sections (CH, CJ, CN);
+   111-167 are sections of Italy, the Adriatic and the Aegean, many filmed sideways (BH along one side), with f0133
+   and f0160 the Black Sea cut-out of 1892 G (BJ, BK, CL); 207-229 and 319-360 are mosaics and 1892 G sections, f0335,
+   f0348 and f0352 with the east margin; 361 onwards are the U-boat type papers of PG/33378, not charts (sampled every
+   5th frame). Frames 1-73 (the Arctic charts, PG/33365) were not viewed. No full-scale 1891 G was seen. **Next**:
+   the sideways sections (f0112, f0125 and the like) have a margin strip along one long side that may be 1892 G's
+   west margin near 13°E with a latitude scale beside CK and BH: check one at full resolution. Then the U-boat track
+   charts drawn "aufzulegen auf 1891 G / 1892 G" (rolls 2838, 2889-2892, 3074, 3375-3396).
 2. **Check CH west of 3°20′E** against f0318's bottom graticule, which runs from about 8°W to 18°E. Also check Spain
    (CH 1, 4, 7) and the CG/CH boundary at 4°18′W.
 3. **Fill in what wasn't seen:** CL and CM (their irregular Black Sea and Aegean edges, on f0074 and f0091); CQ

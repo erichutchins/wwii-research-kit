@@ -49,13 +49,68 @@ At this size 1 km on the ground is about 83 px.
 ### Editions
 
 - **4th edition** (this key): Arabic block numbers. It is filmed with the March 1944 Anlagen, and A.O.K. 10's May 1944
-  traffic uses the same form ("60 22", Gruppe Hauck, 11.5.1944, `t312-0092` p. 6, OCR only). That it was valid from
-  March to May 1944 is an **inference**: no issuing order has been found.
-- **February 1944**: Roman block numerals ("XXIII 68" = Caira, `t314-0544/f0361`; the 90th Pz.Gren.Div.'s Ic report
-  of 7 Feb measures from "XXIII 72", "XXIII 50", "XXIII 69", "XXIII 89", `t314-0547/f0740`). This is an earlier edition
-  with the same scheme. The 4th edition **does not decode it**.
+  traffic uses the same form ("60 22", Gruppe Hauck, 11.5.1944, `t312-0092` p. 6, OCR only). It was in use by the
+  **end of February**: the Chief of Staff's situation map for "28+29. Februar 44" is drawn on the 4th edition's
+  Zusammendruck Pescara (title box, `t312-0090/f0083`, read on the scan), while the map for 21 Feb (`f0113`) still
+  carries the digit+letter blocks. So the change came between 21 and 28 Feb 1944 (read on the two maps; the exact day
+  and any issuing order are not found).
+- **February 1944** (to about 21-28 Feb): an earlier edition whose printed blocks are **a digit and a letter** (8Z, 8P,
+  6X ...). The reports write a **Roman numeral** for the block and **add 11** to the point number: "XXIII 68" = Caira =
+  printed **8Z 57**. Decoded by `feb1944.csv`; see "The February 1944 edition" below.
 - **January 1944**: a letter and two digits ("V 37" = "NO Corigliano", `t314-0547/f0289`). Probably another edition.
-- **"8 Z 18"** (XIV Pz.K. Ia, 1 Feb 1944, `t314-0546/f0838-0848`): not explained.
+- **"8 Z 18"** (XIV Pz.K. Ia, 1 Feb 1944, `t314-0546/f0838-0848`): the February edition by its printed block name.
+  Printed 8Z 18 is a circle near Castrocielo (f0203), a plausible command post; whether the Ia's numbers are printed
+  ones (no +11) is an **inference** from that one case.
+
+## The February 1944 edition
+
+**The map.** Tenth Army's situation maps for February 1944 (Ia, Anlagen zum KTB 5, Lagekarten; T-312 roll 90, filmed in
+reverse: 1-10 Feb ≈ `f0215-f0296`, 11-20 Feb ≈ `f0131-f0214`, 21-29 Feb ≈ `f0071-f0130`) are drawn in sections on a
+Bezugspunktkarte 1:100,000 whose large hatched block labels are **a digit and a letter**. No title box survives on the
+February sections read (the inset "Blattübersicht der Karten 1:100 000" is on section 7), so the edition's number is
+not known: it is the one before the 4th (2nd or 3rd). The base carries the **same Gauss-Krüger km grid** as the 4th
+edition (margin figures "4620", "3400"; zone 3, 15°E, Bessel), so it was georeferenced the same way.
+
+**The cover names.** Beside some blocks a Roman numeral is written by hand. These are the reports' block names:
+
+| Printed block | Written beside it | Area | Frames | How sure |
+|---|---|---|---|---|
+| 8Z | XXIII | Cassino, Liri valley to Pignataro, Cervaro, S. Vittore | f0213, f0215 | read (plain on f0213) |
+| 8P | XXIX | Monti Ausoni, Monte S. Biagio | f0213, f0215 | read |
+| 9N | XXVII **+ 11** | Adriatic coast (section 2) | f0250 (map of 6 Feb), f0113 (21 Feb, cut: "XX...") | read |
+| 5V | VIII | section 2 / 3 | f0113 | read |
+| 8V | XII | Gaeta, Formia, the coast to Minturno | f0213 | read, faint pencil (earlier read "XI"); XII fits the reports' "Küstenstreifen O XII 65" |
+| 6X | XXXV | Esperia, Pico, Ausonia hills | f0213, f0215 | top of the numeral cut; XXXVI not excluded |
+| 8N | XXIV | section 2 | f0113 | faint: XXIV or XXV |
+| 1T | V | north of Cassino (Casalattico, Atina) | f0215 | faint, tentative |
+| 7T, 7P, 7Q | X?, III?, XX..? | Frosinone; Adriatic; Sora | f0215, f0113, f0073 | marks, not read |
+| 9V, 3R, 9R | none seen | | f0213, f0215 | the reports' "IV" (middle Garigliano) is probably 3R: not read |
+
+The numerals are the same wherever a block carries one (8Z on two 1-10 Feb maps; 9N on 6 and 21 Feb). Several maps of
+11-20 Feb (`f0153`, `f0203`) carry none, so no change within the month can be seen; the reports keep "XXIII 89" for
+Cassino from 7 to 12 Feb.
+
+**The +11.** "XXVII + 11" is written beside 9N (`f0250`). The reports' 8Z numbers are the printed ones plus 11:
+Caira is printed 57 and reported "XXIII 68"; Cassino is printed 78 and reported "Nordrand XXIII 89"; Terelle is printed
+53, and the enemy came "auf den Strassen von XXIII 68 bis XXIII 64" (Caira to Terelle). So a report's "XXIII nn" is
+printed 8Z (nn − 11). That the same +11 holds for every block is an **inference** (read for 9N, tested for 8Z only). The
+Ia's "8 Z 18" orders appear to use the printed block and number without the offset (inference). The decoder applies
+both: `decode "XXIII 68"` and `decode "8Z 57"` give the same circle.
+
+**Points read** (`reference/bezugspunkte/feb1944.csv`): 67 circles of block 8Z on section 5 of a 1-10 Feb map
+(`t312-0090/f0215`), from Castrocielo and Pignataro to Terelle, Cassino, Sant'Elia, Cervaro and S. Vittore (printed
+numbers 14-124). Circles found by a Hough transform and read by eye; positions from the frame's own 2-km grid lines
+(647 + 607 lines, fitted to 7 and 4 px, about 0.1 km). Points `?` where the number is covered by drawn symbols or its
+circle is ambiguous; Caira, Cassino and 61 were read on `f0203` (11-20 Feb), where they are clean. Section 7 (8Z's
+south: Ausonia, Castelforte, Minturno, the Garigliano; and blocks 3R, 8V) is not read yet.
+
+**The test.** Eight towns printed beside their circles, none used in the fit, against OSM: Terelle 0.02 km, Caira
+0.07, Cassino 0.10, Villa S. Lucia 0.12, Cervaro 0.25, S. Vittore 0.26, Sant'Elia 0.28, Piedimonte S. Germano 0.72;
+Pignataro Interamna 1.9 km (unresolved: OSM's point, a circle beside the town, or a join in the base map). Median
+0.25 km. The reports fit the ground: "XXIII 68" decodes to Caira at 0.07 km; "600 m NW XXIII 72" is 600 m NW of the
+abbey of Monte Cassino (printed 61), "etwa 2,9 km SO XXIII 50" is the heights by Albaneta and Point 593 (2.9 km SE of
+Villa S. Lucia, printed 39), both where the fighting was on 7 Feb (`t314-0547/f0740`). Rows in `anchors.csv`
+(edition "Feb 1944").
 
 ## Method
 
@@ -114,7 +169,10 @@ At this size 1 km on the ground is about 83 px.
 
 ## What has been read (4th edition)
 
-`ausgabe4.csv`: 183 rows, from Section 6 (f0002) unless noted.
+`ausgabe4.csv`: 183 rows, from Section 6 (f0002) unless noted. The block from Cervaro to Venafro is **88**: its outlined
+numeral is on Section 4 (f0004, px ≈ 3640,4010), inside one outline with points 11-26, 38-40, 49, 50 and the annotation
+"3. alg. S.D."; on Section 4 the same block's points 51-88 run on over Pozzilli (57), Lucenteforte (58), Venafro (50) and
+Roccaravindola (about 66): read on the frame, not yet in the table.
 
 | Block | Area | Points read |
 |---|---|---|
@@ -125,7 +183,7 @@ At this size 1 km on the ground is about 83 px.
 | 57 | Pico, S. Giovanni Incarico | 15 |
 | 68 | Itri, Formia, Scauri | 15 |
 | 41 | Vallecorsa, Falvaterra (the block's southern part) | 13 |
-| ? | Cervaro, Conca Casale, Viticuso (block number not on Section 6) | 11 |
+| 88 | Cervaro, Conca Casale, Viticuso; 88 50 is Venafro (block number read on Section 4, f0004) | 11 |
 | 71, 48 | Sonnino (71 35), Terracina (48 19, block to confirm), on Section 5 (f0003) | 2 |
 
 The block numbers 64, 57 and 41 were read on Section 3 (f0005), where the blocks continue north. They are marked in the
@@ -152,8 +210,11 @@ earlier editions. A decoded point is good to **about 0.4 km** against modern coo
 
 - The rest of the 4th edition: Sections 2 and 4 (f0006, f0004), the north of Section 3 (Sora, Arce, Roccasecca), the
   east of Section 6 (blocks 50, 77 and the Volturno), the west of Section 5 (blocks 86, 71, 48), and the Pescara sheet.
-  Read the numbers of the unnamed Cervaro block on Section 3 or 2.
-- Section 5's grid fit (above: split at the seams), then Sections 3, 2, 4 the same way. Getting under 300 m against modern coordinates will need better town positions than OSM's comune points (e.g. the church or castle of each old centre), or accepting the old base map's own error.
+  Block 88's points on Section 4 (51-88: Pozzilli, Lucenteforte, Roccaravindola, Montaquila, Filignano).
+- Section 5's grid fit: a piecewise fit (seam at x ≈ 3530 px; the left margin steps at y ≈ 2115) is good east of the seam
+  (7.6 px) but not west of it (18-23 px; six towns not used in the fit, rms 632 m, southern towns east, northern west, about
+  1.2 km apart: a further seam or shear). So 71 35 and 48 19 keep the earlier town fit. Next: trace single vertical lines
+  across the left piece to find the break. Then Sections 3, 2, 4 the same way. Getting under 300 m against modern coordinates will need better town positions than OSM's comune points (e.g. the church or castle of each old centre), or accepting the old base map's own error.
 - **The earlier editions** (Roman and lettered blocks, January-February 1944). Leads are in `sources/drafts/german-army-codes.md`:
   A.O.K. 10's Lagekarten for February 1944 (index at `t312-0088/f0005-0008`), the tail of roll 89 (early February), and
   Höh. Art. Kdr. 316's files.

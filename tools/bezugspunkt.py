@@ -10,8 +10,18 @@ reference/bezugspunkte/ausgabe4.csv; the evidence in anchors.csv (guide: guides/
   python3 tools/bezugspunkt.py decode "2 km SW 60 22"    offsets: N NO/NE O/E SO/SE S SW W NW,
   python3 tools/bezugspunkt.py decode "2 km südwestl. 60 22"   nördl. südostw. ..., "Nordrand 61 27"
   python3 tools/bezugspunkt.py block 59                  the points read in a block
-  python3 tools/bezugspunkt.py check                     anchors.csv: decoded vs expected place
-  --edition 4 (default; the only edition read so far)
+  python3 tools/bezugspunkt.py check                     anchors.csv: decoded vs expected place (both editions)
+  --edition 4 (default) or --edition feb1944
+
+February 1944 (feb1944.csv): an earlier Bezugspunktkarte whose printed blocks are a digit and a
+letter (8Z, 8P, 6X ...). The XIV Panzer Corps' reports write a Roman numeral for the block (a cover
+name written by hand beside it on Tenth Army's maps: 8Z "XXIII") and add 11 to the printed point
+number ("XXIII 68" = printed 8Z 57, Caira; "XXIII+11" is written beside 9N on t312-0090/f0250).
+Roman numerals and digit+letter blocks select this edition by themselves:
+  python3 tools/bezugspunkt.py decode "XXIII 68"         Roman cover name: point minus 11
+  python3 tools/bezugspunkt.py decode "8Z 57"            printed block and number (also "8 Z 57")
+  python3 tools/bezugspunkt.py block 8Z --edition feb1944
+Only block 8Z's points (Cassino - Liri, on section 5, f0215) are read so far.
 
 Accuracy: Section 6 (f0002) is fitted to the map's own printed km grid (Gauss-Krueger, central
 meridian 15E, Bessel, scale 1.0, false easting 3,500 km; lines fitted to about 0.1 km), but against
@@ -46,9 +56,26 @@ DIRS = {
 EDGES = {"nordrand": "north", "südrand": "south", "sudrand": "south", "ostrand": "east", "westrand": "west"}
 
 
+# February 1944: handwritten cover name -> (printed block, offset added to the printed point number).
+# The block pairs are read on Tenth Army's situation maps (t312-0090; guide: "The February 1944 edition");
+# the +11 is written beside 9N on f0250 and fits 8Z's points against the reports. Applying the same +11
+# to every block is an inference.
+COVER = {"XXIII": "8Z", "XXIX": "8P", "XII": "8V", "XXVII": "9N", "VIII": "5V",
+         "XXXV": "6X", "XXIV": "8N", "V": "1T"}
+COVER_SURE = {"XXIII", "XXIX", "XXVII", "VIII", "XII"}  # the others: faint or cut, read tentatively
+COVER_OFFSET = 11
+
+
+def edition_of(block):
+    if re.fullmatch(r"[IVXL]+", block) or re.fullmatch(r"\d[A-Z]", block):
+        return "feb1944"
+    return None
+
+
 def load(edition="4"):
     pts = {}
-    with open(DATA / f"ausgabe{edition}.csv", encoding="utf-8") as f:
+    name = "feb1944.csv" if edition == "feb1944" else f"ausgabe{edition}.csv"
+    with open(DATA / name, encoding="utf-8") as f:
         for r in csv.DictReader(f):
             pts.setdefault((r["block"], r["point"]), []).append(r)
     return pts
@@ -63,10 +90,10 @@ def offset(lat, lon, km, bearing):
 def parse(text):
     """-> (block, point, km, bearing, edge, words) from '71 35', '2 km SW 60 22', 'Nordrand 61 27'."""
     t = text.strip()
-    m = re.search(r"([IVXL]+|\d{1,3})\s*[ /-]\s*(\d{1,3})\s*$", t)
+    m = re.search(r"\b([IVXL]+|\d\s?[A-Z]|\d{1,3})\s*[ /-]?\s*(\d{1,3})\s*$", t)
     if not m:
         raise ValueError(f"no block and point in {text!r}")
-    block, point, rest = m.group(1), m.group(2), t[:m.start()].strip().lower()
+    block, point, rest = m.group(1).replace(" ", ""), m.group(2), t[:m.start()].strip().lower()
     km = bearing = edge = None
     if rest:
         d = re.match(r"(?:etwa\s+)?([\d.,]+)\s*(km|m)\s+(\S+)", rest)
@@ -89,16 +116,24 @@ def parse(text):
 
 def decode(text, edition="4"):
     block, point, km, bearing, edge, words = parse(text)
-    if re.fullmatch(r"[IVXL]+", block):
-        return None, (f"block {block} is in Roman numerals: an earlier edition (Feb 1944), "
-                      f"not edition {edition}; no key for it yet")
+    edition = edition_of(block) or edition
+    pre = []
+    if edition == "feb1944" and re.fullmatch(r"[IVXL]+", block):
+        if block not in COVER:
+            return None, f"cover name {block}: not read beside any block yet (Feb 1944 edition)"
+        pre.append(f"{block} = block {COVER[block]}" + ("" if block in COVER_SURE else " (tentative)")
+                   + f", point {point} - {COVER_OFFSET} = printed {int(point) - COVER_OFFSET}")
+        block, point = COVER[block], str(int(point) - COVER_OFFSET)
+    elif edition != "feb1944" and not block.isdigit():
+        return None, f"block {block} is not in edition {edition}"
     rows = load(edition).get((block, point))
     if not rows:
-        return None, f"{block} {point}: not read yet in edition {edition}"
+        return None, "; ".join(pre + [f"{block} {point}: not read yet in edition {edition}"])
     r = rows[0]
     lat, lon = float(r["lat"]), float(r["lon"])
-    notes = [f"{block} {point}" + (f" = {r['name_as_printed']}" if r["name_as_printed"] else ""),
-             f"{r['section_frame']} px {r['px_x']},{r['px_y']}",
+    frame = r.get("section_frame") or r.get("frame")
+    notes = pre + [f"{block} {point}" + (f" = {r['name_as_printed']}" if r["name_as_printed"] else ""),
+             f"{frame} px {r['px_x']},{r['px_y']}",
              "reading uncertain" if r["read"] != "read" else "read"]
     if len(rows) > 1:
         notes.append(f"{len(rows)} readings of this number in the block: one is wrong")
@@ -133,9 +168,10 @@ def main(argv):
                 if not a["expected_lat"]:
                     print(f"{a['code']:10} {a['source']:28} not testable: {a['note']}")
                     continue
-                if a["edition"] != edition:
+                ed = {"4": "4", "Feb 1944": "feb1944"}.get(a["edition"])
+                if ed is None:
                     print(f"{a['code']:10} edition {a['edition']}: skipped"); continue
-                pos, note = decode(a["code"], edition)
+                pos, note = decode(a["code"], ed)
                 if not pos:
                     print(f"{a['code']:10} {note}"); continue
                 la, lo = float(a["expected_lat"]), float(a["expected_lon"])

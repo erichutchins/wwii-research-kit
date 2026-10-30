@@ -11,7 +11,7 @@ blocks are read from wartime charts: reference/naval-grid/squares.csv, one row p
 first digit) with its edges and how they were obtained (guides/NAVAL-GRID.md). Inside a block the
 split is regular: two-digit squares 54' x 72', third digit 18' x 24', fourth 6' x 8' (the chart's
 lattice in this band, measured on NARA T-1022 roll 2099 frame 200; the 8' columns re-measured from 17°18'E to
-about 38°E on frames 74 and 91). The lattice holds south of 45°36'N only: north of it (BH, BJ) the columns are 10'
+about 38°E on frames 74 and 91; the rows from 28°44' to 39°48'N at about 39°E on frame 348). The lattice holds south of 45°36'N only: north of it (BH, BJ) the columns are 10'
 wide (frame 74), so a square there needs its own cell width before it is added to squares.csv.
 
   python3 tools/naval_grid.py decode "CJ 9472"     the cell's corners and centre
