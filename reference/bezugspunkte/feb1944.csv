@@ -55,7 +55,7 @@ block,cover_name,point,lat,lon,name_as_printed,frame,px_x,px_y,read,note
 8Z,XXIII,103,41.52196,13.87831,,t312-0090/f0215,4834,3690,read,"km-grid fit (Gauss-Krüger 15°E, Bessel, 2-km lines detected on the frame)"
 8Z,XXIII,104,41.54065,13.89252,,t312-0090/f0215,4944,3506,read,"km-grid fit (Gauss-Krüger 15°E, Bessel, 2-km lines detected on the frame)"
 8Z,XXIII,105,41.56191,13.89348,,t312-0090/f0215,4954,3296,read,"km-grid fit (Gauss-Krüger 15°E, Bessel, 2-km lines detected on the frame)"
-8Z,XXIII,106,41.51706,13.70238,,t312-0090/f0215,3532,3734,read,"km-grid fit (Gauss-Krüger 15°E, Bessel, 2-km lines detected on the frame)"
+8Z,XXIII,106,41.54869,13.91656,Vallerotonda,t312-0090/f0215,5125,3427,read,"circle on the town. Corrected 30 Oct 2026: the pixel position had been entered as 3532,3734 (near Castrocielo, 16 km west), a slip; position from an affine fit to the nine neighbouring points of this table (85, 86, 102-105, 107, 123, 124; residual under 5 m). The XIV Panzer Corps' reports put XXIII 117 on the road out of S. Elia (t314-0544/f0406, f0486)."
 8Z,XXIII,107,41.50831,13.92082,,t312-0090/f0215,5150,3826,?,"km-grid fit (Gauss-Krüger 15°E, Bessel, 2-km lines detected on the frame); number left of the circle, 0.6 km off: pairing uncertain"
 8Z,XXIII,108,41.48299,13.90341,Cervaro,t312-0090/f0215,5014,4074,read,"km-grid fit (Gauss-Krüger 15°E, Bessel, 2-km lines detected on the frame); circle on the town; number on the quadrant edge"
 8Z,XXIII,109,41.46896,13.91376,,t312-0090/f0215,5090,4212,read,"km-grid fit (Gauss-Krüger 15°E, Bessel, 2-km lines detected on the frame)"
