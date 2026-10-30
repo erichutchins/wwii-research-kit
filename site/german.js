@@ -1,6 +1,6 @@
 // German position systems explainer: the Kriegsmarine's naval grid squares in the Mediterranean
 // (reference/naval-grid/{squares,anchors}.csv) and the German Army's reference points in Italy, 1944
-// (reference/bezugspunkte/{ausgabe4,feb1944,anchors}.csv). The decoding is ported from tools/naval_grid.py and
+// (reference/bezugspunkte/{ausgabe4,feb1944,jan1944,anchors}.csv). The decoding is ported from tools/naval_grid.py and
 // tools/bezugspunkt.py; method, evidence and what's missing in guides/NAVAL-GRID.md and guides/BEZUGSPUNKTE.md.
 
 const tip = document.getElementById("tip");
@@ -287,14 +287,27 @@ const EDGES = { nordrand: "north", "südrand": "south", sudrand: "south", ostran
 const COVER = { XXIII: "8Z", XXIX: "8P", XII: "8V", XXVII: "9N", VIII: "5V", XXXV: "6X", XXIV: "8N", V: "1T" };
 const COVER_SURE = new Set(["XXIII", "XXIX", "XXVII", "VIII", "XII"]);
 const COVER_OFFSET = 11;
-const EDITION = { "4": { name: "4th edition", color: "var(--series-track)" }, feb1944: { name: "February 1944", color: "var(--series-attack)" } };
-let POINTS = { "4": new Map(), feb1944: new Map() }, ARMY = { anchors: [], probe: null, view: "both" }, amap;
-const AFOCUS = [[13.18, 41.22], [14.1, 41.6]];
+// January 1944: one printed letter per block, points from 01 (t312-0084/f0440; guide: "January 1944"). Block D's letter
+// isn't printed on the frames read (inferred by elimination); block C's north-east corner fits to only about 1.3 km.
+const EDITION = {
+  jan1944: { name: "January 1944", color: "var(--series-air)" },
+  feb1944: { name: "February 1944", color: "var(--series-attack)" },
+  "4": { name: "4th edition", color: "var(--series-track)" },
+};
+let POINTS = { "4": new Map(), feb1944: new Map(), jan1944: new Map() }, ARMY = { anchors: [], probe: null, view: "all" }, amap;
+const AFOCUS = [[13.18, 41.22], [14.12, 41.68]];
+const ALL_EDS = ["4", "jan1944", "feb1944"];   // drawing order; a town printed on several is named on the last shown
+const ED_ORDER = ["jan1944", "feb1944", "4"];  // the order in time, for the buttons and the legend
+const precKm = (p, ed) => ed === "jan1944" && p.block === "C" ? 1.3 : 0.4;
+const padPt = (pt, ed) => ed === "jan1944" ? String(+pt).padStart(2, "0") : pt;
 
-const editionOf = b => (/^[IVXL]+$/.test(b) || /^\d[A-Z]$/.test(b)) ? "feb1944" : null;
+// The block picks the edition: one letter (not I, V, X, L) is January; a Roman numeral or a digit and a letter is
+// February. V, X, I and L are both January letters and February cover names: the edition chosen (the report's date) decides.
+const editionOf = (b, chosen) => /^[A-Z]$/.test(b) && (!/^[IVXL]$/.test(b) || chosen === "jan1944") ? "jan1944"
+  : (/^[IVXL]+$/.test(b) || /^\d[A-Z]$/.test(b)) ? "feb1944" : null;
 function aParse(text) {
   const t = text.trim();
-  const m = /\b([IVXL]+|\d\s?[A-Z]|\d{1,3})\s*[ /-]?\s*(\d{1,3})\s*$/.exec(t);
+  const m = /\b([IVXL]+|\d\s?[A-Z]|[A-Z]|\d{1,3})\s*[ /-]?\s*(\d{1,3})\s*$/.exec(t);
   if (!m) throw new Error(`no block and point in "${text}"`);
   const block = m[1].replace(" ", ""), point = m[2], rest = t.slice(0, m.index).trim().toLowerCase();
   let km = null, bearing = null, edge = null;
@@ -319,18 +332,22 @@ function aOffset(lat, lon, km, bearing) {
 }
 function aDecode(text, edition = "4") {
   let { block, point, km, bearing, edge, words } = aParse(text);
-  edition = editionOf(block) || edition;
+  edition = editionOf(block, edition) || edition;
   const steps = [], given = { block, point };
-  if (edition === "feb1944" && /^[IVXL]+$/.test(block)) {
+  if (edition === "jan1944") {
+    if (!/^[A-Z]$/.test(block)) return { error: `block ${block} is not in the January 1944 edition (one letter per block)`, edition };
+    point = padPt(point, edition);
+    if (block === "D") steps.push(`block letter <span class="mono">D</span> inferred (not printed on the frames read)`);
+  } else if (edition === "feb1944" && /^[IVXL]+$/.test(block)) {
     if (!COVER[block]) return { error: `cover name ${block}: not read beside any block yet (February 1944 edition)`, edition };
     steps.push(`<span class="mono">${block}</span> = block <span class="mono">${COVER[block]}</span>${COVER_SURE.has(block) ? "" : " (tentative)"}, ` +
       `point ${point} − ${COVER_OFFSET} = printed <span class="mono">${+point - COVER_OFFSET}</span>`);
     block = COVER[block]; point = String(+point - COVER_OFFSET);
-  } else if (edition !== "feb1944" && !/^\d+$/.test(block)) {
+  } else if (edition === "4" && !/^\d+$/.test(block)) {
     return { error: `block ${block} is not in the ${EDITION[edition].name}`, edition };
   }
   const rows = POINTS[edition].get(`${block} ${point}`);
-  if (!rows) return { error: `${steps.length ? steps.join("; ") + "; " : ""}${block} ${point}: not read yet in the ${EDITION[edition].name}`, edition, steps };
+  if (!rows) return { error: `${steps.length ? steps.map(t => t.replace(/<[^>]+>/g, "")).join("; ") + "; " : ""}${block} ${point}: not read yet in the ${EDITION[edition].name}`, edition, steps };
   const r = rows[0];
   let lat = r.lat, lon = r.lon;
   const res = { edition, block, point, row: r, steps, given, pt: [r.lon, r.lat], dup: rows.length > 1 };
@@ -346,18 +363,18 @@ function aDraw(m) {
   graticule(m, [[12.5, 40.8], [14.8, 42]], 0.1);
   g.append("path").datum(LAND10).attr("class", "land").attr("d", path);
   degLabels(m, AFOCUS, 0.2, 0.1);
-  const eds = ARMY.view === "both" ? ["4", "feb1944"] : [ARMY.view];
-  const r04 = Math.abs(proj([13.6, 41.4])[1] - proj([13.6, 41.4 + 0.4 / 111.2])[1]);   // 0.4 km on the map
+  const eds = ARMY.view === "all" ? ALL_EDS : [ARMY.view];
+  const kmPx = Math.abs(proj([13.6, 41.4])[1] - proj([13.6, 41.4 + 1 / 111.2])[1]);   // 1 km on the map
   for (const ed of eds) {
     const pts = [...POINTS[ed].values()].flat();
     const eg = g.append("g").style("--c", EDITION[ed].color);
     eg.append("g").selectAll("circle").data(pts).join("circle").attr("class", "ring")
-      .attr("cx", p => proj([p.lon, p.lat])[0]).attr("cy", p => proj([p.lon, p.lat])[1]).attr("r", r04);
+      .attr("cx", p => proj([p.lon, p.lat])[0]).attr("cy", p => proj([p.lon, p.lat])[1]).attr("r", p => precKm(p, ed) * kmPx);
     // the block's number at the middle of the points read in it (the block's printed edges aren't digitized)
     const byBlock = d3.group(pts, p => p.block);
     eg.append("g").selectAll("text").data([...byBlock]).join("text").attr("class", "bkl")
       .attr("x", ([, ps]) => d3.mean(ps, p => proj([p.lon, p.lat])[0])).attr("y", ([, ps]) => d3.mean(ps, p => proj([p.lon, p.lat])[1]))
-      .text(([b, ps]) => ps[0].cover_name ? `${b} (${ps[0].cover_name})` : b);
+      .text(([b, ps]) => ps[0].cover_name ? `${b} (${ps[0].cover_name})` : ed === "jan1944" && b === "D" ? "D (inferred)" : b);
     const a = eg.append("g").selectAll("a").data(pts).join("a")
       .attr("href", p => srcUrl(p.frame)).attr("target", "_blank").attr("rel", "noopener")
       .on("mousemove", (e, p) => { aPointTip(p, ed); place(e); }).on("mouseleave", hideTip);
@@ -365,9 +382,9 @@ function aDraw(m) {
       .attr("cx", p => proj([p.lon, p.lat])[0]).attr("cy", p => proj([p.lon, p.lat])[1]);
     eg.append("g").attr("class", "ptlg").selectAll("text").data(pts).join("text").attr("class", "ptl")
       .attr("x", p => proj([p.lon, p.lat])[0]).attr("y", p => proj([p.lon, p.lat])[1]).text(p => p.point);
-    // a town printed on both editions is named once (the February map's label, where both are shown)
-    const named = pts.filter(p => p.name_as_printed && !(ed === "4" && eds.includes("feb1944") &&
-      [...POINTS.feb1944.values()].flat().some(q => q.name_as_printed && kmBetween([p.lon, p.lat], [q.lon, q.lat]) < 1.5)));
+    // a town printed on several editions is named once (on the last edition drawn of those shown)
+    const later = eds.slice(eds.indexOf(ed) + 1).flatMap(e => [...POINTS[e].values()].flat().filter(q => q.name_as_printed));
+    const named = pts.filter(p => p.name_as_printed && !later.some(q => kmBetween([p.lon, p.lat], [q.lon, q.lat]) < 1.5));
     eg.append("g").selectAll("text").data(named).join("text").attr("class", "town")
       .attr("x", p => proj([p.lon, p.lat])[0]).attr("y", p => proj([p.lon, p.lat])[1]).text(p => p.name_as_printed);
   }
@@ -388,7 +405,8 @@ function aDraw(m) {
 function aPointTip(p, ed) {
   tip.innerHTML = `<div class="v"><span class="mono">${p.block} ${p.point}</span>${p.name_as_printed ? ` ${esc(p.name_as_printed)}` : ""}</div>` +
     `<div class="k">${EDITION[ed].name}${p.cover_name ? ` · reported as <span class="mono">${p.cover_name} ${+p.point + COVER_OFFSET}</span>` : ""}</div>` +
-    `<div class="m">${p.lat.toFixed(4)}, ${p.lon.toFixed(4)} <span class="prov">provisional (about 0.4 km)</span></div>` +
+    `<div class="m">${p.lat.toFixed(4)}, ${p.lon.toFixed(4)} <span class="prov">provisional (about ${precKm(p, ed)} km${precKm(p, ed) > 0.4 ? ": block C's north-east corner fits worse" : ""})</span></div>` +
+    (ed === "jan1944" && p.block === "D" ? `<div class="m"><i>block letter D inferred: not printed on the frames read</i></div>` : "") +
     `<div class="m">${p.read === "read" ? "number read" : "number read with doubt"}</div>` +
     (p.note ? `<div class="i">${esc(p.note)}</div>` : "") +
     `<div class="i">${p.frame} px ${p.px_x},${p.px_y} · click to open the frame</div>`;
@@ -421,15 +439,15 @@ function aProbe(zoom) {
   const r = d.row, frame = r.frame;
   out.innerHTML = `<div class="anatomy"><span class="a">${d.given.block}</span> <span class="b">${d.given.point}</span>` +
     (d.given.block !== d.block ? ` <span class="muted">=</span> <span class="a">${d.block}</span> <span class="b">${d.point}</span>` : "") + `</div>` +
-    `<table><tbody><tr><td>edition</td><td>${EDITION[d.edition].name}${editionOf(d.given.block) ? " (chosen by the block)" : ""}</td></tr>` +
-    d.steps.map(s => `<tr><td>cover name</td><td>${s}</td></tr>`).join("") +
+    `<table><tbody><tr><td>edition</td><td>${EDITION[d.edition].name}${/^[IVXL]$/.test(d.given.block) ? " (chosen by the date: V, X, I and L are January letters and February cover names)" : editionOf(d.given.block) ? " (chosen by the block)" : ""}</td></tr>` +
+    d.steps.map(s => `<tr><td>${d.edition === "jan1944" ? "block" : "cover name"}</td><td>${s}</td></tr>`).join("") +
     `<tr><td>point</td><td><span class="mono">${d.block} ${d.point}</span>${r.name_as_printed ? ` = ${esc(r.name_as_printed)}` : ""}: ${r.lat.toFixed(5)}, ${r.lon.toFixed(5)} ` +
     `<span class="muted">(${r.read === "read" ? "number read" : "number read with doubt"}; ${srcLink(frame)} px ${r.px_x},${r.px_y})</span>${d.dup ? ` <i>Two readings of this number in the block: one is wrong.</i>` : ""}</td></tr>` +
     (d.offset ? `<tr><td>offset</td><td>${d.offset.km} km at ${d.offset.bearing}° (<span class="mono">${esc(d.offset.words)}</span>)</td></tr>` : "") +
     (d.edge ? `<tr><td>edge</td><td>the ${d.edge} edge of the place at the point (no distance given: not moved)</td></tr>` : "") +
-    `<tr><td>position</td><td><b>${d.at[1].toFixed(4)}, ${d.at[0].toFixed(4)}</b> <span class="prov">provisional: about 0.4 km${d.offset ? ", plus the report's own rounding of the distance" : ""}</span></td></tr>` +
+    `<tr><td>position</td><td><b>${d.at[1].toFixed(4)}, ${d.at[0].toFixed(4)}</b> <span class="prov">provisional: about ${precKm(r, d.edition)} km${d.offset ? ", plus the report's own rounding of the distance" : ""}</span></td></tr>` +
     `</tbody></table>`;
-  if (ARMY.view !== "both" && ARMY.view !== d.edition) { ARMY.view = "both"; buildEdSeg(); amap.render(); }
+  if (ARMY.view !== "all" && ARMY.view !== d.edition) { ARMY.view = "all"; buildEdSeg(); amap.render(); }
   aDrawProbe();
   if (zoom && amap.zoom) { const [x, y] = d.at; amap.zoomTo([[x - 0.03, y - 0.025], [x + 0.03, y + 0.025]], 0.5); }
 }
@@ -446,9 +464,9 @@ function aDrawProbe() {
   aScale(amap, amap.k);
 }
 function buildEdSeg() {
-  const opts = [{ key: "4", name: "4th edition" }, { key: "feb1944", name: "February 1944" }, { key: "both", name: "Both" }];
+  const opts = [...ED_ORDER.map(key => ({ key, name: EDITION[key].name })), { key: "all", name: "All" }];
   d3.select("#ed-seg").selectAll("button").data(opts).join("button")
-    .html(d => d.key === "both" ? d.name : `<span class="swatch" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:${EDITION[d.key].color}"></span>${d.name}`)
+    .html(d => d.key === "all" ? d.name : `<span class="swatch" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:${EDITION[d.key].color}"></span>${d.name}`)
     .attr("aria-pressed", d => d.key === ARMY.view)
     .on("click", (e, d) => { ARMY.view = d.key; buildEdSeg(); amap.render(); });
 }
@@ -467,10 +485,10 @@ let LAND50, LAND10;
 Promise.all([
   d3.csv(REFERENCE + "naval-grid/squares.csv"), d3.csv(REFERENCE + "naval-grid/anchors.csv"),
   d3.csv(REFERENCE + "bezugspunkte/ausgabe4.csv"), d3.csv(REFERENCE + "bezugspunkte/feb1944.csv"),
-  d3.csv(REFERENCE + "bezugspunkte/anchors.csv"),
+  d3.csv(REFERENCE + "bezugspunkte/jan1944.csv"), d3.csv(REFERENCE + "bezugspunkte/anchors.csv"),
   d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/land-50m.json"),
   d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/land-10m.json"),
-]).then(([squares, nanchors, a4, feb, aanchors, w50, w10]) => {
+]).then(([squares, nanchors, a4, feb, jan, aanchors, w50, w10]) => {
   LAND50 = topojson.feature(w50, w50.objects.land);
   LAND10 = topojson.feature(w10, w10.objects.land);
 
@@ -505,7 +523,7 @@ Promise.all([
     `${ex.blk.frames.split(";").map(s => srcLink(s.trim())).join(", ")}).`;
 
   // ── army ──
-  for (const [ed, rows] of [["4", a4], ["feb1944", feb]]) for (const r of rows) {
+  for (const [ed, rows] of [["4", a4], ["feb1944", feb], ["jan1944", jan]]) for (const r of rows) {
     r.lat = +r.lat; r.lon = +r.lon; r.frame = r.section_frame || r.frame;
     const key = `${r.block} ${r.point}`;
     POINTS[ed].set(key, [...(POINTS[ed].get(key) || []), r]);
@@ -513,9 +531,11 @@ Promise.all([
   document.getElementById("n-a4").textContent = a4.length;
   document.getElementById("n-a4b").textContent = new Set(a4.map(r => r.block)).size;
   document.getElementById("n-feb").textContent = feb.length;
+  document.getElementById("n-jan").textContent = jan.length;
+  document.getElementById("n-janb").textContent = new Set(jan.map(r => r.block)).size;
   ARMY.anchors = aanchors.map(a => {
     const r = { ...a };
-    const ed = { "4": "4", "Feb 1944": "feb1944" }[a.edition];
+    const ed = { "4": "4", "Feb 1944": "feb1944", "Jan 1944": "jan1944" }[a.edition];
     if (ed) { const d = aDecode(a.code, ed); if (!d.error) r.d = d; }
     if (a.expected_lat && r.d) { r.expected = [+a.expected_lon, +a.expected_lat]; r.err = kmBetween(r.d.pt, r.expected); }
     return r;
@@ -524,12 +544,18 @@ Promise.all([
   document.getElementById("ex-a-src").href = srcUrl("t314-0544/f0361");
   document.getElementById("tb-src").href = srcUrl("t312-0090/f0003");
   document.querySelectorAll("a[data-src]").forEach(a => { a.href = srcUrl(a.dataset.src); });
+  // January: the XIV Panzer Corps' report of 12 Jan 1944
+  const exj = ["M 28", "M 46", "C 11"].map(c => aDecode(c, "jan1944"));
+  document.getElementById("ex-j-out").innerHTML = `On the January map (${srcLink(exj[0].row.frame)}) ` +
+    exj.map(d => `<span class="mono">${d.block} ${d.point}</span> is ${d.row.lat.toFixed(4)}, ${d.row.lon.toFixed(4)}` +
+      (d.row.name_as_printed ? ` (${esc(d.row.name_as_printed)})` : "") + (d.row.read === "read" ? "" : `, its number read with doubt`)).join("; ") +
+    `. <span class="prov">Provisional: about 0.4 km in block M, about 1.3 km in block C</span>.`;
   const caira = ARMY.anchors.find(a => a.code === "XXIII 68");
   document.getElementById("ex-a-out").innerHTML = `Read on the February map (${srcLink(exa.row.frame)}), the point is ` +
     `${exa.row.lat.toFixed(4)}, ${exa.row.lon.toFixed(4)}${caira && caira.err != null ? `, ${caira.err.toFixed(2)} km from Caira` : ""}; ` +
     `<span class="prov">provisional, about 0.4 km</span>.`;
   document.getElementById("alegend").innerHTML =
-    Object.entries(EDITION).map(([k, e]) => `<span><svg width="22" height="14"><circle cx="11" cy="7" r="6" fill="${e.color}" fill-opacity="0.05" stroke="${e.color}" stroke-opacity="0.5" stroke-dasharray="2 2"/><circle cx="11" cy="7" r="3.2" fill="${e.color}"/></svg>${e.name}: a point, its ring the provisional ~0.4 km</span>`).join("") +
+    ED_ORDER.map(k => [k, EDITION[k]]).map(([k, e]) => `<span><svg width="22" height="14"><circle cx="11" cy="7" r="6" fill="${e.color}" fill-opacity="0.05" stroke="${e.color}" stroke-opacity="0.5" stroke-dasharray="2 2"/><circle cx="11" cy="7" r="3.2" fill="${e.color}"/></svg>${e.name}: a point, its ring the provisional ~${k === "jan1944" ? "0.4 km (block C, 1.3 km)" : "0.4 km"}</span>`).join("") +
     `<span><svg width="14" height="14"><circle cx="7" cy="7" r="3.2" fill="var(--surface-1)" stroke="var(--text-secondary)" stroke-width="1.2"/></svg>number read with doubt</span>` +
     `<span><svg width="34" height="12"><rect x="1" y="2.5" width="7" height="7" fill="var(--text-primary)"/><line x1="8" y1="6" x2="30" y2="6" stroke="var(--text-primary)" stroke-opacity="0.6" stroke-dasharray="3 2"/></svg>the named place (modern position), to its decoded point</span>`;
 
