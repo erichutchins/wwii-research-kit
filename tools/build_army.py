@@ -232,10 +232,12 @@ def place(rows, page=PAGE):
             else:
                 lat, lon = float(p["lat"]), float(p["lon"])
         else:
-            st = [x for x in stations.get(r["unit"], []) if x["lat"] is not None and x["date"] <= r["date"]]
+            # the station in force that day; if the report names a place not yet on the map ("Baraccone"),
+            # the action stays off the map, as its station does (not a problem)
+            st = [x for x in stations.get(r["unit"], []) if x["date"] <= r["date"]]
             if not st:
                 problems.append(f"{where} no station on or before this date to place it at")
-            else:
+            elif st[-1]["lat"] is not None:
                 lat, lon = st[-1]["lat"], st[-1]["lon"]
         if lat is None:
             continue
