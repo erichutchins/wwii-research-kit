@@ -3,6 +3,7 @@
 A kit for rebuilding WWII ships' and units' movements from their own records. Read
 `guides/METHODS.md` before transcribing anything, `guides/MORNING-REPORTS.md` before
 reading Army morning reports, and `guides/MUSTER-ROLLS.md` before following a Navy shore unit.
+For film of a place and date, follow the skill `find-film` (rules in `records/film/README.md`).
 
 ## The rule: cite every source
 
