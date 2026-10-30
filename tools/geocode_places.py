@@ -57,7 +57,7 @@ def main():
         r["note"] = r["note"] or f"matched: {h['display_name'][:90]}"
         print(f"{r['place']:28} {r['lat']:>9} {r['lon']:>9}  {h['display_name'][:70]}")
     with places.open("w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=fields)
+        w = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
         w.writeheader()
         w.writerows(rows)
 
