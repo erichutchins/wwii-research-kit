@@ -12,7 +12,8 @@ the middle of the commune, not the town: Venafro's is 2.7 km from the town. So t
 asks for five answers and takes the first settlement (a city, town, village or hamlet
 node) over a boundary; it falls back to the first answer, and the note says what kind it
 matched. `--audit` re-checks rows already looked up this way and lists those whose
-point was a boundary's, with the settlement's point and the distance between them.
+point was a boundary's, with the settlement's point and the distance between them; rows whose
+note says "Kept (audit ...)" were reviewed and are skipped.
 
   python3 tools/geocode_places.py                              # records/army/places.csv
   python3 tools/geocode_places.py records/seabees/places.csv   # any other (path from here)
@@ -51,12 +52,15 @@ def lookup(query):
     return hits
 
 
-def best(hits):
-    """The first settlement among the answers, else the first answer."""
-    for h in hits:
-        if h.get("category") == "place" and h.get("type") in SETTLEMENT:
+def best(hits, query=""):
+    """The first settlement whose name is the query's first part (so "Bad Brückenau" is the town, not
+    Staatsbad Brückenau), else the first settlement, else the first answer."""
+    name = query.split(",")[0].strip().lower()
+    towns = [h for h in hits if h.get("category") == "place" and h.get("type") in SETTLEMENT]
+    for h in towns:
+        if h["display_name"].split(",")[0].strip().lower() == name:
             return h
-    return hits[0]
+    return towns[0] if towns else hits[0]
 
 
 def km(a, b):
@@ -72,10 +76,12 @@ def audit(places):
     for r in rows:
         if r["source"] != "OSM Nominatim" or not r["query"] or not r["lat"]:
             continue
+        if "Kept (audit" in r["note"] or "(not Staatsbad" in r["note"]:   # reviewed: the note says why
+            continue
         hits = lookup(r["query"])
         if not hits:
             continue
-        b = best(hits)
+        b = best(hits, r["query"])
         d = km((float(r["lat"]), float(r["lon"])), (float(b["lat"]), float(b["lon"])))
         if d > 0.3:
             n += 1
@@ -98,7 +104,7 @@ def main():
         if not hits:
             print(f"NOT FOUND {r['place']!r} ({r['query']})")
             continue
-        h = best(hits)
+        h = best(hits, r["query"])
         r["lat"], r["lon"] = f"{float(h['lat']):.4f}", f"{float(h['lon']):.4f}"
         r["source"] = "OSM Nominatim"
         r["note"] = r["note"] or f"matched ({h.get('type')}): {h['display_name'][:90]}"

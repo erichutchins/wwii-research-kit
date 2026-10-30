@@ -104,10 +104,11 @@ numbers 14-124). Circles found by a Hough transform and read by eye; positions f
 circle is ambiguous; Caira, Cassino and 61 were read on `f0203` (11-20 Feb), where they are clean. Section 7 (8Z's
 south: Ausonia, Castelforte, Minturno, the Garigliano; and blocks 3R, 8V) is not read yet.
 
-**The test.** Eight towns printed beside their circles, none used in the fit, against OSM: Terelle 0.02 km, Caira
-0.07, Cassino 0.10, Villa S. Lucia 0.12, Cervaro 0.25, S. Vittore 0.26, Sant'Elia 0.28, Piedimonte S. Germano 0.72;
-Pignataro Interamna 1.9 km (unresolved: OSM's point, a circle beside the town, or a join in the base map). Median
-0.25 km. The reports fit the ground: "XXIII 68" decodes to Caira at 0.07 km; "600 m NW XXIII 72" is 600 m NW of the
+**The test.** Nine towns printed beside their circles, none used in the fit, against OSM: Terelle 0.02 km, Caira
+0.07, Cassino 0.10, Villa S. Lucia 0.12, Cervaro 0.25, S. Vittore 0.26, Sant'Elia 0.28, Pignataro Interamna 0.58, Piedimonte S. Germano 0.72. Median
+0.25 km. (Pignataro had read 1.9 km: its expected position was OSM's first answer, the commune boundary's point, 1.6 km
+from the village. OSM ranks a boundary first for many Italian communes; `tools/geocode_places.py` now prefers the
+settlement, and `--audit` lists rows placed on a boundary.) The reports fit the ground: "XXIII 68" decodes to Caira at 0.07 km; "600 m NW XXIII 72" is 600 m NW of the
 abbey of Monte Cassino (printed 61), "etwa 2,9 km SO XXIII 50" is the heights by Albaneta and Point 593 (2.9 km SE of
 Villa S. Lucia, printed 39), both where the fighting was on 7 Feb (`t314-0547/f0740`). Rows in `anchors.csv`
 (edition "Feb 1944").
