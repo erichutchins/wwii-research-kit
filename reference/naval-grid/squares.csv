@@ -1,0 +1,46 @@
+square,block,lat_n,lat_s,lon_w,lon_e,present,frames,method,note
+CH,1,42-54N,40-12N,4-18W,0-42W,123456789,t1022-2099/f0262,read,numbers read on the Klein sheet; mostly Spain (land square)
+CH,2,42-54N,40-12N,0-42W,2-54E,123456789,t1022-2099/f0262,read,
+CH,3,43-48N,41-06N,2-54E,6-30E,123456789,t1022-2099/f0262,read,
+CH,4,40-12N,37-30N,4-18W,0-42W,123456789,t1022-2099/f0262; t1022-2099/f0318,read,
+CH,5,40-12N,37-30N,0-42W,2-54E,123456789,t1022-2099/f0200; t1022-2099/f0262; t1022-2099/f0318,measured,
+CH,6,41-06N,38-24N,2-54E,6-30E,123456789,t1022-2099/f0200; t1022-2099/f0262; t1022-2099/f0318,measured,61-63 above the top of t1022-2099/f0200
+CH,7,37-30N,34-48N,4-18W,0-42W,123456789,t1022-2099/f0262; t1022-2099/f0318,read,CH south edge steps along the Algerian coast below this block (not digitized)
+CH,8,37-30N,34-48N,0-42W,2-54E,123456789,t1022-2099/f0200; t1022-2099/f0262; t1022-2099/f0318,measured,CH south edge steps below 87-89 (f0318)
+CH,9,38-24N,35-42N,2-54E,6-30E,123456789,t1022-2099/f0200; t1022-2099/f0262; t1022-2099/f0318,measured,"CH south edge at 35-42N below 97-99 (f0200, t1022-2099/f0318)"
+CJ,1,44-42N,42-00N,6-30E,10-06E,123456789,t1022-2099/f0262,read,column shifted one row south of CJ 2/3 (top 44-42N)
+CJ,2,45-36N,42-54N,10-06E,13-42E,123456789,t1022-2099/f0262,read,
+CJ,3,45-36N,42-54N,13-42E,17-18E,123456789,t1022-2099/f0262,read,
+CJ,4,42-00N,39-18N,6-30E,10-06E,123456789,t1022-2099/f0200; t1022-2099/f0262,measured,only 47-49 on t1022-2099/f0200
+CJ,5,42-54N,40-12N,10-06E,13-42E,123456789,t1022-2099/f0262,read,
+CJ,6,42-54N,40-12N,13-42E,17-18E,123456789,t1022-2099/f0262,read,
+CJ,7,39-18N,36-36N,6-30E,10-06E,123456789,t1022-2099/f0200; t1022-2099/f0262; t1022-2099/f0314,measured,"reaches 36-36N, below CJ 8/9: CN 11-13 do not exist"
+CJ,8,40-12N,37-30N,10-06E,13-42E,123456789,t1022-2099/f0200; t1022-2099/f0262; t1022-2099/f0314,measured,
+CJ,9,40-12N,37-30N,13-42E,17-18E,123456789,t1022-2099/f0262; t1022-2099/f0314,read,
+CK,1,45-36N,42-54N,17-18E,20-54E,123456789,t1022-2099/f0262,read,only the west part seen; CK assumed regular
+CK,2,45-36N,42-54N,20-54E,24-30E,123456789,t1022-2099/f0200; schmidt-mqs/p18,assumed,"not seen on the frames read; placed as a regular block of a regular large square Not seen on any chart: placed as a regular block on the lattice measured on f0200, by the grid's published 3x3 rule (schmidt-mqs/p18)."
+CK,3,45-36N,42-54N,24-30E,28-06E,123456789,t1022-2099/f0200; schmidt-mqs/p18,assumed,"not seen on the frames read; placed as a regular block of a regular large square Not seen on any chart: placed as a regular block on the lattice measured on f0200, by the grid's published 3x3 rule (schmidt-mqs/p18)."
+CK,4,42-54N,40-12N,17-18E,20-54E,123456789,t1022-2099/f0262,read,only the west part seen; CK assumed regular
+CK,5,42-54N,40-12N,20-54E,24-30E,123456789,t1022-2099/f0200; schmidt-mqs/p18,assumed,"not seen on the frames read; placed as a regular block of a regular large square Not seen on any chart: placed as a regular block on the lattice measured on f0200, by the grid's published 3x3 rule (schmidt-mqs/p18)."
+CK,6,42-54N,40-12N,24-30E,28-06E,123456789,t1022-2099/f0200; schmidt-mqs/p18,assumed,"not seen on the frames read; placed as a regular block of a regular large square Not seen on any chart: placed as a regular block on the lattice measured on f0200, by the grid's published 3x3 rule (schmidt-mqs/p18)."
+CK,7,40-12N,37-30N,17-18E,20-54E,123456789,t1022-2099/f0262; t1022-2099/f0314,read,71-73 seen; CK assumed regular
+CK,8,40-12N,37-30N,20-54E,24-30E,123456789,t1022-2099/f0200; schmidt-mqs/p18,assumed,"not seen on the frames read; placed as a regular block of a regular large square Not seen on any chart: placed as a regular block on the lattice measured on f0200, by the grid's published 3x3 rule (schmidt-mqs/p18)."
+CK,9,40-12N,37-30N,24-30E,28-06E,123456789,t1022-2099/f0200; schmidt-mqs/p18,assumed,"not seen on the frames read; placed as a regular block of a regular large square Not seen on any chart: placed as a regular block on the lattice measured on f0200, by the grid's published 3x3 rule (schmidt-mqs/p18)."
+CN,1,37-30N,34-48N,6-30E,10-06E,456789,t1022-2099/f0200; t1022-2099/f0314; t1022-2099/f0318,measured,11-13 absent: CJ 77-79 occupy that row
+CN,2,37-30N,34-48N,10-06E,13-42E,123456789,t1022-2099/f0200; t1022-2099/f0314; t1022-2099/f0318,measured,
+CN,3,37-30N,34-48N,13-42E,17-18E,123456789,t1022-2099/f0314; t1022-2099/f0318,read,
+CN,4,34-48N,32-06N,6-30E,10-06E,123456789,t1022-2099/f0200; t1022-2099/f0314; t1022-2099/f0318,measured,only 41-43 on t1022-2099/f0200
+CN,5,34-48N,32-06N,10-06E,13-42E,123456789,t1022-2099/f0200; t1022-2099/f0314; t1022-2099/f0318,measured,only 51-53 on t1022-2099/f0200
+CN,6,34-48N,32-06N,13-42E,17-18E,123456789,t1022-2099/f0314; t1022-2099/f0318,read,
+CN,7,32-06N,29-24N,6-30E,10-06E,123456789,t1022-2099/f0314; t1022-2099/f0318,read,
+CN,8,32-06N,29-24N,10-06E,13-42E,123456789,t1022-2099/f0314; t1022-2099/f0318,read,
+CN,9,32-06N,29-24N,13-42E,17-18E,123456789,t1022-2099/f0314; t1022-2099/f0318,read,
+CO,1,37-30N,34-48N,17-18E,20-54E,123456789,t1022-2099/f0314,read,
+CO,2,37-30N,34-48N,20-54E,24-30E,123456789,t1022-2099/f0314,read,
+CO,3,37-30N,34-48N,24-30E,28-06E,123456789,t1022-2099/f0200; schmidt-mqs/p18,assumed,"not seen on the frames read; placed as a regular block of a regular large square Not seen on any chart: placed as a regular block on the lattice measured on f0200, by the grid's published 3x3 rule (schmidt-mqs/p18)."
+CO,4,34-48N,32-06N,17-18E,20-54E,123456789,t1022-2099/f0314,read,
+CO,5,34-48N,32-06N,20-54E,24-30E,123456789,t1022-2099/f0314,read,
+CO,6,34-48N,32-06N,24-30E,28-06E,123456789,t1022-2099/f0200; schmidt-mqs/p18,assumed,"not seen on the frames read; placed as a regular block of a regular large square Not seen on any chart: placed as a regular block on the lattice measured on f0200, by the grid's published 3x3 rule (schmidt-mqs/p18)."
+CO,7,32-06N,29-24N,17-18E,20-54E,123456789,t1022-2099/f0314,read,71-73 seen
+CO,8,32-06N,29-24N,20-54E,24-30E,123456789,t1022-2099/f0314,read,81-83 seen
+CO,9,32-06N,29-24N,24-30E,28-06E,123456789,t1022-2099/f0200; schmidt-mqs/p18,assumed,"not seen on the frames read; placed as a regular block of a regular large square Not seen on any chart: placed as a regular block on the lattice measured on f0200, by the grid's published 3x3 rule (schmidt-mqs/p18)."
