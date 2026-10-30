@@ -76,6 +76,7 @@ python3 tools/jacar.py search|meta|fetch ...;  python3 tools/jgrid.py decode|che
 python3 tools/wayback.py list|fetch|crawl <domain> [--yes]   # an archived website -> sources/wayback/
 python3 tools/frupac.py find|date ...;  python3 tools/gbooks.py search|meta|fetch ...  (key in .env)
 python3 tools/grid_ref.py <grid> <ref>;  python3 tools/geocode_places.py [records/seabees/places.csv]
+python3 tools/film.py nara|shots|search|meta|index|find ...   # film of a place and date: NARA moving images, listed YouTube channels (index = their uploads, saved; find = search it)
 python3 tools/serve.py                        # http://localhost:8385/site/
 ```
 

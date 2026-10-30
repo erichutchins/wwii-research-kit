@@ -58,6 +58,7 @@ CITES = {
     "engagements/timeline.csv": ["ref"],
     "engagements/claims.csv": ["ref"],
     "engagements/positions.csv": ["ref"],
+    "film/clips.csv": ["source"],
 }
 # files whose rows don't carry a citation of their own, and why
 UNCITED = {
