@@ -1,11 +1,11 @@
 // The front page's figures and lists, drawn from the records (RECORDS, config.js):
-//   the Luzon Strait replay        battles/luzon-strait-1944.json (built by tools/build_battle.py)
-//   Haynsworth's four times        engagements/haynsworth-1945-04-06/claims.csv ("When was she hit?")
+//   the Luzon Strait replay        engagements/tama-17-1944-04-29/engagement.json (built by tools/build_engagement.py)
+//   Haynsworth's four times        engagements/haynsworth-1945-04-06/engagement.json ("When was she hit?")
 //   the 20th Seabees' parts        seabees/seabees.json
 //   Solar and UGS 72               ships/de-221-solar/track.geojson
-//   Neuburg's five minutes         engagements/neuburg-1945-04-26/timeline.csv
+//   Neuburg's five minutes         engagements/neuburg-1945-04-26/engagement.json
 //   every ship's track             ships.json and each ship's track geojson
-//   what else, and what's wanted   ships.json, army/army.json, battles/index.json, inventory.yml
+//   what else, and what's wanted   ships.json, army/army.json, engagements/index.json, inventory.yml
 
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -25,9 +25,16 @@ const fmtDate = d3.utcFormat("%-d %b %Y");
 
 // ── The one-clock replay ────────────────────────────────────────────────────────────────────────
 async function replay() {
-  const battle = await d3.json(RECORDS + "battles/luzon-strait-1944.json");
-  const act = battle.actions[0];
-  const boats = battle.boats.map((b, i) => ({ ...b, color: `var(--c${i + 1})` }));
+  // the engagement as tools/build_engagement.py builds it, in the shape this replay reads
+  const [D, land10] = await Promise.all([d3.json(RECORDS + "engagements/tama-17-1944-04-29/engagement.json"),
+    d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/land-10m.json")]);
+  const cv = D.convoys["tama-17"], outcome = D.sections.find(s => s.heading === "Outcome");
+  const act = { start: D.window.from, end: D.window.to, box: D.box, tracks: D.tracks, fixes: D.fixes.map(f => ({ ...f, boat: f.who })),
+    convoy: `Convoy ${cv.convoy}`, route: `${cv.from} → ${cv.to}, sailed ${cv.sailed}.`, outcome: outcome ? outcome.paras.map(p => p.text).join(" ") : "",
+    events: D.events.map(e => ({ ...e, side: e.side === "jp" ? "japan" : e.actor, title: e.title || e.kind, text: e.words, page: e.cite.ref, scan: e.cite.href })),
+    sinkings: [] };
+  const battle = { places: D.places };
+  const boats = D.participants.filter(p => p.kind === "submarine").map((b, i) => ({ ...b, color: `var(--c${i + 1})` }));
   const color = Object.fromEntries(boats.map(b => [b.id, b.color]));
   const T = s => Date.parse(s);
   const t0 = T(act.start), t1 = T(act.end);
@@ -54,7 +61,7 @@ async function replay() {
   let K = 1;
   const pin = xy => `translate(${xy}) scale(${1 / K})`;
   world.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([1, 1])()));
-  world.append("path").attr("class", "land").attr("d", path({ type: "MultiPolygon", coordinates: act.land.map(r => [r]) }));
+  world.append("path").attr("class", "land").attr("d", path(topojsonFeature(land10)));
   for (const p of battle.places || []) {
     const xy = proj([p.lon, p.lat]);
     if (xy && xy[0] > 30 && xy[0] < W - 30 && xy[1] > 14 && xy[1] < H - 8)
@@ -123,7 +130,7 @@ async function replay() {
   const entry = (e, old) => {
     const boat = boats.find(b => b.id === e.side);
     const u = pageUrl(e.page, e.scan);
-    const own = /^\S+ (\d{4}) \(([^),]+)/.exec(e.local || "");   // "1944-04-29 2300 (K)" -> 2300 K
+    const own = /^\S+ (\d{4}) ([A-Z]{1,2})/.exec(e.local || "");   // "1944-04-29 2300 K" -> 2300 K
     const cite = u ? ` <a class="src" href="${esc(u)}" target="_blank" rel="noopener" title="${esc(e.page || "")}">${pageOf(e.page)}</a>` : "";
     const words = e.original
       ? `<span class="ja" lang="ja">${esc(e.original)}</span><span class="tr">${esc(e.text)} (translated)${cite}</span>`
@@ -188,7 +195,7 @@ async function replay() {
 
 // ── Haynsworth: one hit, four times ───────────────────────────────────────────────────────────
 async function haynsworth() {
-  const claims = (await d3.csv(RECORDS + "engagements/haynsworth-1945-04-06/claims.csv")).filter(c => c.question === "When was she hit?");
+  const claims = Engage.story(await d3.json(RECORDS + "engagements/haynsworth-1945-04-06/engagement.json")).claims.filter(c => c.question === "When was she hit?");
   const host = d3.select("#fig-haynsworth");
   const W = 860, H = 210, m = { l: 20, r: 20 };
   const mins = s => { const m = /(\d{2})(\d{2})/.exec(s); return m ? +m[1] * 60 + +m[2] : null; };
@@ -337,7 +344,7 @@ function topojsonFeature(topo) {
 
 // ── Neuburg: three records on one five-minute clock ─────────────────────────────────────────────
 async function neuburg() {
-  const rows = (await d3.csv(RECORDS + "engagements/neuburg-1945-04-26/timeline.csv")).filter(r => r.date === "1945-04-26" && r.time);
+  const rows = Engage.story(await d3.json(RECORDS + "engagements/neuburg-1945-04-26/engagement.json")).timeline.filter(r => r.date === "1945-04-26" && r.time);
   const lanes = [
     { key: "fired", label: "106th AAA AW Bn fired on them", match: r => r.actor === "106th AAA AW Bn" && r.kind === "engage" },
     { key: "lost", label: "17th Bomb Group lost", match: r => /Bomb Sq/.test(r.actor) },
@@ -440,7 +447,7 @@ async function fleet() {
 // ── What else is in each chapter, and what's still to find ──────────────────────────────────────
 async function lists() {
   const [ships, army, battles, invText] = await Promise.all([d3.json(RECORDS + "ships.json"), d3.json(RECORDS + "army/army.json"),
-    d3.json(RECORDS + "battles/index.json"), d3.text(RECORDS + "inventory.yml")]);
+    d3.json(RECORDS + "engagements/index.json").then(xs => xs.filter(x => x.theater === "pacific")), d3.text(RECORDS + "inventory.yml")]);
   const inv = jsyaml.load(invText);
   const word = { mapped: "on the map", transcribed: "transcribed, not yet drawn", available: "<b>found, not transcribed</b>",
     found: "<b>found, not transcribed</b>", "not-searched": "<b>not looked for yet</b>", missing: "looked for, not found" };
@@ -452,7 +459,7 @@ async function lists() {
   const periodStart = dates => { const [a, b = a] = dates.split("–").map(x => x.trim()); const yr = /\d{4}/.exec(b)?.[0];
     return Date.parse(/\d{4}/.test(a) ? `${a} UTC` : /[A-Za-z]/.test(a) ? `${a} ${yr} UTC` : `${a} ${b.replace(/^\d+\s*/, "")} UTC`); };
   const pac = [];
-  for (const b of battles) pac.push([Date.parse(b.start), row(month(Date.parse(b.start)), `<a href="battle.html?e=${b.id}">${esc(b.title)}</a>`, "both sides, one clock")]);
+  for (const b of battles) pac.push([Date.parse(b.from), row(month(Date.parse(b.from)), `<a href="engagement.html?e=${b.id}">${esc(b.title)}</a>`, "both sides, one clock")]);
   for (const s of ships.filter(s => s.alias !== "solar")) {
     const d = d3.min(s.periods, p => periodStart(p.dates));
     const sub = s.kind === "submarine";

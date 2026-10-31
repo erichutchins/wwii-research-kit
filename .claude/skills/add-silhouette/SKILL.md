@@ -1,7 +1,7 @@
 ---
 name: add-silhouette
 description: >
-  Add a recognition silhouette (an aircraft, a ship class, or a generic kind of ship for the battle
+  Add a recognition silhouette (an aircraft, a ship class, or a generic kind of ship for the engagement
   pages) to records/silhouettes/silhouettes.yml from a wartime recognition plate: find and cite the
   plate, trace an aircraft's views from the scan or draw a ship's profile to the plate's printed
   heights, build silhouettes.json, link it from the ships it draws, and check it on the page. Use when
@@ -65,7 +65,7 @@ date, and every height it prints, e.g. "ONI 54-D, 22 Jan 1944: bow 20', stern 10
 - every printed height must be met (bow, stern, bridge, stack, mast, length); between them, follow the
   plate's drawing. Leave out details smaller than about 4 ft. Label parts with a comment (`# mount 53`).
 
-## 2c. A generic kind of ship (battle pages)
+## 2c. A generic kind of ship (engagement pages)
 
 Under `categories.shapes`, one path in the 120 × 24 box, bow to the right, waterline at y = 22, every
 subpath clockwise. These stand for a kind of ship, not a class, so they stay generic; add one only
@@ -75,7 +75,7 @@ when an engagement needs a kind that isn't there (an `escorts` or `ships` entry 
 
 ```bash
 uv run tools/build_silhouettes.py      # silhouettes.json; fails if a source id is missing
-uv run tools/build_battle.py           # only after changing categories
+uv run tools/build_engagement.py       # the engagement pages check every `sil:` against it
 ```
 
 - A ship class: add `silhouette: <key>` to the `ship.yml` of each vessel of that class

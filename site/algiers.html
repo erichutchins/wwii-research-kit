@@ -10,7 +10,7 @@
 <style>
 /* Three raid nights on Algiers told from both sides' records: Battery C, 62nd CA (AA), 4 mi west of the city; No. 153
    Squadron RAF's Beaufighters at Maison Blanche; the German Naval Staff's war diary; the Italian and German bulletins;
-   L'Écho d'Alger. Data: records/engagements/algiers-1943/*.csv (hand-edited). Silhouettes: records/silhouettes/,
+   L'Écho d'Alger. Data: records/engagements/algiers-1943/ (engagement.json, built from events.yml and claims.yml; positions.csv). Silhouettes: records/silhouettes/,
    loaded by silhouettes.js. Layout as haynsworth.html (a scrolling narrative beside a map that stays put; then the
    nights side by side, the evidence board, the sources). Colours are the project's checked palette: the battery takes
    slot 1 (blue), the RAF night fighters slot 3, the Axis side is ink, the press is grey (ink-3). Anything placed by
@@ -203,7 +203,7 @@ h3 { font-size: 18px; margin: 0; font-weight: 650; }
 <body>
 <div class="wrap">
   <header>
-    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="battle.html">Battles</a><a href="haynsworth.html">Haynsworth</a><a href="algiers.html" aria-current="page">Algiers</a><a href="seabees.html">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="german.html">German grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="engagement.html">Engagements</a><a href="convoys.html">Convoys</a><a href="lanes.html">Sea lanes</a><a href="haynsworth.html">Haynsworth</a><a href="algiers.html" aria-current="page">Algiers</a><a href="seabees.html">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="german.html">German grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
     <div class="eyebrow">Battery C, 62nd Coast Artillery (AA) · No. 153 Squadron RAF · Luftflotte 2</div>
     <h1>Algiers under the night bombers, May–June 1943</h1>
     <p class="lede">Three evenings when an American anti-aircraft battery four miles west of Algiers fired on raiders: 12 May, 13 May and 4 June 1943. This page puts the battery's morning reports beside the record book of the RAF night fighters flying from Maison Blanche, the city's newspaper, the Allied communiqués, and the attackers' side: the German Naval Staff's war diary and the Italian and German bulletins.</p>
@@ -249,6 +249,7 @@ h3 { font-size: 18px; margin: 0; font-weight: 650; }
 <script src="silhouettes.js"></script>
 <script src="mapzoom.js"></script>
 <script src="scalebar.js"></script>
+<script src="engage.js"></script>
 <script src="algiers.js"></script>
 <script src="glossary.js"></script>
 <script src="footer.js"></script>

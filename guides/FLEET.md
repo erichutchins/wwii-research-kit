@@ -53,8 +53,8 @@ Suggested order:
 
 - **PARCHE Patrol 1, TINOSA Patrol 6** (BANG's Patrol 1 partners):
   positions transcribed in `records/boats/`. `check_track.py`,
-  `check_crossrefs.py` and `pack_timeline.py` read that layout; the pages
-  and the other scripts still read BANG only. Depths and layers not yet done.
+  `check_crossrefs.py` and `build_engagement.py` read that layout; the dive and
+  layer pages still read BANG only. Depths and layers not yet done.
 
 ## Changes the code needs first
 

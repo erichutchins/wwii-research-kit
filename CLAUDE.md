@@ -16,17 +16,20 @@ For film of a place and date, follow the skill `find-film` (rules in `records/fi
 ## Layout
 
 - `records/`: the data (the wwii-unit-records repository, a submodule). Hand-edited CSV and YAML
-  are the source of truth; columns in `records/README.md`.
-  - `boats/<hull>-<name>/ship.yml` + `patrol-N/` (positions, depths, layers, japanese, crossrefs,
-    frupac); `ships/<hull>-<name>/`; `engagements/<id>/engagement.yml`; `army/`; `seabees/`;
+  are the source of truth; fields in `records/README.md`. CSV only for numbers, dates and short codes (no cell
+  ever needs a quote or a comma); anything with words goes in YAML or Markdown with front matter; JSON is generated.
+  - `boats/<hull>-<name>/ship.yml` + `patrol-N/` (positions, depths, layers, japanese.yml, claims.yml,
+    frupac.yml); `ships/<hull>-<name>/`; `engagements/<id>/` (engagement.md, events.yml, claims.yml,
+    positions.csv; `guides/ENGAGEMENTS.md`); `convoys/<id>/convoy.md`; `army/`; `seabees/`;
     `silhouettes/silhouettes.yml` (recognition silhouettes, each citing its plate).
   - `inventory.yml`: every report, found or not, and how far along it is. Update it with the work.
   - Generated, never edited: `*.geojson`, `ships.json`, `seafloor.csv`, `weather.csv`,
-    `crossrefs.json`, `pack_timeline.csv`, `dives.json`, `battles/`, `silhouettes.json`, `scans.json`, `citations.json`,
+    `dives.json`, `engagements/*/engagement.json`, `engagements/index.json`, `convoys/convoys.json`, `silhouettes.json`, `scans.json`, `citations.json`,
     `army/army.json`, `army/seafloor.csv`, `seabees/seabees.json`.
 - `tools/`: Python. Standard library only, except scripts with a PEP 723 header (PyYAML,
   Pillow, PyMuPDF), run with `uv run`. `tools/records.py` finds the records and the cache.
 - `reference/jgrid/`: the Japanese kana grid keys and anchors (hand-edited; `guides/JAPANESE-GRID.md`).
+- `reference/lanes/lanes.yml`: the convoy lanes' ports and (assumed) waypoints, which a convoy's `route:` runs through.
 - `site/`: static pages, D3 v7 from a CDN, no build step. `config.js` holds the paths.
 - `sources/`: downloaded scans and caches. **Git-ignored. Never commit.**
 
@@ -60,16 +63,17 @@ nothing is redacted.
 uv run tools/check_track.py all --geojson     # every track: 0 too-fast legs; GeoJSON, ships.json
 uv run tools/check_track.py bang/1            # one patrol, leg by leg
 uv run tools/check_sources.py [--fetch]       # citations resolve; inventory matches the folders
-uv run tools/check_crossrefs.py               # attacks vs japanese.csv -> crossrefs.json
+uv run tools/check_crossrefs.py               # attacks vs japanese.yml, minutes and miles apart
 uv run tools/fetch_seafloor.py; uv run tools/fetch_weather.py   # after positions change (cached)
 python3 tools/fetch_station_weather.py seabees  # a shore unit's daily weather: ISD stations + ERA5
 uv run tools/build_dives.py                   # records/boats/ss-385-bang/dives.json
 python3 tools/build_army.py                   # records/army/army.json (after editing records/army/); 0 problems
 uv run tools/army_seafloor.py                 # records/army/seafloor.csv: the seafloor under the LST crossings
 uv run tools/build_seabees.py                 # records/seabees/seabees.json (after records/seabees/ or its weather); 0 problems
-uv run tools/build_silhouettes.py             # records/silhouettes/silhouettes.json (then build_battle.py)
+uv run tools/build_silhouettes.py             # records/silhouettes/silhouettes.json (then build_engagement.py)
 uv run tools/trace_silhouette.py PLATE.png --crop X Y W H [--symmetric] [--open 2] --preview /tmp/p.png   # trace a plate
-uv run tools/build_battle.py [<id>]           # records/battles/ (new <id> <patrol>... drafts one)
+uv run tools/build_engagement.py             # engagements and convoys -> their JSON; `check` in CI; 0 problems
+node site/engage.test.js                      # the engagement pages' shared computation (engage.js)
 python3 tools/nara.py find "Bang" | fetch <id> | index
 uv run --with pillow python3 tools/crop_pages.py sheet|halves|zoom|heads ...
 python3 tools/morning_reports.py serial|unit|locate|changes|fetch ...
@@ -84,7 +88,8 @@ python3 tools/serve.py                        # http://localhost:8385/site/
 ```
 
 After editing any CSV: `check_track.py all --geojson`, `build_dives.py`, `check_sources.py`; after `records/army/`,
-`build_army.py` (and `army_seafloor.py` if a crossing changed); after `records/seabees/`, `build_seabees.py`.
+`build_army.py` (and `army_seafloor.py` if a crossing changed); after `records/seabees/`, `build_seabees.py`; after
+an engagement, a convoy, a patrol's japanese.yml or claims.yml, or any track, `build_engagement.py`.
 
 ## Pages
 
@@ -99,8 +104,12 @@ After editing any CSV: `check_track.py all --geojson`, `build_dives.py`, `check_
   labels: italics instead.
 - Every page has the same navigation bar, at the top of its header (copy it from any page).
 - Colours are CSS variables in `site/viz.css` with light and dark values. The three categorical
-  colours were checked for colour-blind separation: don't add hues without checking again.
-- Verify changes in a browser: light and dark mode, every ship on `patrols.html`, no console errors.
+  colours were checked for colour-blind separation: don't add hues without checking again. The engagement pages
+  (`engagement.html`, `convoys.html`, `lanes.html`) share `site/engage.css`, whose boat colours were checked with the
+  hit red, every pair, both modes; their encodings (solid, outlined, hatched, dotted; red only for hits) are in
+  `guides/ENGAGEMENTS.md`, and their computation is `site/engage.js`, never redone in a page.
+- Verify changes in a browser: light and dark mode, every ship on `patrols.html`, every engagement on
+  `engagement.html`, no console errors.
 
 ## Don't
 

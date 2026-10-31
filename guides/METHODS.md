@@ -208,8 +208,8 @@ How it was done for Patrol 1:
 3. Read the page images. Printed pages read well at 110 dpi. Handwritten
    tables need 200–300 dpi crops, and horizontal text of the period runs
    right to left (`(七一マタ)` is タマ一七, TAMA-17).
-4. Transcribe into `japanese.csv` as written, with a translation and the
-   page, and pair the records with attacks in `crossrefs.csv`.
+4. Transcribe into the patrol's `japanese.yml` as written, with a translation and the
+   page, and pair the records with attacks in its `claims.yml`.
 5. `check_crossrefs.py` converts both sides to GMT and reports the gaps.
 
 Patrols 2–4 added two lessons:
@@ -242,7 +242,7 @@ or date. Read the maps in the site's zoom viewer, which serves full-resolution
 tiles (the page images are too small for the pencil). For each note near one
 of BANG's attacks:
 
-1. Copy the text as written into `frupac.csv`, with the message date-time
+1. Copy the text as written into `frupac.yml`, with the message date-time
    group, the event time, and the zoom-viewer query that frames it.
 2. Estimate the mark's position: against the printed 1-degree grid where the
    map has one; on bare tracing overlays, against the red meridian labels
@@ -335,7 +335,8 @@ uv run tools/check_track.py all --geojson   # validate tracks, write GeoJSON
 uv run tools/fetch_seafloor.py              # ETOPO1 along tracks
 uv run tools/fetch_weather.py               # ERA5 along tracks
 uv run tools/build_dives.py                 # bundle records/boats/ss-385-bang/dives.json
-uv run tools/check_crossrefs.py             # attacks vs. Japanese records -> crossrefs.json
+uv run tools/check_crossrefs.py             # attacks vs. Japanese records, minutes and miles apart
+uv run tools/build_engagement.py            # the engagement and convoy pages' JSON
 python3 tools/serve.py                       # http://localhost:8385/patrols.html
 ```
 

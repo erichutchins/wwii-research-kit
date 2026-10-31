@@ -1,7 +1,7 @@
 // Text with links written by name, as a page shows it. The hand-edited Markdown (records/operations/ and a family's
 // own files) writes a link as [[kind:name|label]], not as an address, so the same text works on the kit's pages and
 // on a family's, which sit in different folders; tools/build_operations.py checks every one. This turns them into
-// links, and handles the little Markdown the text uses: *italics*, `code`, and [words](address).
+// links, and handles the little Markdown the text uses: *italics*, **bold**, `code`, and [words](address).
 //
 //   Links.render(text, { cites, family })
 //     cites    the resolved citations: operations.json's "cites" ({ "howe-nwa/35/p676": {href, short, page} })
@@ -22,6 +22,8 @@ const Links = (() => {
       case "op": return a(`#op-${target}`, label || esc(target));
       case "ship": return a(new URL(`patrols.html?ship=${encodeURIComponent(target)}`, KIT_SITE).href, label || esc(target));
       case "unit": return a(new URL(`army.html?unit=${encodeURIComponent(target)}${t}`, KIT_SITE).href, label || esc(target));
+      case "convoy": return a(new URL(`convoys.html?c=${encodeURIComponent(target)}`, KIT_SITE).href, label || esc(target));
+      case "engagement": return a(new URL(`engagement.html?e=${encodeURIComponent(target)}`, KIT_SITE).href, label || esc(target));
       case "page": {
         const href = fam && fam.pages.includes(target) ? new URL(`${target}.html`, fam.root).href : new URL(`${target}.html`, KIT_SITE).href;
         return a(href, label || esc(target));
@@ -46,6 +48,7 @@ const Links = (() => {
     s = s.replace(/(?:\s*\[\[cite:[^\]]+\]\])+/g, run => " " + cites([...run.matchAll(/\[\[cite:([^\]]+)\]\]/g)].map(m => m[1].trim()), ctx));
     s = s.replace(/\[\[(\w+):([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, kind, name, label) => link(kind, name.trim(), label, ctx));
     s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, href) => a(href.replace(/&amp;/g, "&"), label));
+    s = s.replace(/\*\*([^*\s][^*]*)\*\*/g, "<b>$1</b>");
     s = s.replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>");
     return s.replace(/\u0000(\d+)\u0000/g, (_, i) => `<code>${code[+i]}</code>`);
   }

@@ -15,6 +15,8 @@ Links are written by name, not address, so they work on any page and can be chec
   [[ship:bang]]                       a boat's or ship's track (the name in ships.json)
   [[unit:106aaa-d@1944-08-15|...]]    a unit on the Army map, on a day (army/units.csv)
   [[page:algiers|...]]                one of the kit's pages (site/algiers.html)
+  [[convoy:te-04]]                    a convoy's record (records/convoys/<id>/convoy.md; site/convoys.html)
+  [[engagement:te-04-1944-05-03]]     an engagement (records/engagements/<id>/; site/engagement.html)
   [[who:<person>@1942-11-11|...]]     a person on a family's Army map: only in a family's own files (--family)
 The text after | is what the reader sees; without it, the thing's own name.
 
@@ -94,6 +96,8 @@ class Checker:
         self.ships = {s["alias"] for s in json.load(open(records.RECORDS / "ships.json"))}
         self.units = {r["unit"] for r in csv.DictReader(open(records.RECORDS / "army" / "units.csv", encoding="utf-8"))}
         self.pages = {p.stem for p in (records.KIT / "site").glob("*.html")}
+        self.convoys = {p.parent.name for p in (records.RECORDS / "convoys").glob("*/convoy.md")}
+        self.engagements = {p.parent.name for p in (records.RECORDS / "engagements").glob("*/engagement.md")}
         self.family = Path(family) if family else None
         self.people = set()
         if self.family:
@@ -119,9 +123,11 @@ class Checker:
                   "ship": lambda: target in self.ships,
                   "unit": lambda: target in self.units,
                   "page": lambda: target in self.pages,
+                  "convoy": lambda: target in self.convoys,
+                  "engagement": lambda: target in self.engagements,
                   "who": lambda: bool(self.family) and target in self.people}.get(kind)
             if ok is None:
-                self.problems.append(f"{where}: [[{kind}:{name}]]: unknown kind (cite, op, ship, unit, page, who)")
+                self.problems.append(f"{where}: [[{kind}:{name}]]: unknown kind (cite, op, ship, unit, page, convoy, engagement, who)")
             elif kind == "who" and not self.family:
                 self.problems.append(f"{where}: [[who:{name}]]: a person's link belongs in the family's files, not the kit")
             elif not ok():

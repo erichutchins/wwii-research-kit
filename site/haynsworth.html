@@ -12,10 +12,10 @@
 <link rel="stylesheet" href="entry.css">
 <style>
 /* One engagement told end to end from both sides' records: USS Haynsworth (DD-700) on TF 58's picket line,
-   6 April 1945, the first day of Kikusui No. 1. Data: records/engagements/haynsworth-1945-04-06/*.csv (hand-edited),
+   6 April 1945, the first day of Kikusui No. 1. Data: records/engagements/haynsworth-1945-04-06/ (engagement.json, built from its hand-edited events.yml and claims.yml; positions.csv),
    records/ships/dd-700-haynsworth/positions.csv (her track). Silhouettes: records/silhouettes/silhouettes.yml, loaded by silhouettes.js.
    Layout: a scrolling narrative beside a map that stays put; then the attack sequence, the damage plate, the evidence
-   board. Colours are the project's checked palette (as battle.html): the US side takes slot 1 (blue),
+   board. Colours are the project's checked palette (as engagement.html): the US side takes slot 1 (blue),
    US aircraft slot 3, the Japanese side is ink, the hit is --fire. Anything assumed is hatched and says so. */
 :root {
   --page: #fcfcf9; --surface: #fcfcf9; --land: #e6e5df; --coast: #b7b6ab; --sea-grid: #ecebe6;
@@ -229,7 +229,7 @@ h3 { font-size: 18px; margin: 0; font-weight: 650; }
 <body>
 <div class="wrap">
   <header>
-    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="battle.html">Battles</a><a href="haynsworth.html" aria-current="page">Haynsworth</a><a href="algiers.html">Algiers</a><a href="seabees.html">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="german.html">German grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="engagement.html">Engagements</a><a href="convoys.html">Convoys</a><a href="lanes.html">Sea lanes</a><a href="haynsworth.html" aria-current="page">Haynsworth</a><a href="algiers.html">Algiers</a><a href="seabees.html">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="german.html">German grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
     <div class="eyebrow">USS Haynsworth (DD-700) · TF 58 picket line · Kikusui No. 1</div>
     <h1>Twelve miles out: the kamikaze hit on USS Haynsworth, 6 April 1945</h1>
     <p class="lede">On the first day of Japan's mass kamikaze offensive at Okinawa, a destroyer posted 12 miles out from Task Group 58.3's carriers was hit by a single dive bomber that came out of low cloud. Seven men died at once; five more died of their burns. This page puts her own reports beside the other ships of the group and the Japanese records of the planes sent against them.</p>
@@ -306,6 +306,7 @@ h3 { font-size: 18px; margin: 0; font-weight: 650; }
 <script src="silhouettes.js"></script>
 <script src="mapzoom.js"></script>
 <script src="scalebar.js"></script>
+<script src="engage.js"></script>
 <script src="haynsworth.js"></script>
 <script src="glossary.js"></script>
 <script src="footer.js"></script>

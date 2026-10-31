@@ -38,6 +38,10 @@ jobs:
         run: |
           uv run tools/build_operations.py
           git diff --exit-code records/operations/operations.json
+      - name: Every engagement and convoy checks out (ids, times, citations, links), and their JSON is up to date
+        run: uv run tools/build_engagement.py check
+      - name: The engagement pages' shared computation passes its tests
+        run: node site/engage.test.js
       - name: Every track passes the speed check
         run: |
           uv run tools/check_track.py all -q | tee /tmp/tracks.txt

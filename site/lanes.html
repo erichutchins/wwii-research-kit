@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sea lanes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="engage.css">
+<style>
+/* The convoys' sea lanes (records/convoys/convoys.json; the lanes are reference/lanes/lanes.yml): the network, a
+   lane's width the number of convoys on it in the months picked; the same network month by month; and one convoy's
+   voyage as a timetable, distance along its route against time, where the slope is its speed and a flat line a stop. */
+#lanemap { width: 100%; display: block; overflow: hidden; }
+#brush { width: 100%; display: block; overflow: visible; }
+.lane { fill: none; stroke: var(--ink-2); stroke-linecap: round; }
+.lane.idle { stroke: var(--rule); }
+.lane-hit { fill: none; stroke: transparent; stroke-width: 12; cursor: pointer; }
+.shown { padding: 8px 14px; color: var(--ink-2); font-size: 15px; }
+.months { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; padding: 4px 14px 14px; }
+.months figure { margin: 0; }
+.months figcaption { font-size: 15px; } .months figcaption span { color: var(--ink-3); font-size: 13.5px; }
+.months svg { width: 100%; display: block; overflow: hidden; border: 1px solid var(--rule); }
+#marey { width: 100%; display: block; overflow: visible; }
+.station line { stroke: var(--rule); } .station text { fill: var(--ink-2); font-size: 13.5px; }
+.mline { stroke: var(--ink); stroke-width: 2; } .mline.unrec { stroke-dasharray: 1.5 4; stroke-linecap: round; stroke: var(--ink-3); }
+.speed { fill: var(--ink-3); font-size: 13px; font-style: italic; }
+.note { color: var(--ink-3); font-size: 14.5px; padding: 6px 14px 12px; max-width: 100ch; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="engagement.html">Engagements</a><a href="convoys.html">Convoys</a><a href="lanes.html" aria-current="page">Sea lanes</a><a href="haynsworth.html">Haynsworth</a><a href="algiers.html">Algiers</a><a href="seabees.html">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="german.html">German grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
+    <div class="eyebrow">The other side</div>
+    <h1>The sea lanes</h1>
+    <p class="lede">The convoys the boats met, on the lanes they sailed: where the war at sea was fought, and how it moved
+      from month to month. A lane's width is the number of convoys on it; the marks are where a Japanese record puts a ship
+      sunk or hit. Every lane between ports is drawn on an assumed route (see the note under the map).</p>
+  </header>
+
+  <section class="card">
+    <h2>The network</h2>
+    <div class="legend" id="legend"></div>
+    <svg id="lanemap" role="img" aria-label="The convoy lanes"></svg>
+    <div class="shown" id="shown"></div>
+    <svg id="brush" aria-label="The convoys' voyages against the months: drag across to pick months"></svg>
+    <p class="note">Ports are placed on a modern map; the waypoints between them are assumed, each with its reason in
+      <code>reference/lanes/lanes.yml</code>, until the lanes are traced from the escort divisions' charts, which draw and name them.</p>
+  </section>
+
+  <section class="card">
+    <h2>Month by month</h2>
+    <div class="months" id="months"></div>
+  </section>
+
+  <section class="card">
+    <h2>A voyage as a timetable</h2>
+    <div class="controls" style="padding:0 14px"><label class="pick">Convoy <select id="pick"></select></label></div>
+    <svg id="marey" role="img" aria-label="Distance along the convoy's route against time"></svg>
+    <p class="note" id="marey-note"></p>
+  </section>
+</div>
+<div id="tip" hidden></div>
+
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<script src="engage.js"></script>
+<script src="engage-views.js"></script>
+<script src="lanes.js"></script>
+<script src="glossary.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>

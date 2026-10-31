@@ -1,11 +1,11 @@
-// Zoom and pan for the maps that don't build their own (the front page, zones.html, battle.html, haynsworth.html):
+// Zoom and pan for the maps that don't build their own (the front page, zones.html, engagement.html, haynsworth.html):
 // the +, − and ⟲ buttons the map pages have (patrols.html), drag to pan, pinch or ⌘/Ctrl-scroll to zoom.
 //
 //   const view = mapZoom(svgNode, hostElement, t => redraw(t), { capture, max, at });
 //
 // The page draws; this only reports the view. onZoom(transform) runs on every change, and the page either rescales its
-// projection by it (battle.html, zones.html: see mapZoom.scaled) or moves its layers and keeps its marks their size
-// (index.html). capture: true is for a map that fills its page (battle.html): the scroll wheel and a one-finger drag
+// projection by it (engagement.html, zones.html: see mapZoom.scaled) or moves its layers and keeps its marks their size
+// (index.html). capture: true is for a map that fills its page (engagement.html): the scroll wheel and a one-finger drag
 // move the map, as on patrols.html. Otherwise the page is one you read down: a plain scroll and a one-finger swipe
 // still move the page, and a note on the map says how to zoom it.
 // at: where the buttons sit ("top-right", "bottom-right", "top-left"); row: side by side rather than stacked, for a short map.
@@ -13,7 +13,7 @@ function mapZoom(svgNode, host, onZoom, { capture = false, max = 16, min = 1, at
   if (!document.getElementById("mapzoom-style")) {
     const style = document.createElement("style");
     style.id = "mapzoom-style";
-    // either page family's colours: viz.css (--text-..., --border) or home.css, battle.html, haynsworth.html (--ink...)
+    // either page family's colours: viz.css (--text-..., --border) or home.css, engage.css, haynsworth.html (--ink...)
     style.textContent = `
       .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; z-index: 3; }
       .zoom-btns.bottom-right { top: auto; bottom: 30px; }

@@ -1,6 +1,8 @@
 // algiers.html: Algiers under the night bombers, May–June 1943, from both sides' records.
-// Reads records/engagements/algiers-1943/{timeline,positions,claims}.csv (hand-edited), from RECORDS (config.js).
-// The narrative steps are below (STEPS); the entries in each step come from timeline.csv's `step` column. Positions
+// Reads records/engagements/algiers-1943/engagement.json (built from its events.yml and claims.yml by
+// tools/build_engagement.py) and its positions.csv, from RECORDS (config.js); the same engagement is on
+// engagement.html?e=algiers-1943 as a log and a map. The narrative steps are below (STEPS); the entries in each step
+// come from each event's `step`. Positions
 // given as direction and distance from another (`from`, `brg`, `nm`) are resolved here (dest). Silhouettes come from
 // records/silhouettes/ (SILHOUETTES, silhouettes.js). Modelled on haynsworth.js.
 
@@ -81,8 +83,9 @@ function dest([lon, lat], brg, nm) {
   return [l2 * 180 / Math.PI, p2 * 180 / Math.PI];
 }
 
+const engagement = d3.json(ENG + "engagement.json").then(Engage.story);   // engage.js
 Promise.all([
-  d3.csv(ENG + "timeline.csv"), d3.csv(ENG + "positions.csv"), d3.csv(ENG + "claims.csv"),
+  engagement.then(x => x.timeline), d3.csv(ENG + "positions.csv"), engagement.then(x => x.claims),
   d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/land-10m.json"), SILHOUETTES, d3.json(RECORDS + "roads/oss967-primary.geojson").catch(() => null), Promise.all(RELIEFS.map(u => d3.json(u + "relief.json").then(j => ({ ...j, url: u })).catch(() => null))),
 ]).then(([timeline, positions, claims, world, , roads, reliefs]) => {
   for (const rows of [timeline, positions, claims]) rows.forEach(r => { r.ref = refUrl(r.ref); });

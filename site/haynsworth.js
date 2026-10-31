@@ -1,13 +1,14 @@
-// haynsworth.html: USS Haynsworth (DD-700), 6 April 1945, from both sides' records.
-// Reads records/engagements/haynsworth-1945-04-06/{timeline,positions,claims}.csv (hand-edited) and
-// records/ships/dd-700-haynsworth/positions.csv (her track), from RECORDS (config.js). The narrative steps are below
-// (STEPS); the entries in each step come from timeline.csv's `step` column.
+// haynsworth.html: USS Haynsworth (DD-700), 6 April 1945, from both sides' records, told as a story. The same
+// engagement is on engagement.html?e=haynsworth-1945-04-06 as a log and a map.
+// Reads records/engagements/haynsworth-1945-04-06/engagement.json (built from its events.yml and claims.yml by
+// tools/build_engagement.py), its positions.csv, and records/ships/dd-700-haynsworth/positions.csv (her track), from
+// RECORDS (config.js). The narrative steps are below (STEPS); the entries in each step come from each event's `step`.
 //
 // A page that wants more can set window.HAYNSWORTH_EXTRA before this script loads (the family's copy does, to tell
-// one man's part in it):
-//   dir      a folder with notes.csv (file, match, field, text: rewords rows; match is "date time kind" for the
-//            timeline, "question|claim" for claims), extra_claims.csv (claims added after the question named in
-//            `after`) and people.csv (both crews, drawn into #crewlists)
+// one man's part in it; it also loads js-yaml):
+//   dir      a folder with notes.yml (target, match, field, text: rewords entries; match is "date time kind" for
+//            events, "question|answer" for claims), extra_claims.yml (claims added after the question named in
+//            `after`) and people.yml (both crews, drawn into #crewlists)
 //   steps    { stepId: body } replacing a step's text
 //   mount41  the damage profile's second line for mount 41
 //   mark     a pattern; crew rows whose name matches it are shaded
@@ -150,10 +151,14 @@ function dest([lon, lat], brg, nm) {
 }
 
 const none = Promise.resolve([]);
+const yml = url => d3.text(url).then(t => jsyaml.load(t, { schema: jsyaml.JSON_SCHEMA }) || []);
+const engagement = d3.json(ENG + "engagement.json").then(Engage.story);   // engage.js
+const FIELDS = { words: "text", answer: "claim" };   // the YAML's field names -> the story's
 Promise.all([
-  d3.csv(ENG + "timeline.csv"), d3.csv(ENG + "positions.csv"), d3.csv(ENG + "claims.csv"),
-  EXTRA ? d3.csv(EXTRA.dir + "people.csv") : none, EXTRA ? d3.csv(EXTRA.dir + "notes.csv") : none,
-  EXTRA ? d3.csv(EXTRA.dir + "extra_claims.csv") : none,
+  engagement.then(x => x.timeline), d3.csv(ENG + "positions.csv"), engagement.then(x => x.claims),
+  EXTRA ? yml(EXTRA.dir + "people.yml") : none,
+  EXTRA ? yml(EXTRA.dir + "notes.yml").then(ns => ns.map(n => ({ file: n.target === "events" ? "timeline" : "claims", match: n.match, field: FIELDS[n.field] || n.field, text: n.text }))) : none,
+  EXTRA ? yml(EXTRA.dir + "extra_claims.yml").then(cs => cs.map(c => ({ ...c, claim: c.answer }))) : none,
   d3.csv(RECORDS + "ships/dd-700-haynsworth/positions.csv"),
   // the other task groups' guides on 6 April (L49): name, file
   Promise.all(TF58_SHIPS.map(([, dir]) => d3.csv(RECORDS + "ships/" + dir + "/positions.csv").catch(() => []))),

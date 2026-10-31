@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Engagements</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="entry.css">
+<link rel="stylesheet" href="engage.css">
+<style>
+/* One page for every engagement (engagement.html?e=<id>; records/engagements/<id>/engagement.json, built by
+   tools/build_engagement.py). A chart-room working sheet: the map and the two-sided log side by side at one height,
+   so playback never moves the page; one timeline lane per participant under the map; then how the boats closed in,
+   the questions the records leave open, the order of battle in silhouettes, and the story. */
+.main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 420px); gap: 14px; }
+.map-card { display: grid; grid-template-rows: auto auto auto; overflow: hidden; }
+.map-box { position: relative; height: clamp(340px, calc(100vh - 260px), 660px); }
+#map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: hidden; }
+.time { border-top: 1px solid var(--rule); padding: 8px 14px 12px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; align-items: center; }
+#play { font: inherit; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); cursor: pointer; grid-row: span 3; }
+.readout { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; color: var(--ink-2); font-size: 14.5px; }
+.readout b { color: var(--ink); font: 700 18px var(--typed); font-variant-numeric: tabular-nums; }
+#lanes { width: 100%; display: block; cursor: pointer; overflow: visible; }
+#scrub { width: 100%; margin: 0; accent-color: var(--ink-2); }
+.side { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 0; min-height: 100%; overflow: hidden; }
+.side h2 { border-bottom: 1px solid var(--rule); padding-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.side h2 span { font-style: normal; color: var(--ink-3); font-size: 14.5px; }
+.log { position: relative; overflow-y: auto; overscroll-behavior: contain; }
+.row { cursor: pointer; padding: 9px 14px 9px 4px; }
+.row:hover { background: var(--wash); }
+.row.current { background: var(--wash); }
+.row.future { opacity: 0.45; }
+.row .who .sil { width: 40px; height: 8px; }
+.closing-card, .claims-card, .oob-card, .story { padding-bottom: 14px; }
+#closing { width: 100%; height: 220px; display: block; overflow: visible; }
+.below { color: var(--ink-2); font-size: 15px; margin: 6px 14px 0; max-width: 95ch; }
+@media (max-width: 760px) {
+  .main { grid-template-columns: minmax(0, 1fr); }
+  .side { height: 60vh; min-height: 320px; }
+  .map-box { height: 58vh; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="engagement.html" aria-current="page">Engagements</a><a href="convoys.html">Convoys</a><a href="lanes.html">Sea lanes</a><a href="haynsworth.html">Haynsworth</a><a href="algiers.html">Algiers</a><a href="seabees.html">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="german.html">German grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 id="title">Engagements</h1>
+    <p class="lede" id="lede"></p>
+  </header>
+
+  <div class="controls">
+    <label class="pick">Engagement <select id="engagement"></select></label>
+  </div>
+
+  <div class="main" id="action">
+    <div class="card map-card">
+      <div class="legend" id="legend"></div>
+      <div class="map-box"><svg id="map" role="img" aria-label="Map of the engagement"></svg></div>
+      <div class="time">
+        <button id="play" aria-label="Play">▶</button>
+        <div class="readout"><span><b id="clock"></b> <span id="clock-zone">GMT</span></span><span id="clock-own"></span></div>
+        <svg id="lanes" aria-label="Timeline: one lane per side. Click to set the time."></svg>
+        <input id="scrub" type="range" aria-label="Time">
+      </div>
+    </div>
+    <div class="card side">
+      <h2>Both sides' records <span>Follows the clock; click an entry to go there</span></h2>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <section class="card closing-card" id="closing-card" hidden aria-labelledby="closing-h">
+    <h2 id="closing-h">Closing in</h2>
+    <svg id="closing" role="img" aria-label="Each boat's distance from the convoy, over time"></svg>
+    <p class="below" id="closing-note"></p>
+  </section>
+
+  <section class="card claims-card" id="claims-card" hidden aria-labelledby="claims-h">
+    <h2 id="claims-h">What the records leave open</h2>
+    <div class="claims" id="claims"></div>
+  </section>
+
+  <section class="card oob-card" aria-labelledby="oob-h">
+    <h2 id="oob-h">Order of battle</h2>
+    <div class="oob" id="oob"></div>
+  </section>
+
+  <section class="story" id="story"></section>
+</div>
+<div id="tip" hidden></div>
+
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<script src="silhouettes.js"></script>
+<script src="scalebar.js"></script>
+<script src="mapzoom.js"></script>
+<script src="links.js"></script>
+<script src="engage.js"></script>
+<script src="engage-views.js"></script>
+<script src="engagement.js"></script>
+<script src="glossary.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>

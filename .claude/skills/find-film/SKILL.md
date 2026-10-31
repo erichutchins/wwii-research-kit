@@ -16,7 +16,7 @@ The rules (what counts as a source, what makes a row, what stays out of the repo
 ## 1. List the places and dates from the records
 
 From the unit's or ship's own rows (`records/army/stations.csv`, a patrol's `positions.csv`, an engagement's
-`timeline.csv`): each place, with the dates the unit was there and how exact the place is. Film is searched by place and
+`events.yml`): each place, with the dates the unit was there and how exact the place is. Film is searched by place and
 date, never by a person; nothing here names a relative.
 
 ## 2. The National Archives first

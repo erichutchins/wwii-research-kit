@@ -1,4 +1,4 @@
-/* A record's entry, the same on every page that lists them: the front page's replay (index.html), battle.html,
+/* A record's entry, the same on every page that lists them: the front page's replay (index.html), engagement.html,
    haynsworth.html, and the side lists of patrols.html, army.html and seabees.html.
 
      <div class="entry" style="--bar: var(--series-track)">     .assumed: the position is assumed (a dashed bar)
@@ -12,7 +12,7 @@
        </div>
      </div>
 
-   The bar is the colour of the entry's mark on the map. Works with either page's variables (home.css and battle.html's
+   The bar is the colour of the entry's mark on the map. Works with either page's variables (home.css, engage.css
    --ink..., or viz.css's --text-...). */
 .entry {
   --e-ink: var(--ink, var(--text-primary)); --e-ink-2: var(--ink-2, var(--text-secondary));

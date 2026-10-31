@@ -34,10 +34,6 @@ CITES = {
     "positions.csv": ["page"],
     "depths.csv": ["page"],
     "layers.csv": ["page"],
-    "japanese.csv": ["source"],
-    "frupac.csv": ["map"],
-    "convoys/ships.csv": ["source"],
-    "notes.csv": ["page"],
     "army/stations.csv": ["page"],
     "army/actions.csv": ["page"],
     "army/places.csv": ["source"],
@@ -61,15 +57,11 @@ CITES = {
     "bezugspunkte/ausgabe4.csv": ["section_frame"],
     "bezugspunkte/feb1944.csv": ["frame"],
     "bezugspunkte/jan1944.csv": ["frame"],
-    "engagements/timeline.csv": ["ref"],
-    "engagements/claims.csv": ["ref"],
     "engagements/positions.csv": ["ref"],
     "film/clips.csv": ["source"],
 }
 # files whose rows don't carry a citation of their own, and why
 UNCITED = {
-    "crossrefs.csv": "pairs an attack with a japanese.csv row; both are cited",
-    "pack_timeline.csv": "generated from cited rows (tools/pack_timeline.py), each with its source",
     "seafloor.csv": "dataset file: SOURCES.yml etopo1",
     "weather.csv": "dataset file: SOURCES.yml era5",
     "army/units.csv": "unit names and lineage; the stations give the pages",
@@ -81,8 +73,8 @@ UNCITED = {
 
 
 def key(path):
-    """'records/army/stations.csv' -> 'army/stations.csv'; 'records/engagements/<id>/timeline.csv' ->
-    'engagements/timeline.csv'; 'records/boats/x/patrol-1/depths.csv' -> 'depths.csv'"""
+    """'records/army/stations.csv' -> 'army/stations.csv'; 'records/engagements/<id>/positions.csv' ->
+    'engagements/positions.csv'; 'records/boats/x/patrol-1/depths.csv' -> 'depths.csv'"""
     for k in (f"{path.parent.name}/{path.name}", f"{path.parent.parent.name}/{path.name}"):
         if k in CITES or k in UNCITED:
             return k
@@ -146,7 +138,27 @@ def main():
     bad += [f"operations: {p}" for p in chk.problems]
     for c in chk.cites:
         used[resolve(c)] += 1
-    print(f"{sum(used.values())} citations in {len(files)} files, {len(nara)} National Archives items")
+    # the engagements and convoys (events.yml, claims.yml, convoy.md's ships, a patrol's japanese.yml), checked by
+    # build_engagement.py, and the FRUPAC notes (a patrol's frupac.yml), each citing its map
+    import build_engagement
+    eb, _, _ = build_engagement.build()
+    bad += [f"engagements: {p}" for p in eb.problems]
+    yml = sorted(RECORDS.rglob("frupac.yml"))
+    for path in yml:
+        for n, row in enumerate(records.load_yaml(path) or [], 1):
+            if not row.get("map"):
+                uncited[rel(path)] += 1
+            elif resolve(row["map"]) is None:
+                bad.append(f"{rel(path)} #{n}: {row['map']!r}")
+            else:
+                eb.cited.append(row["map"])
+    for c in eb.cited:
+        used[resolve(c)] += 1
+        m = re.match(r"^rg\d+-(\d+)/p(\d+)$", c)
+        if m:
+            nara[m[1]].add(int(m[2]))
+    files += yml
+    print(f"{sum(used.values())} citations in {len(files)} files and the engagements, {len(nara)} National Archives items")
     for sid, n in used.most_common():
         print(f"  {n:6}  {sid}")
     unused = [s for s in sources if s not in used and "match" in sources[s]]

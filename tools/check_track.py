@@ -41,9 +41,10 @@ from records import RECORDS, rel, unit_dir
 # KL and IK are the half-hour zones between K and L, and I and K (GROWLER's Patrol 9 report).
 # L, LM, V, UV, WX and XY are the Haynsworth war diary's zones (Ulithi to Hawaii, half-hour zones included);
 # U, TU and T are the rest of her May 1945 passage, Pearl Harbor to San Francisco Bay.
+# B is the US Army's clock in Germany in April 1945 (UTC+2, as was German summer time).
 # A and N to S are the Atlantic's and Pacific's east side (SOLAR's war diaries type no zone; her rows carry the zone of their longitude;
 # SOUTH DAKOTA's 1942 diary types plus 11 to plus 4 on her way to Panama, X to Q).
-ZONES = {"A": 1, "Z": 0, "N": -1, "O": -2, "P": -3, "Q": -4, "R": -5, "S": -6, "M": 12, "LM": 11.5, "L": 11, "KL": 10.5, "K": 10, "IK": 9.5, "I": 9, "H": 8, "TU": -7.5, "T": -7, "U": -8, "UV": -8.5, "V": -9, "VW": -9.5,
+ZONES = {"A": 1, "B": 2, "Z": 0, "N": -1, "O": -2, "P": -3, "Q": -4, "R": -5, "S": -6, "M": 12, "LM": 11.5, "L": 11, "KL": 10.5, "K": 10, "IK": 9.5, "I": 9, "H": 8, "TU": -7.5, "T": -7, "U": -8, "UV": -8.5, "V": -9, "VW": -9.5,
          "W": -10, "WX": -10.5, "X": -11, "XY": -11.5, "Y": -12}
 DR_TOL = 30     # nm of dead-reckoning disagreement allowed between fixes
 
@@ -80,7 +81,7 @@ def period(unit):
     return 1 if single(unit) else int(str(unit).split("/")[-1])
 
 
-folder = patrol_dir = unit_dir  # the names check_crossrefs.py and build_battle.py import
+folder = patrol_dir = unit_dir  # the names check_crossrefs.py and build_engagement.py import
 
 
 def fmt_coord(v, hemis):
