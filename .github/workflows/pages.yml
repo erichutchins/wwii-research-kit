@@ -40,6 +40,8 @@ jobs:
           git diff --exit-code records/operations/operations.json
       - name: Every engagement and convoy checks out (ids, times, citations, links), and their JSON is up to date
         run: uv run tools/build_engagement.py check
+      - name: Every torpedo attack row joins its attack and checks out
+        run: uv run tools/check_attacks.py
       - name: The engagement pages' shared computation passes its tests
         run: node site/engage.test.js
       - name: Every track passes the speed check

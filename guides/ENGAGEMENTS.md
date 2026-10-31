@@ -137,9 +137,9 @@ hue. Colour follows the boat across every view of a page; text never wears it ex
 
 - **The observer view**: the periscope (or a ship's director, or a battery's sight) with the target at its true size and
   angle on the bow, the sky as computed, and the firing solution on the same clock. The family repository's
-  `periscope-concept.html` is the prototype (SEAHORSE's Attack 3, 4 July 1944); it needs each attack's data sheet as
-  rows (an `attacks.csv` per patrol: tube, fired, own course and speed, target course and speed, range, track, gyro,
-  spread, depth set, torpedo, hit, page) and the narrative's timed bearings. For Haynsworth, the incoming plane's
+  `periscope-concept.html` is the prototype (SEAHORSE's Attack 3, 4 July 1944). Each attack's data sheet is now rows: a
+  patrol's `attacks.csv` and `attack_sheets.yml` (fields in `records/README.md`, checked by `tools/check_attacks.py`);
+  it still needs the narrative's timed bearings. For Haynsworth, the incoming plane's
   bearing, elevation and range from her action report and AA report play the same part.
 - **The lanes from the charts.** Every waypoint in `reference/lanes/lanes.yml` is assumed. The escort divisions'
   charts draw and name the lanes (馬来直航路, the Malay direct route; the Hainan east route); tracing them would replace

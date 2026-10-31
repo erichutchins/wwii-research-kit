@@ -18,8 +18,8 @@ For film of a place and date, follow the skill `find-film` (rules in `records/fi
 - `records/`: the data (the wwii-unit-records repository, a submodule). Hand-edited CSV and YAML
   are the source of truth; fields in `records/README.md`. CSV only for numbers, dates and short codes (no cell
   ever needs a quote or a comma); anything with words goes in YAML or Markdown with front matter; JSON is generated.
-  - `boats/<hull>-<name>/ship.yml` + `patrol-N/` (positions, depths, layers, japanese.yml, claims.yml,
-    frupac.yml); `ships/<hull>-<name>/`; `engagements/<id>/` (engagement.md, events.yml, claims.yml,
+  - `boats/<hull>-<name>/ship.yml` + `patrol-N/` (positions, depths, layers, attacks.csv and attack_sheets.yml,
+    japanese.yml, claims.yml, frupac.yml); `ships/<hull>-<name>/`; `engagements/<id>/` (engagement.md, events.yml, claims.yml,
     positions.csv; `guides/ENGAGEMENTS.md`); `convoys/<id>/convoy.md`; `army/`; `seabees/`;
     `silhouettes/silhouettes.yml` (recognition silhouettes, each citing its plate).
   - `inventory.yml`: every report, found or not, and how far along it is. Update it with the work.
@@ -64,6 +64,7 @@ uv run tools/check_track.py all --geojson     # every track: 0 too-fast legs; Ge
 uv run tools/check_track.py bang/1            # one patrol, leg by leg
 uv run tools/check_sources.py [--fetch]       # citations resolve; inventory matches the folders
 uv run tools/check_crossrefs.py               # attacks vs japanese.yml, minutes and miles apart
+uv run tools/check_attacks.py [bang/2]        # attacks.csv: each torpedo's track against own course, gyro, target course
 uv run tools/fetch_seafloor.py; uv run tools/fetch_weather.py   # after positions change (cached)
 python3 tools/fetch_station_weather.py seabees  # a shore unit's daily weather: ISD stations + ERA5
 uv run tools/build_dives.py                   # records/boats/ss-385-bang/dives.json

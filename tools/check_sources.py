@@ -34,6 +34,7 @@ CITES = {
     "positions.csv": ["page"],
     "depths.csv": ["page"],
     "layers.csv": ["page"],
+    "attacks.csv": ["page"],
     "army/stations.csv": ["page"],
     "army/actions.csv": ["page"],
     "army/places.csv": ["source"],

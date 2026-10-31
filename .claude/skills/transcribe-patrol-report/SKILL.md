@@ -39,6 +39,9 @@ end is the density layers. Note which pages hold what.
 - Never fix while typing. Corrections come later, in the `*_fix` columns.
 - Optional, for a full record like BANG's: `depths.csv` (every dive, depth order and depth
   charge in the narrative, quoted), `layers.csv` (the density-layer table).
+- The attack sheets: `attacks.csv` (one row per torpedo: own and target data, track, gyro, hit, as typed) and
+  `attack_sheets.yml` (the sheet's words, and a `note` wherever it disagrees with itself or the narrative). Fields in
+  `records/README.md`; copy SEAHORSE's Patrol 5 for the form.
 - A new boat needs a `ship.yml` (copy one from another boat of the same class).
 
 ## 4. Check
@@ -47,6 +50,8 @@ end is the density layers. Note which pages hold what.
    a zone mix-up or a target position: find which on the scan, put the correction in
    `lat_fix`/`lon_fix`/`date_fix`/`time_fix` with the reason in `fix_note`, or set
    `on_track=no` when it can't be resolved. Repeat until 0 too-fast legs.
+   With attack sheets: `uv run tools/check_attacks.py <name>/<n>` recomputes each torpedo's track; re-read every
+   `CHECK` or `DISAGREES` on the scan, and keep a value the sheet really types, with a note.
 2. `uv run tools/check_track.py all --geojson` rebuilds the tracks and `ships.json`.
 3. `uv run tools/check_sources.py` must pass (every row cited, inventory matches the folders).
 4. Set the patrol's status in `inventory.yml` (`mapped` once it's on the map) and the files done.
