@@ -26,6 +26,12 @@ CACHE = Path(os.environ.get("WWII_CACHE") or KIT / "sources")
 def load_yaml(path):
     """Load a records YAML file, refusing a key given twice in one mapping: PyYAML would keep the last silently, but
     the pages' js-yaml rejects the whole file, so a duplicate breaks the site while every tool still passes."""
+    with open(path, encoding="utf-8") as f:
+        return load_yaml_text(f.read(), path)
+
+
+def load_yaml_text(text, path="<text>"):
+    """load_yaml for YAML already read, e.g. a Markdown file's front matter; `path` names it in errors."""
     import yaml  # PyYAML; the scripts that read YAML declare it for `uv run`
 
     class Strict(yaml.SafeLoader):
@@ -41,8 +47,7 @@ def load_yaml(path):
         return yaml.SafeLoader.construct_mapping(loader, node, deep)
 
     Strict.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, mapping)
-    with open(path, encoding="utf-8") as f:
-        return yaml.load(f, Loader=Strict)
+    return yaml.load(text, Loader=Strict)
 
 
 def vessels():
