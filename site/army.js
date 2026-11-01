@@ -112,7 +112,8 @@ const AT_SEA = /\b(at sea|aboard|on board)\b/i;
 
 function prepare(data, seafloor = []) {
   const floors = d3.group(seafloor, d => `${d.unit} ${d.from instanceof Date ? d3.utcFormat("%Y-%m-%d")(d.from) : d.from} ${d.to instanceof Date ? d3.utcFormat("%Y-%m-%d")(d.to) : d.to}`);
-  const units = data.units.map(u => {
+  // a unit entered only for its relations (a battalion of a division, no stations yet) has nothing to draw
+  const units = data.units.filter(u => u.stations.length).map(u => {
     const rows = u.stations.map(r => ({
       ...r, unit: u.unit, unitName: u.name, t: parseDay(r.date), plotted: r.lat !== null,
       lonlat: r.lat === null ? null : [r.lon, r.lat], bn: r.source in ASSUMED, presumed: ASSUMED[r.source],

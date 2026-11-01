@@ -55,7 +55,7 @@ AGREE_KM = 8
 AAR = r"aar3/p\d{3}"
 PAGE = {"mr": r"rg64-\d+/p\d{4}", "btry": r"ok45th-\d+/p\d{2}", "bn": r"ok45th-\d+/p\d{2}",
         "regt": r"rg64-\d+/p\d{4}", "hist": r"hist894/p\d{2}", "aar": AAR,
-        "div": AAR + r"|gi9ad|wiki9ad|etoob-\w+/p\d+(?:-\d+)?|rg64-\d+/p\d{4}",
+        "div": AAR + r"|gi9ad|wiki9ad|almanac9ad|etoob-\w+/p\d+(?:-\d+)?|rg64-\d+/p\d{4}",
         "cp": r"etoob-\w+/p\d+(?:-\d+)?|ok45th-\d+/p\d{2}", "uaar": r"eucmh60aib/\d{4}-\d{2}|ok45th-\d+/p\d{2}"}
 # stations.csv `precision` (optional): how a position was given, when its source doesn't say (README.md)
 PRECISIONS = ("grid-100m", "grid-1km", "town", "area", "division")
@@ -214,7 +214,7 @@ def place(rows, page=PAGE):
         if r["kind"] not in KINDS or r["placed"] not in PLACED:
             problems.append(f"{where} kind {r['kind']!r} / placed {r['placed']!r} (want {KINDS} / {PLACED})")
             continue
-        if not re.fullmatch(r"ok45th-\d+/p\d{2}|rg64-\d+/p\d{4}|" + PAGE["hist"], r["page"]):
+        if not re.fullmatch(r"ok45th-\d+/p\d{2}|rg64-\d+/p\d{4}|" + PAGE["hist"] + "|" + AAR, r["page"]):
             problems.append(f"{where} page {r['page']!r}")
         lat = lon = None
         if r["placed"] == "grid":
