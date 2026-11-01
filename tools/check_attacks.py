@@ -32,7 +32,7 @@ from records import RECORDS, rel
 
 COLUMNS = ("attack,date,time,zone,tube,own_course,own_speed,own_depth,target_course,target_speed,target_range,"
            "target_draft,track,gyro,depth_set,power,hit,erratic,torpedo,interval,since_first,spread,offset,page").split(",")
-OFFSET = re.compile(r"(\d+(\.\d+)?[RL]?|MOT|\d+'\s*(aft|ahead))", re.I)
+OFFSET = re.compile(r"(\d+(\.\d+)?[RL]?|MOT|\d+'\s*(aft|ahead|fwd))", re.I)
 NEAR, FAR = 3, 10   # degrees: within NEAR agrees; beyond FAR is listed as a disagreement
 
 
