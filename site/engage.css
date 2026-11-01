@@ -33,11 +33,14 @@ header { display: grid; gap: 4px; }
 .nav a:hover { color: var(--ink); text-decoration: underline; }
 .nav a[aria-current="page"] { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; }
 .nav .home { color: var(--ink); font-size: 20.5px; margin-right: 6px; }
-.nav .grp { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
+.nav .grp, .nav .sub { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
 .nav .grp + .grp, .nav .grp + a, .nav a.theater { padding-left: 15px; border-left: 1px solid var(--rule); }
+.nav .lbl { font-style: italic; color: var(--ink-3); }
+.nav .sub { gap: 4px 11px; }
+/* two lines at every width: the two theaters, then the pages for every theater, reading the records and the guide for relatives */
 .nav::after { content: ""; flex-basis: 100%; order: 1; }
-.nav .grp + .grp, .nav .grp + .grp ~ a { order: 2; }
-.nav .grp + .grp { padding-left: 0; border-left: 0; }
+.nav .grp.ref, .nav .grp.ref ~ .grp, .nav .grp.ref ~ a { order: 2; }
+.nav .grp.ref { padding-left: 0; border-left: 0; }
 .eyebrow { font-size: 18px; font-style: italic; color: var(--ink-3); }
 h1 { font-size: 36px; line-height: 1.2; margin: 0; text-wrap: balance; font-weight: 400; }
 h2 { font-size: 19px; font-weight: 400; font-style: italic; color: var(--ink-2); margin: 0; padding: 12px 14px 6px; }

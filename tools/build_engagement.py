@@ -487,7 +487,7 @@ def build():
                      "from": e["window"]["from"] if e["window"] else min((x["key"] for x in e["events"]), default=""),
                      "participants": [p.get("name", p["id"]) for p in e["participants"]],
                      "boats": [p["name"] for p in e["participants"] if p.get("kind") == "submarine"],
-                     "convoys": list(e["convoys"])} for e in engs), key=lambda x: x["from"])
+                     "convoys": list(e["convoys"]), "box": e["box"]} for e in engs), key=lambda x: x["from"])
     cv = sorted((convoy_summary(c, engs) for c in convoys.values()),
                 key=lambda c: (c["engagements"][0]["window"] or {}).get("from", "") if c["engagements"] else str(c.get("sailed") or ""))
     out = {ENG / e["id"] / "engagement.json": e for e in engs}

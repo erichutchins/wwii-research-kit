@@ -38,12 +38,14 @@ a:hover { text-decoration-color: currentColor; }
 .nav a:hover { color: var(--ink); text-decoration: underline; }
 .nav a[aria-current="page"] { color: var(--ink); text-decoration: underline; }
 .nav .home { color: var(--ink); font-size: 20.5px; margin-right: 6px; }
-.nav .grp { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
+.nav .grp, .nav .sub { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
 .nav .grp + .grp, .nav .grp + a { padding-left: 15px; border-left: 1px solid var(--rule); }
-/* two lines at every width, broken between the groups (as in viz.css) */
+.nav .lbl { font-style: italic; color: var(--ink-3); }
+.nav .sub { gap: 4px 11px; }
+/* two lines at every width: the two theaters, then the pages for every theater, reading the records and the guide for relatives */
 .nav::after { content: ""; flex-basis: 100%; order: 1; }
-.nav .grp + .grp, .nav .grp + .grp ~ a { order: 2; }
-.nav .grp + .grp { padding-left: 0; border-left: 0; }
+.nav .grp.ref, .nav .grp.ref ~ .grp, .nav .grp.ref ~ a { order: 2; }
+.nav .grp.ref { padding-left: 0; border-left: 0; }
 .mast { padding: 56px 0 8px; max-width: 760px; }
 h1 { font: 400 clamp(40px, 5.8vw, 66px)/1.05 "Special Elite", var(--typed); margin: 0 0 20px; letter-spacing: -.02em; }
 .lede { font-size: clamp(24px, 2.3vw, 28.5px); line-height: 1.4; margin: 0; color: var(--ink-2); }
@@ -150,12 +152,35 @@ h1 { font: 400 clamp(40px, 5.8vw, 66px)/1.05 "Special Elite", var(--typed); marg
 .ship-card p { margin: 2px 0 0; font-size: 17px; line-height: 1.45; color: var(--ink-2); }
 .ship-card .pn a { display: inline-block; min-width: 1.4em; }
 
+/* Algiers to Germany: the stages in order, then each stage */
+.stages { list-style: none; display: flex; flex-wrap: wrap; gap: 10px 0; padding: 0; margin: 34px 0 0; font-size: 19.5px; }
+.stages li { display: flex; flex-direction: column; padding-right: 30px; margin-right: 18px; position: relative; }
+.stages li:not(:last-child)::after { content: "→"; position: absolute; right: 0; top: 0; color: var(--ink-3); }
+.stages a { text-decoration: none; border-bottom: 1px solid var(--rule); align-self: flex-start; }
+.stages a:hover { border-color: var(--ink); }
+.stages .when { font-size: 16.5px; color: var(--ink-3); }
+.stages .n, .stage h3 .n { color: var(--ink-3); }
+.stage { padding-top: 46px; max-width: 980px; }
+.stage h3 { font-weight: 400; font-size: 34.5px; line-height: 1.15; margin: 0 0 6px; }
+.stage h3 .when { font-size: 22px; font-style: italic; color: var(--ink-2); }
+.stage p { margin: 4px 0 0; font-size: 19.5px; color: var(--ink-2); }
+.stage .ops .dates { color: var(--ink-3); font-size: 17px; white-space: nowrap; }
+.stage .ops .none { color: var(--ink-3); }
+.stage .pages { margin: 10px 0 0; padding-left: 20px; font-size: 19.5px; color: var(--ink-2); }
+.stage .pages li { margin: 3px 0; }
+.stage .also { margin-top: 16px; }
+
 /* Reference shelf and do-it-yourself */
-.shelf { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 56px; margin-top: 30px; }
+.shelf { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px 40px; margin-top: 30px; }
 .shelf h3, .steps h3 { font-weight: 400; font-size: 25.5px; margin: 0 0 4px; }
 .shelf p, .steps p { margin: 0; font-size: 19.5px; color: var(--ink-2); }
 .shelf .ex { font-family: var(--typed); font-size: 17px; color: var(--ink); }
 .shelf .kana { font: 500 1.05em var(--ja); color: var(--ink); }
+/* the grids: three pages under one heading, the width of the shelf */
+.shelf .grids { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 40px; }
+.shelf .grids h3 { grid-column: 1 / -1; }
+.shelf .grids h4 { font-weight: 400; font-size: 21.5px; margin: 0 0 4px; }
+.shelf .grids p { font-size: 18.5px; }
 .guides { margin: 36px 0 0; font-size: 19.5px; color: var(--ink-2); max-width: 70ch; }
 .steps { counter-reset: step; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 56px; margin-top: 30px; }
 .steps > div { counter-increment: step; }
@@ -173,8 +198,12 @@ code { font: 17px var(--typed); color: var(--ink); }
   .feature { grid-template-columns: 1fr; }
   .feature .side { grid-column: 1; grid-row: auto; padding: 0 0 14px 14px; border-left: 2px solid var(--rule); }
   .replay { grid-template-columns: 1fr; gap: 18px; }
-  .shelf, .steps, .help { grid-template-columns: 1fr; }
+  .shelf, .steps, .help, .shelf .grids { grid-template-columns: 1fr; }
   .also td.state { width: auto; }
+  .stage .also td.when { width: 5.5em; white-space: normal; }
+  .stages { flex-direction: column; }
+  .stages li { flex-direction: row; gap: 12px; align-items: baseline; margin: 0; padding: 0; }
+  .stages li:not(:last-child)::after { display: none; }
 }
 @media (max-width: 760px) {
   /* the figures keep a readable size and scroll sideways */

@@ -157,15 +157,16 @@ header { display: block; }
 .nav a:hover { color: var(--text-primary); text-decoration: underline; text-underline-offset: 3px; }
 .nav a[aria-current="page"] { color: var(--text-primary); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .nav .home { color: var(--text-primary); font-size: 20.5px; margin-right: 6px; }
-.nav .grp { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
+.nav .grp, .nav .sub { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
 .nav .grp + .grp, .nav .grp + a { padding-left: 15px; border-left: 1px solid var(--border); }
 /* the family's own pages: a bar to the kit, set apart by a rule */
 .nav a.theater { padding-left: 15px; border-left: 1px solid var(--border); }
-/* two lines at every width, broken between the groups: the pages, then reading the records and the guide for
-   relatives (which would otherwise wrap on its own below a full first line) */
+.nav .lbl { font-style: italic; color: var(--text-muted); }
+.nav .sub { gap: 4px 11px; }
+/* two lines at every width: the two theaters, then the pages for every theater, reading the records and the guide for relatives */
 .nav::after { content: ""; flex-basis: 100%; order: 1; }
-.nav .grp + .grp, .nav .grp + .grp ~ a { order: 2; }
-.nav .grp + .grp { padding-left: 0; border-left: 0; }
+.nav .grp.ref, .nav .grp.ref ~ .grp, .nav .grp.ref ~ a { order: 2; }
+.nav .grp.ref { padding-left: 0; border-left: 0; }
 
 /* Explainer pages (zones.html, grids.html): a scrolling article around one map */
 .doc { max-width: 1240px; margin: 0 auto; padding: 16px 20px 48px; }

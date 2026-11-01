@@ -49,12 +49,14 @@ header { display: grid; gap: 4px; }
 .nav a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .nav a[aria-current="page"] { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .nav .home { color: var(--ink); font-size: 20.5px; margin-right: 6px; }
-.nav .grp { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
+.nav .grp, .nav .sub { display: inline-flex; flex-wrap: wrap; gap: 4px 15px; }
 .nav .grp + .grp, .nav .grp + a, .nav a.theater { padding-left: 15px; border-left: 1px solid var(--rule); }
-/* two lines at every width, broken between the groups (as in viz.css) */
+.nav .lbl { font-style: italic; color: var(--ink-3); }
+.nav .sub { gap: 4px 11px; }
+/* two lines at every width: the two theaters, then the pages for every theater, reading the records and the guide for relatives */
 .nav::after { content: ""; flex-basis: 100%; order: 1; }
-.nav .grp + .grp, .nav .grp + .grp ~ a { order: 2; }
-.nav .grp + .grp { padding-left: 0; border-left: 0; }
+.nav .grp.ref, .nav .grp.ref ~ .grp, .nav .grp.ref ~ a { order: 2; }
+.nav .grp.ref { padding-left: 0; border-left: 0; }
 .eyebrow { font-size: 18px; font-style: italic; color: var(--ink-3); }
 h1 { font-size: 36px; line-height: 1.15; margin: 0; text-wrap: balance; font-weight: 400; max-width: 30ch; }
 .lede { margin: 4px 0 0; color: var(--ink-2); max-width: 78ch; font-size: 19px; }
@@ -203,7 +205,7 @@ h3 { font-size: 18px; margin: 0; font-weight: 650; }
 <body>
 <div class="wrap">
   <header>
-    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a href="patrols.html">Ship tracks</a><a href="engagement.html">Engagements</a><a href="convoys.html">Convoys</a><a href="lanes.html">Sea lanes</a><a href="haynsworth.html">Haynsworth</a><a href="algiers.html" aria-current="page">Algiers</a><a href="seabees.html">Seabees</a><a href="army.html">Army units</a><a href="dives.html">Dives</a></span><span class="grp"><a href="zones.html">Time zones</a><a href="jgrid.html">Position codes</a><a href="grids.html">Map grids</a><a href="german.html">German grids</a><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a class="lbl" href="index.html#pacific">Pacific</a><a href="convoys.html">Convoys</a><a href="lanes.html">Sea lanes</a><a href="haynsworth.html">Haynsworth</a><a href="seabees.html">Seabees</a><a href="dives.html">Dives</a></span><span class="grp"><a class="lbl" href="index.html#europe">Algiers to Germany</a><a href="algiers.html" aria-current="page">Algiers</a><a href="army.html">Army units</a></span><span class="grp ref"><a class="lbl" href="index.html#ships">Every theater</a><a href="patrols.html">Ship tracks</a><a href="engagement.html">Engagements</a></span><span class="grp"><a class="lbl" href="index.html#reference">Reading the records</a><a href="zones.html">Time zones</a><span class="sub"><span class="lbl">Grids:</span><a href="jgrid.html">Japanese</a><a href="grids.html">US Army</a><a href="german.html">German</a></span><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
     <div class="eyebrow">Battery C, 62nd Coast Artillery (AA) · No. 153 Squadron RAF · Luftflotte 2</div>
     <h1>Algiers under the night bombers, May–June 1943</h1>
     <p class="lede">Three evenings when an American anti-aircraft battery four miles west of Algiers fired on raiders: 12 May, 13 May and 4 June 1943. This page puts the battery's morning reports beside the record book of the RAF night fighters flying from Maison Blanche, the city's newspaper, the Allied communiqués, and the attackers' side: the German Naval Staff's war diary and the Italian and German bulletins.</p>

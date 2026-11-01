@@ -4,6 +4,7 @@
 //   the 20th Seabees' parts        seabees/seabees.json
 //   Solar and UGS 72               ships/de-221-solar/track.geojson
 //   Neuburg's five minutes         engagements/neuburg-1945-04-26/engagement.json
+//   Algiers to Germany's stages    army/army.json, operations/operations.json, engagements/index.json, countries-50m
 //   every ship's track             ships.json and each ship's track geojson
 //   what else, and what's wanted   ships.json, army/army.json, engagements/index.json, inventory.yml
 
@@ -333,13 +334,17 @@ async function solar() {
     .append("text").attr("class", "lab-2").attr("x", 8).attr("y", 18).text("UGS 72 sails, 2 February");
   host.append("p").attr("class", "readout").text("Grey: every position in her war diaries, September 1944 to October 1945. Blue: convoy UGS 72, 2 to 17 February 1945.");
 }
-// world-atlas's land, without loading topojson-client for one call
-function topojsonFeature(topo) {
-  const o = topo.objects.land, arcs = topo.arcs, [sx, sy] = topo.transform.scale, [tx, ty] = topo.transform.translate;
+// world-atlas's land (or its countries, one feature each), without loading topojson-client for two calls
+function topojsonFeatures(topo, key) {
+  const o = topo.objects[key], arcs = topo.arcs, [sx, sy] = topo.transform.scale, [tx, ty] = topo.transform.translate;
   const decoded = arcs.map(arc => { let x = 0, y = 0; return arc.map(([dx, dy]) => [(x += dx) * sx + tx, (y += dy) * sy + ty]); });
   const ring = idx => idx.flatMap((i, k) => { const a = i < 0 ? decoded[~i].slice().reverse() : decoded[i]; return k ? a.slice(1) : a; });
   const geoms = o.type === "GeometryCollection" ? o.geometries : [o];
-  return { type: "MultiPolygon", coordinates: geoms.flatMap(g => g.type === "Polygon" ? [g.arcs.map(ring)] : g.arcs.map(p => p.map(ring))) };
+  return geoms.filter(g => g.arcs).map(g => ({ type: "Feature", properties: g.properties || {},
+    geometry: { type: "MultiPolygon", coordinates: g.type === "Polygon" ? [g.arcs.map(ring)] : g.arcs.map(p => p.map(ring)) } }));
+}
+function topojsonFeature(topo) {
+  return { type: "MultiPolygon", coordinates: topojsonFeatures(topo, "land").flatMap(f => f.geometry.coordinates) };
 }
 
 // ── Neuburg: three records on one five-minute clock ─────────────────────────────────────────────
@@ -444,6 +449,100 @@ async function fleet() {
   }
 }
 
+// ── Algiers to Germany: the stages in the order the units went ──────────────────────────────────
+// A station's stage is the country it lies in, by today's borders (world-atlas), Sicily cut from Italy by the
+// Strait of Messina; a station on a coast the 1:50m outline misses goes to the country with the nearest coast,
+// within about 20 km (further out, at sea, it's in no stage). A unit's time in a stage runs from its first station there to its first station after.
+// The campaigns are records/operations/ (Mediterranean only, so far), placed by the middle of their areas;
+// the engagements by the middle of their boxes.
+const STAGES = [
+  { id: "algiers", name: "Algiers", where: "Algeria and Tunisia", countries: ["Algeria", "Tunisia", "Morocco"],
+    pages: [["algiers.html", "Algiers under the night bombers, May–June 1943", "the raids and the guns around the port, night by night"]] },
+  { id: "sicily", name: "Sicily", where: "Sicily", countries: [],
+    pages: [["grids.html", "The Army's map grids", "the grid references in the reports, from Sicily on"]] },
+  { id: "italy", name: "Italy", where: "the Italian mainland", countries: ["Italy", "San Marino", "Vatican"],
+    pages: [["german.html", "The German Army's reference points", "how the other side's reports in Italy give a position"]] },
+  { id: "france", name: "France", where: "France, Belgium and Luxembourg", countries: ["France", "Belgium", "Luxembourg", "Netherlands"], pages: [] },
+  { id: "germany", name: "Germany", where: "Germany, Austria and Czechoslovakia", countries: ["Germany", "Austria", "Czechia"], pages: [] },
+];
+async function stages() {
+  const [army, world, ops, index] = await Promise.all([d3.json(RECORDS + "army/army.json"),
+    d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json"), d3.json(RECORDS + "operations/operations.json"),
+    d3.json(RECORDS + "engagements/index.json")]);
+  // every country of Europe and North Africa (Britain too, so a station there is in no stage)
+  const areas = topojsonFeatures(world, "countries").map(f => ({ f, s: STAGES.find(s => s.countries.includes(f.properties.name)),
+    polys: f.geometry.coordinates.map(p => ({ p, b: d3.geoBounds({ type: "Polygon", coordinates: p }) })) }))
+    .filter(a => a.polys.some(({ b: [[w, s], [e, n]] }) => e > -20 && w < 30 && n > 25 && s < 60));
+  const sicily = STAGES[1];
+  const stageOf = ([lon, lat]) => {
+    if (lon == null || lat == null) return null;
+    const inBox = ([[w, s], [e, n]], pad) => lon >= w - pad && lon <= e + pad && lat >= s - pad && lat <= n + pad;
+    let hit = areas.find(a => a.polys.some(({ b }) => inBox(b, 0)) && d3.geoContains(a.f, [lon, lat]));
+    if (!hit) {   // off the outline (a harbour, a beach): the country with the nearest coast, within about 20 km
+      let best = 0.003;
+      for (const a of areas) for (const { p, b } of a.polys) if (inBox(b, 0.3)) for (const xy of p[0]) {
+        const d = d3.geoDistance(xy, [lon, lat]);
+        if (d < best) { best = d; hit = a; }
+      }
+    }
+    if (!hit?.s) return null;
+    return hit.s.id === "italy" && lat < 38.35 && lon < 15.62 && lon > 12 ? sicily : hit.s;
+  };
+  const day = d => Date.parse(d + "T00:00Z");
+  const mon = d3.utcFormat("%b %Y"), fmt = d3.utcFormat("%-d %b %Y");
+  const span = (a, b) => mon(a) === mon(b) ? mon(a) : `${mon(a)} – ${mon(b)}`;
+
+  // each unit's runs through the stages
+  const by = new Map(STAGES.map(s => [s, []])), home = [];
+  for (const u of army.units) {
+    const st = u.stations.filter(x => x.date).map(x => ({ ...x, t: day(x.date), s: stageOf([x.lon, x.lat]) }));
+    const runs = new Map();
+    st.forEach((x, i) => {
+      if (!x.s) return;
+      const r = runs.get(x.s) || { from: x.t, to: x.t, n: 0 };
+      const next = st.slice(i + 1).find(y => y.s !== x.s);
+      r.to = Math.max(r.to, next ? next.t : x.t); r.n++;
+      runs.set(x.s, r);
+    });
+    if (!runs.size) home.push(u);
+    for (const [s, r] of runs) by.get(s).push({ u, ...r });
+  }
+  const opsBy = new Map(STAGES.map(s => [s, []])), engBy = new Map(STAGES.map(s => [s, []]));
+  for (const o of ops.operations.filter(o => o.kind !== "theater")) {
+    const [w, s, e, n] = o.area, st = stageOf([(w + e) / 2, (s + n) / 2]);
+    if (st) opsBy.get(st).push(o);
+  }
+  for (const x of index.filter(x => x.theater !== "pacific" && x.box)) {
+    const [w, s, e, n] = x.box, st = stageOf([(w + e) / 2, (s + n) / 2]);
+    if (st) engBy.get(st).push(x);
+  }
+
+  const strip = [];
+  STAGES.forEach((s, i) => {
+    const rs = by.get(s).sort((a, b) => a.from - b.from);
+    const t0 = d3.min(rs, r => r.from), t1 = d3.max(rs, r => r.to);
+    strip.push(`<li><a href="#stage-${s.id}"><span class="n">${i + 1}</span> ${s.name}</a>${rs.length ? `<span class="when">${span(t0, t1)}</span>` : ""}</li>`);
+    const cite = o => ops.cites[o.ref[0]];
+    const opDates = o => o.to ? (o.from.slice(0, 4) === o.to.slice(0, 4) && o.from.slice(5, 7) === o.to.slice(5, 7)
+      ? `${+o.from.slice(8)}–${fmt(day(o.to))}` : `${fmt(day(o.from))} – ${fmt(day(o.to))}`) : `from ${fmt(day(o.from))}`;
+    const opsHtml = opsBy.get(s).length
+      ? opsBy.get(s).map(o => `${cite(o) ? `<a href="${esc(cite(o).href)}" title="${esc(cite(o).title || cite(o).short)}">${esc(o.name)}</a>` : esc(o.name)} <span class="dates">${opDates(o)}</span>`).join(" · ")
+      : `<span class="none">not in the records' operations yet</span>`;
+    // an engagement with a page of its own (Algiers) is listed once, as its page
+    const links = [...engBy.get(s).filter(x => !s.pages.some(p => p[1] === x.title)).map(x => [`engagement.html?e=${x.id}`, x.title, "both sides, one clock"]), ...s.pages]
+      .map(([href, title, what]) => `<li><a href="${href}">${esc(title)}</a>: ${esc(what)}</li>`).join("");
+    const units = rs.map(r => `<tr><td class="when">${span(r.from, r.to)}</td><td class="what"><a href="army.html?unit=${r.u.unit}&amp;t=${d3.utcFormat("%Y-%m-%d")(r.from)}">${esc(r.u.name)}</a></td><td class="state">${r.n} station${r.n === 1 ? "" : "s"} here</td></tr>`).join("");
+    document.getElementById(`stage-${s.id}`).innerHTML = `
+      <h3><span class="n">${i + 1}</span> ${s.name}${rs.length ? ` <span class="when">${span(t0, t1)}</span>` : ""}</h3>
+      <p class="where">${esc(s.where[0].toUpperCase() + s.where.slice(1))}.${rs.length ? ` <a href="army.html?unit=${rs[0].u.unit}&amp;t=${d3.utcFormat("%Y-%m-%d")(t0)}">The Army map on ${fmt(t0)}</a>, the first station here.` : ""}</p>
+      <p class="ops"><i>The campaigns:</i> ${opsHtml}</p>
+      ${links ? `<ul class="pages">${links}</ul>` : ""}
+      <div class="also"><table><tbody>${units}</tbody></table></div>`;
+  });
+  document.getElementById("stages").innerHTML = strip.join("");
+  return { home };
+}
+
 // ── What else is in each chapter, and what's still to find ──────────────────────────────────────
 async function lists() {
   const [ships, army, battles, invText] = await Promise.all([d3.json(RECORDS + "ships.json"), d3.json(RECORDS + "army/army.json"),
@@ -486,15 +585,13 @@ async function lists() {
     row(/^\d{4}-\d{2}$/.test(k) ? month(k + "-01") : "", `USS Solar (DE-221): ${esc(r.note || k)}`, word[r.status] || r.status, r.status !== "mapped"));
   table("also-atlantic", "Also in the Atlantic", sol);
 
-  // Europe: the Army units by date, and what's still to find
-  const eur = army.units.map(u => {
-    const a = u.stations[0].date, b = u.stations[u.stations.length - 1].date;
-    return [Date.parse(a), row(month(a), `<a href="army.html?unit=${u.unit}">${esc(u.name)}</a>, to ${month(b)}`, `${u.stations.length} stations on the map`)];
-  }).sort((a, b) => a[0] - b[0]).map(r => r[1]);
+  // Europe: the units the stages above leave out (never overseas), and what's still to find
+  const eur = (await STAGED).home.map(u => row(month(u.stations[0].date), `<a href="army.html?unit=${u.unit}">${esc(u.name)}</a>, to ${month(u.stations[u.stations.length - 1].date)}`,
+    "in the United States and Britain only", false));
   const after = part => { const m = /^after-(\d{4})-(\d{2})$/.exec(part); return m ? `its records after ${d3.utcFormat("%B %Y")(new Date(Date.UTC(+m[1], +m[2] - 1)))} (not online)` : part; };
   for (const [k, u] of Object.entries(inv.units || {})) for (const [part, r] of Object.entries(u)) if (part !== "record")
     eur.push(row("", `${esc(army.units.find(x => x.unit === k)?.name || k)}: ${after(part)}`, word[r.status] || r.status, true));
-  table("also-europe", "Also in North Africa and Europe, by date", eur);
+  table("also-europe", "Also in the records, and still to find", eur);
 
   // Wanted: everything the inventory knows of and nobody has done
   const wanted = [];
@@ -519,4 +616,6 @@ seabees().catch(failed("#fig-seabees", "figure"));
 solar().catch(failed("#fig-solar", "map"));
 neuburg().catch(failed("#fig-neuburg", "figure"));
 fleet().catch(failed("#fleet", "list"));
+const STAGED = stages();
+STAGED.catch(failed("#stages", "list"));
 lists().catch(failed("#wanted", "list"));
