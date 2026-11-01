@@ -618,13 +618,14 @@ function shipBlock(sh) {
   return box;
 }
 
-// Where a row comes from (records/SOURCES.yml): a morning report (nara-catalog, rg64-…), the
-// 106th AAA's monthly records and journal (ok45th-…), the 894th's history (hist894/…), Third
-// Army's report (aar3/…), or a source only linked (gi9ad, wiki9ad)
+// Where a row comes from (records/SOURCES.yml): a morning report (nara-catalog, rg64-…), a unit's
+// monthly history or journal at the 45th Infantry Division Museum (ok45th-…: the 106th AAA's, the
+// 189th FA's), the 894th's history (hist894/…), Third Army's report (aar3/…), or a source only
+// linked (gi9ad, wiki9ad)
 const kindOf = r => r.page.startsWith("ok45th-") ? "museum" : r.page.startsWith("hist894/") ? "hist"
   : r.page.startsWith("aar3/") ? "aar" : LINKED[r.page] ? "linked" : "mr";
-const SOURCE_NAME = { museum: "106th AAA record", hist: "894th AAA history", aar: "Third Army report", mr: "Morning report" };
-const SOURCE_TITLE = { mr: "Morning reports", museum: "The 106th AAA's histories and journal", hist: "The 894th's printed history",
+const SOURCE_NAME = { museum: "45th Division Museum record", hist: "894th AAA history", aar: "Third Army report", mr: "Morning report" };
+const SOURCE_TITLE = { mr: "Morning reports", museum: "Unit histories and journals (45th Infantry Division Museum)", hist: "The 894th's printed history",
                        aar: "Third Army's after action report", linked: "Division sources" };
 const pageNo = r => r.page.includes("/p") ? parseInt(r.page.split("/p")[1], 10) : "";
 const pageLabel = r => kindOf(r) === "linked" ? `${LINKED[r.page][1]} ↗`
