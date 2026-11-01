@@ -35,8 +35,10 @@ Suggested order:
 
 1. **BANG's wolfpack partners.** PARCHE and TINOSA (Patrol 1);
    SEAHORSE and GROWLER (Patrol 2); REDFISH and SHAD (Patrol 4);
-   SPADEFISH, ATULE and POMPON (Patrol 5); SNOOK and BURRFISH (Patrol 6);
-   SEGUNDO and JACK (passage home). Their reports describe the same
+   SPADEFISH, ATULE and POMPON (Patrol 5); SNOOK and BURRFISH (Patrol 6;
+   SNOOK left the pack the first night, BURRFISH's report says); SEGUNDO and
+   JACK (with BANG at Saipan on 8-9 May 1945, they outbound on patrol, she
+   bound for Pearl, SEGUNDO's report). Their reports describe the same
    convoys and nights from another boat's position, so each boat
    cross-checks BANG and the reverse. The convoy of 29–30 April 1944 should
    appear in BANG's, PARCHE's and TINOSA's reports.
