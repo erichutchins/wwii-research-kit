@@ -378,6 +378,15 @@
   }
   playBtn.addEventListener("click", () => playing ? stop() : play());
 
+  // ---------- the observer view (observer.js): each attack whose data sheet is transcribed; picking one moves the clock
+  const observer = Observer.mount({ D, colour, nameOf, setPageTime: ms => { stop(); setTime(ms); highlightRow(ms); } });
+  const sheetOf = e => e && e.kind === "attack" && D.sheets?.[e.actor]?.[e.title.replace(" (narrative)", "")] ? e : null;
+  document.getElementById("log").addEventListener("click", ev => {
+    const row = ev.target.closest(".row"), e = row && D.events[[...row.parentNode.children].indexOf(row)];
+    if (sheetOf(e)) observer.pick(e.actor, e.title.replace(" (narrative)", ""));
+  });
+  gMk.on("click.observer", ev => { const d = d3.select(ev.target.closest("g.mk")).datum(); const e = d && d.es && d.es.find(sheetOf); if (e) observer.pick(e.actor, e.title.replace(" (narrative)", "")); });
+
   drawOOB(); drawClaims(); drawLog(); drawStatic(); drawLanes(); drawClosing(); drawFrame();
   new ResizeObserver(() => { if (D.box) drawStatic(); drawLanes(); drawClosing(); drawFrame(); }).observe(document.querySelector(".wrap"));
 })();

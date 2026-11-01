@@ -15,7 +15,10 @@ changed: a real disagreement on the sheet is kept as typed and explained in atta
 
 A time typed with seconds, 1616-32, is the minute 1616 in positions.csv; a sheet typing no zone leaves `zone` blank
 (the attack's row in positions.csv has it). Also checked: the columns, every `attack` joining a `source=attack` row's `ref` in the patrol's positions.csv, the
-date and time against that row, and every attack having an attack_sheets.yml entry (and the reverse).
+date and time against that row, and every attack having an attack_sheets.yml entry (and the reverse). And the
+firing times and aims: each attack's rows type either `interval` (seconds since the torpedo before) or `since_first`
+(seconds since the salvo's first), never both, and `since_first` never goes back within a salvo; `offset` is an aim
+off the point of aim (`1.5R`, `0`, `225'Aft`, `MOT`) and `spread` the kind of spread (`divergent`), never an offset.
 
   uv run tools/check_attacks.py            every patrol; exits 1 on a structural problem
   uv run tools/check_attacks.py bang/2     one patrol, every torpedo
@@ -28,7 +31,8 @@ import records
 from records import RECORDS, rel
 
 COLUMNS = ("attack,date,time,zone,tube,own_course,own_speed,own_depth,target_course,target_speed,target_range,"
-           "target_draft,track,gyro,depth_set,power,hit,erratic,torpedo,firing_int,spread,page").split(",")
+           "target_draft,track,gyro,depth_set,power,hit,erratic,torpedo,interval,since_first,spread,offset,page").split(",")
+OFFSET = re.compile(r"(\d+(\.\d+)?[RL]?|MOT|\d+'\s*(aft|ahead))", re.I)
 NEAR, FAR = 3, 10   # degrees: within NEAR agrees; beyond FAR is listed as a disagreement
 
 
@@ -83,6 +87,27 @@ def miss(row):
     return best
 
 
+def timing(path, rows):
+    """interval or since_first, one per attack; since_first never back within a salvo (a 0 starts the next);
+    offset an aim, spread a kind"""
+    out = []
+    for a in dict.fromkeys(r["attack"] for r in rows):
+        rs = [r for r in rows if r["attack"] == a]
+        if {k for r in rs for k in ("interval", "since_first") if r[k]} == {"interval", "since_first"}:
+            out.append(f"{rel(path)}: {a} types both interval and since_first")
+        last = None
+        for r in rs:
+            v = num(r["since_first"])
+            if v is not None and last is not None and 0 < v < last:
+                out.append(f"{rel(path)}: {a} tube {r['tube']}: since_first {r['since_first']} after {last:g}")
+            last = v if v is not None else last
+            if r["offset"] and not OFFSET.fullmatch(r["offset"]):
+                out.append(f"{rel(path)}: {a} tube {r['tube']}: offset {r['offset']!r} is not an aim (1.5R, 0, 225'Aft)")
+            if r["spread"] and OFFSET.fullmatch(r["spread"]):
+                out.append(f"{rel(path)}: {a} tube {r['tube']}: spread {r['spread']!r} is an offset: it goes in `offset`")
+    return out
+
+
 def patrol(folder, verbose):
     path = folder / "attacks.csv"
     problems, far = [], []
@@ -118,6 +143,7 @@ def patrol(folder, verbose):
             far.append(f"{where}: typed track {r['track']}, computed {got} from own {r['own_course']} + gyro {r['gyro']} vs target {r['target_course']}")
         elif d > NEAR and not verbose:
             far.append(f"{where}: typed track {r['track']}, computed {got} ({d:.1f}° off)")
+    problems += timing(path, rows)
     for a in sorted({r["attack"] for r in rows} - named):
         problems.append(f"{rel(sheets)}: no entry for {a}")
     for a in sorted(named - {r["attack"] for r in rows}):

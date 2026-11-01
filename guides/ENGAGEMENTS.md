@@ -86,6 +86,7 @@ new format is converted for good: no reader for the old one is kept.
 | The sky | sun and moon, bearing, altitude, phase and lit fraction, from SunCalc |
 | Fire control | torpedo course = own course + gyro; track = torpedo course + 180 − target course; lead L: tan L = k·sin TA / (1 + k·cos TA), k = target speed / torpedo speed; angle on the bow = track − L |
 | Apparent size | width = 2·atan(projected length / 2R), projected length = L·\|sin AOB\| + beam·\|cos AOB\|; height = atan(H/R) |
+| An attack on one clock (`attackSheet`, `attackAt`) | seconds from the first torpedo, from `attacks.csv` as typed: each torpedo fired at its `interval` or `since_first` (a salvo the sheet gives no time for, 10 s after the last: assumed); the point of aim from the torpedoes' courses less each typed `offset` (the middle of the spread where none is typed); the target placed at the sheet's range on the bearing that point of aim and the fire-control angles give; boat and target steady on the sheet's courses and speeds; each torpedo runs to where it first reaches a hull of the target's assumed length, or past it. Torpedo speed: the sheet's where typed; the Mark 18's 27.7 knots from ATULE's sheet; the Mark 14's and 23's secondary. The torpedo's straight run and turn out of the tube are left out, so runs come out a few seconds short (SEAHORSE's Attack 3: 33 s against the narrative's 36) |
 
 ## How the pages draw it
 
@@ -135,12 +136,18 @@ hue. Colour follows the boat across every view of a page; text never wears it ex
 
 ## Still to build
 
-- **The observer view**: the periscope (or a ship's director, or a battery's sight) with the target at its true size and
-  angle on the bow, the sky as computed, and the firing solution on the same clock. The family repository's
-  `periscope-concept.html` is the prototype (SEAHORSE's Attack 3, 4 July 1944). Each attack's data sheet is now rows: a
-  patrol's `attacks.csv` and `attack_sheets.yml` (fields in `records/README.md`, checked by `tools/check_attacks.py`);
-  it still needs the narrative's timed bearings. For Haynsworth, the incoming plane's
-  bearing, elevation and range from her action report and AA report play the same part.
+- **The observer view, further.** Built (`site/observer.js`, the engagement page's "At the periscope"): every attack
+  whose data sheet is transcribed, from the plot above, through the periscope or from the bridge, with the sky and the
+  solution on one clock; the build carries the sheets in `engagement.json`'s `sheets`. Still to do:
+  - the narrative's timed bearings and ranges (`bearings.csv`), so the approach before firing is the record's and not
+    the target held steady on the sheet's course;
+  - TINOSA's own and target courses from her narrative (her report has only the summary table; family lead L73);
+  - the Mark 14's and 23's speeds, and the periscope's fields of view (the *Submarine Periscope Manual*, NAVPERS
+    16165), from primary sources;
+  - the torpedo's straight run and turn out of the tube (USF 25(A)), and each target's own silhouette and size where the
+    Japanese record names the ship;
+  - for Haynsworth, the incoming plane's bearing, elevation and range from her action report and AA report, in the same
+    view from her director.
 - **The lanes from the charts.** Every waypoint in `reference/lanes/lanes.yml` is assumed. The escort divisions'
   charts draw and name the lanes (馬来直航路, the Malay direct route; the Hainan east route); tracing them would replace
   the assumptions.

@@ -17,6 +17,10 @@
 //   Engage.fireControl({...})         torpedo course, track angle, lead angle and angle on the bow from the attack sheet
 //   Engage.apparentSize({...})        a target's angular width and height at a range and angle on the bow
 //   Engage.sky(ms, lat, lon)          sun and moon: bearing, altitude, the moon's phase and lit fraction (SunCalc)
+//   Engage.attackSheet(rows, {length, beam})   an attack data sheet (attacks.csv's rows for one attack) on one clock: each
+//                                     torpedo's firing second, course and run, each target placed from the gyro and
+//                                     track, and the list of what's assumed
+//   Engage.attackAt(A, s)             the boat, the targets and the torpedoes s seconds after the first torpedo
 const Engage = (() => {
   const ZONE_LETTERS_E = "ABCDEFGHIKLM", ZONE_LETTERS_W = "NOPQRSTUVWXY";
   // the half-hour zones the war diaries type (tools/check_track.py ZONES)
@@ -111,6 +115,137 @@ const Engage = (() => {
     return { sun: { bearing: az(sun.azimuth), altitude: deg(sun.altitude) },
              moon: { bearing: az(moon.azimuth), altitude: deg(moon.altitude), fraction: ill.fraction, phase: ill.phase, waxing: ill.phase < 0.5 } };
   }
+  // ---------- an attack data sheet (attacks.csv's rows, as typed) worked through on one clock: seconds from the first
+  // torpedo, yards, x east and y north, the boat at the origin when she fired. Every value is the sheet's except those
+  // listed in `assumed`, which the page shows.
+  const num = s => { const m = /^\s*(\d+(?:\.\d+)?)\s*$/.exec(s ?? ""); return m ? +m[1] : null; };
+  // '162' -> 162; right or left of the bow, '15R' -> 15, '5L' -> 355
+  const gyroOf = s => { const m = /^\s*(\d+(?:\.\d+)?)\s*([RL]?)\s*$/.exec(s ?? ""); return m ? (m[2] === "L" ? norm(-m[1]) : +m[1]) : null; };
+  // '050' -> [50]; a course swinging while firing, '050-069' -> [50, 69]; a zig, '210 - 260' -> [210, 260]
+  const coursesOf = s => { const v = String(s ?? "").split("-").map(num); return v.length && v.every(x => x != null) ? v : []; };
+  // an aim off the point of aim in degrees, right positive: '1.5R' -> 1.5, '1L' -> -1, '0' -> 0; along the target ('225'Aft') -> null
+  const offsetOf = s => { const m = /^\s*(\d+(?:\.\d+)?)\s*([RL]?)\s*$/.exec(s ?? ""); return m ? (m[2] === "L" ? -m[1] : +m[1]) : null; };
+  // seconds into the day of a typed time: '2354' or, with seconds, '1616-32'
+  const secOf = s => { const m = /^(\d\d)(\d\d)(?:-(\d\d))?$/.exec(s ?? ""); return m ? m[1] * 3600 + m[2] * 60 + (+m[3] || 0) : null; };
+  // Torpedo speeds where the sheet types none. The Mark 18's is ATULE's sheet's "Mk 18 speed 27.7" (rg367-74802211/p33),
+  // which SEAHORSE's narrative bears out (560 yards in 36 seconds, rg367-74845019/p09); the Mark 14's and 23's are
+  // commonly given figures, not yet from a primary source (ENGAGEMENTS.md, "Still to build"). A typed speed is always used.
+  const TORPEDO_KNOTS = { "14": { high: 46, low: 31.5 }, "23": { high: 46 }, "18": { high: 27.7 } };
+  const YD_S = kn => kn * 2025.37 / 3600;   // knots -> yards a second
+  function torpedoKnots(r) {
+    const typed = num(r.power);
+    if (typed) return { knots: typed, basis: "sheet" };
+    const mark = String(r.torpedo || "").split("-")[0], mk = TORPEDO_KNOTS[mark] || TORPEDO_KNOTS["14"];
+    return { knots: /^low/i.test(r.power || "") && mk.low ? mk.low : mk.high, basis: mark === "18" ? "atule" : "assumed" };
+  }
+  const SALVO_GAP = 10;   // seconds: a salvo whose own time the sheet doesn't give starts this long after the last
+  function firingTimes(rows) {
+    const t0 = secOf(rows[0].time);
+    let base = 0, last = 0;
+    return rows.map((r, i) => {
+      const ts = secOf(r.time), typedLater = ts != null && t0 != null && ts > t0;
+      const iv = r.since_first != null ? num(r.since_first) : num(r.interval), since = r.since_first != null;
+      if (i === 0) return { s: 0 };
+      if (iv === null || iv === 0) {          // a dash, a blank or 0 after the first: the next salvo
+        base = typedLater ? Math.max(ts - t0, last) : last + SALVO_GAP;
+        last = base;
+        return { s: base, assumed: !typedLater };
+      }
+      last = since ? base + iv : last + iv;
+      return { s: last };
+    });
+  }
+  function attackSheet(rows, opts = {}) {
+    const assumed = [], problems = [];
+    const n = rows.length, tf = firingTimes(rows);
+    const own = rows.map((r, i) => { const c = coursesOf(r.own_course); return c.length ? c[0] + (c.length > 1 && n > 1 ? (c[c.length - 1] - c[0]) * i / (n - 1) : 0) : null; });
+    const swinging = rows.some(r => coursesOf(r.own_course).length > 1);
+    const ownSpeed = num(rows[0].own_speed) ?? 0;
+    const surface = rows.some(r => /surface/i.test(r.own_depth || "")) || (num(rows[0].own_depth) ?? 99) < 25;
+    if (own.some(c => c == null)) problems.push("the sheet types no own course");
+    if (tf.some(x => x.assumed)) assumed.push(`a salvo the sheet gives no time for starts ${SALVO_GAP} s after the last torpedo`);
+    // one target for each set of target data the rows carry (a sheet may aim at two)
+    const key = r => [r.target_course, r.target_speed, r.target_range].join("|");
+    const groups = [...new Set(rows.map(key))];
+    const torps = rows.map((r, i) => {
+      const g = gyroOf(r.gyro), sp = torpedoKnots(r);
+      return { i, tube: r.tube, row: r, s: tf[i].s, timeAssumed: !!tf[i].assumed, course: own[i] != null && g != null ? norm(own[i] + g) : null,
+               knots: sp.knots, speedBasis: sp.basis, offset: offsetOf(r.offset), hitTyped: /hit/i.test(r.hit || ""), target: groups.indexOf(key(r)) };
+    });
+    if (torps.some(t => t.speedBasis === "atule")) assumed.push("the Mark 18's speed, 27.7 knots: not typed on this sheet, but on ATULE's (rg367-74802211/p33)");
+    if (torps.some(t => t.speedBasis === "assumed")) assumed.push("the Mark 14's and 23's speed, 46 knots at high power and 31.5 at low: not typed on the sheet; secondary figures");
+    if (swinging) assumed.push("own course turning evenly between the typed courses while firing");
+    assumed.push("each torpedo on its course from the moment it leaves the tube (its straight run and turn onto the gyro angle are left out, so runs come out a few seconds short)",
+                 "the boat steady on the sheet's course and speed", "the target steady on the sheet's course and speed, before firing as after: the narrative's bearings aren't transcribed yet");
+    const ownAt = s => {   // the boat: steady speed; the heading turning evenly across a swing
+      const last = tf[n - 1].s || 1, k = Math.max(0, Math.min(1, s / last)), h = own[0] == null ? 0 : own[0] + ((own[n - 1] ?? own[0]) - own[0]) * (swinging ? k : 0);
+      // position: integrate the heading (straight where it doesn't swing)
+      const steps = swinging ? 12 : 1; let x = 0, y = 0;
+      for (let j = 0; j < steps; j++) { const sj = s * (j + 0.5) / steps, kj = Math.max(0, Math.min(1, sj / last)), hj = own[0] == null ? 0 : own[0] + ((own[n - 1] ?? own[0]) - own[0]) * (swinging ? kj : 0);
+        x += Math.sin(rad(hj)) * YD_S(ownSpeed) * s / steps; y += Math.cos(rad(hj)) * YD_S(ownSpeed) * s / steps; }
+      return { p: [x, y], heading: norm(h) };
+    };
+    const targets = groups.map((gk, gi) => {
+      const ts = torps.filter(t => t.target === gi), r = ts[0].row;
+      const course = coursesOf(r.target_course)[0], speed = num(r.target_speed) ?? 0, range = num(r.target_range);
+      const zig = coursesOf(r.target_course).length > 1;
+      // the point of aim: the torpedoes' courses, less each one's typed offset; with no offsets typed, their mean
+      const first = ts.filter(t => t.s - ts[0].s < 30 && t.course != null);
+      const aims = first.map(t => t.offset != null ? t.course - t.offset : t.course);
+      if (course == null || range == null || !aims.length) return { course, speed, range, ok: false };
+      const aim = norm(aims[0] + d3mean(aims.map(a => ((a - aims[0] + 540) % 360) - 180)));
+      const sp = d3mean(first.map(t => t.knots));
+      const fc = fireControl({ ownCourse: aim, gyro: 0, targetCourse: course, targetSpeed: speed, torpedoSpeed: sp });
+      const signedAob = fc.side === "S" ? fc.aob : -fc.aob;
+      const bearing = norm(course + signedAob + 180), at = ts[0].s, from = ownAt(at).p;
+      const p0 = [from[0] + range * Math.sin(rad(bearing)), from[1] + range * Math.cos(rad(bearing))];
+      return { course, speed, range, zig, ok: true, bearing, aob: signedAob, lead: fc.lead, track: fc.track, side: fc.side, at, p0, typedTrack: r.track,
+               noOffsets: first.every(t => t.offset == null) && first.length > 1 };
+    });
+    if (targets.some(t => t.zig)) assumed.push("the target on the first of the courses typed for its zig");
+    if (targets.some(t => t.noOffsets)) assumed.push("the point of aim in the middle of the spread (the sheet types the kind of spread, not each torpedo's offset)");
+    if (targets.some(t => !t.ok)) problems.push("the sheet doesn't give the target's course and range, so the target can't be placed");
+    const targetAt = (gi, s) => { const T = targets[gi]; if (!T.ok) return null; const v = YD_S(T.speed);
+      return [T.p0[0] + Math.sin(rad(T.course)) * v * (s - T.at), T.p0[1] + Math.cos(rad(T.course)) * v * (s - T.at)]; };
+    // each torpedo's run: to where it first reaches the target's hull (a line of the target's length, `opts.length`
+    // feet, on its course), or, missing, how far from the hull it passed
+    const halfL = (opts.length || 400) / 6, halfB = (opts.beam || 55) / 6;   // feet -> half the length and beam in yards
+    torps.forEach(t => {
+      const T = targets[t.target];
+      if (t.course == null || !T.ok) return;
+      const from = ownAt(t.s).p, v = YD_S(t.knots), vt = [Math.sin(rad(t.course)) * v, Math.cos(rad(t.course)) * v];
+      const tp = targetAt(t.target, t.s), u = [Math.sin(rad(T.course)), Math.cos(rad(T.course))], vT = [u[0] * YD_S(T.speed), u[1] * YD_S(T.speed)];
+      const r0 = [from[0] - tp[0], from[1] - tp[1]], dv = [vt[0] - vT[0], vt[1] - vT[1]];   // the torpedo, from the target
+      const gap = tau => { const x = r0[0] + dv[0] * tau, y = r0[1] + dv[1] * tau, along = x * u[0] + y * u[1], across = x * u[1] - y * u[0];
+        return Math.hypot(Math.max(0, Math.abs(along) - halfL), Math.max(0, Math.abs(across) - halfB)); };
+      const centre = Math.max(0, -(r0[0] * dv[0] + r0[1] * dv[1]) / (dv[0] ** 2 + dv[1] ** 2));
+      let run = centre, passed = gap(centre);
+      for (let tau = 0; tau <= centre * 2 + 20; tau += 0.1) { const g = gap(tau); if (g === 0) { run = tau; passed = 0; break; } if (g < passed) { passed = g; run = tau; } }
+      Object.assign(t, { from, v: vt, run, runYd: run * v, passed, end: t.hitTyped ? run : Math.max(run * 1.5, 4000 / v) });
+    });
+    const end = Math.max(30, ...torps.filter(t => t.end != null).map(t => t.s + t.end)) + 15;
+    return { rows, torps, targets, surface, ownSpeed, assumed, problems, start: -240, end, ownAt, targetAt };
+  }
+  const d3mean = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
+  // Everything at second s: the boat, each target (bearing, range, angle on the bow), each torpedo running or done
+  function attackAt(A, s) {
+    const o = A.ownAt(s);
+    const targets = A.targets.map((T, gi) => {
+      const p = A.targetAt(gi, s);
+      if (!p) return null;
+      const hitAt = d3min(A.torps.filter(t => t.target === gi && t.hitTyped && t.run != null).map(t => t.s + t.run));
+      const q = hitAt != null && s > hitAt ? A.targetAt(gi, hitAt) : p;   // a hit ship stops where she was hit
+      const dx = q[0] - o.p[0], dy = q[1] - o.p[1], bearing = norm(deg(Math.atan2(dx, dy)));
+      return { p: q, bearing, range: Math.hypot(dx, dy), aob: ((bearing + 180 - T.course + 540) % 360) - 180, course: T.course, hit: hitAt != null && s >= hitAt };
+    });
+    const torps = A.torps.filter(t => t.from && s >= t.s).map(t => {
+      const run = Math.min(s - t.s, t.end);
+      return { t, p: [t.from[0] + t.v[0] * run, t.from[1] + t.v[1] * run], done: s - t.s >= t.end };
+    });
+    return { own: o, targets, torps };
+  }
+  const d3min = xs => xs.length ? Math.min(...xs) : null;
+
   // A built engagement (engagement.json) as the story pages (haynsworth.html, algiers.html) read it: its own entries in
   // the order events.yml gives them, with the record's date and time apart, and the claims; `ref` is the page's link.
   function story(D) {
@@ -123,6 +258,7 @@ const Engage = (() => {
   const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const hhmm = ms => { const d = new Date(ms); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()); };
   const day = ms => { const d = new Date(ms); return `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`; };
-  return { zoneHours, toUTC, T, coord, offset, nm, posAt, observedPath, closing, fireControl, apparentSize, sky, story, hhmm, day };
+  return { zoneHours, toUTC, T, coord, offset, nm, posAt, observedPath, closing, fireControl, apparentSize, sky, story, hhmm, day,
+           gyroOf, coursesOf, offsetOf, firingTimes, torpedoKnots, attackSheet, attackAt };
 })();
 if (typeof module !== "undefined") module.exports = Engage;

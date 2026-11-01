@@ -201,6 +201,25 @@ class Build:
                 pairs.append({**x, "unit": other or unit, "attack_ref": ref, "attack_utc": a["utc"]})
         return rows, ja, pairs
 
+    def sheets(self, p, refs):
+        """A boat's attack data sheets (attacks.csv and attack_sheets.yml) for the attacks in `refs`: the torpedoes'
+        rows as typed, the sheet's words, and its page. The observer view computes from them; nothing is changed."""
+        d = patrol_dir(p["track"])
+        path, ypath = d / "attacks.csv", d / "attack_sheets.yml"
+        if not path.exists():
+            return {}
+        words = {}
+        for e in (records.load_yaml(ypath) or []) if ypath.exists() else []:
+            words.setdefault(e["attack"], []).append({k: v for k, v in e.items() if k != "attack"})
+        out = {}
+        for r in csv.DictReader(open(path, encoding="utf-8", newline="")):
+            if r["attack"] not in refs:
+                continue
+            a = out.setdefault(r["attack"], {"torpedoes": [], "words": words.get(r["attack"], []),
+                                             "cite": self.cite(r["page"], f"{rel(path)} {r['attack']}")})
+            a["torpedoes"].append({k: v for k, v in r.items() if k not in ("attack", "page") and v != ""})
+        return out
+
     # ------------------------------------------------------------------ an engagement
     def engagement(self, d, convoys):
         where = rel(d / "engagement.md")
@@ -297,7 +316,7 @@ class Build:
                 e["outside"] = bool(e["utc"]) and not start <= parse_iso(e["utc"]) <= end
 
         # each participant's own record, inside the window
-        tracks, fixes, seen_ja, japanese, pairs = {}, [], set(), [], []
+        tracks, fixes, seen_ja, japanese, pairs, sheets = {}, [], set(), [], [], {}
         for p in parts:
             if not p.get("track") or not start:
                 continue
@@ -310,6 +329,9 @@ class Build:
             if p.get("kind") == "submarine":
                 fixes += [self.fix(p, r) for r in inside]
                 events += self.depths(p, start, end)
+                sh = self.sheets(p, {r["ref"] for r in inside if r["source"] == "attack"})
+                if sh:
+                    sheets[p["id"]] = sh
             for j in ja.values():
                 if (p["track"], j["id"]) not in seen_ja:
                     seen_ja.add((p["track"], j["id"]))
@@ -347,7 +369,7 @@ class Build:
                 "window": {"from": iso(start), "to": iso(end)} if start else None, "gmt": bool(start),
                 "participants": parts, "places": fm.get("places") or [], "sections": secs, "cites": cites, "box": box,
                 "tracks": tracks, "fixes": fixes, "events": events, "claims": claims,
-                "positions": list(positions.values()), "convoys": conv}
+                "positions": list(positions.values()), "convoys": conv, "sheets": sheets}
 
     def place(self, r, positions, where):
         """A positions.csv row -> lat/lon: its own, or bearing and distance from another row."""
