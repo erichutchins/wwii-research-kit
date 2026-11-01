@@ -1,14 +1,22 @@
-# The glossary: the records' abbreviations and terms, each explained in a line or two.
+# The glossary: the records' abbreviations and terms, each explained in a line or two, each from a cited source.
 # site/glossary.js marks the first use of each term in a passage with a dotted underline; pointing at it or tapping it
-# shows the line below, and "see" adds a link to the page that explains more.
+# shows the explanation, its source (linked) and, with "see", a link to the page that explains more.
+# tools/build_glossary.py checks this file and writes glossary.json, which the pages read: run it after any edit.
 #
 # Hand-edit freely. Each entry:
-#   term   the word as the pages use it (it's also the heading of the card)
-#   match  other forms to find, if any (e.g. the plural, an older spelling). Matching ignores case for ordinary words;
-#          a form with two capitals in a row (AAA, CP, Med Det) must match exactly, and an abbreviation followed by
-#          digits ("VT 0893", "RN 25") is left alone, because that's a grid reference.
-#   says   the explanation, in plain words, on the lines below "says: >-" (indented; any punctuation is fine there)
-#   see    a kit page that explains more (optional; relative to site/)
+#   term    the word as the pages use it (it's also the heading of the card)
+#   match   other forms to find, if any (e.g. the plural, an older spelling). Matching ignores case for ordinary words;
+#           a form with two capitals in a row (AAA, CP, Med Det) must match exactly, and an abbreviation followed by
+#           digits ("VT 0893", "RN 25") is left alone, because that's a grid reference.
+#   says    the explanation, in plain words, on the lines below "says: >-" (indented; any punctuation is fine there).
+#           Say only what the source supports.
+#   source  where the explanation comes from: one or more citations in a form SOURCES.yml knows, separated by "; ".
+#           The wartime glossaries come first: tm-20-205/n<leaf> (the Army's Dictionary of Terms, 1944),
+#           opnav-29-p1000/<letter> (the Navy's abbreviations), usf-25a/<paragraph> (the submarine doctrine, 1944),
+#           fm-30-30/n<leaf> (the recognition manual). Then a record that shows the thing (rg367-74802746/p21), and a
+#           web page by its address where nothing wartime was found (marked secondary in `says` where it matters).
+#   see     a kit page that explains more (optional; relative to site/)
+#   unless  phrases that contain the term but mean something else, left unmarked (optional; e.g. "AP Hill" for AP)
 #
 # Ships aren't listed here: every ship in records/ships.json is linked to its track. Their bare names (without "USS")
 # are only matched when they're listed under ships.bare, since Washington, Missouri or Bougainville are also places.
@@ -22,75 +30,95 @@ terms:
     match: [morning reports]
     says: >-
       A company's or battery's daily report of its strength and of every change (men joining, leaving, sick, wounded),
-      with the unit's location. The Army's day-by-day stations here come from them.
+      with a record of events that shows where the unit moved. The Army's day-by-day stations here come from them.
+    source: tm-20-205/n186
     see: relatives.html
   - term: AA
     says: >-
-      Anti-aircraft.
+      Antiaircraft.
+    source: tm-20-205/n10
   - term: AAA
     says: >-
-      Antiaircraft Artillery. In 1943 the Coast Artillery's anti-aircraft regiments were broken up into separate AAA
-      battalions.
+      Antiaircraft artillery: the guns and equipment used to find, light up and fire on enemy aircraft, and the units
+      that manned them.
+    source: tm-20-205/n10; tm-20-205/n28
   - term: AW
     match: [AW Bn]
     says: >-
-      Automatic weapons. An AAA AW battalion fought low-flying aircraft with 40 mm Bofors guns and .50-calibre machine
-      guns; a gun battalion had 90 mm guns for high-flying ones.
+      Automatic weapons: guns that keep firing while the trigger is held, as in an AAA AW (automatic weapons)
+      battalion.
+    source: tm-20-205/n41; tm-20-205/n40
   - term: SP
     says: >-
-      Self-propelled, as in "AAA AW Bn (SP)": the guns were mounted on half-tracks.
+      Self-propelled, as in "AAA AW Bn (SP)": the guns were carried on, and fired from, their own vehicles.
+    source: tm-20-205/n269; tm-20-205/n256
   - term: CA
     says: >-
-      Coast Artillery. A "CA (AA)" regiment was a Coast Artillery regiment equipped for anti-aircraft defence.
+      Coast Artillery. A "CA (AA)" regiment was a Coast Artillery regiment equipped for antiaircraft defence.
+    source: tm-20-205/n315; https://www.ibiblio.org/hyperwar/USA/ref/FM/PDFs/FM21-30.pdf#page=67
   - term: Bn
     says: >-
-      Battalion.
+      Battalion: a headquarters and two or more companies or batteries.
+    source: tm-20-205/n53; tm-20-205/n48
   - term: Btry
     says: >-
-      Battery, the artillery's company. A battalion had three to five.
+      Battery, the artillery's equivalent of a company.
+    source: tm-20-205/n58; tm-20-205/n49
   - term: CP
     says: >-
-      Command post, where a unit's headquarters was set up. The morning reports often give its location.
+      Command post, where a unit's commander and staff worked. The morning reports often give its location.
+    source: tm-20-205/n87; tm-20-205/n78
   - term: EM
     says: >-
       Enlisted men (as against officers).
+    source: tm-20-205/n108
   - term: Med Det
     says: >-
-      Medical detachment, a battalion's own doctors, aidmen and ambulance drivers.
+      Medical detachment: the Medical Department's men attached to a unit, its own doctors and medics.
+    source: tm-20-205/n177
   - term: Repl Depot
     match: [replacement depot, replacement depots]
     says: >-
-      Replacement depot, where soldiers waited to be sent to a unit that needed men.
+      Replacement depot, where replacements were gathered and then sent on to fill gaps in units.
+    source: tm-20-205/n241
   - term: SO
     says: >-
-      Special Orders, the numbered orders that moved individual soldiers.
+      Special Orders: orders that applied to individuals or small groups, such as those moving a soldier.
+    source: tm-20-205/n268; tm-20-205/n270
   - term: APO
     says: >-
-      Army Post Office number, a unit's mail address that didn't give away where it was.
+      Army post office. A unit's APO number was its mail address.
+    source: tm-20-205/n29; tm-20-205/n35
   - term: AIB
     says: >-
-      Armored infantry battalion, the infantry of an armored division, carried in half-tracks.
+      Armored infantry battalion, the infantry of an armored division (the 9th Armored Division's 60th AIB, for one).
+    source: https://web.archive.org/web/20190817132207/https://www.eucmh.be/2018/04/17/9th-armored-division-60-aib-aar-10-1944-03-1945/
   - term: Combat Command
     match: [CC A, CC B, CC R, CCA, CCB, CCR]
     says: >-
-      An armored division fought as three battle groups, Combat Commands A, B and R (Reserve), each a mix of tanks,
-      armored infantry and artillery.
+      Combat command (CC): an armored division fought as battle groups, Combat Commands A, B and R (Reserve), each a
+      mix of tanks, armored infantry and artillery.
+    source: tm-20-205/n76; https://web.archive.org/web/20190817132207/https://www.eucmh.be/2018/04/17/9th-armored-division-60-aib-aar-10-1944-03-1945/
   - term: FA
     says: >-
-      Field artillery.
+      Field artillery: guns and howitzers mobile enough to go with the infantry or armor in the field.
+    source: tm-20-205/n115; tm-20-205/n116
   - term: TD
     says: >-
       Tank destroyer, a self-propelled anti-tank gun, or the battalion that had them.
+    source: tm-20-205/n287; tm-20-205/n286
   - term: grid reference
     match: [grid references]
     says: >-
-      A position given as a map square's letter and a number of digits, e.g. V-044572. Which grid it's on has to be
-      worked out from the date and the towns.
+      A position given on a map's military grid, the lines that divide it into squares: a square's letter and a number
+      of digits, e.g. V-044572. Which grid it's on has to be worked out from the date and the towns.
+    source: tm-20-205/n181
     see: grids.html
   - term: OSS
     says: >-
       Office of Strategic Services, the wartime intelligence service. Its map division drew the 1942 road maps used on
       the Army map.
+    source: opnav-29-p1000/O; oss-967
 
   # ── The Navy and its records ─────────────────────────────────────────────────────────────────────────
   - term: war patrol report
@@ -98,108 +126,278 @@ terms:
     says: >-
       A submarine captain's report of one patrol, written up on return, with a narrative, the positions, every attack
       and the depth charges received.
+    source: https://catalog.archives.gov/id/305243; rg367-74802746/p16
   - term: war diary
     match: [war diaries]
     says: >-
-      A ship's or unit's monthly record of where it was and what it did, sent up the chain of command.
+      A ship's or unit's log or daily account of events in a campaign.
+    source: tm-20-205/n306
   - term: action report
     match: [action reports]
     says: >-
-      A ship's report of one engagement, written soon after it.
+      A ship's or air unit's report of one engagement, written soon after it.
+    source: https://catalog.archives.gov/id/140065945?objectPage=1
   - term: muster roll
     match: [muster rolls]
     says: >-
-      The Navy's list of the men aboard a ship or in a shore unit, quarter by quarter, with monthly reports of
+      The list of the men in a ship or unit by name and grade. The Navy's were kept quarter by quarter, with reports of
       changes.
+    source: tm-20-205/n190; https://catalog.archives.gov/id/594996
   - term: TF
     says: >-
       Task force, e.g. TF 58, the fast carriers. It was split into task groups (TG 58.3).
+    source: opnav-29-p1000/T
   - term: TG
     says: >-
       Task group, part of a task force, e.g. TG 58.3, a few carriers and their screen of battleships, cruisers and
       destroyers.
+    source: opnav-29-p1000/T
   - term: CAP
     says: >-
       Combat air patrol, fighters circling over or ahead of the fleet to meet raids before they reached it.
+    source: opnav-29-p1000/C
   - term: CIC
     says: >-
       Combat Information Center, the room where a ship's radar picture was plotted and fighters were directed.
+    source: opnav-29-p1000/C
   - term: radar picket
     match: [picket, pickets, picket station]
     says: >-
-      A destroyer posted miles out from the carriers to see raids coming on radar and warn the fleet, and so often the
-      first ship the attackers met.
+      A destroyer posted miles out from the carriers (Haynsworth on 5 April 1945: picket station #1, 12 miles from her
+      group) to see raids coming on radar and warn the fleet.
+    source: https://catalog.archives.gov/id/633422068?objectPage=3
   - term: LST
     says: >-
       Landing Ship, Tank, a large beaching ship that carried vehicles, men and stores straight onto a beach.
+    source: opnav-29-p1000/L
   - term: GCT
     says: >-
-      Greenwich Civil Time, the Navy's name for GMT.
+      Greenwich Civil Time, the Navy's name for Greenwich Mean Time (GMT).
+    source: opnav-29-p1000/G
     see: zones.html
   - term: zone time
     match: [zone letter, zone letters]
     says: >-
-      Each report kept the time of its own time zone, marked by a letter (K, Z, Item…). Two reports can only be
+      Each report kept the time of its own time zone (ZT), marked by a letter (K, Z, Item…). Two reports can only be
       compared once both are on one clock.
+    source: opnav-29-p1000/X
     see: zones.html
   - term: kana grid
     says: >-
-      The Japanese Navy's code for a position, a square about 20 miles across named in kana.
+      The Japanese Navy's code for a position, a square about 20 miles across named in kana. The kit's key is worked
+      out from Japanese reports that give both the code and the position.
+    source: https://github.com/erichutchins/wwii-research-kit/blob/main/guides/JAPANESE-GRID.md
     see: jgrid.html
   - term: ONI
     says: >-
       Office of Naval Intelligence. Its recognition manuals (ONI 54 for US ships) gave the silhouettes drawn here.
+    source: opnav-29-p1000/O
     see: silhouettes.html
   - term: Seabees
     match: [Seabee, NCB]
     says: >-
-      The Navy's construction battalions (CBs, hence "Seabees"), which built airfields, bases and roads, often under
-      fire.
+      The Navy's construction battalions (CBs, hence "Seabees"), which built airfields, bases and roads.
+    source: opnav-29-p1000/C
+  - term: FRUPAC
+    match: [FRUPac]
+    says: >-
+      Fleet Radio Unit, Pacific, the Navy's radio intelligence centre. Its war maps plotted Japanese ships and convoys
+      from their intercepted messages.
+    source: opnav-29-p1000/F; https://texashistory.unt.edu/explore/collections/FRUPAC/
+
+  # ── Ships, by their type letters ─────────────────────────────────────────────────────────────────────
+  - term: AK
+    says: >-
+      Cargo ship. The reports use the Navy's own type letters for Japanese ships too: AK a freighter, AO a tanker, AP a
+      transport.
+    source: opnav-29-p1000/A
+  - term: AO
+    says: >-
+      Oiler or fuel-oil tanker.
+    source: opnav-29-p1000/A
+  - term: AP
+    unless: [AP Hill, AP dispatch, AP Photo, AP.O]
+    says: >-
+      Transport.
+    source: opnav-29-p1000/A
+  - term: DD
+    says: >-
+      Destroyer.
+    source: opnav-29-p1000/D
+  - term: DE
+    says: >-
+      Destroyer escort.
+    source: opnav-29-p1000/D
+  - term: CV
+    says: >-
+      Aircraft carrier (CVL, a small or light one).
+    source: opnav-29-p1000/C
+  - term: CVL
+    says: >-
+      Aircraft carrier, small: a light carrier.
+    source: opnav-29-p1000/C
+  - term: Maru
+    says: >-
+      The word that ends a Japanese merchant ship's name (Nittatsu Maru). A "Maru" in the records is a merchant ship,
+      or one taken over by the Navy.
+    source: https://archive.org/details/oni-208-j; https://archive.org/details/ONI222JTheJapaneseNavy/page/n36/mode/1up
+  - term: kaibokan
+    says: >-
+      "Sea defence ship": the Japanese Navy's escort ships, which the US Navy classed as frigates (PF). Most of the
+      convoys here were guarded by them.
+    source: https://archive.org/details/ONI222JTheJapaneseNavy/page/n8/mode/1up
+
+  # ── Submarines and their attacks ─────────────────────────────────────────────────────────────────────
+  - term: angle on the bow
+    says: >-
+      The submarine's bearing as seen from the target: measured from the target's bow, 0° to 180°, to starboard or
+      port. 0° means the target is heading straight for the submarine.
+    source: usf-25a/4107
+  - term: track angle
+    says: >-
+      The angle at which the torpedo's track crosses the target's: measured from the target's bow, 0° to 180°, to
+      starboard or port. A 90° track hits square on the beam.
+    source: usf-25a/4107
+  - term: gyro angle
+    says: >-
+      The turn set into a torpedo before firing, so that it swings onto its course after leaving the tube: measured
+      from the submarine's bow, 0° to 360° clockwise (a straight shot from a stern tube is 180°).
+    source: usf-25a/4107
+  - term: TDC
+    says: >-
+      Torpedo Data Computer, the machine in the conning tower that kept the target's course, speed and range up to date
+      and set each torpedo's gyro angle.
+    source: https://maritime.org/doc/tdc/index.htm; usf-25a/2403
+  - term: TBT
+    says: >-
+      Target Bearing Transmitter, a sight on the bridge that sent the target's bearing to the TDC, for attacks on the
+      surface at night.
+    source: https://maritime.org/doc/tdc/index.htm; rg367-74802746/p21
+  - term: SJ
+    match: [SJ radar]
+    says: >-
+      The submarines' surface-search radar, which found ships at night and gave their range for the attack.
+    source: opnav-29-p1000/S; usf-25a/2403
+  - term: PPI
+    match: [P.P.I.]
+    says: >-
+      Plan Position Indicator, the round radar screen that drew the contacts around the ship as on a map.
+    source: opnav-29-p1000/P; usf-25a/2404
+  - term: periscope depth
+    says: >-
+      The depth at which a submarine could look through her periscope: about 60 feet for these boats (SEAHORSE fired at
+      58 to 66 feet).
+    source: usf-25a/1221; rg367-74845019/p29
+  - term: lifeguard
+    match: [lifeguard duty, lifeguard station]
+    says: >-
+      "Lifeguard duty": a submarine stationed off an enemy coast during an air strike to rescue aviators who came down
+      at sea.
+    source: usf-25a/3901
+  - term: coordinated attack group
+    match: [wolfpack, wolfpacks, wolf pack, wolf packs]
+    says: >-
+      Two or more submarines hunting together under one commander and sharing contacts by radio, so that a convoy
+      could be attacked from several sides: what came to be called a wolfpack.
+    source: usf-25a/1117
+  - term: Mark 14
+    match: [Mk 14]
+    says: >-
+      The US Navy's standard submarine torpedo, steam-driven, with a high and a low speed ("Power: High" on the attack
+      sheets).
+    source: https://maritime.org/doc/torpedo/index.htm
+  - term: Mark 23
+    match: [Mk 23]
+    says: >-
+      A Mark 14 with one speed only, so the attack sheets give it no power setting.
+    source: https://maritime.org/doc/torpedo/index.htm
+  - term: Mark 18
+    match: [Mk 18]
+    says: >-
+      An electric torpedo: slower than the Mark 14, but it left no wake of bubbles to show where it came from.
+    source: https://maritime.org/doc/pdf/torp-mk18-tactical.pdf
 
   # ── Aircraft and the air war ─────────────────────────────────────────────────────────────────────────
   - term: AI radar
     says: >-
-      Airborne Interception radar, a night fighter's own radar. Ground control brought the fighter near a bomber; the
-      AI set found it for the last few miles.
+      Airborne Intercept radar, a night fighter's own radar, for finding a bomber in the dark once ground control had
+      brought the fighter near it.
+    source: opnav-29-p1000/A
   - term: GCI
     says: >-
       Ground-controlled interception, a ground radar station directing a night fighter onto a raider.
+    source: opnav-29-p1000/G
   - term: Beaufighter
     match: [Beaufighters]
     says: >-
-      A British twin-engined heavy fighter, flown at night with AI radar.
+      The Bristol Beaufighter, a British twin-engined fighter.
+    source: fm-30-30/n92
   - term: MACR
     says: >-
-      Missing Air Crew Report, filed for every US Army Air Forces aircraft lost, with the crew's and witnesses'
+      Missing Air Crew Report, filed for each US Army Air Forces aircraft lost, with the crew's and witnesses'
       statements.
+    source: rg92-91150796/p09
   - term: Suisei
     says: >-
       The Yokosuka D4Y, a Japanese Navy carrier dive bomber, called "Judy" by the Allies.
+    source: https://www.ibiblio.org/hyperwar/USN/ref/KYE/CINCPAC-105-45/index.html
     see: silhouettes.html
   - term: Judy
     says: >-
       The Allies' code name for the Yokosuka D4Y Suisei dive bomber.
+    source: https://www.ibiblio.org/hyperwar/USN/ref/KYE/CINCPAC-105-45/index.html
     see: silhouettes.html
   - term: Zeke
     says: >-
       The Allies' code name for the Mitsubishi A6M Zero fighter.
+    source: https://www.ibiblio.org/hyperwar/USN/ref/KYE/CINCPAC-105-45/index.html
     see: silhouettes.html
   - term: Saiun
     says: >-
-      The Nakajima C6N, a fast Japanese Navy reconnaissance plane, called "Myrt" by the Allies.
+      The Nakajima C6N, a fast Japanese Navy reconnaissance plane, called "Myrt" by the Allies (a secondary source:
+      no wartime list with the name was found).
+    source: https://en.wikipedia.org/wiki/Nakajima_C6N
   - term: Kikusui
     says: >-
-      "Floating chrysanthemum": the ten mass kamikaze attacks on the fleet at Okinawa, April to June 1945. Kikusui No.
-      1 was 6–7 April.
+      "Floating chrysanthemum" (菊水): the Japanese Navy's numbered mass kamikaze attacks on the fleet at Okinawa in
+      1945. Kikusui No. 1 began on 6 April.
+    source: jacar:C13120531300 p02
   - term: JV 44
     says: >-
-      Jagdverband 44, the Luftwaffe's Me 262 jet-fighter unit led by Adolf Galland in the war's last weeks.
+      Jagdverband 44, the Luftwaffe's Me 262 jet-fighter unit led by Adolf Galland in the war's last weeks (a secondary
+      source).
+    source: https://en.wikipedia.org/wiki/Jagdverband_44
   - term: Me 262
     says: >-
-      The Messerschmitt Me 262, the German twin-jet fighter.
+      The Messerschmitt Me 262, the German twin-jet fighter (a secondary source).
+    source: https://en.wikipedia.org/wiki/Messerschmitt_Me_262
+  - term: Ju 88
+    says: >-
+      The Junkers Ju 88, a German twin-engined medium bomber, also used as a fighter (the recognition manual's
+      "bomber-fighter").
+    source: fm-30-30/n118
+    see: silhouettes.html
   - term: RAF
     says: >-
       Royal Air Force.
+    source: opnav-29-p1000/R
+
+  # ── The other side's records and the archives ────────────────────────────────────────────────────────
+  - term: Luftwaffe
+    says: >-
+      The German Air Force.
+    source: https://www.ibiblio.org/hyperwar/Glossary/L.html
+  - term: KTB
+    match: [Kriegstagebuch]
+    says: >-
+      Kriegstagebuch, a German war diary, such as the Naval Staff's, kept day by day.
+    source: https://archive.org/details/wardiarygermann451943germ
+  - term: JACAR
+    says: >-
+      The Japan Center for Asian Historical Records, the National Archives of Japan's online archive, where the Japanese
+      Navy's war diaries and action reports cited here are kept.
+    source: https://www.jacar.archives.go.jp/
   - term: NARA
     says: >-
       The US National Archives and Records Administration, where most of these records are kept.
+    source: https://www.archives.gov/about

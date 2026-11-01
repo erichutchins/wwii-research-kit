@@ -1,8 +1,8 @@
 // The glossary: explains the records' abbreviations and terms, and links the ships, without crowding the page.
-// Reads reference/glossary.yml (hand-edited; its header says how) and records/ships.json. Only the first use of a term
-// on the page is marked, including what the page's script draws later (lists, panels, steps): a dotted underline, no
-// colour. Pointing at it, focusing it or tapping it opens a small card with the explanation and, for a
-// ship, a link to its track. Skipped: links, buttons, form controls, headings, the nav, the footer, SVG, Japanese,
+// Reads reference/glossary.json (built by tools/build_glossary.py from the hand-edited glossary.yml, whose header says
+// how) and records/ships.json. Only the first use of a term on the page is marked, including what the page's script draws later (lists, panels, steps): a dotted underline, no
+// colour. Pointing at it, focusing it or tapping it opens a small card with the explanation, its source (linked) and,
+// for a ship, a link to its track. Skipped: links, buttons, form controls, headings, the nav, the footer, SVG, Japanese,
 // the map tooltips (#tip), and anything inside [data-no-gloss].
 // Paths are relative to this script, so the family pages (which load it as kit/site/glossary.js) work too.
 (() => {
@@ -21,24 +21,17 @@
       color: var(--text-primary, var(--ink, #1d1d1b)); background: var(--surface-1, var(--paper, var(--page, #fcfcf9)));
       border: 1px solid var(--border, var(--rule, #e1dfd5)); border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.12); }
     .gloss-card b { display: block; font-weight: 600; margin-bottom: 2px; }
-    .gloss-card a { color: inherit; display: inline-block; margin-top: 4px; }`;
+    .gloss-card a { color: inherit; display: inline-block; margin-top: 4px; }
+    .gloss-card .gloss-src { display: block; margin-top: 5px; font-size: 13px; color: var(--text-secondary, var(--muted, #5f5e5a)); }
+    .gloss-card .gloss-src a { margin-top: 0; }`;
   document.head.append(style);
 
+  // if glossary.json is missing, the ships are still linked and the console says why the terms aren't explained
   const ready = Promise.all([
-    fetch(new URL("reference/glossary.yml", KIT)).then(r => r.ok ? r.text() : "").catch(() => ""),
+    fetch(new URL("reference/glossary.json", KIT)).then(r => r.ok ? r.json() : Promise.reject(new Error(r.status)))
+      .catch(err => { console.warn(`glossary.json didn't load, so terms aren't explained: ${err.message}`); return {}; }),
     fetch(new URL("records/ships.json", KIT)).then(r => r.ok ? r.json() : []).catch(() => []),
-    window.jsyaml ? null : new Promise(res => {
-      const s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js";
-      s.onload = s.onerror = res; document.head.append(s);
-    }),
-  ]).then(([yml, ships]) => {
-    let g = {};
-    // a mistake in glossary.yml leaves the ships linked and says where the mistake is, rather than breaking the page
-    try { g = yml && window.jsyaml ? jsyaml.load(yml) || {} : {}; }
-    catch (err) { console.warn(`glossary.yml didn't load, so terms aren't explained: ${err.message}`); }
-    return build(g, ships);
-  });
+  ]).then(([g, ships]) => build(g, ships));
 
   const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const exact = s => /[A-Z]{2}/.test(s);          // AAA, CP, Med Det, BANG: match exactly; ordinary words ignore case
@@ -47,8 +40,12 @@
   // name in capitals as the reports type it, and the bare name only where glossary.yml's ships.bare allows it.
   function build(g, ships) {
     const entries = [];
-    for (const t of g.terms || []) entries.push({ title: t.term, says: t.says, see: t.see && new URL(t.see, HERE).href,
-      seeText: "More", forms: [t.term, ...(t.match || [])] });
+    for (const t of g.terms || []) {
+      entries.push({ title: t.term, says: t.says, see: t.see && new URL(t.see, HERE).href,
+        seeText: "More", sources: t.sources || [], forms: [t.term, ...(t.match || [])] });
+      // phrases that contain the term but mean something else ("AP Hill"): found first (they're longer), never marked
+      if (t.unless?.length) entries.push({ skip: true, forms: t.unless });
+    }
     const bare = new Set(g.ships?.bare || []);
     const here = new URLSearchParams(location.search).get("ship");
     for (const s of ships) {
@@ -99,7 +96,7 @@
       let at = 0, m;
       while ((m = G.re.exec(text))) {
         const e = G.find(m[1]);
-        if (!e || here.has(e) || seen.get(e)?.isConnected) continue;
+        if (!e || e.skip || here.has(e) || seen.get(e)?.isConnected) continue;
         here.add(e);
         parts.push(text.slice(at, m.index));
         const span = document.createElement("span");
@@ -117,14 +114,26 @@
   // The card: one, reused; hover or focus opens it, tap toggles it, Escape or a tap elsewhere closes it.
   const card = document.createElement("div");
   card.className = "gloss-card"; card.setAttribute("role", "tooltip"); card.hidden = true;
-  let owner = null, hideTimer = null;
+  let owner = null, hideTimer = null, shownAt = 0;
   function show(span) {
     clearTimeout(hideTimer);
+    if (owner !== span || card.hidden) shownAt = Date.now();
     const e = span.__gloss; owner = span;
     card.replaceChildren();
     const b = document.createElement("b"); b.textContent = e.title;
     card.append(b, document.createTextNode(e.says || ""));
     if (e.see) { const a = document.createElement("a"); a.href = e.see; a.textContent = `${e.seeText} →`; card.append(document.createElement("br"), a); }
+    if (e.sources?.length) {
+      const src = document.createElement("span"); src.className = "gloss-src"; src.append("Source: ");
+      e.sources.forEach((s, i) => {
+        const a = document.createElement("a"); a.href = s.href; a.target = "_blank"; a.rel = "noopener";
+        // a second page of the same source reads "another page", not its name again
+        a.textContent = e.sources.slice(0, i).some(p => p.short === s.short) ? "another page" : s.short;
+        if (s.title) a.title = s.title;
+        src.append(...(i ? ["; ", a] : [a]));
+      });
+      card.append(src);
+    }
     if (!card.isConnected) document.body.append(card);
     card.hidden = false;
     const r = span.getBoundingClientRect(), w = card.offsetWidth, h = card.offsetHeight;
@@ -139,7 +148,9 @@
   document.addEventListener("focusout", ev => { if (ev.target.classList?.contains("gloss")) hide(); });
   document.addEventListener("click", ev => {
     const s = ev.target.closest?.(".gloss");
-    if (s) { ev.preventDefault(); ev.stopPropagation(); if (owner === s && !card.hidden) { card.hidden = true; owner = null; } else show(s); return; }
+    // a tap on a phone fires mouseover (which opens the card) just before click: that click must not close it again
+    if (s) { ev.preventDefault(); ev.stopPropagation();
+      if (owner === s && !card.hidden && Date.now() - shownAt > 500) { card.hidden = true; owner = null; } else show(s); return; }
     if (!ev.target.closest?.(".gloss-card")) { card.hidden = true; owner = null; }
   }, true);
   document.addEventListener("keydown", ev => {

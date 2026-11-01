@@ -25,11 +25,13 @@ For film of a place and date, follow the skill `find-film` (rules in `records/fi
   - `inventory.yml`: every report, found or not, and how far along it is. Update it with the work.
   - Generated, never edited: `*.geojson`, `ships.json`, `seafloor.csv`, `weather.csv`,
     `dives.json`, `engagements/*/engagement.json`, `engagements/index.json`, `convoys/convoys.json`, `silhouettes.json`, `scans.json`, `citations.json`,
-    `army/army.json`, `army/seafloor.csv`, `seabees/seabees.json`.
+    `army/army.json`, `army/seafloor.csv`, `seabees/seabees.json`, `reference/glossary.json`.
 - `tools/`: Python. Standard library only, except scripts with a PEP 723 header (PyYAML,
   Pillow, PyMuPDF), run with `uv run`. `tools/records.py` finds the records and the cache.
 - `reference/jgrid/`: the Japanese kana grid keys and anchors (hand-edited; `guides/JAPANESE-GRID.md`).
 - `reference/lanes/lanes.yml`: the convoy lanes' ports and (assumed) waypoints, which a convoy's `route:` runs through.
+- `reference/glossary.yml`: the terms the pages explain on hover, each citing its source (`tools/build_glossary.py` writes
+  `glossary.json`, which `site/glossary.js` reads).
 - `site/`: static pages, D3 v7 from a CDN, no build step. `config.js` holds the paths.
 - `sources/`: downloaded scans and caches. **Git-ignored. Never commit.**
 
@@ -74,6 +76,7 @@ uv run tools/build_seabees.py                 # records/seabees/seabees.json (af
 uv run tools/build_silhouettes.py             # records/silhouettes/silhouettes.json (then build_engagement.py)
 uv run tools/trace_silhouette.py PLATE.png --crop X Y W H [--symmetric] [--open 2] --preview /tmp/p.png   # trace a plate
 uv run tools/build_engagement.py             # engagements and convoys -> their JSON; `check` in CI; 0 problems
+uv run tools/build_glossary.py               # reference/glossary.yml -> glossary.json; every term cites its source
 node site/engage.test.js                      # the engagement pages' shared computation (engage.js)
 python3 tools/nara.py find "Bang" | fetch <id> | index
 uv run --with pillow python3 tools/crop_pages.py sheet|halves|zoom|heads ...
@@ -90,7 +93,8 @@ python3 tools/serve.py                        # http://localhost:8385/site/
 
 After editing any CSV: `check_track.py all --geojson`, `build_dives.py`, `check_sources.py`; after `records/army/`,
 `build_army.py` (and `army_seafloor.py` if a crossing changed); after `records/seabees/`, `build_seabees.py`; after
-an engagement, a convoy, a patrol's japanese.yml or claims.yml, or any track, `build_engagement.py`.
+an engagement, a convoy, a patrol's japanese.yml or claims.yml, or any track, `build_engagement.py`; after
+`reference/glossary.yml` or `records/SOURCES.yml`, `build_glossary.py`.
 
 ## Pages
 

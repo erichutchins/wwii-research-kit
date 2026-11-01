@@ -12,6 +12,7 @@ own say why in UNCITED. The `sources:` lists in dives.yml and silhouettes.yml mu
 records/inventory.yml must agree with the folders: every patrol folder listed as transcribed,
 verified or mapped, and every patrol so listed present. And every ship.yml `silhouette:` must name a
 ship profile in silhouettes.yml.
+And every glossary entry (reference/glossary.yml) cites its source, checked by build_glossary.py.
 
   uv run tools/check_sources.py            check; exits 1 on an unresolved citation or an uncited row
   uv run tools/check_sources.py --fetch    also look up every cited National Archives item's title
@@ -159,7 +160,16 @@ def main():
         if m:
             nara[m[1]].add(int(m[2]))
     files += yml
-    print(f"{sum(used.values())} citations in {len(files)} files and the engagements, {len(nara)} National Archives items")
+    # the glossary (reference/glossary.yml): every entry cites where its explanation comes from, checked by build_glossary
+    import build_glossary
+    _, gproblems, gcited = build_glossary.build()
+    bad += [f"glossary: {p}" for p in gproblems]
+    for c in gcited:
+        used[resolve(c)] += 1
+        m = re.match(r"^rg\d+-(\d+)/p(\d+)$", c)
+        if m:
+            nara[m[1]].add(int(m[2]))
+    print(f"{sum(used.values())} citations in {len(files)} files, the engagements and the glossary, {len(nara)} National Archives items")
     for sid, n in used.most_common():
         print(f"  {n:6}  {sid}")
     unused = [s for s in sources if s not in used and "match" in sources[s]]
