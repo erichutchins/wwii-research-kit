@@ -34,6 +34,14 @@
   dl.fields dt { margin-top: 8px; }
   dl.fields dd { margin-left: 18px; }
   .src { color: var(--text-muted); }
+  math { font-size: 1.08em; }
+  math[display="block"] { margin: 10px 0 12px; }
+  dl.syms dt { float: left; clear: left; width: 8em; margin: 4px 0 0; }
+  dl.syms dd { margin: 4px 0 0 8.5em; }
+  dl.syms dt math { font-size: 1em; }
+  .working { padding: 0 14px 10px; color: var(--text-secondary); font-size: 15px; }
+  .working math { color: var(--text-primary); }
+  @media (max-width: 600px) { dl.syms dt { float: none; width: auto; } dl.syms dd { margin-left: 14px; } math[display="block"] { overflow-x: auto; overflow-y: hidden; } }
 </style>
 </head>
 <body class="viz-root">
@@ -103,6 +111,42 @@
     example below both call. It leaves out the advance and transfer and the parallax, so on an angled shot it is a
     degree or two and some tens of yards from what the computer set (inferred).</p>
 
+
+  <h2>The equations</h2>
+  <p>The same triangle, written out. These are worked from the doctrine's definitions above, and they are the
+    equations <span class="mono">engage.js</span> computes; the Navy's own working, in the computer, is in OP 1056's
+    section on the angle solver, which is not online in full. The symbols:</p>
+  <dl class="fields syms">
+    <dt><math><msub><mi>C</mi><mi>o</mi></msub><mo>,</mo><msub><mi>C</mi><mi>t</mi></msub><mo>,</mo><msub><mi>C</mi><mi>&#x3C4;</mi></msub></math></dt><dd>the courses of own boat, the target and the torpedo, in degrees true;</dd>
+    <dt><math><msub><mi>V</mi><mi>t</mi></msub><mo>,</mo><msub><mi>V</mi><mi>&#x3C4;</mi></msub></math></dt><dd>the target's and the torpedo's speeds, in knots, and <math><mi>k</mi><mo>=</mo><mfrac><mrow><msub><mi>V</mi><mi>t</mi></msub></mrow><mrow><msub><mi>V</mi><mi>&#x3C4;</mi></msub></mrow></mfrac></math> their ratio;</dd>
+    <dt><math><mi>R</mi></math></dt><dd>the range at firing; <math><mi>&#x3B2;</mi></math> the target's relative bearing (from own bow);</dd>
+    <dt><math><mi>AOB</mi><mo>,</mo><mi>L</mi><mo>,</mo><mi>TA</mi></math></dt><dd>the angle on the bow, the lead angle and the track angle; <math><mi>G</mi></math> the gyro angle.</dd>
+  </dl>
+  <p><b>1. Where the torpedo goes.</b> Its course is own course plus the gyro angle, and the track angle is the
+    angle between the target's head and the torpedo coming at it (starboard when it is positive):</p>
+  <math display="block"><msub><mi>C</mi><mi>&#x3C4;</mi></msub><mo>=</mo><msub><mi>C</mi><mi>o</mi></msub><mo>+</mo><mi>G</mi></math>
+  <math display="block"><mi>TA</mi><mo>=</mo><msub><mi>C</mi><mi>&#x3C4;</mi></msub><mo>+</mo><mn>180°</mn><mo>&#x2212;</mo><msub><mi>C</mi><mi>t</mi></msub></math>
+  <p><b>2. The triangle.</b> Its angles add up to 180°: the lead at the boat, the angle on the bow at the target, and
+    180° less the track angle at the intercept. So</p>
+  <math display="block"><mi>TA</mi><mo>=</mo><mi>AOB</mi><mo>+</mo><mi>L</mi></math>
+  <p><b>3. Arriving together.</b> In the time <i>t</i> the torpedo takes to reach the intercept, the torpedo runs
+    <math><msub><mi>V</mi><mi>&#x3C4;</mi></msub><mi>t</mi></math> and the target <math><msub><mi>V</mi><mi>t</mi></msub><mi>t</mi></math>.
+    Each side of the triangle is opposite one angle, so by the law of sines</p>
+  <math display="block"><mfrac><mrow><msub><mi>V</mi><mi>t</mi></msub><mi>t</mi></mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mspace width="0.22em"/><mi>L</mi></mrow></mfrac><mo>=</mo><mfrac><mrow><msub><mi>V</mi><mi>&#x3C4;</mi></msub><mi>t</mi></mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mspace width="0.22em"/><mi>AOB</mi></mrow></mfrac><mo>=</mo><mfrac><mrow><mi>R</mi></mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mspace width="0.22em"/><mi>TA</mi></mrow></mfrac></math>
+  <p>and the <b>lead angle</b> follows from the angle on the bow and the two speeds alone (the range drops out):</p>
+  <math display="block"><mi>sin</mi><mo>&#x2061;</mo><mspace width="0.22em"/><mi>L</mi><mo>=</mo><mi>k</mi><mspace width="0.18em"/><mi>sin</mi><mo>&#x2061;</mo><mspace width="0.22em"/><mi>AOB</mi></math>
+  <p>or, from the track angle instead, which is how <span class="mono">fireControl</span> works it from a sheet's typed
+    track:</p>
+  <math display="block"><mi>tan</mi><mo>&#x2061;</mo><mspace width="0.22em"/><mi>L</mi><mo>=</mo><mfrac><mrow><mi>k</mi><mspace width="0.18em"/><mi>sin</mi><mo>&#x2061;</mo><mspace width="0.22em"/><mi>TA</mi></mrow><mrow><mn>1</mn><mo>+</mo><mi>k</mi><mspace width="0.18em"/><mi>cos</mi><mo>&#x2061;</mo><mspace width="0.22em"/><mi>TA</mi></mrow></mfrac></math>
+  <p><b>4. The gyro angle.</b> The torpedo is aimed ahead of the target by the lead: to the right of its bearing when
+    the target shows its starboard side (it is crossing to the right), to the left when it shows its port side:</p>
+  <math display="block"><mi>G</mi><mo>=</mo><mi>&#x3B2;</mi><mo>&#xB1;</mo><mi>L</mi></math>
+  <p><b>5. The runs.</b> From the law of sines again, the torpedo's run, the time it takes and the target's run to the
+    intercept:</p>
+  <math display="block"><msub><mi>D</mi><mi>&#x3C4;</mi></msub><mo>=</mo><mfrac><mrow><mi>R</mi><mspace width="0.18em"/><mi>sin</mi><mo>&#x2061;</mo><mspace width="0.22em"/><mi>AOB</mi></mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mspace width="0.22em"/><mi>TA</mi></mrow></mfrac><mo>,</mo><mspace width="1em"/><mi>t</mi><mo>=</mo><mfrac><mrow><msub><mi>D</mi><mi>&#x3C4;</mi></msub></mrow><mrow><msub><mi>V</mi><mi>&#x3C4;</mi></msub></mrow></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>D</mi><mi>t</mi></msub><mo>=</mo><mfrac><mrow><mi>R</mi><mspace width="0.18em"/><mi>sin</mi><mo>&#x2061;</mo><mspace width="0.22em"/><mi>L</mi></mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mspace width="0.22em"/><mi>TA</mi></mrow></mfrac></math>
+  <p>with a knot taken as 2,025 yards an hour (a nautical mile), so a 46-knot torpedo runs about 26 yards a second. The
+    figure below shows the numbers going in, for whatever you set.</p>
+
   <h2>Set up a shot</h2>
   <p>The boat (blue) is at the bottom, heading up the page, with the target dead ahead at the range you set. Choose the
     target's speed and the angle on the bow; the figure works out the gyro angle for a bow shot, the track angle and
@@ -116,6 +160,8 @@
         <input type="range" id="aob" min="0" max="180" step="1" value="60"></label>
       <label>Range <output id="o-range"></output>
         <input type="range" id="range" min="500" max="4500" step="100" value="1500"></label>
+      <label>Own speed <output id="o-own"></output>
+        <input type="range" id="own" min="0" max="18" step="1" value="0"></label>
       <div><div class="filters" style="margin:0">
         <div class="seg" id="side-seg" role="group" aria-label="Side of the target's bow"><button data-v="S" aria-pressed="true">Starboard</button><button data-v="P" aria-pressed="false">Port</button></div>
         <div class="seg" id="power-seg" role="group" aria-label="Torpedo speed"><button data-v="46" aria-pressed="true">46 kn</button><button data-v="31" aria-pressed="false">31 kn</button></div>
@@ -127,15 +173,46 @@
       <span><svg width="12" height="12"><rect x="1" y="3" width="10" height="6" fill="var(--series-attack)"/></svg>The target at firing</span>
       <span><svg width="26" height="12"><line x1="0" y1="6" x2="26" y2="6" stroke="var(--series-attack)" stroke-width="2" stroke-dasharray="6 4"/></svg>Its run to the intercept</span>
       <span><svg width="26" height="12"><line x1="0" y1="6" x2="26" y2="6" stroke="var(--text-secondary)" stroke-dasharray="1 3"/></svg>Line of sight at firing</span>
+      <span><svg width="26" height="12"><line x1="0" y1="6" x2="26" y2="6" stroke="var(--series-track)" stroke-width="1.5" stroke-dasharray="2 4"/></svg>The boat, while the torpedo runs</span>
     </div>
     <div class="tri-wrap"><svg id="tri" role="img" aria-label="The attack triangle: the boat, the target at firing and the intercept point"></svg></div>
     <div class="readout" id="readout" aria-live="polite"></div>
+    <div class="working" id="working"></div>
     <div class="caption" id="tri-caption"></div>
   </div>
   <p class="muted">Try it: with a 10-knot target at 60° starboard, the torpedo leads by about 11°. Raise the angle on the
     bow to 90° and the lead is greatest for that speed. Swing the angle towards 0° (the target coming straight at you) or
     180° (going away) and the lead shrinks, but the track angle goes to 0° or 180°, which the doctrine counts poor
     shots: "Track angles between 70° and 110° are considered best for all around coverage" (USF 25(A) p. 53).</p>
+
+
+  <h2>If the boat is moving</h2>
+  <p>She usually was: the doctrine has the Torpedo Data Computer kept ready with "own course and speed automatic"
+    <span class="src">(USF 25(A) p. 59)</span>, the submarine's speed being "the speed through the water as
+    determined by underwater log" <span class="src">(p. 38)</span>. Her motion matters in
+    three places, and the triangle above is not one of them (the reasoning here is ours, from the definitions):</p>
+  <ul>
+    <li><b>Not at the moment of firing.</b> Once it is running, the torpedo goes through the water at its own speed on
+      its own course, wherever the boat goes next. The triangle is between the torpedo, from where it was launched, and
+      the target, so own speed does not appear in it. Set an own speed in the figure: the boat moves on (dotted) while
+      the torpedo runs, and the gyro angle, lead and run do not change.</li>
+    <li><b>Before firing: the position keeper.</b> Bearing and range change because both ships move. The position
+      keeper ran the target's position forward from the last observation using both ships' courses and speeds. In a
+      frame fixed on own boat, the target moves at the difference of the two velocities:
+      <math display="block"><mfrac><mrow><mi>d</mi><mi>x</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><msub><mi>V</mi><mi>t</mi></msub><mi>sin</mi><mo>&#x2061;</mo><mspace width="0.22em"/><msub><mi>C</mi><mi>t</mi></msub><mo>&#x2212;</mo><msub><mi>V</mi><mi>o</mi></msub><mi>sin</mi><mo>&#x2061;</mo><mspace width="0.22em"/><msub><mi>C</mi><mi>o</mi></msub><mo>,</mo><mspace width="1em"/><mfrac><mrow><mi>d</mi><mi>y</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><msub><mi>V</mi><mi>t</mi></msub><mi>cos</mi><mo>&#x2061;</mo><mspace width="0.22em"/><msub><mi>C</mi><mi>t</mi></msub><mo>&#x2212;</mo><msub><mi>V</mi><mi>o</mi></msub><mi>cos</mi><mo>&#x2061;</mo><mspace width="0.22em"/><msub><mi>C</mi><mi>o</mi></msub></math>
+      <math display="block"><mi>R</mi><mo>=</mo><msqrt><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msup><mi>y</mi><mn>2</mn></msup></msqrt><mo>,</mo><mspace width="1em"/><mtext>true bearing</mtext><mo>=</mo><mi>atan2</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>)</mo><mo>,</mo><mspace width="1em"/><mi>&#x3B2;</mi><mo>=</mo><mtext>true bearing</mtext><mo>&#x2212;</mo><msub><mi>C</mi><mi>o</mi></msub></math>
+      (east and north, in yards). The bearings it produced this way were the doctrine's "generated bearings", which a
+      boat could fire on between looks, "from recent periscope observations" <span class="src">(USF 25(A) p. 52)</span>.
+      If own course or speed was wrong, so were they (inferred). The computer's own equations are on OP 1056 p. 22,
+      not yet read.</li>
+    <li><b>Between the torpedoes of a spread.</b> The boat keeps moving between shots, so each torpedo starts a little
+      farther on: at 3 knots she makes about 1.7 yards a second, some 14 yards between torpedoes fired 8 seconds apart.
+      The worked example below places each torpedo where the boat was when it was fired, from the sheet's own course
+      and speed.</li>
+    <li><b>Turning to fire.</b> The doctrine also obtains a divergent spread "by swinging the submarine"
+      <span class="src">(p. 53)</span>: the boat turns between shots and the gyro angles stay put, so the torpedoes'
+      courses fan out with her heading.</li>
+  </ul>
 
   <h2>Reading an attack data sheet</h2>
   <p>Each attack in a war patrol report has a two-page data sheet. The first page gives the time and position, the

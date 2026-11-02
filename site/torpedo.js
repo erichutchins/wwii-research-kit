@@ -12,9 +12,9 @@
     el.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); draw(); });
     return () => el.querySelector("[aria-pressed=true]").dataset.v; };
   const side = seg("side-seg"), power = seg("power-seg");
-  ["speed", "aob", "range"].forEach(id => $(id).addEventListener("input", draw));
+  ["speed", "aob", "range", "own"].forEach(id => $(id).addEventListener("input", draw));
 
-  function solve(speed, aob, sideV, range, knots) {
+  function solve(speed, aob, sideV, range, knots, own = 0) {
     const signed = sideV === "S" ? aob : -aob;
     // AOB = bearing of the boat from the target, from the target's head; the target bears 000 from the boat
     const targetCourse = (180 - signed + 360) % 360;
@@ -27,7 +27,7 @@
     }
     gyro = ((gyro % 360) + 360) % 360;
     const fc = Engage.fireControl({ ownCourse: 0, gyro, targetCourse, targetSpeed: speed, torpedoSpeed: knots });
-    const row = { time: "1200", tube: "1", own_course: "000", own_speed: "0", own_depth: "60", target_course: pad3(targetCourse),
+    const row = { time: "1200", tube: "1", own_course: "000", own_speed: String(own), own_depth: "60", target_course: pad3(targetCourse),
       target_speed: String(speed), target_range: String(range), track: "", gyro: gyro.toFixed(3), power: String(knots),
       hit: "Hit", torpedo: "14", since_first: "0", offset: "" };
     const A = Engage.attackSheet([row], { length: 1, beam: 1 });   // a point target: the run is to the intercept itself
@@ -36,16 +36,18 @@
 
   const svg = d3.select("#tri");
   function draw() {
-    const speed = +$("speed").value, aob = +$("aob").value, range = +$("range").value, sv = side(), knots = +power();
+    const speed = +$("speed").value, aob = +$("aob").value, range = +$("range").value, sv = side(), knots = +power(), own = +$("own").value;
+    $("o-own").textContent = own ? `${own} kn` : "stopped";
     $("o-speed").textContent = `${speed} kn`; $("o-aob").textContent = `${aob}° ${sv === "S" ? "starboard" : "port"}`;
     $("o-range").textContent = `${fyd(range)} yd`;
-    const S = solve(speed, aob, sv, range, knots), t = S.t, T = S.T;
+    const S = solve(speed, aob, sv, range, knots, own), t = S.t, T = S.T;
+    const boatAtHit = S.A.ownAt(t.run).p;   // where the boat is when the torpedo arrives (engage.js: steady course and speed)
     // drawn at the width it is shown, so the labels keep their size on a phone
     const W = Math.round(Math.min(720, Math.max(320, svg.node().parentNode.clientWidth || 720))), H = Math.round(W < 500 ? W * 1.05 : W * 0.72), m = W < 500 ? 70 : 40;
     svg.attr("viewBox", `0 0 ${W} ${H}`);
     // the intercept: where the torpedo reaches the target
     const hit = [t.from[0] + t.v[0] * t.run, t.from[1] + t.v[1] * t.run];
-    const pts = [[0, 0], T.p0, hit];
+    const pts = [[0, 0], T.p0, hit, boatAtHit];
     const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
     const span = Math.max(d3.max(xs) - d3.min(xs), d3.max(ys) - d3.min(ys), 600) * 1.15;
     const k = Math.min((W - 2 * m) / span, (H - 2 * m) / span);
@@ -62,6 +64,8 @@
     line([0, 0], T.p0, "sight");
     line(T.p0, hit, "tgt-path");
     line([0, 0], hit, "torp");
+    if (own) { line([0, 0], boatAtHit, "torp-pre"); const Bh = P(boatAtHit);
+      svg.append("path").attr("class", "boat").attr("opacity", 0.45).attr("transform", `translate(${Bh[0]},${Bh[1]})`).attr("d", "M0,-11 L6,6 L0,3 L-6,6 Z"); }
     // the angles: at the boat (lead), at the target (angle on the bow), at the intercept (180 - track)
     const ang = (o, a, b, label, r = 46) => {
       const O = P(o), A = P(a), Bp = P(b);
@@ -100,6 +104,16 @@
       ["Gyro angle", gyroText], ["Track angle", `${f1(S.fc.track)}° ${S.fc.side}`], ["Lead angle", `${f1(Math.abs(S.fc.lead))}°`],
       ["Target course", `${pad3(S.targetCourse)}°`], ["Torpedo run", `${fyd(t.runYd)} yd`], ["Time of run", `${Math.round(t.run)} s`]
     ].map(([a, b]) => `<div><i>${a}</i><b>${b}</b></div>`).join("");
+    // the working: the numbers going into the equations above (engage.js's results, shown against the formulas)
+    const rad = d => d * Math.PI / 180, kk = speed / knots, L = Math.abs(S.fc.lead);
+    const mth = x => `<math>${x}</math>`, n = x => `<mn>${x}</mn>`, o = x => `<mo>${x}</mo>`, sinm = "<mi>sin</mi><mo>&#x2061;</mo><mspace width='0.22em'/>";
+    $("working").innerHTML = speed === 0 ? "A stopped target: no lead, and the gyro angle is the target's bearing." :
+      `The working: ${mth(`<mi>k</mi>${o("=")}<mfrac>${n(speed)}${n(knots)}</mfrac>${o("=")}${n(kk.toFixed(3))}`)};
+       ${mth(`${sinm}<mi>L</mi>${o("=")}${n(kk.toFixed(3))}${o("&#xD7;")}${sinm}${n(aob + "°")}${o("=")}${n((kk * Math.sin(rad(aob))).toFixed(3))}`)},
+       so ${mth(`<mi>L</mi>${o("=")}${n(f1(L) + "°")}`)};
+       ${mth(`<mi>TA</mi>${o("=")}${n(aob + "°")}${o("+")}${n(f1(L) + "°")}${o("=")}${n(f1(S.fc.track) + "°")}`)};
+       ${mth(`<msub><mi>D</mi><mi>&#x3C4;</mi></msub>${o("=")}<mfrac><mrow>${n(fyd(range))}${o("&#xD7;")}${sinm}${n(aob + "°")}</mrow><mrow>${sinm}${n(f1(S.fc.track) + "°")}</mrow></mfrac>${o("=")}${n(fyd(t.runYd) + " yd")}`)}.`
+      + (own ? ` While it runs, the boat makes ${fyd(Math.hypot(boatAtHit[0], boatAtHit[1]))} yards at ${own} knots; nothing above changes.` : "");
     const notes = [limit, runOk, t.runYd < 500 ? "under the doctrine's 500-yard minimum run (USF 25(A) p. 50)" : ""].filter(Boolean);
     $("tri-caption").textContent = `Own course 000, target bearing 000 at ${fyd(range)} yards, on course ${pad3(S.targetCourse)} at ${speed} knots; torpedo at ${knots} knots.`
       + (notes.length ? " Note: " + notes.join("; ") + "." : "") + " Advance, transfer and parallax are left out.";
