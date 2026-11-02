@@ -619,4 +619,6 @@ neuburg().catch(failed("#fig-neuburg", "figure"));
 fleet().catch(failed("#fleet", "list"));
 const STAGED = stages();
 STAGED.catch(failed("#stages", "list"));
+// the nav's stage links (index.html#stage-italy) land on an empty div until the stages are drawn: scroll again then
+STAGED.then(() => { if (/^#stage-/.test(location.hash)) document.querySelector(location.hash)?.scrollIntoView(); });
 lists().catch(failed("#wanted", "list"));
