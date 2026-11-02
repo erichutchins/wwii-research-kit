@@ -63,7 +63,9 @@ new format is converted for good: no reader for the old one is kept.
    attack goes with which record, and how: `hit`, `miss`, `probable`, `possible`, `no_loss`); `check_crossrefs.py`
    prints the minutes and miles between each pair. The skill `find-the-other-side` is the method. A convoy gets its own
    `convoy.md`: route, voyage, ships, each cited.
-3. **`engagement.md`.** The participants (at most three with a US track: the page's checked colours), the window in
+3. **`engagement.md`.** The participants (at most three with a US track: the page's checked colours; an Army unit as
+   `kind: army` with its `unit:` from `army/units.csv`, and `basis: inferred` when no entry names it, so the pages' breadcrumb,
+   `site/chapter.js`, can follow it to its engagements and entries before and after), the window in
    GMT, map labels, and the story: a lede, then `##` sections (the outcome, the convoy as the boats saw it, reading the
    map, the clocks, the sources).
 4. **`events.yml`** for what belongs to the engagement alone: a boat's narrative entries (contact reports with `to:`,

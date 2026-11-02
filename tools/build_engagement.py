@@ -43,10 +43,12 @@ CONVOYS = RECORDS / "convoys"
 SCANS = json.load(open(RECORDS / "scans.json", encoding="utf-8"))
 SIL = json.load(open(RECORDS / "silhouettes" / "silhouettes.json", encoding="utf-8"))
 SIL_IDS = set(SIL["categories"]["shapes"]) | set(SIL["ships"]) | set(SIL["aircraft"])
+with open(RECORDS / "army" / "units.csv", encoding="utf-8", newline="") as f:
+    ARMY_UNITS = {r["unit"] for r in csv.DictReader(f)}   # a participant's `unit:` (followed from one engagement to the next)
 MAX_BOATS = 3   # the page's three categorical colours are checked for three boats; check again before a fourth
 
 FM = {"title", "short", "eyebrow", "theater", "clock", "window", "participants", "places"}
-PART = {"id", "name", "side", "kind", "sil", "hull", "co", "track", "convoy", "note"}
+PART = {"id", "name", "side", "kind", "sil", "hull", "co", "track", "convoy", "unit", "basis", "note"}
 EVENT = {"at", "placed", "side", "actor", "kind", "to", "from", "title", "words", "original", "source", "ref", "pos",
          "step", "basis", "note"}
 CLAIM = {"question", "answer", "weight", "source", "ref", "note"}
@@ -250,6 +252,10 @@ class Build:
                     p["alias"] = y["dir"].name
                 except SystemExit as e:
                     self.bad(w, str(e))
+            if p.get("basis") and p["basis"] not in BASIS:
+                self.bad(w, f"basis {p['basis']!r} is not one of {', '.join(sorted(BASIS))}")
+            if p.get("unit") and p["unit"] not in ARMY_UNITS:
+                self.bad(w, f"unit {p['unit']!r} is not in records/army/units.csv")
             if p.get("convoy") and p["convoy"] not in convoys:
                 self.bad(w, f"convoy {p['convoy']!r} has no records/convoys/{p['convoy']}/convoy.md")
             if p.get("sil") and p["sil"] not in SIL_IDS:
@@ -485,6 +491,9 @@ def build():
     engs = [b.engagement(d, convoys) for d in sorted(ENG.iterdir()) if (d / "engagement.md").exists()]
     index = sorted(({"id": e["id"], "title": e["title"], "short": e["short"], "theater": e["theater"],
                      "from": e["window"]["from"] if e["window"] else min((x["key"] for x in e["events"]), default=""),
+                     "to": e["window"]["to"] if e["window"] else max((x["key"] for x in e["events"]), default=""),
+                     "units": [{"unit": p["unit"], "name": p.get("name", p["id"]), "basis": p.get("basis", "reported")}
+                               for p in e["participants"] if p.get("unit")],
                      "participants": [p.get("name", p["id"]) for p in e["participants"]],
                      "boats": [p["name"] for p in e["participants"] if p.get("kind") == "submarine"],
                      "convoys": list(e["convoys"]), "box": e["box"]} for e in engs), key=lambda x: x["from"])

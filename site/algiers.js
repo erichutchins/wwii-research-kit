@@ -471,3 +471,9 @@ function buildSources(timeline, positions, claims) {
   ul.append("li").text("Silhouettes: " + sil.map(a => `${a.name.replace(/^JU/, "Ju").replace(/^BEAUFIGHTER$/, "Beaufighter")}, ${a.source}`).join("; ") + ".");
   d3.select("#sil-note").text("Map silhouettes are drawn to show the type, not to scale or at a recorded heading: the Ju 88 at 12 May points south because the record says it turned south; the others' headings are not recorded.");
 }
+
+// where this falls in Algiers to Germany (chapter.js): the engagement before and after, and Battery C's own
+{
+  const crumb = document.getElementById("crumb");
+  Chapter.crumb("algiers-1943", crumb).then(() => { crumb.hidden = !crumb.innerHTML; }, () => { crumb.hidden = true; });
+}

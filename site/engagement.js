@@ -9,6 +9,8 @@
   const [D, world] = await Promise.all([fetch(`${RECORDS}engagements/${id}/engagement.json`).then(r => r.json()),
     d3.json(EV.LAND_10M), SILHOUETTES]);
   const LAND = EV.land(world);
+  const crumb = document.getElementById("crumb");
+  Chapter.crumb(id, crumb).then(() => { crumb.hidden = !crumb.innerHTML; }, () => { crumb.hidden = true; });
 
   // ---------- the picker: every engagement, by theatre, in date order
   const THEATRES = { pacific: "Pacific", mediterranean: "Mediterranean", europe: "Europe" };
@@ -343,7 +345,8 @@
 
   // ---------- order of battle: the kit's silhouettes, true relative size where the library has the class
   function drawOOB() {
-    const us = PARTS.filter(p => p.side !== "jp" && !p.convoy), jp = PARTS.filter(p => p.side === "jp" && !p.convoy);
+    const us = PARTS.filter(p => p.side !== "jp" && !p.convoy && !p.unit), jp = PARTS.filter(p => p.side === "jp" && !p.convoy);
+    const army = PARTS.filter(p => p.unit), t0 = d3.utcFormat("%Y-%m-%d")(new Date(E.T(D.window?.from || d3.min(D.events, e => e.key)) || 0));
     const plate = (name, kind, silId, fill, extra = "", cls = "", title = "") => `<div class="plate ${cls}" title="${esc(title)}">${EV.sil(silId, fill, { ftPx: 0.42 })}<div class="nm">${esc(name)}</div><div class="kd">${esc(kind)}</div>${extra}</div>`;
     const usPlates = us.map(p => plate(p.name + (p.hull ? ` (${p.hull})` : ""), [p.co, p.track ? `record: ${p.track}` : p.note].filter(Boolean).join(" · "), p.sil || EV.category(p.kind), colour(p.id), "", "", EV.silWords(p.sil)));
     const convoyHTML = Object.values(D.convoys).map(c => {
@@ -357,7 +360,9 @@
         <p class="muted">Silhouettes are drawn to one scale, from the class's own recognition plate where the library has it (hover for which); otherwise the kind of ship only. Italic names come from a secondary source.</p>`;
     }).join("");
     const jpHTML = jp.length ? `<h3>The target</h3><div class="plates">${jp.map(p => plate(p.name, p.note || p.kind, p.sil || EV.category(p.kind), "var(--ink-3)", "", "", "As the boat identified it")).join("")}</div>` : "";
-    document.getElementById("oob").innerHTML = `<div class="pack"><h3>${us.length > 1 ? "US" : "The boat"}</h3><div class="plates">${usPlates.join("")}</div></div><div>${convoyHTML}${jpHTML}</div>`;
+    const armyHTML = army.length ? `<h3>The units</h3><ul class="units">${army.map(p => `<li><a href="army.html?unit=${encodeURIComponent(p.unit)}&amp;t=${t0}">${esc(p.name)}</a>${p.basis && p.basis !== "reported" ? ` <i>(${esc(p.basis)})</i>` : ""}${p.note ? ` <span class="muted">${esc(p.note)}</span>` : ""}</li>`).join("")}</ul>` : "";
+    const usHTML = us.length ? `<h3>${us.length > 1 ? "US" : us[0].kind === "submarine" ? "The boat" : "US"}</h3><div class="plates">${usPlates.join("")}</div>` : "";
+    document.getElementById("oob").innerHTML = `<div class="pack">${usHTML}${armyHTML}</div><div>${convoyHTML}${jpHTML}</div>`;
   }
 
   // ---------- time and playback

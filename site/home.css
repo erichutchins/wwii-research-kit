@@ -164,10 +164,21 @@ h1 { font: 400 clamp(40px, 5.8vw, 66px)/1.05 "Special Elite", var(--typed); marg
 .stage h3 { font-weight: 400; font-size: 34.5px; line-height: 1.15; margin: 0 0 6px; }
 .stage h3 .when { font-size: 22px; font-style: italic; color: var(--ink-2); }
 .stage p { margin: 4px 0 0; font-size: 19.5px; color: var(--ink-2); }
-.stage .ops .dates { color: var(--ink-3); font-size: 17px; white-space: nowrap; }
-.stage .ops .none { color: var(--ink-3); }
-.stage .pages { margin: 10px 0 0; padding-left: 20px; font-size: 19.5px; color: var(--ink-2); }
-.stage .pages li { margin: 3px 0; }
+/* a stage's spine: its campaigns in date order, each with its engagements (and an engagement outside any campaign) */
+.stage .spine { list-style: none; padding: 0; margin: 14px 0 0; font-size: 19.5px; }
+.stage .spine li { margin: 6px 0; }
+.stage .spine .dates { display: inline-block; min-width: 13.5em; color: var(--ink-3); font-size: 17px; }
+.stage .spine .camp > .name { color: var(--ink); }
+.stage .spine ul { list-style: none; padding: 0 0 0 1.4em; margin: 4px 0 8px; border-left: 1px solid var(--rule); }
+.stage .spine ul .dates { min-width: 12.1em; }
+.stage .spine .who { display: block; margin-left: 13.5em; font-size: 17px; color: var(--ink-3); }
+.stage .spine ul .who { margin-left: 12.1em; }
+.stage .none { color: var(--ink-3); }
+.stage .reading { font-size: 17.5px; margin-top: 10px; }
+@media (max-width: 640px) {
+  .stage .spine .dates { display: block; min-width: 0; }
+  .stage .spine .who, .stage .spine ul .who { margin-left: 0; }
+}
 .stage .also { margin-top: 16px; }
 
 /* Reference shelf and do-it-yourself */

@@ -92,6 +92,8 @@ button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible
 .oob .muted, .muted { color: var(--ink-3); font-size: 14.5px; }
 .plates { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px 16px; }
 .pack .plates { grid-template-columns: minmax(0, 1fr); }
+.oob .units { list-style: none; padding: 0; margin: 0 0 12px; font-size: 17px; }
+.oob .units li { margin: 4px 0; }
 .plate { display: grid; gap: 3px; align-content: end; }
 .plate .sil { width: 100%; max-width: 170px; height: auto; }
 .pack .plate { grid-template-columns: 170px minmax(0, 1fr); gap: 2px 12px; align-items: end; }

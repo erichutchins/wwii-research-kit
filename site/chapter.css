@@ -1,0 +1,26 @@
+/* The engagement pages' breadcrumb (chapter.js): where an engagement falls in Algiers to Germany, the engagement before
+   and after it, and each of its units' own before and after. Works with either page's variables (engage.css --ink...,
+   or viz.css's --text-...). */
+.crumb {
+  --c-ink: var(--ink, var(--text-primary)); --c-ink-2: var(--ink-2, var(--text-secondary));
+  --c-ink-3: var(--ink-3, var(--text-muted)); --c-rule: var(--rule, var(--border));
+  margin: 2px 0 18px; font: 17.5px/1.45 var(--serif); color: var(--c-ink-2);
+}
+.crumb a { color: var(--c-ink-2); text-decoration: underline; text-decoration-color: var(--c-rule); text-underline-offset: 3px; }
+.crumb a:hover { color: var(--c-ink); text-decoration-color: currentColor; }
+.crumb .trail [aria-current] { color: var(--c-ink); }
+.crumb .dates { color: var(--c-ink-3); font-size: 15.5px; }
+.crumb .none { color: var(--c-ink-3); font-style: italic; }
+.crumb .seq { display: flex; align-items: baseline; gap: 6px 18px; flex-wrap: wrap; margin-top: 4px; }
+.crumb .seq .what { color: var(--c-ink-3); font-style: italic; font-size: 15.5px; }
+.crumb .seq [rel="next"], .crumb .seq .none:last-child { margin-left: auto; }
+.crumb .follow { border-collapse: collapse; margin-top: 8px; font-size: 16.5px; }
+.crumb .follow caption { text-align: left; font-style: italic; color: var(--c-ink-3); font-size: 15.5px; padding-bottom: 2px; }
+.crumb .follow td { padding: 3px 18px 3px 0; border-top: 1px solid var(--c-rule); vertical-align: baseline; }
+.crumb .follow td.u { color: var(--c-ink); white-space: nowrap; }
+.crumb .follow .said { font: 14.5px var(--typed); color: var(--c-ink-2); }
+@media (max-width: 640px) {
+  .crumb .follow tr { display: grid; grid-template-columns: 1fr 1fr; padding: 4px 0; border-top: 1px solid var(--c-rule); }
+  .crumb .follow td { border: 0; padding: 1px 10px 1px 0; }
+  .crumb .follow td.u, .crumb .follow td:last-child { grid-column: 1 / -1; }
+}
