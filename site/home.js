@@ -494,7 +494,8 @@ async function stages() {
 
   // each unit's runs through the stages
   const by = new Map(STAGES.map(s => [s, []])), home = [];
-  for (const u of army.units) {
+  // (a unit entered only for its relations, a battalion of a division with no stations yet, has no runs to place)
+  for (const u of army.units.filter(u => u.stations.some(x => x.date))) {
     const st = u.stations.filter(x => x.date).map(x => ({ ...x, t: day(x.date), s: stageOf([x.lon, x.lat]) }));
     const runs = new Map();
     st.forEach((x, i) => {

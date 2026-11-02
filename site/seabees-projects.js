@@ -85,8 +85,31 @@ function seabeeProjects(container, data, unit, opts = {}) {
     }
     const more = mk("details", "proj-film-note");
     more.append(mk("summary", null, "What it is to the battalion"), mk("p", null, c.note));
-    box.append(top, shows, links, more);
+    box.append(top, shows, player(c), links, more);
     return box;
+  };
+  // The film itself: the archive's own MP4 when it is online (records/film/clips.csv `video`), or else the YouTube
+  // copy, embedded; neither loads until it is played. Nothing when the film isn't online.
+  const player = c => {
+    if (c.video) {
+      const fig = mk("figure", "proj-film-play");
+      const v = mk("video");
+      Object.assign(v, { controls: true, preload: "none", src: c.video + (c.start ? `#t=${c.start}` : "") });
+      v.setAttribute("playsinline", "");
+      v.setAttribute("aria-label", `Film: ${c.place}, ${filmDate(c.date)}`);
+      fig.append(v, mk("figcaption", null, `The National Archives' copy, ${c.archive_id} (public domain).`));
+      return fig;
+    }
+    if (c.youtube_id) {
+      const fig = mk("figure", "proj-film-play");
+      const f = mk("iframe");
+      Object.assign(f, { src: `https://www.youtube-nocookie.com/embed/${c.youtube_id}${c.start ? `?start=${c.start}` : ""}`,
+                         title: `Film: ${c.place}, ${filmDate(c.date)}`, loading: "lazy", allowFullscreen: true });
+      f.setAttribute("allow", "encrypted-media; picture-in-picture");
+      fig.append(f, mk("figcaption", null, "A copy on YouTube (a re-upload; the catalogue is the source)."));
+      return fig;
+    }
+    return mk("p", "proj-film-off", "Not online: the catalogue page has the shot list.");
   };
   const filmDate = s => s.length === 10 ? day(s) : s.length === 7 ? month(`${s}-01`) : s;
   const dates = p => {
@@ -106,18 +129,18 @@ function seabeeProjects(container, data, unit, opts = {}) {
     key.append(mk("span", `ev ev-${k.replace(" ", "-")}`, label), mk("span", "proj-key-t", ` ${title.toLowerCase()} `));
   });
   head.append(key);
-  const index = mk("nav", "proj-index");
-  index.setAttribute("aria-label", "Projects");
-  projects.forEach((p, i) => {
-    const a = mk("a", null, `${i + 1}. ${p.places[0].name.split(",")[0]}`);
-    a.href = `#proj-${p.id}`;
-    index.append(a);
-  });
-  if (also.length) {
-    const a = mk("a", null, "Also at");
-    a.href = "#proj-also";
-    index.append(a);
-  }
+  const index = mk("div", "seg proj-tabs");
+  index.setAttribute("role", "group");
+  index.setAttribute("aria-label", "Project");
+  const tab = (id, label, title) => {
+    const b = mk("button", null, label);
+    Object.assign(b, { type: "button", title });
+    b.dataset.id = id;
+    b.addEventListener("click", () => select(id, true));
+    index.append(b);
+  };
+  projects.forEach((p, i) => tab(p.id, `${i + 1}. ${p.tab || p.places[0].name.split(",")[0]}`, p.title));
+  if (also.length) tab("also", "Also at", "Where else the battalion trained, staged or worked on something smaller");
   head.append(index);
   container.append(head);
 
@@ -181,6 +204,24 @@ function seabeeProjects(container, data, unit, opts = {}) {
     grid.append(art);
   }
   container.append(grid);
+
+  // one project at a time: the tab pressed, the map's numbered square (a link to #proj-<id>) or the address
+  const ids = [...projects.map(p => p.id), ...(also.length ? ["also"] : [])];
+  function select(id, scroll = false) {
+    if (!ids.includes(id)) id = ids[0];
+    index.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.id === id));
+    grid.querySelectorAll("article").forEach(a => {
+      const on = a.id === `proj-${id}`;
+      a.hidden = !on;
+      if (!on) a.querySelectorAll("video").forEach(v => v.pause());
+    });
+    if (location.hash !== `#proj-${id}`) history.replaceState(null, "", `#proj-${id}`);
+    if (scroll) head.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+  const fromHash = () => location.hash.startsWith("#proj-") ? location.hash.slice(6) : null;
+  window.addEventListener("hashchange", () => { const id = fromHash(); if (id) select(id, true); });
+  select(fromHash() || ids[0], !!fromHash());
+  return { select };
 }
 
 // The projects on a page's map: a numbered square per project place, held a little up and to the left of the place

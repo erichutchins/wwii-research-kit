@@ -176,11 +176,11 @@ h1 { font: 400 clamp(40px, 5.8vw, 66px)/1.05 "Special Elite", var(--typed); marg
 .shelf p, .steps p { margin: 0; font-size: 19.5px; color: var(--ink-2); }
 .shelf .ex { font-family: var(--typed); font-size: 17px; color: var(--ink); }
 .shelf .kana { font: 500 1.05em var(--ja); color: var(--ink); }
-/* the grids: three pages under one heading, the width of the shelf */
-.shelf .grids { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 40px; }
-.shelf .grids h3 { grid-column: 1 / -1; }
-.shelf .grids h4 { font-weight: 400; font-size: 21.5px; margin: 0 0 4px; }
-.shelf .grids p { font-size: 18.5px; }
+/* a collection (the grids; how it worked): pages under one heading, the width of the shelf */
+.shelf .set { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 40px; }
+.shelf .set h3 { grid-column: 1 / -1; }
+.shelf .set h4 { font-weight: 400; font-size: 21.5px; margin: 0 0 4px; }
+.shelf .set p { font-size: 18.5px; }
 .guides { margin: 36px 0 0; font-size: 19.5px; color: var(--ink-2); max-width: 70ch; }
 .steps { counter-reset: step; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 56px; margin-top: 30px; }
 .steps > div { counter-increment: step; }
@@ -198,7 +198,7 @@ code { font: 17px var(--typed); color: var(--ink); }
   .feature { grid-template-columns: 1fr; }
   .feature .side { grid-column: 1; grid-row: auto; padding: 0 0 14px 14px; border-left: 2px solid var(--rule); }
   .replay { grid-template-columns: 1fr; gap: 18px; }
-  .shelf, .steps, .help, .shelf .grids { grid-template-columns: 1fr; }
+  .shelf, .steps, .help, .shelf .set { grid-template-columns: 1fr; }
   .also td.state { width: auto; }
   .stage .also td.when { width: 5.5em; white-space: normal; }
   .stages { flex-direction: column; }

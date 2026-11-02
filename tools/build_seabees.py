@@ -268,7 +268,7 @@ def load_weather(problems, hint="python3 tools/fetch_station_weather.py seabees"
 PROJECTS = SEABEES / "projects"
 PROJECT_FIELDS = {"id", "title", "unit", "part", "places", "from", "from_basis", "to", "to_basis", "dates_ref",
                   "built", "sources"}
-PROJECT_OPTIONAL = {"film"}     # clip ids in records/film/clips.csv
+PROJECT_OPTIONAL = {"film", "tab"}   # film: clip ids in records/film/clips.csv; tab: a short label for its tab
 CLIPS = RECORDS / "film" / "clips.csv"
 CLIP_RELEVANCE = ("place-date", "context")
 BASIS = ("reported", "derived", "inferred", "assumed")
@@ -313,7 +313,7 @@ def segments(text, link):
 
 def load_clips(link, problems):
     """records/film/clips.csv, by clip id: what each film shows, its date and basis, its relevance, its catalogue
-    page and its YouTube copy (README in records/film/)."""
+    page, its YouTube copy and the archive's own MP4 (README in records/film/)."""
     clips = {}
     if not CLIPS.exists():
         return clips
@@ -325,7 +325,8 @@ def load_clips(link, problems):
             "clip": r["clip"], "date": r["date"], "date_basis": r["date_basis"], "place": r["place"],
             "place_precision": r["place_precision"], "archive_id": r["archive_id"], "shows": r["shows"],
             "relevance": r["relevance"], "note": r["note"], "link": link(r["source"]),
-            "youtube": (f"https://www.youtube.com/watch?v={yt}" + (f"&t={r['start']}s" if r["start"] else "")) if yt else ""}
+            "youtube": (f"https://www.youtube.com/watch?v={yt}" + (f"&t={r['start']}s" if r["start"] else "")) if yt else "",
+            "youtube_id": yt, "start": r["start"], "video": r.get("video", "")}
     return clips
 
 
@@ -438,7 +439,7 @@ def load_projects(units, parts_csv, places, link, problems):
         for k in ("account", "afterwards"):
             if not out_secs.get(k):
                 problems.append(f"{where}: no {'Built' if k == 'account' else 'Afterwards'} section")
-        projects.append({"id": fm.get("id"), "title": fm.get("title"), "unit": fm.get("unit"), "part": fm.get("part"),
+        projects.append({"id": fm.get("id"), "title": fm.get("title"), "tab": str(fm.get("tab") or ""), "unit": fm.get("unit"), "part": fm.get("part"),
                          "places": pls, "from": d0, "from_basis": fm.get("from_basis"), "to": d1,
                          "to_basis": fm.get("to_basis"), "dates_links": cites_of(fm.get("dates_ref"), where),
                          "built": [str(b) for b in fm.get("built") or []],
