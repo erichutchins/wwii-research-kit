@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """Decode the Imperial Japanese Navy's kana position codes (地点符号), 1944-45.
 
 Aircraft contact reports give positions as four characters, e.g. 「メキ三ツ」:

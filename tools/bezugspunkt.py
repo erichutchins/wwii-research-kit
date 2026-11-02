@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """Decode the German Army's reference-point code (Bezugspunkte) in Italy, 1944.
 
 A.O.K. 10's reports give places as block + point: "71 35" is point 35 in block 71 of the

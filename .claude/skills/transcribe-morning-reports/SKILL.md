@@ -21,7 +21,7 @@ and the pitfalls. Formats are in `records/army/README.md`.
    YYYY-MM YYYY-MM` for every month (a draft in `sources/drafts/`).
 3. **Changes.** `changes sources/drafts/<draft>.csv`: the pages where the station changes.
 4. **Read on the scan.** `fetch <roll> <pages>`, then
-   `uv run --with pillow python3 tools/crop_pages.py heads <roll> <pages>`. The OCR finds pages;
+   `uv run tools/crop_pages.py heads <roll> <pages>`. The OCR finds pages;
    it is never the source of a value.
 5. **Write the rows.** `records/army/stations.csv`: unit, date, the STATION line exactly as typed,
    place, offset, grid, page (`rg64-<roll>/pNNNN`), source (`mr`), note. Add the unit to

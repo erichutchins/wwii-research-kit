@@ -91,7 +91,7 @@ Once there are many boats, add:
 ## Work per patrol (checklist)
 
 1. `python3 tools/nara.py fetch <ids>`
-2. `uv run --with pillow python3 tools/crop_pages.py sheet <id>` to find the
+2. `uv run tools/crop_pages.py sheet <id>` to find the
    narrative, the contact tables, the attack sheets and the density layers.
 3. Transcribe `positions.csv` from the tables and noon positions.
 4. Run `check_track.py`, then resolve every flag with `*_fix` or `on_track=no` and a `fix_note`.

@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """Japan Center for Asian Historical Records (JACAR) helper: search the
 catalog and download a record's scanned pages.
 

@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """Wayback Machine helper: download a lost website's archived pages and images, as captured.
 
 Commands:

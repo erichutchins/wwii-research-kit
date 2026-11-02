@@ -26,7 +26,7 @@ def main():
     if cmd == "find" and len(args) >= 2:
         ctx = int(args[args.index("--context") + 1]) if "--context" in args else 60
         pat = re.compile(args[1], re.I)
-        for i, page in enumerate(fitz.open(args[0]), 1):
+        for i, page in enumerate(fitz.open(args[0]).pages(), 1):
             text = re.sub(r"\s+", " ", page.get_text())
             for m in pat.finditer(text):
                 print(f"p{i}\t…{text[max(0, m.start() - ctx):m.end() + ctx]}…")

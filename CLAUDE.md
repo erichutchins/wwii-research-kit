@@ -26,8 +26,9 @@ For film of a place and date, follow the skill `find-film` (rules in `records/fi
   - Generated, never edited: `*.geojson`, `ships.json`, `seafloor.csv`, `weather.csv`,
     `dives.json`, `engagements/*/engagement.json`, `engagements/index.json`, `convoys/convoys.json`, `silhouettes.json`, `scans.json`, `citations.json`,
     `army/army.json`, `army/seafloor.csv`, `seabees/seabees.json`, `reference/glossary.json`.
-- `tools/`: Python. Standard library only, except scripts with a PEP 723 header (PyYAML,
-  Pillow, PyMuPDF), run with `uv run`. `tools/records.py` finds the records and the cache.
+- `tools/`: Python. Every file opens with a PEP 723 header giving the oldest Python it runs on and the packages it
+  imports (`dependencies = []` for the standard library alone; a shared module like `records.py` too), so `uv run`
+  builds its environment and ty checks it against exactly that. `tools/records.py` finds the records and the cache.
 - `reference/jgrid/`: the Japanese kana grid keys and anchors (hand-edited; `guides/JAPANESE-GRID.md`).
 - `reference/lanes/lanes.yml`: the convoy lanes' ports and (assumed) waypoints, which a convoy's `route:` runs through.
 - `reference/glossary.yml`: the terms the pages explain on hover, each citing its source (`tools/build_glossary.py` writes
@@ -75,8 +76,12 @@ in a browser. A hook that fails is fixed, not skipped.
 - `tools/test_tools.py`: the tools' computation against hand-worked cases (positions, zone letters, the grids'
   anchors, the land test); `site/engage.test.js` the engagement pages'.
 - `tools/check_builds.sh`: every build checks out and its generated JSON is committed.
-- ruff (`ruff.toml`: defects and orphans, not style) and ty (`ty.toml`; findings in the older tools are in
-  `ty-baseline.json`, and new code adds none).
+- ruff (`ruff.toml`: defects and orphans, not style) and ty through `tools/typecheck.py`: ty checks a set of files
+  against one environment and doesn't yet read PEP 723 headers for several scripts (astral-sh/ty#691), so this groups
+  the files by header, has uv build each group's environment (`uv sync --script`, which honours `requires-python`) and
+  runs ty once per group at the header's oldest Python. Nothing is allowed unresolved: an import a header doesn't
+  declare fails. A file with no header fails. Findings in the older tools are in `ty-baseline.json` (`--update-baseline`
+  rewrites it), and new code adds none.
 - The private list (`sources/private-terms.txt`, never committed) is written by the family repository that holds this
   kit; without it PRV001 checks nothing and says so.
 
@@ -87,6 +92,7 @@ uv run tools/lint.py [--select REF,ORF] [--statistics] [--explain CODE]   # lint
 uv run tools/smoke.py [--quick] [--only engagement]   # every page in a browser (2-3 min; --quick under 1)
 uv run tools/test_tools.py                    # the tools' computation against hand-worked cases
 tools/check_builds.sh                         # every build: 0 problems, generated files up to date
+uv run tools/typecheck.py --baseline ty-baseline.json tools -- --config-file ty.toml --extra-search-path tools   # ty, per header
 prek run --all-files [--hook-stage pre-push]  # the hooks by hand
 uv run tools/check_track.py all --geojson     # every track: 0 too-fast legs; GeoJSON, ships.json
 uv run tools/check_track.py bang/1            # one patrol, leg by leg
@@ -105,7 +111,7 @@ uv run tools/build_engagement.py             # engagements and convoys -> their 
 uv run tools/build_glossary.py               # reference/glossary.yml -> glossary.json; every term cites its source
 node site/engage.test.js                      # the engagement pages' shared computation (engage.js)
 python3 tools/nara.py find "Bang" | fetch <id> | index
-uv run --with pillow python3 tools/crop_pages.py sheet|halves|zoom|heads ...
+uv run tools/crop_pages.py sheet|halves|zoom|heads ...
 python3 tools/morning_reports.py serial|unit|locate|changes|fetch ...
 python3 tools/jacar.py search|meta|fetch ...;  python3 tools/jgrid.py decode|check|key ...
 python3 tools/naval_grid.py decode|check|blocks ...   # Kriegsmarine naval squares, Mediterranean ("CJ 9472"; guides/NAVAL-GRID.md)

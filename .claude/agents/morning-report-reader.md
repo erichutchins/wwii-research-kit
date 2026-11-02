@@ -26,7 +26,7 @@ If the prompt lacks one of these, stop and say what's missing.
 
 `guides/MORNING-REPORTS.md` (what the reports are, the workflow, the pitfalls) and `tools/morning_reports.py`'s
 docstring. Run tools from the kit's folder (the one with `tools/`), as `python3 tools/...` and
-`uv run --with pillow python3 tools/crop_pages.py ...`.
+`uv run tools/crop_pages.py ...`.
 
 ## Procedure
 

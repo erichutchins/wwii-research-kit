@@ -71,13 +71,15 @@ def main():
     cx1, cy1 = int((x1 - tx0) * 256), int((y1 - ty0) * 256)
     mosaic = mosaic.crop((cx0, cy0, cx1, cy1))
     W, H = mosaic.size
-    px = mosaic.load()
-    elev = [[px[i, j][0] * 256 + px[i, j][1] + px[i, j][2] / 256 - 32768 for i in range(W)] for j in range(H)]
+    rgb = mosaic.tobytes()   # RGB, row by row: Terrarium's elevation is R * 256 + G + B / 256 - 32768 metres
+    elev = [[rgb[k] * 256 + rgb[k + 1] + rgb[k + 2] / 256 - 32768 for k in range(3 * W * j, 3 * W * (j + 1), 3)]
+            for j in range(H)]
     # metres per pixel at the box's middle latitude
     mpp = 40075016.686 * math.cos(math.radians((s + n) / 2)) / (256 * 2 ** z)
     land = Image.new("LA", (W, H))
     shade = Image.new("LA", (W, H))
     lp, sp = land.load(), shade.load()
+    assert lp is not None and sp is not None   # None only for an image with no data; these were just made
     az, alt = math.radians(315), math.radians(45)
     for j in range(H):
         for i in range(W):

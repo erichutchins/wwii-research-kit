@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """Find film of a place and time: the US National Archives' moving images, and YouTube uploads by the archives
 listed in records/film/channels.yml. A find is a candidate for records/film/clips.csv, not a row
 (records/film/README.md says how a clip is checked and cited).

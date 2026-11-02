@@ -24,10 +24,10 @@ jobs:
           submodules: recursive
           persist-credentials: false
       - uses: astral-sh/setup-uv@v6
-      - name: The tools' Python (ruff, ty against its baseline)
+      - name: The tools' Python (ruff; ty, each tool against its own header and the baseline)
         run: |
           uvx ruff@0.16.10 check
-          uvx ty@0.0.95 check --config-file ty.toml --extra-search-path tools --baseline ty-baseline.json tools
+          uv run tools/typecheck.py --baseline ty-baseline.json tools -- --config-file ty.toml --extra-search-path tools
       - name: Lint (references, orphans, file forms, records that disagree, ships inland; lint.toml)
         run: uv run tools/lint.py
       - name: Every build checks out and its JSON is up to date; citations, attacks, tracks; the computation's tests

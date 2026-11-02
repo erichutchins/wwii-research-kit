@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """Google Books helper: find digitized manuals and reports, read a volume's
 access info, and download the PDF when the volume is full view.
 

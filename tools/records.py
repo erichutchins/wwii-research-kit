@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = ["pyyaml"]
+# ///
 """Where the tools find things, and how they name a boat or a ship.
 
   KIT        this kit (tools/, site/, reference/, guides/)
@@ -33,6 +37,8 @@ def load_yaml(path):
 def load_yaml_text(text, path="<text>"):
     """load_yaml for YAML already read, e.g. a Markdown file's front matter; `path` names it in errors."""
     import yaml  # PyYAML; the scripts that read YAML declare it for `uv run`
+    from yaml.constructor import ConstructorError
+    from yaml.resolver import BaseResolver
 
     class Strict(yaml.SafeLoader):
         pass
@@ -42,11 +48,11 @@ def load_yaml_text(text, path="<text>"):
         for k, _ in node.value:
             key = loader.construct_object(k, deep=deep)
             if key in seen:
-                raise yaml.constructor.ConstructorError(None, None, f"duplicate key {key!r} in {path}", k.start_mark)
+                raise ConstructorError(None, None, f"duplicate key {key!r} in {path}", k.start_mark)
             seen.add(key)
         return yaml.SafeLoader.construct_mapping(loader, node, deep)
 
-    Strict.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, mapping)
+    Strict.add_constructor(BaseResolver.DEFAULT_MAPPING_TAG, mapping)
     return yaml.load(text, Loader=Strict)
 
 

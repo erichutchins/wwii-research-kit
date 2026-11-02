@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """Check the Army transcriptions and build records/army/army.json for site/army.html.
 
 Inputs (hand-edited, the source of truth; columns in records/army/README.md):

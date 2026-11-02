@@ -44,7 +44,7 @@ to the archive's own copy.
 ```bash
 python3 tools/nara.py find "Wahoo"                  # a submarine's war patrol report folders
 python3 tools/nara.py fetch 74802746                # its scans -> sources/nara/rg367-74802746/
-uv run --with pillow python3 tools/crop_pages.py halves 74802746 03 04   # readable halves
+uv run tools/crop_pages.py halves 74802746 03 04   # readable halves
 uv run tools/check_track.py bang/1                  # speed-check a transcribed patrol
 uv run tools/check_sources.py                       # every citation resolves
 python3 tools/morning_reports.py unit 578447414 'Btry.{0,4}D.{0,6}62'   # a unit's morning reports

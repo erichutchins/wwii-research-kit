@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """National Archives catalog helper: find a submarine's war patrol report
 folders and download their page scans.
 

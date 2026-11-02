@@ -1,5 +1,2 @@
-[environment]
-python-version = "3.11"
-
-[analysis]
-allowed-unresolved-imports = ["yaml", "PIL.**", "PIL", "scipy.**", "scipy", "skimage.**", "numpy", "pymupdf", "fitz", "playwright.**", "requests"]
+# ty: the types in the tools. Each file is checked against its own PEP 723 header (its packages, its oldest Python)
+# by tools/typecheck.py, which passes this file; there is no shared environment and nothing is allowed unresolved.

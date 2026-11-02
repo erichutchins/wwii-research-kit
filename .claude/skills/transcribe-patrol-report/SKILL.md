@@ -24,7 +24,7 @@ checklist.
 
 ## 2. Find the pages
 
-`uv run --with pillow python3 tools/crop_pages.py sheet <id>`: contact sheets. The dense grids
+`uv run tools/crop_pages.py sheet <id>`: contact sheets. The dense grids
 are the ship and aircraft contact tables and the attack sheets; the four-column table near the
 end is the density layers. Note which pages hold what.
 

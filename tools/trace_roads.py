@@ -42,7 +42,7 @@ from PIL import Image
 from scipy import ndimage as ndi
 from scipy.sparse import coo_matrix
 from scipy.sparse.csgraph import dijkstra
-from scipy.spatial import cKDTree
+from scipy.spatial import KDTree
 from skimage.morphology import disk, skeletonize
 
 Image.MAX_IMAGE_PIXELS = None
@@ -159,7 +159,7 @@ def graph(primary, lines, gap=45, secondary_cost=3.0):
     ends = np.nonzero(nb <= 1)[0]
     lab, _ = ndi.label(lines, structure=np.ones((3, 3)))
     comp = lab[ys, xs]
-    tree = cKDTree(np.c_[xs, ys])
+    tree = KDTree(np.c_[xs, ys])
     for e in ends:
         for j in tree.query_ball_point((xs[e], ys[e]), gap):
             if comp[j] != comp[e] or abs(int(j) - int(e)) > 400:  # another piece, or far along this one
@@ -220,7 +220,7 @@ def network_geojson(primary, fit, fit_km):
 def order_run(px, py):
     """Order the pixels of a one-pixel-wide run from one end to the other."""
     pts = np.c_[px, py]
-    tree = cKDTree(pts)
+    tree = KDTree(pts)
     deg = np.array([len(tree.query_ball_point(p, 1.5)) - 1 for p in pts])
     start = int(np.argmin(deg))
     seen = np.zeros(len(pts), bool); seen[start] = True

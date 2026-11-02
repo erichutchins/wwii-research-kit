@@ -44,7 +44,7 @@ read from the scan.
 4. **Find the changes.** `changes sources/drafts/<draft>.csv` lists the pages where the station
    text changes: those are the pages to read.
 5. **Read them on the scan.** `fetch <roll> <pages>` downloads them;
-   `uv run --with pillow python3 tools/crop_pages.py heads <roll> <pages>` makes strips of each
+   `uv run tools/crop_pages.py heads <roll> <pages>` makes strips of each
    page's date / STATION / ORGANIZATION header, six to an image. Record the station **exactly as
    typed** ("Pozzouli"), the page, and the record of events that explains a move.
 6. **Place it.** `places.csv` gives each named place coordinates (`tools/geocode_places.py`

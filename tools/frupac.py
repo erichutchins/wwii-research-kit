@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 r"""FRUPAC war maps: find the Fleet Radio Unit Pacific map overlays for a ship
 or a date.
 

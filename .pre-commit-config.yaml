@@ -15,8 +15,8 @@ repos:
         language: system
         types: [python]
       - id: ty
-        name: "ty (the tools' types, against ty-baseline.json)"
-        entry: uvx ty@0.0.95 check --config-file ty.toml --extra-search-path tools --baseline ty-baseline.json tools
+        name: "ty (each tool against its own PEP 723 header; ty-baseline.json)"
+        entry: uv run tools/typecheck.py --baseline ty-baseline.json tools -- --config-file ty.toml --extra-search-path tools
         language: system
         types: [python]
         pass_filenames: false

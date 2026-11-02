@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """Decode Kriegsmarine naval grid squares (Marinequadrate) in the Mediterranean, e.g. "CJ 9472".
 
 The code is two letters (a large square, Großquadrat) and up to four digits. The first digit is a

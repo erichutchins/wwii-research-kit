@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """Fill in coordinates for a places.csv (records/army/ by default) from OpenStreetMap.
 
 Rows with an empty lat/lon are looked up by their `query` column (town,

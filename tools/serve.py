@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """Serve the current folder for local viewing, with caching disabled so edits
 to the pages and data files always show up on reload.
 

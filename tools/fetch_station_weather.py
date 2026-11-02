@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """Daily weather at a shore unit's stations: wartime observations where a weather station nearby
 recorded them, and ERA5 reanalysis everywhere.
 

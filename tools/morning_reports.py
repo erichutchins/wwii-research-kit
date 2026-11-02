@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """WWII Army morning reports (NARA RG 64, series 85713825): find a unit's or
 a soldier's pages, read the catalog's OCR, and download page scans.
 

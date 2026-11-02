@@ -1,26 +1,30 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = ["pillow"]
+# ///
 """Make readable crops of scanned report pages for transcription.
 
 A full scan (about 2460 x 3217 px) is too dense to read reliably in one view;
 the transcription workflow reads pages as overlapping top/bottom halves, plus
 contact sheets to find which pages hold which tables.
 
-  uv run --with pillow python3 tools/crop_pages.py halves 74802784 08 09 10
+  uv run tools/crop_pages.py halves 74802784 08 09 10
       -> /tmp/bang/74802784_p08_a.jpg (top half), _b.jpg (bottom half), ...
-  uv run --with pillow python3 tools/crop_pages.py sheet 74802784
+  uv run tools/crop_pages.py sheet 74802784
       -> /tmp/bang/sheet_74802784_1.jpg ... (24 labelled thumbnails per sheet)
-  uv run --with pillow python3 tools/crop_pages.py zoom 74802868 11 1550 700 700 260
+  uv run tools/crop_pages.py zoom 74802868 11 1550 700 700 260
       -> /tmp/bang/74802868_p11_zoom.jpg (x y w h in full-scan pixels, contrast-stretched)
 
-  uv run --with pillow python3 tools/crop_pages.py heads 578447414 918 953 960
+  uv run tools/crop_pages.py heads 578447414 918 953 960
       -> /tmp/bang/heads_578447414_1.jpg ... (Army morning reports, rg64-<roll>:
          the date / STATION / ORGANIZATION strip of each page, 6 to an image; pages as
          "918 953" or "918-930,953"; add `tall` for the book-type forms of 1940 - mid-1943,
          whose ORGANIZATION line sits lower)
 
-  uv run --with pillow python3 tools/crop_pages.py thumbs 427179736 700-760
+  uv run tools/crop_pages.py thumbs 427179736 700-760
       -> /tmp/bang/thumbs_427179736_1.jpg ... (Army morning reports: 32 labelled page
          thumbnails per sheet, to tell fronts, sideways panels and backs apart at a glance)
-  uv run --with pillow python3 tools/crop_pages.py panel 427179736 709 [ccw]
+  uv run tools/crop_pages.py panel 427179736 709 [ccw]
       -> /tmp/bang/panel_427179736_p0709_a.jpg, _b.jpg (a sideways "Station and record of
          events" panel turned upright (clockwise by default) and cut into two readable halves)
 
@@ -112,7 +116,7 @@ def panel(roll, page, turn="cw", width=1700):
 
 
 def fit(img, width):
-    return img.resize((width, round(img.height * width / img.width)), Image.LANCZOS)
+    return img.resize((width, round(img.height * width / img.width)), Image.Resampling.LANCZOS)
 
 
 def halves(na_id, pages):

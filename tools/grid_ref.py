@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """Convert a WWII grid reference on any of the six grids the Army records use to latitude/longitude.
 
 Which grid a reference is on is in the data (`grid_on` in records/army/stations.csv and

@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """Convert a WWII "Nord de Guerre" grid reference (e.g. Y-888629) to latitude/longitude.
 
 The 106th AAA's 1945 records give positions on the Central Europe 1/100,000
