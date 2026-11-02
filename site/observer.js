@@ -2,7 +2,8 @@
 // `sheets`, a patrol's attacks.csv and attack_sheets.yml, built by tools/build_engagement.py). The plot from above,
 // the view through the periscope (or from the bridge, for a surface attack) with the target at its true angular size
 // and angle on the bow, the sky as computed, and the firing solution, all on one clock in seconds from the first
-// torpedo. The computation is engage.js's (attackSheet, attackAt, sky); every assumption is listed under the view.
+// torpedo. Beside the periscope, in tabs: the plot, or the Torpedo Data Computer's two faces (tdc.js, its values engage.js's
+// tdcAt). The computation is engage.js's (attackSheet, attackAt, tdcAt, sky); every assumption is listed under the view.
 // It replaces the family repository's periscope prototype (SEAHORSE's Attack 3), retired 1 Nov 2026.
 const Observer = (() => {
   const E = Engage, esc = s => EV.esc(s);
@@ -35,7 +36,7 @@ const Observer = (() => {
     card.hidden = !list.length;
     if (!list.length) return { pick() {} };
 
-    let cur = null, A = null, s = 0, power = "low", light = "was", train = 0, timer = null, aimAt = 0;
+    let cur = null, A = null, s = 0, power = "low", light = "was", train = 0, timer = null, aimAt = 0, tab = "plot";
     const pick = document.getElementById("obs-pick");
     pick.innerHTML = list.map((x, i) => `<button type="button" data-i="${i}" style="--bar:${colour(x.actor)}">${esc(nameOf(x.actor))} · ${esc(x.ref)} <span>${esc(x.ev.local.slice(11))}</span></button>`).join("");
     pick.querySelectorAll("button").forEach(b => b.addEventListener("click", () => choose(+b.dataset.i, true)));
@@ -45,6 +46,21 @@ const Observer = (() => {
     playBtn.addEventListener("click", () => timer ? stop() : play());
     document.getElementById("obs-light").innerHTML = Object.entries(LIGHT).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
     document.getElementById("obs-light").addEventListener("change", e => { light = e.target.value; update(s); });
+    // the tabs beside the periscope: the plot, or the Torpedo Data Computer's Position Keeper or Angle Solver
+    const tdc = TDC.create(document.getElementById("tdc-pk"), document.getElementById("tdc-as"));
+    const TAB_NOTE = { plot: "from above: yards, north up", pk: "Torpedo Data Computer Mark 3 (assumed)", as: "Torpedo Data Computer Mark 3 (assumed)" };
+    const tabs = [...document.querySelectorAll(".obs-tabs button")];
+    tabs.forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+    function showTab(t) {
+      tab = t;
+      tabs.forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+      document.getElementById("obs-plot").style.display = t === "plot" ? "" : "none";
+      // (an SVG has no .hidden property: the attribute itself)
+      document.getElementById("tdc-pk").toggleAttribute("hidden", t !== "pk"); document.getElementById("tdc-as").toggleAttribute("hidden", t !== "as");
+      document.getElementById("tdc-note").hidden = t === "plot";
+      document.getElementById("obs-tab-note").textContent = TAB_NOTE[t];
+      if (cur && !A.problems.length) { if (t === "plot") layoutPlot(); update(s); }
+    }
 
     // ---------- choosing an attack
     function choose(i, sync) {
@@ -69,7 +85,8 @@ const Observer = (() => {
       const drawable = !A.problems.length;
       card.querySelectorAll(".obs-ctrl, .obs-read, .obs-stage").forEach(el => { el.hidden = !drawable; });
       drawTorpTable(); drawWords();
-      if (drawable) { layoutPlot(); update(-60); }
+      drawTdcNote();
+      if (drawable) { if (tab === "plot") layoutPlot(); update(-60); }
       if (sync && setPageTime) setPageTime(cur.ms);
     }
 
@@ -141,7 +158,7 @@ const Observer = (() => {
     const brgTxt = scope.append("text").attr("class", "obs-scopetxt").attr("text-anchor", "middle"), offTxt = scope.append("text").attr("class", "obs-scopetxt");
     const STARS = d3.range(420).map(i => ({ b: (i * 137.508) % 360, a: 2 + ((i * 61.8) % 70), m: 0.3 + ((i * 7) % 10) / 14 }));
     function layoutScope() {
-      S = Math.min(scope.node().parentNode.clientWidth, 520); r = S / 2 - 10;
+      S = Math.min(scope.node().parentNode.clientWidth, 760); r = S / 2 - 10;   // the whole column
       scope.attr("width", S).attr("height", S);
       defs.html(`<clipPath id="obs-eye"><circle cx="${S / 2}" cy="${S / 2}" r="${r}"/></clipPath>
         <linearGradient id="obs-skyg" x1="0" y1="0" x2="0" y2="1"><stop id="obs-sky0" offset="0"/><stop id="obs-sky1" offset="1"/></linearGradient>
@@ -297,6 +314,16 @@ const Observer = (() => {
         `<p class="below">From ${esc(nameOf(cur.actor))}'s attack data sheet, as typed: ${EV.cite(cur.sh.cite, "src")}. Computed from it, and assumed: ${list.join("; ")}. A reconstruction, not a photograph: a lead, not a record.</p>`;
     }
 
+    // what the TDC tabs show, and what they assume
+    function drawTdcNote() {
+      const [Lft] = SIZE[cur.kind], lowDepth = A.torps.some(t => (parseFloat(t.row.depth_set) || 99) < 10);
+      const list = [`that ${esc(nameOf(cur.actor))}'s computer was a Mark 3 (no record read names its mark; the Mark 3's manual went to boats "SS 167-544 incl.", OP 1056 p. 277)`,
+        "the forward and after angle solvers ordering the same angles (the periscope-to-tube distance, the torpedo's reach and its turn are left out, as in the plot); tubes 1-6 forward, 7-10 aft",
+        `the target's length, ${Lft} ft${Lft < 300 ? " (below the dial's 300 ft, shown at 300)" : ""}`, "the own-speed dial's numbers (the manual says only that it matches the ship's log)",
+        "the time dial started at the start of this view", "the Distance to Track lines read as thousands of yards", ...(lowDepth ? ["a depth set below the dial's 10 feet shown at 10"] : [])];
+      document.getElementById("tdc-note").innerHTML = `The dials of a Torpedo Data Computer Mark 3, after its manual, OP 1056 (the faces Figs. 98 and 102, pp. 107 and 111; what the Target and Own Ship dials read, pp. 72-73; the scales, pp. 267-270; <a href="https://archive.org/details/mechanical-computer-technical-manuals">a scan</a>), turned to the solution computed from the sheet: what the computer would have shown on these figures, not a record of what it did show. Each dial reads at the orange index at its top. Assumed: ${list.join("; ")}.`;
+    }
+
     // ---------- the clock
     function update(sec) {
       s = Math.max(A.start, Math.min(A.end, sec));
@@ -305,7 +332,8 @@ const Observer = (() => {
       const firing = q.torps.length ? q.torps[q.torps.length - 1].t.target : 0;
       if (!train) aimAt = firing;
       const lt = lightAt(cur.t0 + s * 1000);
-      drawPlot(q);
+      if (tab === "plot") drawPlot(q);
+      else tdc.set(E.tdcAt(A, s), { time: s - A.start, length: SIZE[cur.kind][0] });
       const { B, fv } = drawScope(q, lt);
       const tg = q.targets[aimAt];
       drawSky(lt, B, tg ? tg.bearing : B, fv);
@@ -320,7 +348,7 @@ const Observer = (() => {
         if (s >= A.end) stop(); });
     }
     let lastW = 0;   // redraw when the card's width changes, not its height (the readout and notes change that)
-    function resize() { const w = card.clientWidth; if (!cur || A.problems.length || w === lastW) return; lastW = w; layoutPlot(); layoutScope(); update(s); }
+    function resize() { const w = card.clientWidth; if (!cur || A.problems.length || w === lastW) return; lastW = w; if (tab === "plot") layoutPlot(); layoutScope(); update(s); }
     layoutScope();
     choose(Math.max(0, list.findIndex(x => !E.attackSheet(x.sh.torpedoes).problems.length)), false);   // the first that can be drawn
     new ResizeObserver(() => resize()).observe(card);

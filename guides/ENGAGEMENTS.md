@@ -88,6 +88,7 @@ new format is converted for good: no reader for the old one is kept.
 | Fire control | torpedo course = own course + gyro; track = torpedo course + 180 − target course; lead L: tan L = k·sin TA / (1 + k·cos TA), k = target speed / torpedo speed; angle on the bow = track − L |
 | Apparent size | width = 2·atan(projected length / 2R), projected length = L·\|sin AOB\| + beam·\|cos AOB\|; height = atan(H/R) |
 | An attack on one clock (`attackSheet`, `attackAt`) | seconds from the first torpedo, from `attacks.csv` as typed: each torpedo fired at its `interval` or `since_first` (a salvo the sheet gives no time for, 10 s after the last: assumed); the point of aim from the torpedoes' courses less each typed `offset` (the middle of the spread where none is typed); the target placed at the sheet's range on the bearing that point of aim and the fire-control angles give; boat and target steady on the sheet's courses and speeds; each torpedo runs to where it first reaches a hull of the target's assumed length, or past it. Torpedo speed: the sheet's where typed; the Mark 18's 27.7 knots from ATULE's sheet; the Mark 14's and 23's secondary. The torpedo's straight run and turn out of the tube are left out, so runs come out a few seconds short (SEAHORSE's Attack 3: 33 s against the narrative's 36) |
+| The Torpedo Data Computer's dials (`tdcAt`) | at second *s*, what a TDC Mark 3 would show on the sheet's solution: own course and speed; the target aimed at (the next torpedo's, else the last's), its course and speed; true and relative bearing, range and angle on the bow (`attackAt`); distance to track = R·\|sin AOB\|; for the point of aim, lead L: sin L = k·sin AOB (the law of sines), torpedo course = bearing + L, gyro = torpedo course − own heading, the track, and the run = R·\|sin AOB\| / \|sin track\|; each side's gyro order adds its next tube's offset. Parallax, reach and turn left out, so the forward and after solvers order the same angles; tubes 1–6 forward, 7–10 aft. Drawn by `site/tdc.js` after OP 1056 (faces Figs. 98 and 102; dial readings pp. 72–73; scales pp. 267–270; distance to track Fig. 38) |
 
 ## How the pages draw it
 
@@ -139,7 +140,11 @@ hue. Colour follows the boat across every view of a page; text never wears it ex
 
 - **The observer view, further.** Built (`site/observer.js`, the engagement page's "At the periscope"): every attack
   whose data sheet is transcribed, from the plot above, through the periscope or from the bridge, with the sky and the
-  solution on one clock; the build carries the sheets in `engagement.json`'s `sheets`. Still to do:
+  solution on one clock; the build carries the sheets in `engagement.json`'s `sheets`. Beside the periscope, in tabs, the
+  plot or the Torpedo Data Computer's Position Keeper and Angle Solver (`site/tdc.js`, display only: the dials turn with
+  the clock to `tdcAt`'s values; the boat's computer assumed a Mark 3). Still to do:
+  - the TDC's reach and turning radius (hand-set inputs on the real machine, OP 1056 p. 269) and the periscope-to-tube
+    parallax, so the forward and after solvers differ as they did; the Mark 4's face (OP 1442, not yet found);
   - the narrative's timed bearings and ranges (`bearings.csv`), so the approach before firing is the record's and not
     the target held steady on the sheet's course;
   - TINOSA's own and target courses from her narrative (her report has only the summary table; family lead L73);

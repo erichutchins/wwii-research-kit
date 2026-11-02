@@ -61,8 +61,37 @@
 .obs-read .k { font-size: 13px; color: var(--ink-3); font-style: italic; }
 .obs-read .v { font: 17px var(--typed); font-variant-numeric: tabular-nums; }
 .obs-read .n { font-size: 13px; color: var(--ink-3); }
-.obs-stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; margin: 14px 14px 0; align-items: start; }
-.obs-stage h3 { font-weight: 400; font-size: 17px; margin: 0 0 6px; }
+.obs-stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 20px; margin: 14px 14px 0; align-items: start; }
+/* each column: a heading and a body on the stage's rows, so the periscope's top and the panel's beside it stay level */
+.obs-col { display: grid; grid-template-rows: subgrid; grid-row: span 2; min-width: 0; }
+.obs-stage h3 { font-weight: 400; font-size: 17px; margin: 0 0 8px; align-self: end; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.obs-light { font-size: 15px; color: var(--ink-2); white-space: nowrap; }
+.obs-tabs { display: inline-flex; gap: 6px; }
+.obs-tabs button { font: inherit; font-size: 15px; padding: 4px 11px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); border-radius: 6px; cursor: pointer; }
+.obs-tabs button[aria-selected=true] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+#obs-tab-note { font-size: 14.5px; color: var(--ink-3); }
+/* the Torpedo Data Computer (tdc.js): an instrument, black plates in a bezel, in either mode; the lamps and arrows orange */
+.tdc { display: block; width: 100%; height: auto; --tdc-ink: #ecebe6; --tdc-lamp: #ff8a3d; }
+.tdc text { font-family: inherit; }
+.tdc-bezel { fill: #b9b7b0; stroke: #8d8b85; stroke-width: 2; } .tdc-bolt { fill: #d8d6cf; stroke: #777; }
+@media (prefers-color-scheme: dark) { .tdc-bezel { fill: #5d5c58; stroke: #43423f; } .tdc-bolt { fill: #9a9893; stroke: #555; } }
+.tdc-plate { fill: #121212; } .tdc-disc { fill: #1b1b1a; stroke: #3c3c3a; } .tdc-inner { fill: #202020; stroke: #444; } .tdc-glass { fill: rgba(200, 210, 215, .18); stroke: #999; }
+.tdc-maj { stroke: var(--tdc-ink); stroke-width: 1.3; } .tdc-min { stroke: var(--tdc-ink); stroke-width: .8; opacity: .85; } .tdc-link, .tdc-rule { stroke: var(--tdc-ink); stroke-width: .8; }
+.tdc-link { stroke-dasharray: 2 3; }
+.tdc-num { fill: var(--tdc-ink); text-anchor: middle; dominant-baseline: central; }
+.tdc-title { fill: var(--tdc-ink); font-size: 11.5px; font-style: italic; text-anchor: middle; }
+.tdc-side { fill: var(--tdc-ink); font-size: 18px; font-style: italic; text-anchor: middle; }
+.tdc-sp { fill: var(--tdc-ink); font-size: 10px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.tdc-index { fill: var(--tdc-lamp); } .tdc-hub { fill: #2a2a29; stroke: #555; stroke-width: 1.5; } .tdc-pin { fill: #777; }
+.tdc-ship { fill: none; stroke: var(--tdc-ink); stroke-width: 1.4; } .tdc-arm { stroke: var(--tdc-ink); stroke-width: 2.2; }
+.tdc-x { fill: var(--tdc-lamp); font-size: 15px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.tdc-arrow line, .tdc-arrow path { stroke: var(--tdc-lamp); stroke-width: 1.6; } .tdc-arrow path:not([fill]) { fill: var(--tdc-lamp); }
+.tdc-arrow.aft { opacity: .55; }
+.tdc-cell { fill: #e9e6dc; stroke: #555; } .tdc-digit { fill: #111; font-size: 14px; text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+.tdc-socket { fill: #1f1f1e; stroke: #555; stroke-width: 2; } .tdc-lamp { fill: #3a3a38; } .tdc-lamp.on { fill: var(--tdc-lamp); }
+.tdc-glow { fill: var(--tdc-lamp); opacity: 0; } .tdc-glow.on { opacity: .18; }
+.tdc .idle { opacity: .45; }
+#tdc-note { margin: 8px 0 0; }
 #obs-plot { width: 100%; display: block; border: 1px solid var(--rule); border-radius: 4px; }
 #obs-scope { display: block; border-radius: 4px; background: #0b0f14; touch-action: none; }
 .obs-skyrow { display: flex; gap: 12px; align-items: flex-start; margin-top: 10px; }
@@ -86,7 +115,7 @@
 .obs-table .typed, #obs-words .typed { font-family: var(--typed); font-size: 0.92em; }
 #obs-words p { margin: 8px 14px 0; max-width: 100ch; }
 #obs-words .assume { color: var(--ink-3); font-size: 14.5px; }
-@media (max-width: 980px) { .obs-stage { grid-template-columns: minmax(0, 1fr); } .obs-read { grid-template-columns: repeat(3, minmax(0, 1fr)); } .obs-read > div:nth-child(3) { border-right: 0; } }
+@media (max-width: 980px) { .obs-stage { grid-template-columns: minmax(0, 1fr); row-gap: 14px; } .obs-read { grid-template-columns: repeat(3, minmax(0, 1fr)); } .obs-read > div:nth-child(3) { border-right: 0; } }
 @media (max-width: 760px) { #obs-torps { overflow-x: auto; } .obs-table { min-width: 680px; } }
 @media (max-width: 760px) {
   .main { grid-template-columns: minmax(0, 1fr); }
@@ -134,22 +163,33 @@
       <b id="obs-clock" class="obs-clock"></b>
       <input id="obs-t" type="range" aria-label="Time, seconds from the first torpedo">
       <span class="obs-power" id="obs-power" role="group" aria-label="Power"></span>
-      <label>Light <select id="obs-light"></select></label>
     </div>
     <div class="obs-read" id="obs-read"></div>
     <div class="obs-stage">
-      <div>
-        <h3>The plot, from above <span>yards, north up</span></h3>
-        <svg id="obs-plot" role="img" aria-label="Plan view: the boat, the target's track and the torpedoes"></svg>
-      </div>
-      <div>
-        <h3><span id="obs-scope-h">Through the periscope</span> <span>drag to train it; double-click to come back to the target</span></h3>
-        <svg id="obs-scope" role="img" aria-label="The reconstructed view, with the target at its true size and angle"></svg>
-        <div class="obs-skyrow">
-          <svg id="obs-sky" role="img" aria-label="Sky chart: the sun, the moon, and where the view looks"></svg>
-          <p class="below">The sky from above: the zenith in the middle, the horizon round the edge, north up, rings at 30° and 60°. The wedge is what the view takes in; the dot on the rim is the target.</p>
+      <div class="obs-col">
+        <h3><span><span id="obs-scope-h">Through the periscope</span> <span>drag to train it; double-click to come back to the target</span></span>
+          <label class="obs-light">Light <select id="obs-light"></select></label></h3>
+        <div>
+          <svg id="obs-scope" role="img" aria-label="The reconstructed view, with the target at its true size and angle"></svg>
+          <div class="obs-skyrow">
+            <svg id="obs-sky" role="img" aria-label="Sky chart: the sun, the moon, and where the view looks"></svg>
+            <p class="below">The sky from above: the zenith in the middle, the horizon round the edge, north up, rings at 30° and 60°. The wedge is what the view takes in; the dot on the rim is the target.</p>
+          </div>
+          <p class="below" id="obs-light-note"></p>
         </div>
-        <p class="below" id="obs-light-note"></p>
+      </div>
+      <div class="obs-col">
+        <h3><span class="obs-tabs" role="tablist" aria-label="Beside the periscope">
+            <button type="button" role="tab" data-tab="plot" aria-selected="true" aria-controls="obs-plot">Plot</button>
+            <button type="button" role="tab" data-tab="pk" aria-selected="false" aria-controls="tdc-pk">Position keeper</button>
+            <button type="button" role="tab" data-tab="as" aria-selected="false" aria-controls="tdc-as">Angle solver</button></span>
+          <span id="obs-tab-note">from above: yards, north up</span></h3>
+        <div>
+          <svg id="obs-plot" role="tabpanel" aria-label="Plan view: the boat, the target's track and the torpedoes"></svg>
+          <svg id="tdc-pk" class="tdc" role="tabpanel" hidden aria-label="The Torpedo Data Computer's Position Keeper, its dials at this second"></svg>
+          <svg id="tdc-as" class="tdc" role="tabpanel" hidden aria-label="The Torpedo Data Computer's Angle Solver, forward and after, at this second"></svg>
+          <p class="below" id="tdc-note" hidden></p>
+        </div>
       </div>
     </div>
     <div id="obs-torps"></div>
@@ -186,6 +226,7 @@
 <script src="engage.js"></script>
 <script src="engage-views.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.min.js"></script>
+<script src="tdc.js"></script>
 <script src="observer.js"></script>
 <script src="engagement.js"></script>
 <script src="glossary.js"></script>

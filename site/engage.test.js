@@ -82,6 +82,31 @@ console.log(port.targets[0].side === "P" ? "ok  " : (failed++, "FAIL"), "a 50P t
 near(port.targets[0].bearing, 16.8, 0.2, "a port-track target's bearing at firing (46 kn: lead 6.8, aob 43.2P)");
 near(port.torps[0].passed, 0, 0, "the port-track torpedo reaches the hull");
 
+// The Torpedo Data Computer's dials (tdcAt). BANG's first attack, patrol 1 (rg367-74802746/p16): four bow tubes on the
+// destroyer at 1800 yards with offsets 1½R ½R ½L 1½L, then two at the tanker. At the moment of firing the angle
+// solver's point of aim is attackSheet's (the four aims' middle: gyro 013.4), and its angles must agree with fireControl's
+const bang1 = [["1", "013", "1.5R", "0", "23", "1800", "123S"], ["2", "013", "0.5R", "8", "23", "1800", "123S"], ["3", "013.5", "0.5L", "16", "23", "1800", "123S"],
+               ["4", "014", "1.5L", "24", "14-3A", "1800", "123S"], ["5", "345", "1R", "45", "14-3A", "2800", "95S"], ["6", "344", "1L", "53", "14-3A", "2800", "95S"]]
+  .map(([tube, gyro, offset, since, torpedo, range, trk]) => ({ time: "2256", tube, own_course: "090", own_speed: "2.5", own_depth: "60", target_course: "160", target_speed: "10.5",
+        target_range: range, track: trk, gyro, depth_set: "6", power: torpedo === "23" ? "-" : "High", hit: "Hit", torpedo, since_first: since, offset }));
+const AB = E.attackSheet(bang1, { length: 350, beam: 34 }), d0 = E.tdcAt(AB, 0);
+const fc0 = E.fireControl({ ownCourse: 90, gyro: d0.gyro, targetCourse: 160, targetSpeed: 10.5, torpedoSpeed: 46 });
+near(d0.gyro, 13.4, 0.05, "TDC: the point of aim's gyro at firing (the four aims' middle)");
+near(d0.fwd.gyroOrder, 14.9, 0.05, "TDC: the gyro order adds tube 1's offset, 1½R");
+near(d0.aob, fc0.aob, 0.05, "TDC: its angle on the bow agrees with fireControl's for that gyro");
+near(d0.track, fc0.track, 0.05, "TDC: its track angle agrees with fireControl's"); near(d0.range, 1800, 0.5, "TDC: the range at firing is the sheet's");
+near(d0.relBearing, (d0.trueBearing - 90 + 360) % 360, 1e-9, "TDC: relative bearing is true bearing less own course");
+// the fire-control triangle, worked separately: the run over the range is sin AOB over sin track; distance to track is R sin AOB
+near(d0.fwd.run, 1800 * Math.sin(d0.aob * Math.PI / 180) / Math.sin(d0.track * Math.PI / 180), 0.5, "TDC: torpedo run from the triangle");
+near(d0.distanceToTrack, 1800 * Math.sin(d0.aob * Math.PI / 180), 0.5, "TDC: distance to track, range × sin AOB");
+console.log(d0.side === "S" && d0.fwd.tube === "1" && d0.aft.tube === null ? "ok  " : (failed++, "FAIL"), "TDC: starboard track; tube 1 next forward; no after tube on this sheet");
+const d9 = E.tdcAt(AB, 9), d30 = E.tdcAt(AB, 30);
+console.log(d9.fwd.tube === "3" && d9.fwd.offset === -0.5 ? "ok  " : (failed++, "FAIL"), "TDC: at 9 s the next forward tube is 3, offset ½L");
+console.log(d30.target === 1 && Math.round(d30.range) > 2700 ? "ok  " : (failed++, "FAIL"), "TDC: at 30 s it is on the second target, the tanker");
+const dS = E.tdcAt(A, 0);   // SEAHORSE's stern tubes: the after solver's
+console.log(dS.aft.tube === "7" && dS.fwd.tube === null ? "ok  " : (failed++, "FAIL"), "TDC: SEAHORSE's tube 7 is an after tube");
+near(dS.gyro, 162.5, 0.1, "TDC: SEAHORSE's point of aim, gyro 162½ (mid-spread)");
+
 // The periscope view's light: "Broad daylight" is the same local date at noon; "Night vision" lifts the darkness
 // (illustrative) without moving the sun or the moon
 const tinosa = E.toUTC("1944-05-03", "0603", "H");

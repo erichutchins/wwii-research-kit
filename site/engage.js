@@ -262,6 +262,36 @@ const Engage = (() => {
     return { own: o, targets, torps };
   }
   const d3min = xs => xs.length ? Math.min(...xs) : null;
+  // What a Torpedo Data Computer Mark 3's dials show at second s, from the sheet's solution (the dials: OP 1056 pp. 72-73,
+  // 107, 111). The position keeper: own course and speed; the target aimed at (the next torpedo's, else the last fired),
+  // its course and speed as the sheet gives them; its true and relative bearing, range and angle on the bow, from
+  // attackAt; the distance from own ship to its track, range × sin(angle on the bow). The angle solver, for the point of
+  // aim: the lead angle (sin L = k sin AOB, the law of sines in the fire-control triangle, k = target speed / torpedo
+  // speed), the torpedo course (bearing + L), the gyro angle (from own heading), the track angle, and the run
+  // (range × sin AOB / sin track). The gyro angle order adds the offset of each side's next tube. Parallax, the reach and
+  // the turn are left out here as in attackSheet, so the forward and after solvers order the same angles; forward tubes
+  // are 1-6, after 7-10, as in the fleet boats (Gato, Balao, Tench). No solution (k sin AOB beyond 1: the target too fast
+  // for the torpedo on that bearing) leaves the angle solvers without one.
+  function tdcAt(A, s) {
+    const q = attackAt(A, s), own = q.own;
+    const order = [...A.torps].sort((a, b) => a.s - b.s);
+    const next = order.find(t => t.s >= s) || order[order.length - 1];
+    const gi = next ? next.target : 0, T = A.targets[gi], at = q.targets[gi];
+    const nextOn = aft => order.find(t => t.s >= s && (+t.tube >= 7) === aft) || [...order].reverse().find(t => (+t.tube >= 7) === aft);
+    const base = { ownCourse: own.heading, ownSpeed: A.ownSpeed, target: gi, generating: !!(T && T.ok && at) };
+    if (!base.generating) return { ...base, solved: false, fwd: null, aft: null };
+    const relBearing = norm(at.bearing - own.heading), k = T.speed / next.knots, sinL = k * Math.sin(rad(at.aob));
+    const out = { ...base, targetCourse: T.course, targetSpeed: T.speed, trueBearing: at.bearing, relBearing, range: at.range,
+                  aob: at.aob, distanceToTrack: at.range * Math.abs(Math.sin(rad(at.aob))), torpedoSpeed: next.knots, depth: num(next.row.depth_set),
+                  solved: Math.abs(sinL) <= 1, hit: at.hit };
+    if (!out.solved) return { ...out, fwd: null, aft: null };
+    const lead = deg(Math.asin(sinL)), torpedoCourse = norm(at.bearing + lead), gyro = norm(torpedoCourse - own.heading);
+    const ta = ((torpedoCourse + 180 - T.course + 540) % 360) - 180;
+    const run = Math.abs(Math.sin(rad(ta))) > 1e-6 ? at.range * Math.abs(Math.sin(rad(at.aob))) / Math.abs(Math.sin(rad(ta))) : at.range;
+    const side = aft => { const t = nextOn(aft), offset = t && t.offset != null ? t.offset : 0;
+      return { gyroOrder: norm(gyro + offset), offset, run, tube: t ? t.tube : null }; };
+    return { ...out, lead, torpedoCourse, gyro, track: Math.abs(ta), side: ta >= 0 ? "S" : "P", fwd: side(false), aft: side(true) };
+  }
 
   // A built engagement (engagement.json) as the story pages (haynsworth.html, algiers.html) read it: its own entries in
   // the order events.yml gives them, with the record's date and time apart, and the claims; `ref` is the page's link.
@@ -276,6 +306,6 @@ const Engage = (() => {
   const hhmm = ms => { const d = new Date(ms); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()); };
   const day = ms => { const d = new Date(ms); return `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`; };
   return { zoneHours, toUTC, T, coord, offset, nm, posAt, observedPath, closing, fireControl, apparentSize, sky, localNoon, light, story, hhmm, day,
-           gyroOf, coursesOf, offsetOf, firingTimes, torpedoKnots, attackSheet, attackAt };
+           gyroOf, coursesOf, offsetOf, firingTimes, torpedoKnots, attackSheet, attackAt, tdcAt };
 })();
 if (typeof module !== "undefined") module.exports = Engage;

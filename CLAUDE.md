@@ -145,7 +145,8 @@ an engagement, a convoy, a patrol's japanese.yml or claims.yml, or any track, `b
   (`engagement.html`, `convoys.html`, `lanes.html`) share `site/engage.css`, whose boat colours were checked with the
   hit red, every pair, both modes; their encodings (solid, outlined, hatched, dotted; red only for hits) are in
   `guides/ENGAGEMENTS.md`, and their computation is `site/engage.js`, never redone in a page. The engagement page's
-  observer view (`site/observer.js`) draws each attack from its sheet with `engage.js`'s `attackSheet` and `attackAt`.
+  observer view (`site/observer.js`) draws each attack from its sheet with `engage.js`'s `attackSheet` and `attackAt`;
+  beside its periscope, in tabs, the Torpedo Data Computer's faces (`site/tdc.js`, drawing only, the values `tdcAt`'s).
 - Verify changes in a browser: light and dark mode, every ship on `patrols.html`, every engagement on
   `engagement.html`, no console errors.
 
