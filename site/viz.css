@@ -193,6 +193,57 @@ header { display: block; }
 .doc .callout { border-left: 2px solid var(--border); padding: 4px 16px; margin: 12px 0; }
 .doc .muted { color: var(--text-muted); }
 
+/* The Seabees pages' projects (site/seabees-projects.js): a card per main construction project. The evidence tags
+   have no hue of their own: solid for a record, dashed for a published history, hatched for an inference (as every
+   assumption is hatched), dotted for not known. */
+.projects { margin-top: 4px; }
+.proj-head { max-width: 860px; }
+.proj-head h2 { font-size: 26px; font-weight: 400; margin: 0 0 6px; }
+.proj-head p { color: var(--text-secondary); margin: 0 0 8px; }
+.proj-key { font-size: 14.5px; display: flex; flex-wrap: wrap; gap: 4px 0; align-items: center; }
+.proj-key-t { color: var(--text-muted); font-style: italic; margin-right: 10px; }
+.proj-index { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0 14px; font-size: 15.5px; }
+.proj-index a { color: var(--text-secondary); }
+.proj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr)); gap: 16px; }
+.proj { padding: 14px 16px 12px; scroll-margin-top: 12px; }
+.proj h3 { font-size: 21px; font-weight: 400; margin: 0 0 4px; line-height: 1.25; }
+.proj-n { display: inline-block; min-width: 22px; height: 22px; line-height: 21px; text-align: center; font-size: 14px;
+          border-radius: 50%; border: 1px solid var(--text-secondary); color: var(--text-secondary); margin-right: 4px;
+          vertical-align: 2px; }
+.proj h4 { font-size: 16.5px; font-style: italic; font-weight: 400; margin: 12px 0 4px; }
+.proj-ctx { color: var(--text-muted); font-size: 14.5px; }
+.proj-when { color: var(--text-secondary); font-size: 14.5px; font-variant-numeric: tabular-nums; }
+.proj-locs { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.proj-locate { font: 15px var(--serif); padding: 3px 9px; border-radius: 2px; cursor: pointer; text-align: left;
+               background: var(--surface-1); color: var(--text-primary); border: 1px solid var(--border); }
+.proj-locate:hover { background: var(--wash); }
+.proj-locate-sm { padding: 1px 6px; font-size: 14.5px; }
+.proj-pin { color: var(--series-track); }
+.proj-prec { color: var(--text-muted); font-style: italic; }
+.proj-built { margin: 6px 0 2px; padding-left: 20px; }
+.proj-built li { margin: 1px 0; }
+.proj-para { margin: 4px 0 8px; font-size: 16px; line-height: 1.45; }
+.proj-cite { color: var(--text-muted); font-size: 14px; margin-left: 2px; }
+.proj-cite::before { content: "["; }
+.proj-cite::after { content: "]"; }
+.proj-when .proj-cite { margin-left: 0; }
+.ev { display: inline-block; font-size: 13px; font-style: italic; line-height: 1.3; padding: 0 5px; border-radius: 2px;
+      color: var(--text-primary); border: 1px solid var(--text-secondary); vertical-align: 1px; }
+.ev-secondary { border-style: dashed; }
+.ev-inference { border-color: var(--text-muted);
+                background: repeating-linear-gradient(135deg, var(--wash) 0 3px, transparent 3px 6px); }
+.ev-not-known { border-style: dotted; border-color: var(--text-muted); color: var(--text-secondary); }
+.proj-family { margin: 8px 0 4px; padding: 6px 9px; border-left: 3px solid var(--series-track); background: var(--wash);
+               font-size: 15px; color: var(--text-secondary); }
+.proj-family.assumed { border-left-style: dashed; }
+.proj-family.away { border-left-color: var(--text-muted); }
+.proj-family b { color: var(--text-primary); font-weight: 600; }
+.proj-family div + div { margin-top: 3px; }
+.proj-also-list { margin: 6px 0 0; padding-left: 0; list-style: none; }
+.proj-also-list li { margin: 6px 0; font-size: 15.5px; color: var(--text-secondary); }
+.proj-also-list b { color: var(--text-primary); font-weight: 600; }
+.proj-also-when { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
 /* Touch: map controls and segmented buttons big enough for a thumb */
 @media (pointer: coarse) {
   .map-wrap .zoom-btns button { width: 40px; height: 40px; }
@@ -204,6 +255,8 @@ header { display: block; }
   .app { padding: 14px 16px 24px; gap: 14px; grid-template-rows: none; align-content: start; }
   /* the map and log come first; the summary numbers follow them */
   .app > .stats { order: 1; }
+  .app > .projects { order: 2; }
+  .proj { padding: 12px 12px 10px; }
   header h1 { font-size: 25px; }
   /* nav: each group starts its own line; the dividing rules only make sense on one line */
   nav.nav { font-size: 16.5px; gap: 2px 13px; margin-bottom: 12px; }

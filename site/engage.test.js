@@ -76,4 +76,13 @@ const two = E.attackSheet([{ time: "0106", own_course: "100", target_course: "01
                            { time: "0106", own_course: "100", target_course: "010", target_speed: "8", target_range: "2200", gyro: "355", interval: "0" }]);
 near(two.targets.length, 2, 0, "two targets, from two ranges");
 
+// The periscope view's light: "Broad daylight" is the same local date at noon; "Night vision" lifts the darkness
+// (illustrative) without moving the sun or the moon
+const tinosa = E.toUTC("1944-05-03", "0603", "H");
+console.log(iso(E.localNoon(tinosa, "H")) === "1944-05-03T04:00Z" ? "ok  " : (failed++, "FAIL"), "local noon on 3 May, zone H =", iso(E.localNoon(tinosa, "H")));
+const dark = { sun: { bearing: 0, altitude: -30 }, moon: { bearing: 90, altitude: -10, fraction: 0, phase: 0 } };
+near(E.light(dark).day, 0, 0, "no daylight with the sun 30° down"); near(E.light(dark).L, 0.04, 0.001, "a moonless night's light");
+near(E.light(dark, true).L, 0.5, 0.001, "night vision lifts the light"); near(E.light(dark, true).V, 8000, 0, "night vision: a ship shows farther");
+near(E.light({ sun: { bearing: 180, altitude: 60 }, moon: dark.moon }, true).L, 1, 0, "night vision leaves daylight as it was");
+
 process.exit(failed ? 1 : 0);

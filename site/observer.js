@@ -20,7 +20,7 @@ const Observer = (() => {
     const hits = KINDS.map(([k, re]) => [k, (words || "").search(re)]).filter(([, i]) => i >= 0).sort((a, b) => a[1] - b[1]);
     return hits.length ? hits[0][0] : "cargo";
   };
-  const LIGHT = { was: "As it was", full: "What-if: full moon", none: "What-if: no moon", noon: "What-if: local noon" };
+  const LIGHT = { was: "As it was", day: "Broad daylight", night: "Night vision" };
 
   function mount({ D, colour, nameOf, setPageTime }) {
     const card = document.getElementById("observer-card");
@@ -146,7 +146,8 @@ const Observer = (() => {
       defs.html(`<clipPath id="obs-eye"><circle cx="${S / 2}" cy="${S / 2}" r="${r}"/></clipPath>
         <linearGradient id="obs-skyg" x1="0" y1="0" x2="0" y2="1"><stop id="obs-sky0" offset="0"/><stop id="obs-sky1" offset="1"/></linearGradient>
         <linearGradient id="obs-glit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3eed8" stop-opacity=".55"/><stop offset="1" stop-color="#f3eed8" stop-opacity="0"/></linearGradient>
-        <filter id="obs-soft" x="-50%" y="0" width="200%" height="100%"><feGaussianBlur stdDeviation="7 2"/></filter>`);
+        <filter id="obs-soft" x="-50%" y="0" width="200%" height="100%"><feGaussianBlur stdDeviation="7 2"/></filter>
+        <filter id="obs-nv" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.04 0.12 0.02 0 0.01  0.45 1.15 0.30 0 0.07  0.06 0.18 0.03 0 0.02  0 0 0 1 0"/></filter>`);
       view.attr("clip-path", "url(#obs-eye)");
       skyR.attr("width", S).attr("height", S).attr("fill", "url(#obs-skyg)");
       seaR.attr("width", S).attr("y", S / 2).attr("height", S / 2);
@@ -163,14 +164,11 @@ const Observer = (() => {
 
     // the light: the sun and moon computed for the time and place; how far a ship shows is illustrative
     function lightAt(ms) {
-      let when = ms;
-      if (light === "noon") { const local = ms + E.zoneHours(cur.zone || "Z") * 3600e3, d = new Date(local); when = ms + (Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12) - local); }
+      const when = light === "day" ? E.localNoon(ms, cur.zone) : ms;
       const sk = E.sky(when, cur.ev.lat, cur.ev.lon);
       if (!sk) return null;
-      const m = { ...sk.moon, ...(light === "full" ? { fraction: 1, phase: 0.5 } : light === "none" ? { fraction: 0, phase: 0 } : {}) };
-      const day = Math.max(0, Math.min(1, (sk.sun.altitude + 6) / 12));
-      const moonLight = m.altitude > 0 ? m.fraction * Math.sqrt(Math.sin(rad(m.altitude))) : 0;
-      return { day, L: Math.min(1, day + (1 - day) * (0.04 + 0.5 * moonLight)), V: 600 + 18000 * day + (1 - day) * 3400 * moonLight, sun: sk.sun, moon: m, when };
+      const raw = E.light(sk), seen = light === "night" ? E.light(sk, true) : raw;
+      return { day: raw.day, L: seen.L, V: seen.V, rawL: raw.L, sun: sk.sun, moon: sk.moon, when };
     }
     function moonPath(R, phase) {
       const f = Math.cos(phase * 2 * Math.PI), waxing = phase < 0.5, rx = Math.abs(f) * R;
@@ -185,7 +183,9 @@ const Observer = (() => {
       d3.select("#obs-sky1").attr("stop-color", skyLow);
       seaR.attr("fill", mix(mix("#010203", "#0b1422", L * 2), "#3c6385", day));
       stars.selectAll("*").remove(); bodies.selectAll("*").remove(); ticks.selectAll("*").remove(); shipG.selectAll("*").remove();
-      const starA = Math.max(0, 0.9 - L * 2.2);
+      // night vision: drawn in a modern image intensifier's green (#obs-nv), the stars as the darkness has them
+      view.attr("filter", light === "night" ? "url(#obs-nv)" : null);
+      const starA = Math.max(0, 0.9 - (lt ? lt.rawL : 1) * 2.2);
       if (starA > 0.02) for (const st of STARS) { const x = cx + norm(st.b - B) * ppd, y = hy - st.a * ppd;
         if (Math.hypot(x - cx, y - hy) < r && y < hy) stars.append("circle").attr("cx", x).attr("cy", y).attr("r", 0.7 + st.m * 0.6).attr("fill", "#dfe6f0").attr("opacity", starA * st.m); }
       const step = fv > 20 ? 5 : 1;
@@ -230,7 +230,7 @@ const Observer = (() => {
     const altR = a => SR * (90 - a) / 90, at2 = (b, a) => [SC / 2 + altR(a) * Math.sin(rad(b)), SC / 2 - altR(a) * Math.cos(rad(b))];
     function drawSky(lt, B, BT, fv) {
       skyc.selectAll("*").remove();
-      const L = lt ? lt.L : 1, day = lt ? lt.day : 1;
+      const L = lt ? lt.rawL : 1, day = lt ? lt.day : 1;
       skyc.append("circle").attr("cx", SC / 2).attr("cy", SC / 2).attr("r", SR).attr("fill", mix(mix("#05080d", "#2a3a55", L * 2), "#c7dcef", day)).attr("stroke", "var(--ink-3)");
       for (const a of [30, 60]) skyc.append("circle").attr("cx", SC / 2).attr("cy", SC / 2).attr("r", altR(a)).attr("fill", "none").attr("stroke", "#9fb3c8").attr("stroke-opacity", .35).attr("stroke-dasharray", "2 3");
       for (const [b, n] of [[0, "N"], [90, "E"], [180, "S"], [270, "W"]]) { const [x, y] = at2(b, -13); skyc.append("text").attr("class", "obs-lbl").attr("x", x).attr("y", y + 4).attr("text-anchor", "middle").text(n); }
@@ -261,7 +261,7 @@ const Observer = (() => {
       ];
       document.getElementById("obs-read").innerHTML = cells.map(([k, v, n]) => `<div><div class="k">${k}</div><div class="v">${esc(v)}</div><div class="n">${esc(n)}</div></div>`).join("");
       document.getElementById("obs-clock").textContent = clock(s);
-      const sk = lt ? `${light === "was" ? "" : LIGHT[light] + ". "}Sun ${pad3(lt.sun.bearing)}°, ${lt.sun.altitude >= 0 ? Math.round(lt.sun.altitude) + "° up" : Math.round(-lt.sun.altitude) + "° below the horizon"}; moon ${pad3(lt.moon.bearing)}°, ${lt.moon.altitude >= 0 ? Math.round(lt.moon.altitude) + "° up" : "below the horizon"}, ${Math.round(lt.moon.fraction * 100)}% lit (computed for ${cur.ev.lat.toFixed(2)}°, ${cur.ev.lon.toFixed(2)}°). How far a ship shows in this light, about ${(Math.round(lt.V / 100) * 100).toLocaleString()} yards here, is illustrative, not from a source.` : "The sun and moon need SunCalc, which didn't load.";
+      const sk = lt ? `${{ was: "", day: "Broad daylight: the same date at local noon. ", night: "Night vision: the scene as it was, the darkness lifted and drawn in a modern image intensifier's green; the rendering is illustrative, not from a source, and the sun and moon are as computed. " }[light]}Sun ${pad3(lt.sun.bearing)}°, ${lt.sun.altitude >= 0 ? Math.round(lt.sun.altitude) + "° up" : Math.round(-lt.sun.altitude) + "° below the horizon"}; moon ${pad3(lt.moon.bearing)}°, ${lt.moon.altitude >= 0 ? Math.round(lt.moon.altitude) + "° up" : "below the horizon"}, ${Math.round(lt.moon.fraction * 100)}% lit (computed for ${cur.ev.lat.toFixed(2)}°, ${cur.ev.lon.toFixed(2)}°). How far a ship shows in this light, about ${(Math.round(lt.V / 100) * 100).toLocaleString()} yards here, is illustrative, not from a source.` : "The sun and moon need SunCalc, which didn't load.";
       document.getElementById("obs-light-note").textContent = sk;
     }
     function drawTorpTable() {

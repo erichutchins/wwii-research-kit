@@ -163,6 +163,18 @@ function select(unit, { keepUrl = false } = {}) {
   renderSide();
   drawStrip();
   render();
+  // the battalion's main construction projects (seabees-projects.js); a project's button flies the map to it
+  seabeeProjects(document.getElementById("projects"), DATA, unit, {
+    locate: (lonlat, p) => {
+      stop();
+      setTime(parseDay(p.from));
+      // an instant scroll (a smooth one interrupts the map's transition); frame the place once the new date's weather line has resized the map (render() resets the zoom)
+      document.querySelector(".map-card").scrollIntoView({ block: "nearest" });
+      const [lon, lat] = lonlat;
+      setTimeout(() => fitBox([[lon - 0.5, lat - 0.35], [lon + 0.5, lat + 0.35]]), 80);
+    },
+    open: openSource,
+  });
 }
 const inBox = ([lon, lat], [[w, s], [e, n]]) => lon >= w && lon <= e && lat >= s && lat <= n;
 

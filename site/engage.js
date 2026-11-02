@@ -17,6 +17,10 @@
 //   Engage.fireControl({...})         torpedo course, track angle, lead angle and angle on the bow from the attack sheet
 //   Engage.apparentSize({...})        a target's angular width and height at a range and angle on the bow
 //   Engage.sky(ms, lat, lon)          sun and moon: bearing, altitude, the moon's phase and lit fraction (SunCalc)
+//   Engage.localNoon(ms, zone)        ms of local noon (in that zone letter) on the same local date
+//   Engage.light(sky, nightVision)    {day, L, V}: daylight 0-1, the light 0-1 and how far a ship shows (yards,
+//                                     illustrative); nightVision lifts L and V as a dark-adapted eye or an image
+//                                     intensifier might (illustrative, not from a source), the sun and moon unchanged
 //   Engage.attackSheet(rows, {length, beam})   an attack data sheet (attacks.csv's rows for one attack) on one clock: each
 //                                     torpedo's firing second, course and run, each target placed from the gyro and
 //                                     track, and the list of what's assumed
@@ -114,6 +118,19 @@ const Engage = (() => {
     const az = a => norm(deg(a) + 180);
     return { sun: { bearing: az(sun.azimuth), altitude: deg(sun.altitude) },
              moon: { bearing: az(moon.azimuth), altitude: deg(moon.altitude), fraction: ill.fraction, phase: ill.phase, waxing: ill.phase < 0.5 } };
+  }
+  function localNoon(ms, zone) {
+    const local = ms + zoneHours(zone || "Z") * 3600e3, d = new Date(local);
+    return ms + (Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12) - local);
+  }
+  // How far a ship shows is illustrative: daylight from the sun's altitude (0 below -6 degrees, 1 above +6), the moon
+  // adding by its lit fraction and height. Night vision lifts the darkness (illustrative, not from a source).
+  function light(sk, nightVision) {
+    const m = sk.moon, day = Math.max(0, Math.min(1, (sk.sun.altitude + 6) / 12));
+    const moonLight = m.altitude > 0 ? m.fraction * Math.sqrt(Math.sin(rad(m.altitude))) : 0;
+    let L = Math.min(1, day + (1 - day) * (0.04 + 0.5 * moonLight)), V = 600 + 18000 * day + (1 - day) * 3400 * moonLight;
+    if (nightVision) { L = Math.max(L, 0.5); V = Math.max(V, 8000); }
+    return { day, L, V };
   }
   // ---------- an attack data sheet (attacks.csv's rows, as typed) worked through on one clock: seconds from the first
   // torpedo, yards, x east and y north, the boat at the origin when she fired. Every value is the sheet's except those
@@ -258,7 +275,7 @@ const Engage = (() => {
   const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const hhmm = ms => { const d = new Date(ms); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()); };
   const day = ms => { const d = new Date(ms); return `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`; };
-  return { zoneHours, toUTC, T, coord, offset, nm, posAt, observedPath, closing, fireControl, apparentSize, sky, story, hhmm, day,
+  return { zoneHours, toUTC, T, coord, offset, nm, posAt, observedPath, closing, fireControl, apparentSize, sky, localNoon, light, story, hhmm, day,
            gyroOf, coursesOf, offsetOf, firingTimes, torpedoKnots, attackSheet, attackAt };
 })();
 if (typeof module !== "undefined") module.exports = Engage;

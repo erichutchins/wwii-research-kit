@@ -169,6 +169,15 @@ def main():
         m = re.match(r"^rg\d+-(\d+)/p(\d+)$", c)
         if m:
             nara[m[1]].add(int(m[2]))
+    # the Seabee battalions' projects (records/seabees/projects/*.md), checked by build_seabees.py
+    import build_seabees
+    sproblems, scited = build_seabees.check_projects()
+    bad += [f"seabees projects: {p}" for p in sproblems]
+    for c in scited:
+        used[resolve(c)] += 1
+        m = re.match(r"^rg\d+-(\d+)/p(\d+)$", c)
+        if m:
+            nara[m[1]].add(int(m[2]))
     print(f"{sum(used.values())} citations in {len(files)} files, the engagements and the glossary, {len(nara)} National Archives items")
     for sid, n in used.most_common():
         print(f"  {n:6}  {sid}")
