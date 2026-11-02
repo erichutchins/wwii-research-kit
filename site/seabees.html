@@ -82,9 +82,14 @@
     .app { height: auto; }
     header { flex-direction: column; }
     .nav { margin-left: 0; flex-wrap: wrap; }
-    .main { grid-template-columns: 1fr; }
+    .main { grid-template-columns: 1fr; height: auto; }   /* the cards set their own heights: a fixed one squeezes the map */
     .map-wrap { height: 60vh; }
     .side { max-height: 60vh; }
+  }
+  @media (max-width: 600px) {   /* a phone: a compact legend, and the map without its hint (it covered the ruler) */
+    .legend { gap: 2px 12px; font-size: 13.5px; padding: 8px 10px 4px; }
+    .hint { display: none; }
+    .map-wrap { height: 62vh; }
   }
 </style>
 </head>

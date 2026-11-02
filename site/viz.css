@@ -243,6 +243,25 @@ header { display: block; }
 .proj-also-list li { margin: 6px 0; font-size: 15.5px; color: var(--text-secondary); }
 .proj-also-list b { color: var(--text-primary); font-weight: 600; }
 .proj-also-when { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+/* A project's film (records/film/clips.csv): a place-date clip has a solid rule, a context clip a dashed one */
+.proj-film { margin: 6px 0 10px; padding: 6px 9px; border-left: 3px solid var(--text-secondary); font-size: 15px; }
+.proj-film.context { border-left-style: dashed; border-left-color: var(--text-muted); }
+.proj-film-head { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.proj-film-head b { color: var(--text-primary); font-weight: 600; }
+.proj-film-rel { font-style: italic; }
+.proj-film-shows { margin: 3px 0; line-height: 1.4; }
+.proj-film-links { font-size: 14.5px; }
+.proj-film-links a { color: var(--text-secondary); }
+.proj-film-note { font-size: 14.5px; color: var(--text-secondary); margin-top: 3px; }
+.proj-film-note summary { cursor: pointer; color: var(--text-muted); font-style: italic; }
+.proj-film-note p { margin: 3px 0 0; line-height: 1.4; }
+/* The projects on the Seabees maps (seabeeProjectMarks): a numbered square on a leader, not a station's dot */
+.pmk-lead { stroke: var(--text-secondary); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.pmk-box { fill: var(--surface-1); stroke: var(--text-primary); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.pmk-n { fill: var(--text-primary); font-weight: 600; pointer-events: none; }
+.pmk a { cursor: pointer; }
+.pmk a:hover .pmk-box, .pmk a:focus .pmk-box { fill: var(--wash); stroke-width: 2.5; }
+.pmk.future { opacity: 0.35; }
 
 /* Touch: map controls and segmented buttons big enough for a thumb */
 @media (pointer: coarse) {

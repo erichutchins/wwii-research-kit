@@ -268,6 +268,9 @@ def load_weather(problems, hint="python3 tools/fetch_station_weather.py seabees"
 PROJECTS = SEABEES / "projects"
 PROJECT_FIELDS = {"id", "title", "unit", "part", "places", "from", "from_basis", "to", "to_basis", "dates_ref",
                   "built", "sources"}
+PROJECT_OPTIONAL = {"film"}     # clip ids in records/film/clips.csv
+CLIPS = RECORDS / "film" / "clips.csv"
+CLIP_RELEVANCE = ("place-date", "context")
 BASIS = ("reported", "derived", "inferred", "assumed")
 PRECISION = ("exact", "town", "harbour", "island", "peninsula", "area")
 EVIDENCE = {"Record.": "record", "Secondary.": "secondary", "Inference.": "inference", "Not known.": "not known"}
@@ -308,6 +311,24 @@ def segments(text, link):
     return segs, cites
 
 
+def load_clips(link, problems):
+    """records/film/clips.csv, by clip id: what each film shows, its date and basis, its relevance, its catalogue
+    page and its YouTube copy (README in records/film/)."""
+    clips = {}
+    if not CLIPS.exists():
+        return clips
+    for r in read_csv(CLIPS):
+        if r["relevance"] not in CLIP_RELEVANCE:
+            problems.append(f"film/clips.csv: {r['clip']}: relevance must be one of {', '.join(CLIP_RELEVANCE)}")
+        yt = r["youtube"]
+        clips[r["clip"]] = {
+            "clip": r["clip"], "date": r["date"], "date_basis": r["date_basis"], "place": r["place"],
+            "place_precision": r["place_precision"], "archive_id": r["archive_id"], "shows": r["shows"],
+            "relevance": r["relevance"], "note": r["note"], "link": link(r["source"]),
+            "youtube": (f"https://www.youtube.com/watch?v={yt}" + (f"&t={r['start']}s" if r["start"] else "")) if yt else ""}
+    return clips
+
+
 def load_projects(units, parts_csv, places, link, problems):
     """The battalions' main construction projects (records/seabees/projects/<id>.md, one each) and the other stations
     (projects/also-at.md), checked: fields, dates, places, a citation on every paragraph of what was built, and an
@@ -316,6 +337,7 @@ def load_projects(units, parts_csv, places, link, problems):
     projects, also = [], {}
     if not PROJECTS.exists():
         return projects, also
+    clips = load_clips(link, problems)
 
     def day(v, where):
         try:
@@ -348,7 +370,7 @@ def load_projects(units, parts_csv, places, link, problems):
                 problems.append(f"{where}: unknown unit {fm.get('unit')!r}")
             also[fm.get("unit")] = sorted(rows, key=lambda r: r["from"])
             continue
-        for k in sorted(set(fm) - PROJECT_FIELDS):
+        for k in sorted(set(fm) - PROJECT_FIELDS - PROJECT_OPTIONAL):
             problems.append(f"{where}: unknown field {k!r}")
         for k in sorted(PROJECT_FIELDS - set(fm)):
             problems.append(f"{where}: missing field {k!r}")
@@ -382,6 +404,12 @@ def load_projects(units, parts_csv, places, link, problems):
             pls.append({k: p.get(k) for k in ("name", "lat", "lon", "precision", "station", "placed")})
         if not pls:
             problems.append(f"{where}: no places")
+        film = []
+        for c in fm.get("film") or []:
+            if str(c) not in clips:
+                problems.append(f"{where}: film {c!r} isn't a clip in film/clips.csv")
+            else:
+                film.append(clips[str(c)])
         listed = {str(c) for c in (fm.get("sources") or []) + (fm.get("dates_ref") or [])}
         out_secs = {}
         for sec in secs:
@@ -414,7 +442,7 @@ def load_projects(units, parts_csv, places, link, problems):
                          "places": pls, "from": d0, "from_basis": fm.get("from_basis"), "to": d1,
                          "to_basis": fm.get("to_basis"), "dates_links": cites_of(fm.get("dates_ref"), where),
                          "built": [str(b) for b in fm.get("built") or []],
-                         "sources": cites_of(fm.get("sources"), where), **out_secs})
+                         "sources": cites_of(fm.get("sources"), where), "film": film, **out_secs})
     projects.sort(key=lambda p: (p["unit"], p["from"]))
     return projects, also
 

@@ -213,7 +213,7 @@ const Engage = (() => {
       const aim = norm(aims[0] + d3mean(aims.map(a => ((a - aims[0] + 540) % 360) - 180)));
       const sp = d3mean(first.map(t => t.knots));
       const fc = fireControl({ ownCourse: aim, gyro: 0, targetCourse: course, targetSpeed: speed, torpedoSpeed: sp });
-      const signedAob = fc.side === "S" ? fc.aob : -fc.aob;
+      const signedAob = fc.aob;   // fireControl's aob is already signed (starboard +, port -)
       const bearing = norm(course + signedAob + 180), at = ts[0].s, from = ownAt(at).p;
       const p0 = [from[0] + range * Math.sin(rad(bearing)), from[1] + range * Math.cos(rad(bearing))];
       return { course, speed, range, zig, ok: true, bearing, aob: signedAob, lead: fc.lead, track: fc.track, side: fc.side, at, p0, typedTrack: r.track,

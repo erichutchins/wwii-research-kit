@@ -75,6 +75,12 @@ console.log(A.surface === false ? "ok  " : (failed++, "FAIL"), "64 ft is a peris
 const two = E.attackSheet([{ time: "0106", own_course: "100", target_course: "010", target_speed: "8", target_range: "1500", gyro: "350", interval: "0" },
                            { time: "0106", own_course: "100", target_course: "010", target_speed: "8", target_range: "2200", gyro: "355", interval: "0" }]);
 near(two.targets.length, 2, 0, "two targets, from two ranges");
+// A port track: own course 000, gyro 010, target course 240 (track 50P). The target lies off the bow to port of the
+// torpedo's course, and a torpedo fired on the solution reaches her hull (fireControl's aob is already signed)
+const port = E.attackSheet([{ time: "0100", own_course: "000", target_course: "240", target_speed: "8", target_range: "1500", gyro: "010", interval: "0", hit: "Hit" }]);
+console.log(port.targets[0].side === "P" ? "ok  " : (failed++, "FAIL"), "a 50P track is a port track");
+near(port.targets[0].bearing, 16.8, 0.2, "a port-track target's bearing at firing (46 kn: lead 6.8, aob 43.2P)");
+near(port.torps[0].passed, 0, 0, "the port-track torpedo reaches the hull");
 
 // The periscope view's light: "Broad daylight" is the same local date at noon; "Night vision" lifts the darkness
 // (illustrative) without moving the sun or the moon

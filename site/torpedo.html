@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Torpedo fire control: the arithmetic of an attack</title>
+<link rel="stylesheet" href="viz.css">
+<style>
+  .tri-wrap { width: 100%; }
+  #tri { display: block; width: 100%; height: auto; max-height: 560px; }
+  .grid-ring { fill: none; stroke: var(--grid); stroke-width: 1; }
+  .ring-label { font-size: 12px; fill: var(--text-muted); }
+  .boat { fill: var(--series-track); stroke: var(--surface-1); stroke-width: 2; }
+  .torp { fill: none; stroke: var(--series-track); stroke-width: 2; }
+  .torp-pre { fill: none; stroke: var(--series-track); stroke-width: 1.5; stroke-dasharray: 2 4; }
+  .tgt { fill: var(--series-attack); stroke: var(--surface-1); stroke-width: 2; }
+  .tgt-path { fill: none; stroke: var(--series-attack); stroke-width: 2; stroke-dasharray: 6 4; }
+  .sight { fill: none; stroke: var(--text-secondary); stroke-width: 1; stroke-dasharray: 1 3; }
+  .arc { fill: none; stroke: var(--text-secondary); stroke-width: 1.2; }
+  .arc-label { font-size: 13px; fill: var(--text-primary); paint-order: stroke; stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round; }
+  .hitpt { fill: var(--surface-1); stroke: var(--text-primary); stroke-width: 1.5; }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 22px; padding: 12px 14px 4px; }
+  .controls label { display: block; color: var(--text-secondary); font-size: 14.5px; }
+  .controls output { color: var(--text-primary); font-variant-numeric: tabular-nums; font-weight: 600; }
+  .controls input[type=range] { width: 100%; accent-color: var(--series-track); }
+  .readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px 18px; padding: 8px 14px 12px; }
+  .readout div { border-left: 2px solid var(--border); padding-left: 10px; }
+  .readout b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+  .readout i { color: var(--text-secondary); font-size: 14px; }
+  table.sheet td, table.sheet th { font-variant-numeric: tabular-nums; }
+  table.sheet td.mono { white-space: nowrap; }
+  .tblwrap { overflow-x: auto; }
+  dl.fields dt { margin-top: 8px; }
+  dl.fields dd { margin-left: 18px; }
+  .src { color: var(--text-muted); }
+</style>
+</head>
+<body class="viz-root">
+<div class="doc">
+  <header>
+    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a class="lbl" href="index.html#pacific">Pacific</a><a href="convoys.html">Convoys</a><a href="lanes.html">Sea lanes</a><a href="haynsworth.html">Haynsworth</a><a href="seabees.html">Seabees</a><a href="dives.html">Dives</a></span><span class="grp"><a class="lbl" href="index.html#europe">Algiers to Germany</a><a href="algiers.html">Algiers</a><a href="army.html">Army units</a></span><span class="grp ref"><a class="lbl" href="index.html#ships">Every theater</a><a href="patrols.html">Ship tracks</a><a href="engagement.html">Engagements</a></span><span class="grp"><a class="lbl" href="index.html#reference">Reading the records</a><a href="zones.html">Time zones</a><span class="sub"><span class="lbl">Grids:</span><a href="jgrid.html">Japanese</a><a href="grids.html">US Army</a><a href="german.html">German</a></span><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
+    <div>
+      <h1>Torpedo fire control: the arithmetic of an attack</h1>
+      <p class="lede">Every attack data sheet in a war patrol report ends in a table of numbers: <span class="mono">Track
+        123S</span>, <span class="mono">Gyro 013</span>, <span class="mono">Depth Set 6</span>. They are the answer to a
+        triangle: where the target would be when a torpedo, fired now, reached its track. This page explains the
+        terms as the Navy defined them, works one of BANG's attacks from her own sheet, and lets you set up the
+        triangle yourself.</p>
+    </div>
+  </header>
+
+  <h2>The gyro: aiming the torpedo, not the boat</h2>
+  <p>A submarine did not have to point at its target. The Navy's doctrine defines the <b>gyro angle</b> as "an angle
+    applied in the mechanism of a torpedo gyro before firing which causes the torpedo, immediately upon launching, to
+    turn through an angle and steady on a course differing from the direction of the torpedo tube axis". It is measured
+    from the boat's bow, "from 0° clockwise through 360°": a straight shot from a bow tube is 0°, a straight shot from a
+    stern tube 180°, a 90° right-angle shot from a bow tube 90° and from a stern tube 270°
+    <span class="src">(<a href="https://www.ibiblio.org/hyperwar/USN/ref/SS-Doct/SS-Doct-4.html">USF 25(A)</a> p. 37)</span>.
+    So the torpedo's course is the boat's course plus the gyro angle.</p>
+  <p>The turn is not instant. The torpedo runs out of the tube and swings onto its gyro course along a curve, so its
+    final track is offset from the tube: the doctrine calls the sideways part of that offset the <b>advance</b>, and
+    applies a "correction for advance and transfer" to angled shots, and a <b>correction for parallax</b> for the
+    distance between the tube and the periscope <span class="src">(USF 25(A) pp. 37–38)</span>. It also dives: "As the
+    torpedo is launched, its initial dive takes it below its pre-set depth. The depth mechanism brings it back to set
+    depth" <span class="src">(<a href="https://web.archive.org/web/20220522053952/https://maritime.org/doc/torpedo/index.htm">OP 635</a> Ch. 1, pp. 10–13)</span>,
+    which is why the doctrine wants a run of no less than 500 yards, so the torpedo "will settle to its set depth"
+    <span class="src">(USF 25(A) p. 50)</span>.</p>
+  <p>The limits were the mechanism's. The Mark 14-1A's gyro allowed "angle shots up to 90 degrees right or left"; the
+    Mark 14-3A's "up to 160 degrees". The Mark 14-1A and 14-3A had two speeds, "31 and 46 knots, having a range of
+    9,000 yards and 4,500 yards respectively"; the Mark 23 was a 14-3A locked in high power, "operated at high speed only"
+    <span class="src">(OP 635 pp. 13–14)</span>. The doctrine preferred small gyro angles: "The best chances of hitting
+    are with small gyro angles", and "the straight shot is the better shot when feasible"
+    <span class="src">(USF 25(A) pp. 44, 52)</span>.</p>
+
+  <h2>The problem the Torpedo Data Computer solved</h2>
+  <p>The approach officer could measure three things directly: the target's <b>bearing</b> (periscope, radar or sound),
+    its <b>range</b> (stadimeter, radar or echo ranging) and, by eye from its aspect, its <b>angle on the bow</b>: the
+    "relative bearing of submarine from the target ship measured to starboard or port from the target ship's head from
+    0° to 180°" <span class="src">(USF 25(A) pp. 37, 49)</span>. From a series of these the target's course and speed
+    were worked out. The Torpedo Data Computer Mark 3 did that work in two parts: a <b>position keeper</b>, which kept
+    the target's position moving on its estimated course and speed, and an <b>angle solver</b>, which worked the
+    shot <span class="src">(<a href="https://web.archive.org/web/20220522045228/https://maritime.org/doc/tdc/index.htm">OP 1056</a>,
+    Section 1: the position keeper's equations p. 22, the angle solver's p. 29)</span>. "The gyro angle, track angle and
+    torpedo run are continuously being computed … The computed gyro angle is set on the torpedo continuously either
+    automatically or by follow the pointer, spread angles being superimposed as desired"
+    <span class="src">(USF 25(A) p. 50)</span>.</p>
+  <p>The answer is a triangle: the boat, the target at the moment of firing, and the <b>intercept point</b>, "the
+    intersection of torpedo and target tracks" <span class="src">(USF 25(A) p. 38)</span>. Its angles are:</p>
+  <ul>
+    <li>at the target, the <b>angle on the bow</b>;</li>
+    <li>at the boat, the <b>lead angle</b>: how far ahead of the target the torpedo is aimed (the doctrine's "sight
+      angle", "the angle between the bearing of the target at the instant of firing and the torpedo track",
+      USF 25(A) p. 37);</li>
+    <li>at the intercept, the supplement of the <b>track angle</b>: "the angle at the point of intercept between the
+      target ship's track and the reversed direction of the torpedo track … measured to starboard or to port from the
+      target ship's head from 0° to 180°" (USF 25(A) p. 37). So track angle = angle on the bow + lead angle.</li>
+  </ul>
+  <p>The torpedo and the target reach the intercept together, so their runs are in the ratio of their speeds, and
+    the lead angle follows from the target's speed against the torpedo's (the law of sines). That trigonometry is ours,
+    worked from the definitions above, and is the kit's computation in <span class="mono">site/engage.js</span>
+    (<span class="mono">fireControl</span>, <span class="mono">attackSheet</span>), which the figure and the worked
+    example below both call. It leaves out the advance and transfer and the parallax, so on an angled shot it is a
+    degree or two and some tens of yards from what the computer set (inferred).</p>
+
+  <h2>Set up a shot</h2>
+  <p>The boat (blue) is at the bottom, heading up the page, with the target dead ahead at the range you set. Choose the
+    target's speed and the angle on the bow; the figure works out the gyro angle for a bow shot, the track angle and
+    the torpedo's run. It is the plain triangle (no advance, transfer or parallax), drawn by
+    <span class="mono">engage.js</span>.</p>
+  <div class="card">
+    <div class="controls">
+      <label>Target speed <output id="o-speed"></output>
+        <input type="range" id="speed" min="0" max="20" step="0.5" value="10"></label>
+      <label>Angle on the bow <output id="o-aob"></output>
+        <input type="range" id="aob" min="0" max="180" step="1" value="60"></label>
+      <label>Range <output id="o-range"></output>
+        <input type="range" id="range" min="500" max="4500" step="100" value="1500"></label>
+      <div><div class="filters" style="margin:0">
+        <div class="seg" id="side-seg" role="group" aria-label="Side of the target's bow"><button data-v="S" aria-pressed="true">Starboard</button><button data-v="P" aria-pressed="false">Port</button></div>
+        <div class="seg" id="power-seg" role="group" aria-label="Torpedo speed"><button data-v="46" aria-pressed="true">46 kn</button><button data-v="31" aria-pressed="false">31 kn</button></div>
+      </div></div>
+    </div>
+    <div class="legend">
+      <span><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="var(--series-track)"/></svg>The boat</span>
+      <span><svg width="26" height="12"><line x1="0" y1="6" x2="26" y2="6" stroke="var(--series-track)" stroke-width="2"/></svg>Torpedo track</span>
+      <span><svg width="12" height="12"><rect x="1" y="3" width="10" height="6" fill="var(--series-attack)"/></svg>The target at firing</span>
+      <span><svg width="26" height="12"><line x1="0" y1="6" x2="26" y2="6" stroke="var(--series-attack)" stroke-width="2" stroke-dasharray="6 4"/></svg>Its run to the intercept</span>
+      <span><svg width="26" height="12"><line x1="0" y1="6" x2="26" y2="6" stroke="var(--text-secondary)" stroke-dasharray="1 3"/></svg>Line of sight at firing</span>
+    </div>
+    <div class="tri-wrap"><svg id="tri" role="img" aria-label="The attack triangle: the boat, the target at firing and the intercept point"></svg></div>
+    <div class="readout" id="readout" aria-live="polite"></div>
+    <div class="caption" id="tri-caption"></div>
+  </div>
+  <p class="muted">Try it: with a 10-knot target at 60° starboard, the torpedo leads by about 11°. Raise the angle on the
+    bow to 90° and the lead is greatest for that speed. Swing the angle towards 0° (the target coming straight at you) or
+    180° (going away) and the lead shrinks, but the track angle goes to 0° or 180°, which the doctrine counts poor
+    shots: "Track angles between 70° and 110° are considered best for all around coverage" (USF 25(A) p. 53).</p>
+
+  <h2>Reading an attack data sheet</h2>
+  <p>Each attack in a war patrol report has a two-page data sheet. The first page gives the time and position, the
+    target's description, draft, course, speed and range, the boat's own speed, course and depth, and the type of
+    attack in words; the second has one column per torpedo
+    <span class="src">(SEAHORSE's sheets, <a href="https://catalog.archives.gov/id/74845019?objectPage=29">rg367-74845019/p29–30</a>;
+    BANG's, <a href="https://catalog.archives.gov/id/74802746?objectPage=16">rg367-74802746/p16–17</a>)</span>. The kit
+    transcribes the numbers, as typed, into each patrol's <span class="mono">attacks.csv</span> (one row a torpedo) and
+    the words into <span class="mono">attack_sheets.yml</span>. The fields, and how they check each other:</p>
+  <dl class="fields">
+    <dt><span class="mono">Tubes Fired</span></dt><dd>Tubes 1–6 are a fleet boat's bow tubes and 7–10 its stern tubes
+      (BANG's stern shots are typed with gyros near 180°, tubes 7–10, <a href="https://catalog.archives.gov/id/74802746?objectPage=21">rg367-74802746/p21</a>).</dd>
+    <dt><span class="mono">Track Angle</span></dt><dd>With S or P, the side of the target the torpedo meets. Check:
+      own course + gyro angle + 180° − target course should give it.</dd>
+    <dt><span class="mono">Gyro Angle</span></dt><dd>From the bow, clockwise (USF 25(A) p. 37). Some boats type
+      right or left of the bow (<span class="mono">15R</span>, <span class="mono">5L</span>).</dd>
+    <dt><span class="mono">Depth Set</span></dt><dd>Feet. The doctrine set 6 feet for destroyers and 10–12 for merchant
+      ships when using the older exploders, and "When using the Mark 6 exploder mechanism set torpedo depth in
+      accordance with the latest instructions from the Force Commander" (USF 25(A) pp. 51–52).</dd>
+    <dt><span class="mono">Power</span></dt><dd>High or low, the two-speed Mark 14's setting (OP 635 pp. 13–14);
+      doctrine was "the highest torpedo speed which will reach the target" (USF 25(A) p. 50). BANG's sheets leave it
+      blank (−) for the single-speed Mark 23s.</dd>
+    <dt><span class="mono">Firing Interval</span> and <span class="mono">Type Spread</span></dt><dd>Seconds between
+      torpedoes, and how they were spread: BANG's first sheets type each torpedo's offset from the point of aim
+      (<span class="mono">1½R</span>, <span class="mono">½L</span>), applied "by means of the offset knob on TDC"
+      (<a href="https://catalog.archives.gov/id/74802746?objectPage=16">rg367-74802746/p16</a>).</dd>
+    <dt><span class="mono">Hit or Miss</span>, <span class="mono">Erratic</span></dt><dd>As the boat judged them, from
+      what was seen and heard and the timed explosions: a claim, which the other side's records test.</dd>
+  </dl>
+
+  <h2>Worked from the sheet: BANG, Attack 1, 29 April 1944</h2>
+  <p>BANG's first attack, a "night periscope depth attack" on a convoy in the Luzon Strait at <span class="mono">2256 K</span>
+    (<a href="https://catalog.archives.gov/id/74802746?objectPage=16">rg367-74802746/p16</a>; the Japanese side of it is
+    on the <a href="engagement.html">engagement page</a>, its clock on <a href="zones.html">the time-zones page</a>). The
+    sheet's own-ship line: "Speed: 2.5 knots Course: 090 Depth: 60 ft." Its target line: a destroyer at 1,800 yards and
+    a tanker (AO) at 2,800, both on course 160° at 10.5 knots. Tubes 1–4 were fired on the destroyer's solution, "in line
+    with AK range 3000 yards"; tubes 5 and 6 at the tanker. The table below takes every number from the sheet
+    (<a href="https://catalog.archives.gov/id/74802746?objectPage=17">p17</a>, transcribed in
+    <span class="mono">attacks.csv</span>) and works it with <span class="mono">engage.js</span>.</p>
+  <div class="tblwrap"><table class="sheet" id="sheet"></table></div>
+  <div class="callout" id="sheet-check"></div>
+  <p class="muted" id="sheet-assumed"></p>
+
+  <h2>Tactics of the day</h2>
+  <p><b>The submerged approach.</b> The 1944 doctrine breaks an attack into getting ahead of the enemy unseen, closing
+    submerged, firing on a good track, and getting away. Periscope looks were short ("Two or more brief exposures of
+    less than 30 seconds are preferable to a long exposure"), and it favoured "a driving in approach where the angle on
+    the bow is small" (USF 25(A) pp. 41–42, 46). It assumed discovery: "discovery at the time of firing torpedoes is
+    almost inevitable", so the boat retires at once and reloads (pp. 56, 62).</p>
+  <p><b>The night surface attack.</b> "Remain on the surface, in order to maintain the advantages of mobility, until
+    there is a possibility of detection. When detection is possible, go to radar depth"; "Submarines have been sighted on
+    bright moonlight nights at 12,000 yards range" (USF 25(A) p. 59). BANG's Attack 2, the next morning, was a "Night
+    surface radar attack, using constant radar ranges and constant TBT bearings to TDC"
+    (<a href="https://catalog.archives.gov/id/74802746?objectPage=19">rg367-74802746/p19</a>): the bearings from the
+    target bearing transmitter on the bridge, the ranges from radar.</p>
+  <p><b>Spreads.</b> "Spreads are always used. The minimum spread should cover at least 80% of the target length", and
+    up to 200% when the problem was less well solved. A <i>longitudinal</i> spread fires along one track at different
+    points of aim, "the simplest to apply … used principally with periscope firing"; a <i>divergent</i> spread fans the
+    torpedoes with different gyro angles at one point of aim, "more difficult to evade"; a <i>parallel</i> spread from bow
+    and stern tubes together was "undesirable" (USF 25(A) pp. 37–38, 53). BANG's offsets of 1½R to 1½L on Attack 1 are a
+    spread of the first kind, set on the computer.</p>
+  <p><b>Bow and stern shots, and the escorts.</b> If the target turned at the last minute, the doctrine changed the gyro
+    angle or shifted "from bow to stern fire (or vice versa) rather than" turning the slow boat (USF 25(A) p. 45).
+    "Offensive action should be taken whenever practicable against escorts of such a size as to warrant torpedo fire"
+    (p. 56). The doctrine read here does not name the bow-on shot at an oncoming escort that later accounts call "down
+    the throat"; we have not found it in a wartime source yet.</p>
+  <p><b>The torpedo failures of 1942–43.</b> A secondary account by the Naval Undersea Museum: warshot torpedoes "ran
+    deeper than the set depth because the warheads were heavier than exercise heads", corrected by "new depth
+    calibrations"; the Mark 6 magnetic exploder "was detonating prematurely", so "the submarine force switched to the
+    contact exploder"; and then a direct hit "would bend the firing pin", fixed with "a lighter firing pin and a heavier
+    firing pin spring", so that "by fall 1943 … the MK 14 was finally functioning satisfactorily"
+    <span class="src">(<a href="https://navalunderseamuseum.org/mk-14/">Ryan, Naval Undersea Museum, 2016</a>)</span>.
+    The wartime manuals show traces of it: the Mark 14-3's "depth mechanism … was improved, and the torpedo was designated
+    the Torpedo Mk 14-3A" (OP 635 p. 13), and the February 1944 doctrine leaves the Mark 6's depth setting to "the
+    latest instructions from the Force Commander" (USF 25(A) p. 52). BANG's sheets of 1944 set 6 to 8 feet
+    (<span class="mono">attacks.csv</span>, patrol 1).</p>
+  <p><b>Wolf packs.</b> The February 1944 doctrine says of coordinated attack only "These tactics are at present
+    undergoing revision" (USF 25(A) p. 61). The packs' practice shows in the patrol reports: BANG, PARCHE and TINOSA in
+    April–May 1944 sent each other contact reports, were asked for "positions of all submarines", and were given flanks
+    to attack from (<a href="engagement.html">the Luzon Strait engagement</a>, its notes from the three boats' reports).</p>
+
+  <h2>Sources</h2>
+  <ul>
+    <li><i>Current Doctrine, Submarines</i>, USF 25(A), Commander Submarine Force, Pacific Fleet, February 1944, Chapter IV
+      (<a href="https://www.ibiblio.org/hyperwar/USN/ref/SS-Doct/SS-Doct-4.html">HyperWar transcription</a>, printed pages).</li>
+    <li><i>Torpedoes Mark 14 and 23 Types</i>, OP 635 (First Revision), Bureau of Ordnance, 24 March 1945
+      (<a href="https://web.archive.org/web/20220522053952/https://maritime.org/doc/torpedo/index.htm">maritime.org's edition</a>, archived;
+      the site itself did not answer on 1 November 2026).</li>
+    <li><i>Torpedo Data Computer Mark 3, Mods. 5 to 12</i>, OP 1056, Bureau of Ordnance, June 1944
+      (<a href="https://web.archive.org/web/20220522045228/https://maritime.org/doc/tdc/index.htm">maritime.org's edition</a>, archived;
+      its table of contents only).</li>
+    <li>BANG's first war patrol report, attack data sheets (<a href="https://catalog.archives.gov/id/74802746?objectPage=16">National Archives, rg367-74802746</a>).</li>
+    <li>Mary Ryan, "MK 14 Torpedo", <a href="https://navalunderseamuseum.org/mk-14/">U.S. Naval Undersea Museum</a>, 2016 (secondary).</li>
+  </ul>
+  <p class="muted">Not yet read, to check next: the <i>Submarine Torpedo Fire Control Manual</i> (1950, postwar;
+    <a href="https://maritime.org/doc/attack/index.htm">maritime.org</a>), the TDC manual's pages themselves, and the
+    Mark 14 manual's gyro chapter (OP 635 Chapter 6).</p>
+</div>
+
+<div id="tip" role="tooltip"></div>
+
+<script src="config.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="engage.js"></script>
+<script src="torpedo.js"></script>
+<script src="glossary.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>

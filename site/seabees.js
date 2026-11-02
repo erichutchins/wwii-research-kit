@@ -4,6 +4,7 @@
 // day's weather from tools/fetch_station_weather.py).
 
 let RULER = null;   // scalebar.js
+let PM = null;      // the projects' marks on the map (seabees-projects.js)
 const DAY = 864e5;
 const DAYS_PER_SECOND = 20;    // playback speed
 const KM_PER_DAY = 550;        // pace of a moving marker between stations (a transport, ~12 knots)
@@ -206,6 +207,7 @@ function render() {
     .attr("transform", d => `translate(${proj(d.lonlat)})`);
   mks.append("circle").attr("class", "ring");
   mks.append("circle").attr("class", "shape");
+  PM = seabeeProjectMarks(g.append("g"), DATA, state.unit, proj);   // the main projects: numbered squares, each linking to its section
   g.append("g").attr("class", "who-g");
   zoom = d3.zoom().scaleExtent([1, 600]).on("zoom", ev => {
     (RULER = RULER || scaleBar(svg.node().parentNode, { units: ["nm"] })).update(p => proj.invert(ev.transform.invert(p)));   // the distance ruler
@@ -217,7 +219,7 @@ function render() {
   svg.call(zoom).on("dblclick.zoom", null);
   svg.call(zoom.transform, d3.zoomIdentity);
   svg.on("pointermove", onHover).on("pointerleave", () => { hideTip(); setHover(null); })
-     .on("click", ev => { const d = nearest(ev); if (d) openSource(d.links[0], d); });
+     .on("click", ev => { if (PM?.at(ev.target)) return; const d = nearest(ev); if (d) openSource(d.links[0], d); });
   rescale();
   placeLabels();
   setTime(state.t);
@@ -236,6 +238,7 @@ function rescale() {
   const k = state.k;
   g.selectAll(".mk .ring").attr("r", (R + 2) / k);
   g.selectAll(".mk .shape").attr("r", d => (d.hollow ? R - 1 : R) / k);
+  PM?.rescale(k);
   g.selectAll(".sea-label").style("font-size", `${12 / k}px`).attr("display", k > 12 ? "none" : null);
   g.selectAll(".place-label").style("font-size", `${12 / k}px`).style("stroke-width", `${3 / k}px`);
   drawWho();
@@ -309,6 +312,7 @@ function setTime(t) {
   }).join("   ·   ");
   if (g) {
     g.selectAll(".mk").classed("future", d => d.t > state.t);
+    PM?.setTime(state.t);
     g.selectAll(".leg").classed("ahead", d => d.b.t > state.t);
     drawWho(pos.filter(p => p.at));
   }
@@ -505,6 +509,9 @@ function renderLegend() {
          "Position assumed: a stand-in point");
   item(v => v.append("line").attr("x1", 1).attr("x2", 21).attr("y1", 6).attr("y2", 6).attr("stroke", "var(--series-track)").attr("stroke-width", 2), "Between stations, or a ship's logged track");
   item(v => v.append("line").attr("x1", 1).attr("x2", 21).attr("y1", 6).attr("y2", 6).attr("stroke", "var(--series-track)").attr("stroke-width", 2).attr("stroke-dasharray", "5 4"), "An end assumed");
+  item(v => { v.append("rect").attr("x", 5).attr("y", -1).attr("width", 13).attr("height", 13).attr("fill", "var(--surface-1)").attr("stroke", "var(--text-primary)").attr("stroke-width", 1.5);
+              v.append("text").attr("x", 11.5).attr("y", 5.5).attr("dy", "0.36em").attr("text-anchor", "middle").attr("font-size", 10).attr("font-weight", 600).attr("fill", "var(--text-primary)").text("1"); },
+       "A main project: click for its section (hover for how precisely it's placed)");
   item(v => { v.append("circle").attr("cx", 8).attr("cy", 6).attr("r", 5).attr("fill", "var(--series-track)").attr("opacity", 0.25);
               v.append("circle").attr("cx", 8).attr("cy", 6).attr("r", 3).attr("fill", "var(--text-primary)"); },
        "Where each part was that day");
@@ -521,6 +528,8 @@ function nearest(ev) {
 
 let hovered = null;
 function onHover(ev) {
+  const pm = PM?.at(ev.target);
+  if (pm) { setHover(null); return showTip(ev, PM.tip(pm)); }
   const d = nearest(ev);
   setHover(d);
   if (!d) return hideTip();
