@@ -32,7 +32,7 @@ import urllib.parse
 import urllib.request
 from datetime import date, datetime, timedelta
 
-from records import CACHE, RECORDS, rel  # noqa: E402
+from records import CACHE, RECORDS, rel
 
 ISD = CACHE / "isd"
 ERA5 = CACHE / "era5"

@@ -44,10 +44,10 @@ function chooseShip(ships) {
 }
 
 // Report section -> map class
-const CLASS = { bt: "fix", noon: "fix", radar: "fix", narrative: "fix", diary: "fix", air: "air", attack: "attack", gun: "attack",
+const CLASS = { bt: "fix", noon: "fix", radar: "fix", narrative: "fix", diary: "fix", action: "fix", air: "air", attack: "attack", gun: "attack",
                 ship: "ship", event: "event" };
 const BASE_LABEL = {
-  bt: "Bathythermograph reading", noon: "Noon position", radar: "Radar intercept", diary: "War diary position",
+  bt: "Bathythermograph reading", noon: "Noon position", radar: "Radar intercept", diary: "War diary position", action: "AA action form position",
   narrative: "Port / narrative", air: "Aircraft contact", attack: "Torpedo attack", gun: "Gun attack", ship: "Ship contact",
 };
 const SHAPE = {

@@ -22,7 +22,7 @@ against the town the same entry names (grids.html shows the checks):
             (Normandy, June-July 1944: Co. B, 313th Infantry typed "VT 1099" at Le Valdecie).
   nwa       British "North West Africa" Grid (Tunisia, Algeria, Morocco, 1942-43). Lambert, Clarke 1880,
             origin 34 N on the Greenwich meridian, false E 1,000 km, N 500 km, metres, as printed on AMS
-            "Alger and vicinity" (1942) sheet 3 of 7 (princeton-amsalger); scale 0.9994 from sigterritoires.fr.
+            "Alger and vicinity" (1942) sheet 3 of 7 (princeton-amsalger); scale 0.9994 from sigterritoires.fr (sigterritoires-nwa-grid).
             The 100 km letters, A-Z without I, five a row from the north-west, repeat in every 500 km block
             from 0 km N: give a town, and the block nearest it is used. Fixed by the same sheet's worked
             example, Mon Rouge (Algiers) = H743072 (block from 1000 km E, 500 km N; full northing 807 km, as

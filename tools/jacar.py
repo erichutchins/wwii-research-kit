@@ -28,7 +28,8 @@ import sys
 import urllib.parse
 import urllib.request
 
-from records import CACHE, rel  # noqa: E402
+from records import CACHE, rel
+
 OUT = CACHE / "jacar"
 SITE = "https://www.jacar.archives.go.jp"
 

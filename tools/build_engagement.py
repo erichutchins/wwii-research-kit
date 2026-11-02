@@ -33,10 +33,10 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-import records  # noqa: E402
-from build_operations import Checker, resolve_cite, sections, split  # noqa: E402
-from check_track import ZONES, load, parse_coord, patrol_dir  # noqa: E402
-from records import RECORDS, rel  # noqa: E402
+import records
+from build_operations import Checker, resolve_cite, sections, split
+from check_track import ZONES, load, parse_coord, patrol_dir
+from records import RECORDS, rel
 
 ENG = RECORDS / "engagements"
 CONVOYS = RECORDS / "convoys"

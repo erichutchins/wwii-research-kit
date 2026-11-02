@@ -1,0 +1,69 @@
+# The kit's git hooks, run by prek (https://prek.j178.dev; `uv tool install prek`, then `prek install` once in the
+# kit and once in records/). Before a commit, the fast checks (a few seconds); before a push, everything the CI runs,
+# the land check and the browser smoke test (a few minutes). `prek run --all-files` runs the commit hooks by hand,
+# `prek run --hook-stage pre-push --all-files` the push hooks.
+default_install_hook_types: [pre-commit, pre-push]
+default_stages: [pre-commit]
+
+repos:
+  - repo: local
+    hooks:
+      # ── before a commit ─────────────────────────────────────────────────────
+      - id: ruff
+        name: "ruff (the tools' Python: defects and orphans)"
+        entry: uvx ruff@0.16.10 check
+        language: system
+        types: [python]
+      - id: ty
+        name: "ty (the tools' types, against ty-baseline.json)"
+        entry: uvx ty@0.0.95 check --config-file ty.toml --extra-search-path tools --baseline ty-baseline.json tools
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: lint
+        name: "lint (references, orphans, file forms, records that disagree, the private list)"
+        entry: uv run --quiet tools/lint.py --ignore ACC
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: check-sources
+        name: "every citation resolves"
+        entry: uv run --quiet tools/check_sources.py
+        language: system
+        pass_filenames: false
+        files: ^(records|reference|site)/
+      - id: test-tools
+        name: "the tools' computation (positions, zones, grids, land)"
+        entry: uv run --quiet tools/test_tools.py
+        language: system
+        pass_filenames: false
+        files: ^(tools|reference)/
+      - id: test-engage
+        name: "the engagement pages' computation (engage.js)"
+        entry: node site/engage.test.js
+        language: system
+        pass_filenames: false
+        files: ^site/engage
+
+      # ── before a push: what the CI runs, and the slow checks ───────────────
+      - id: lint-all
+        name: "lint, with the land check"
+        entry: uv run --quiet tools/lint.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+      - id: builds
+        name: "every build checks out, and its JSON is up to date"
+        entry: tools/check_builds.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+      - id: smoke
+        name: "every page loads clean (light and dark, desktop and phone)"
+        entry: uv run --quiet tools/smoke.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

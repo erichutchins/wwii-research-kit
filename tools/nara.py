@@ -23,7 +23,8 @@ import time
 import urllib.parse
 import urllib.request
 
-from records import CACHE, RECORDS, rel  # noqa: E402
+from records import CACHE, RECORDS, rel
+
 NARA = CACHE / "nara"
 API = "https://catalog.archives.gov/proxy/v3/records/search"   # the older /proxy/records/search stopped answering q= in 2026
 SERIES_PATROL_REPORTS = 305243        # RG 38/367 "U.S. Submarine War Patrol Reports" (microfilm M1752)

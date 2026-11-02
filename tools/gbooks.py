@@ -27,7 +27,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-from records import CACHE, KIT, rel  # noqa: E402
+from records import CACHE, KIT, rel
+
 OUT = CACHE / "googlebooks"
 API = "https://www.googleapis.com/books/v1/volumes"
 

@@ -20,8 +20,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 sys.path.insert(0, str(Path(__file__).parent))
-import records  # noqa: E402
-from build_operations import resolve_cite, sources  # noqa: E402
+import records
+from build_operations import resolve_cite, sources
 
 YML = records.REFERENCE / "glossary.yml"
 OUT = records.REFERENCE / "glossary.json"

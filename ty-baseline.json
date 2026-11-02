@@ -1,0 +1,171 @@
+{
+  "version": 0,
+  "files": {
+    "tools/build_army.py": [
+      {
+        "rule": "no-matching-overload",
+        "startColumn": 80,
+        "endColumn": 93,
+        "lineCount": 1
+      }
+    ],
+    "tools/build_engagement.py": [
+      {
+        "rule": "not-subscriptable",
+        "startColumn": 20,
+        "endColumn": 35,
+        "lineCount": 1
+      },
+      {
+        "rule": "not-subscriptable",
+        "startColumn": 99,
+        "endColumn": 114,
+        "lineCount": 1
+      }
+    ],
+    "tools/build_operations.py": [
+      {
+        "rule": "unresolved-attribute",
+        "startColumn": 8,
+        "endColumn": 31,
+        "lineCount": 1
+      }
+    ],
+    "tools/build_seabees.py": [
+      {
+        "rule": "unresolved-attribute",
+        "startColumn": 17,
+        "endColumn": 22,
+        "lineCount": 1
+      },
+      {
+        "rule": "not-subscriptable",
+        "startColumn": 36,
+        "endColumn": 45,
+        "lineCount": 1
+      },
+      {
+        "rule": "unresolved-attribute",
+        "startColumn": 17,
+        "endColumn": 22,
+        "lineCount": 1
+      },
+      {
+        "rule": "not-subscriptable",
+        "startColumn": 36,
+        "endColumn": 45,
+        "lineCount": 1
+      },
+      {
+        "rule": "unresolved-attribute",
+        "startColumn": 15,
+        "endColumn": 20,
+        "lineCount": 1
+      },
+      {
+        "rule": "unresolved-attribute",
+        "startColumn": 32,
+        "endColumn": 37,
+        "lineCount": 1
+      },
+      {
+        "rule": "not-subscriptable",
+        "startColumn": 108,
+        "endColumn": 116,
+        "lineCount": 1
+      },
+      {
+        "rule": "not-subscriptable",
+        "startColumn": 123,
+        "endColumn": 131,
+        "lineCount": 1
+      },
+      {
+        "rule": "not-subscriptable",
+        "startColumn": 37,
+        "endColumn": 50,
+        "lineCount": 1
+      },
+      {
+        "rule": "not-subscriptable",
+        "startColumn": 61,
+        "endColumn": 74,
+        "lineCount": 1
+      },
+      {
+        "rule": "unresolved-attribute",
+        "startColumn": 12,
+        "endColumn": 35,
+        "lineCount": 1
+      },
+      {
+        "rule": "no-matching-overload",
+        "startColumn": 35,
+        "endColumn": 72,
+        "lineCount": 1
+      }
+    ],
+    "tools/frupac.py": [
+      {
+        "rule": "unresolved-attribute",
+        "startColumn": 18,
+        "endColumn": 73,
+        "lineCount": 1
+      }
+    ],
+    "tools/geocode_places.py": [
+      {
+        "rule": "invalid-argument-type",
+        "startColumn": 30,
+        "endColumn": 47,
+        "lineCount": 1
+      }
+    ],
+    "tools/grid_ref.py": [
+      {
+        "rule": "unsupported-operator",
+        "startColumn": 11,
+        "endColumn": 28,
+        "lineCount": 1
+      },
+      {
+        "rule": "unsupported-operator",
+        "startColumn": 30,
+        "endColumn": 53,
+        "lineCount": 1
+      }
+    ],
+    "tools/morning_reports.py": [
+      {
+        "rule": "unresolved-attribute",
+        "startColumn": 25,
+        "endColumn": 92,
+        "lineCount": 1
+      },
+      {
+        "rule": "invalid-argument-type",
+        "startColumn": 58,
+        "endColumn": 68,
+        "lineCount": 1
+      },
+      {
+        "rule": "invalid-argument-type",
+        "startColumn": 42,
+        "endColumn": 52,
+        "lineCount": 1
+      },
+      {
+        "rule": "not-subscriptable",
+        "startColumn": 32,
+        "endColumn": 70,
+        "lineCount": 1
+      },
+      {
+        "rule": "not-subscriptable",
+        "startColumn": 15,
+        "endColumn": 53,
+        "lineCount": 1
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+# ruff's settings for the kit's Python (tools/). Run `ruff check tools` (the commit hook does). The rules catch
+# defects and orphans (an undefined or unused name, an unused import or noqa, a variable unpacked and never used),
+# not style: the compact one-liners, lambdas and long lines are the house style, and ruff format isn't used.
+line-length = 120
+target-version = "py311"   # the scripts run under uv's newest Python; a PEP 723 header that claims older must be true
+src = ["tools"]                # the tools import each other by name (records, check_track); records/ is data, not a package
+
+[lint]
+select = ["F", "E7", "E9", "W6", "B", "I", "UP", "PLE", "RUF100", "RUF059"]
+ignore = [
+  "E701", "E702", "E731", "E741",   # one-line ifs and statements, named lambdas, `l`: the house style
+  "B905",                           # zip() without strict=: the tools zip lists of known equal length
+  "B008",                           # a call in a default argument: used for immutable defaults
+  "B023",                           # a closure over a loop variable: every one here is called inside its iteration
+]

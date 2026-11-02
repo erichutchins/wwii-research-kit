@@ -19,27 +19,27 @@ nodes:
   yulin: {name: Yulin, lon: 109.55, lat: 18.23, port: true, source: hand-placed}
   manila: {name: Manila, lon: 120.95, lat: 14.59, port: true, source: hand-placed}
   singapore: {name: Singapore, lon: 103.82, lat: 1.26, port: true, source: hand-placed}
-  w-genkai: {name: Genkai Sea, lon: 129.6, lat: 33.75, assumed: out of Shimonoseki Strait to the west, clear of Iki}
-  w-goto: {name: off the Goto Islands, lon: 128.7, lat: 31.9, assumed: south of the Goto Islands, toward the East China Sea}
-  w-kbay: {name: off Kagoshima Bay, lon: 130.7, lat: 31.05, assumed: the mouth of Kagoshima Bay}
-  w-ecs: {name: East China Sea, lon: 125.3, lat: 28.6, assumed: a straight run across the East China Sea}
-  w-ntw: {name: north of Formosa, lon: 122.0, lat: 25.55, assumed: off Keelung, clear of the north coast}
-  w-nwtip: {name: Formosa's north-west tip, lon: 121.45, lat: 25.38, assumed: rounding Formosa's north-west tip}
-  w-strait-n: {name: Formosa Strait (north), lon: 120.55, lat: 24.95, assumed: down the middle of the Formosa Strait}
-  w-strait: {name: Formosa Strait, lon: 119.7, lat: 23.6, assumed: down the middle of the Formosa Strait, west of the Pescadores}
-  w-bashi: {name: Bashi Channel (west), lon: 119.9, lat: 21.3, assumed: west of the Bashi Channel, past Formosa's southern tip}
-  w-luzw: {name: west of Luzon, lon: 119.2, lat: 19.0, assumed: down Luzon's west coast, outside the 100-fathom line}
-  w-zamb: {name: off Zambales, lon: 119.75, lat: 15.5, assumed: down the Zambales coast to Manila Bay}
-  w-bataan: {name: off Bataan, lon: 120.0, lat: 14.8, assumed: approaching Manila Bay from the north-west}
-  w-corr: {name: Corregidor, lon: 120.55, lat: 14.38, assumed: the entrance to Manila Bay}
-  w-scs1: {name: South China Sea (Palawan), lon: 118.5, lat: 12.0, assumed: south-west from Manila, west of Mindoro}
-  w-scs2: {name: South China Sea (south), lon: 109.5, lat: 5.0, assumed: a straight run across the South China Sea}
-  w-scs3: {name: approaching Singapore, lon: 105.0, lat: 2.0, assumed: the approach to Singapore Strait}
-  w-scse: {name: South China Sea (north), lon: 118.0, lat: 20.6, assumed: across the north of the South China Sea, where the boats saw the convoys}
-  w-s91: {name: south-west of Pratas, lon: 116.0, lat: 19.3, assumed: where No. 91 was attacked (the Hong Kong fleet's narrative), toward Hong Kong}
-  w-hainan: {name: east of Hainan, lon: 111.6, lat: 18.7, assumed: east from Yulin along Hainan's south coast}
-  w-etw: {name: east of Formosa, lon: 122.55, lat: 24.6, assumed: up Formosa's east coast, west of Yonaguni}
-  w-scape: {name: off South Cape, lon: 120.85, lat: 21.7, assumed: rounding Formosa's southern cape}
-  w-etw2: {name: east of Formosa (south), lon: 121.75, lat: 23.0, assumed: up Formosa's east coast}
-  w-izu: {name: off the Izu Islands, lon: 139.5, lat: 33.5, assumed: south along the Izu Islands}
-  w-bonin: {name: toward the Bonins, lon: 137.9, lat: 29.3, assumed: south toward the Bonins, by BANG's attack position}
+  w-genkai: {name: Genkai Sea, lon: 129.6, lat: 33.75, assumed: "out of Shimonoseki Strait to the west, clear of Iki"}
+  w-goto: {name: off the Goto Islands, lon: 128.7, lat: 31.9, assumed: "south of the Goto Islands, toward the East China Sea"}
+  w-kbay: {name: off Kagoshima Bay, lon: 130.7, lat: 31.05, assumed: "the mouth of Kagoshima Bay"}
+  w-ecs: {name: East China Sea, lon: 125.3, lat: 28.6, assumed: "a straight run across the East China Sea"}
+  w-ntw: {name: north of Formosa, lon: 122.0, lat: 25.55, assumed: "off Keelung, clear of the north coast"}
+  w-nwtip: {name: Formosa's north-west tip, lon: 121.45, lat: 25.38, assumed: "rounding Formosa's north-west tip"}
+  w-strait-n: {name: Formosa Strait (north), lon: 120.55, lat: 24.95, assumed: "down the middle of the Formosa Strait"}
+  w-strait: {name: Formosa Strait, lon: 119.7, lat: 23.6, assumed: "down the middle of the Formosa Strait, west of the Pescadores"}
+  w-bashi: {name: Bashi Channel (west), lon: 119.9, lat: 21.3, assumed: "west of the Bashi Channel, past Formosa's southern tip"}
+  w-luzw: {name: west of Luzon, lon: 119.2, lat: 19.0, assumed: "down Luzon's west coast, outside the 100-fathom line"}
+  w-zamb: {name: off Zambales, lon: 119.75, lat: 15.5, assumed: "down the Zambales coast to Manila Bay"}
+  w-bataan: {name: off Bataan, lon: 120.0, lat: 14.8, assumed: "approaching Manila Bay from the north-west"}
+  w-corr: {name: Corregidor, lon: 120.55, lat: 14.38, assumed: "the entrance to Manila Bay"}
+  w-scs1: {name: South China Sea (Palawan), lon: 118.5, lat: 12.0, assumed: "south-west from Manila, west of Mindoro"}
+  w-scs2: {name: South China Sea (south), lon: 109.5, lat: 5.0, assumed: "a straight run across the South China Sea"}
+  w-scs3: {name: approaching Singapore, lon: 105.0, lat: 2.0, assumed: "the approach to Singapore Strait"}
+  w-scse: {name: South China Sea (north), lon: 118.0, lat: 20.6, assumed: "across the north of the South China Sea, where the boats saw the convoys"}
+  w-s91: {name: south-west of Pratas, lon: 116.0, lat: 19.3, assumed: "where No. 91 was attacked (the Hong Kong fleet's narrative), toward Hong Kong"}
+  w-hainan: {name: east of Hainan, lon: 111.6, lat: 18.7, assumed: "east from Yulin along Hainan's south coast"}
+  w-etw: {name: east of Formosa, lon: 122.55, lat: 24.6, assumed: "up Formosa's east coast, west of Yonaguni"}
+  w-scape: {name: off South Cape, lon: 120.85, lat: 21.7, assumed: "rounding Formosa's southern cape"}
+  w-etw2: {name: east of Formosa (south), lon: 121.75, lat: 23.0, assumed: "up Formosa's east coast"}
+  w-izu: {name: off the Izu Islands, lon: 139.5, lat: 33.5, assumed: "south along the Izu Islands"}
+  w-bonin: {name: toward the Bonins, lon: 137.9, lat: 29.3, assumed: "south toward the Bonins, by BANG's attack position"}

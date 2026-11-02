@@ -17,9 +17,8 @@ Keys and anchors are hand-edited in reference/jgrid/ (columns in guides/JAPANESE
 import csv
 import math
 import sys
-from pathlib import Path
 
-from records import REFERENCE  # noqa: E402
+from records import REFERENCE
 
 DATA = REFERENCE / "jgrid"
 SIDE = 1 / 3  # degrees: 20 minutes

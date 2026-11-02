@@ -1,0 +1,5 @@
+[environment]
+python-version = "3.11"
+
+[analysis]
+allowed-unresolved-imports = ["yaml", "PIL.**", "PIL", "scipy.**", "scipy", "skimage.**", "numpy", "pymupdf", "fitz", "playwright.**", "requests"]

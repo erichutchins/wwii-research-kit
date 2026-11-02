@@ -32,7 +32,8 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageOps
 
-from records import CACHE  # noqa: E402
+from records import CACHE
+
 OUT = Path(os.environ.get("CROP_DIR", "/tmp/bang"))
 
 

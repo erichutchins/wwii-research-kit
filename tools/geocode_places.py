@@ -22,13 +22,14 @@ note says "Kept (audit ...)" were reviewed and are skipped.
 import csv
 import json
 import math
-from pathlib import Path
 import sys
 import time
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
-from records import CACHE, RECORDS  # noqa: E402
+from records import CACHE, RECORDS
+
 PLACES = RECORDS / "army" / "places.csv"
 CACHE = CACHE / "geocode"
 UA = "wwii-submarine-history/1.0 (family history research; github.com/erichutchins)"

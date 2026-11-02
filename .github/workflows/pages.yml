@@ -1,5 +1,5 @@
 # Publish the kit to GitHub Pages: the site at /site/, with the records submodule beside it,
-# after checking that every citation resolves and every track passes the speed check.
+# after the checks the pre-push hook runs (.pre-commit-config.yaml): ruff and ty, the lint, every build, every page.
 name: pages
 
 on:
@@ -24,32 +24,18 @@ jobs:
           submodules: recursive
           persist-credentials: false
       - uses: astral-sh/setup-uv@v6
-      - name: Every citation resolves; inventory matches the folders
-        run: uv run tools/check_sources.py
-      - name: Every Army station is placed, and army.json is up to date
+      - name: The tools' Python (ruff, ty against its baseline)
         run: |
-          python3 tools/build_army.py
-          git diff --exit-code records/army/army.json
-      - name: Every Seabee station checks out, and seabees.json is up to date
+          uvx ruff@0.16.10 check
+          uvx ty@0.0.95 check --config-file ty.toml --extra-search-path tools --baseline ty-baseline.json tools
+      - name: Lint (references, orphans, file forms, records that disagree, ships inland; lint.toml)
+        run: uv run tools/lint.py
+      - name: Every build checks out and its JSON is up to date; citations, attacks, tracks; the computation's tests
+        run: tools/check_builds.sh
+      - name: Every page loads clean, light and dark, desktop and phone
         run: |
-          uv run tools/build_seabees.py
-          git diff --exit-code records/seabees/seabees.json
-      - name: Every operation's citations and links check out, and operations.json is up to date
-        run: |
-          uv run tools/build_operations.py
-          git diff --exit-code records/operations/operations.json
-      - name: Every engagement and convoy checks out (ids, times, citations, links), and their JSON is up to date
-        run: uv run tools/build_engagement.py check
-      - name: Every glossary entry cites its source, and glossary.json is up to date
-        run: uv run tools/build_glossary.py check
-      - name: Every torpedo attack row joins its attack and checks out
-        run: uv run tools/check_attacks.py
-      - name: The engagement pages' shared computation passes its tests
-        run: node site/engage.test.js
-      - name: Every track passes the speed check
-        run: |
-          uv run tools/check_track.py all -q | tee /tmp/tracks.txt
-          ! grep -v ": 0 too-fast legs" /tmp/tracks.txt
+          uv run --with playwright playwright install --with-deps chromium
+          uv run tools/smoke.py
 
   deploy:
     needs: check

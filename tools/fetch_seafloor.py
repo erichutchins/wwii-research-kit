@@ -95,7 +95,7 @@ def run(patrol):
     out = records.unit_dir(patrol) / "seafloor.csv"
     n = 0
     with open(out, "w", newline="") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(["utc", "lat", "lon", "seafloor_m"])
         for a, b in zip(fixes, fixes[1:]):
             pa, pb = (a["lat"], a["lon"]), (b["lat"], b["lon"])

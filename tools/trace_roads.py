@@ -195,13 +195,12 @@ def furniture(ll):
 
 def network_geojson(primary, fit, fit_km):
     sk = skeletonize(primary)
-    lab, n = ndi.label(sk, structure=np.ones((3, 3)))
+    lab, _n = ndi.label(sk, structure=np.ones((3, 3)))
     feats = []
-    ys, xs = np.nonzero(sk)
     nb = ndi.convolve(sk.astype(np.uint8), np.ones((3, 3), np.uint8), mode="constant")
     # cut at junctions, then walk each run
     run = sk & (nb <= 3)
-    lab, n = ndi.label(run, structure=np.ones((3, 3)))
+    lab, _n = ndi.label(run, structure=np.ones((3, 3)))
     for k, sl in enumerate(ndi.find_objects(lab), 1):
         m = lab[sl] == k
         if m.sum() < 30:
@@ -292,7 +291,7 @@ def main():
             rows.append([unit, f, t, k, f"{lat:.4f}", f"{lon:.4f}", note if k == 1 else ""])
     if a.write_routes and rows:
         with open(REC / "army" / "routes.csv", "a", newline="") as fh:
-            csv.writer(fh).writerows(rows)
+            csv.writer(fh, lineterminator="\n").writerows(rows)
         print(f"routes.csv: {len(rows)} rows added")
 
     if a.overlay:

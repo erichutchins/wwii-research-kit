@@ -25,7 +25,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from records import CACHE, rel  # noqa: E402
+from records import CACHE, rel
 
 OUT = CACHE / "wayback"
 CDX = "https://web.archive.org/cdx/search/cdx"

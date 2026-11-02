@@ -72,7 +72,7 @@ def run(patrol):
     out = records.unit_dir(patrol) / "weather.csv"
     rows = 0
     with open(out, "w", newline="") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(["utc", "lat", "lon", "temp_c", "pressure_hpa", "wind_kn", "wind_dir", "gust_kn", "cloud_pct", "precip_mm"])
         while day <= end:
             points = [position(fixes, day + timedelta(hours=h)) for h in (0, 6, 12, 18)]

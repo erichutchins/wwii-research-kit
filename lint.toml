@@ -1,0 +1,36 @@
+# tools/lint.py's settings, in the manner of ruff's. `uv run tools/lint.py --rules` lists the rules,
+# `--explain CODE` explains one.
+#
+# select: the rule codes or prefixes that run. ACC (a ship's position inland) needs the land map, fetched once into
+# the cache; it runs in CI and before a push.
+select = ["FMT", "CSV", "YML", "REF", "ORF", "CON", "PRV", "ACC"]
+ignore = []
+
+# A known exception: the rule's code, what it flagged (the target shown in the finding, or "<file>:<target>"), and
+# why it stands. An allow that no longer matches anything is reported (LNT001), like an unused noqa. PRV001 can't be
+# allowed.
+
+[[allow]]
+code = "ORF003"
+target = "Aspères"
+why = "Placed but deliberately not mapped: the 45th's command-post table types Aspères, Gard, 130 km off the division's route (stations.csv, 45id-hq 1944-08-23); left open until another record decides."
+
+[[allow]]
+code = "ORF003"
+target = "Savelborn"
+why = "The 60th AIB's report gives only 'the vicinity of Savelborn' (stations.csv, 60aib 1944-12-17), so the row has no place; the place stays for the sector it names."
+
+[[allow]]
+code = "ORF003"
+target = "Dachau concentration camp"
+why = "A place, not a station (its note says so): the units' records name it, and no unit is placed at it."
+
+[[allow]]
+code = "ACC001"
+target = "40.70, -73.97"
+why = "The New York Navy Yard on the East River (Solar's diary, Nov 1944 - Mar 1945): a river port, narrower than the 1:10m coastline."
+
+[[allow]]
+code = "ACC001"
+target = "-27.47, 153.03"
+why = "Brisbane, up the Brisbane River (Seahorse's patrol 5 departure): a river port, narrower than the 1:10m coastline."

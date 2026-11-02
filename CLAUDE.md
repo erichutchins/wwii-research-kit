@@ -10,7 +10,7 @@ For film of a place and date, follow the skill `find-film` (rules in `records/fi
 - Every row carries the page it was read from (`page`, `ref`, `source` or `map`), in a form
   listed in `records/SOURCES.yml`. A new archive, book or site gets an entry there first.
 - Every claim in a note, a guide or a page says where it comes from.
-- `uv run tools/check_sources.py` must pass before a commit. After citing a new National
+- `uv run tools/check_sources.py` must pass before a commit (the commit hook runs it). After citing a new National
   Archives item, run it with `--fetch` to add the item's catalog title to `citations.json`.
 
 ## Layout
@@ -59,9 +59,35 @@ a person's own path (a replacement depot, a hospital) to `records/`, and don't f
 name. Names the records carry (a captain, a pack commander, a rescued aviator) stay as written:
 nothing is redacted.
 
+## Checks and hooks
+
+The hooks run by themselves once installed (`uv tool install prek`, then `prek install` here and in `records/`;
+`.pre-commit-config.yaml` in each). Before a commit (seconds): ruff and ty on the tools, the lint, the citations, the
+computation's tests. Before a push (minutes), and in the CI: everything, with every build, the land check and every page
+in a browser. A hook that fails is fixed, not skipped.
+
+- `tools/lint.py`, in the manner of ruff: rule codes, `file:line` findings, settings and allowed exceptions (each with
+  its reason) in `lint.toml`. References that point at nothing (REF), orphans nothing uses (ORF), file forms (FMT, CSV,
+  YML), records that disagree (CON), the private list (PRV), ships inland (ACC). `--explain CODE`, `--rules`. Nothing
+  is fixed automatically.
+- `tools/smoke.py`: every page and every view the address opens, light and dark, desktop and phone, in a headless
+  browser; fails on a console error, a failed request or an empty figure.
+- `tools/test_tools.py`: the tools' computation against hand-worked cases (positions, zone letters, the grids'
+  anchors, the land test); `site/engage.test.js` the engagement pages'.
+- `tools/check_builds.sh`: every build checks out and its generated JSON is committed.
+- ruff (`ruff.toml`: defects and orphans, not style) and ty (`ty.toml`; findings in the older tools are in
+  `ty-baseline.json`, and new code adds none).
+- The private list (`sources/private-terms.txt`, never committed) is written by the family repository that holds this
+  kit; without it PRV001 checks nothing and says so.
+
 ## Commands
 
 ```bash
+uv run tools/lint.py [--select REF,ORF] [--statistics] [--explain CODE]   # lint.toml; must report no problems
+uv run tools/smoke.py [--quick] [--only engagement]   # every page in a browser (2-3 min; --quick under 1)
+uv run tools/test_tools.py                    # the tools' computation against hand-worked cases
+tools/check_builds.sh                         # every build: 0 problems, generated files up to date
+prek run --all-files [--hook-stage pre-push]  # the hooks by hand
 uv run tools/check_track.py all --geojson     # every track: 0 too-fast legs; GeoJSON, ships.json
 uv run tools/check_track.py bang/1            # one patrol, leg by leg
 uv run tools/check_sources.py [--fetch]       # citations resolve; inventory matches the folders

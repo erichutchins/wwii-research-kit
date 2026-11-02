@@ -136,7 +136,7 @@ def main():
     # the operations' Markdown (records/operations/<theater>/<id>.md): every citation and [[link]], and a citation on
     # every paragraph, checked by build_operations.py
     import build_operations
-    ops, chk = build_operations.build()
+    _ops, chk = build_operations.build()
     bad += [f"operations: {p}" for p in chk.problems]
     for c in chk.cites:
         used[resolve(c)] += 1

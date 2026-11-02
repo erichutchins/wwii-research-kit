@@ -24,7 +24,8 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import date, timedelta
 
-from records import CACHE, rel  # noqa: E402
+from records import CACHE, rel
+
 CATALOG = CACHE / "frupac" / "catalog.json"
 OAI = "https://texashistory.unt.edu/oai/"
 NS = {"oai": "http://www.openarchives.org/OAI/2.0/", "dc": "http://purl.org/dc/elements/1.1/"}

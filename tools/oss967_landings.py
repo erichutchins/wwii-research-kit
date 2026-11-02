@@ -33,7 +33,7 @@ from PIL import Image, ImageDraw
 from scipy import ndimage as ndi
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from trace_roads import FRAME, REC, SCAN, Fit, km  # noqa: E402
+from trace_roads import FRAME, REC, SCAN, Fit, km
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -115,7 +115,7 @@ def main():
     tll = np.array([[float(t["lon"]), float(t["lat"])] for t in towns])
     out = REC / "roads" / "oss967-landings.csv"
     with open(out, "w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(["id", "kind", "x", "y", "read", "lat", "lon", "fit_km", "near", "source", "note"])
         for n, (x, y, kind, read, note) in enumerate(rows, 1):
             lon, lat = fit.to_ll([x, y])[0]
@@ -129,7 +129,7 @@ def main():
     if a.overlay:
         im = Image.open(SCAN).convert("RGB")
         d = ImageDraw.Draw(im)
-        for x, y, kind, read, _ in rows:
+        for x, y, kind, _read, _ in rows:
             c = {"minor": (220, 0, 0), "extensive": (0, 100, 255), "stretch_end": (0, 160, 0)}[kind]
             d.ellipse([x - 20, y - 20, x + 20, y + 20], outline=c, width=6)
         for b, _ in NOT_ARROWS:

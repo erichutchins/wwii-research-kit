@@ -23,7 +23,7 @@ import math
 import re
 import sys
 
-from records import REFERENCE  # noqa: E402
+from records import REFERENCE
 
 DATA = REFERENCE / "naval-grid"
 ROW, COL = 54, 72  # minutes: a two-digit square's height and width
@@ -80,7 +80,7 @@ def decode(code, blocks):
 
 
 def describe(code, blocks):
-    n, s, w, e, blk, digits = decode(code, blocks)
+    n, s, w, e, blk, _digits = decode(code, blocks)
     lat, lon = (n + s) / 2, (w + e) / 2
     size = f"{(n - s):g}' x {(e - w):g}'"
     return (f"{code}: {dm(s, 'N', 'S')} to {dm(n, 'N', 'S')}, {dm(w, 'E', 'W')} to {dm(e, 'E', 'W')} ({size}); "
@@ -101,7 +101,7 @@ def check(blocks):
     with open(DATA / "anchors.csv", encoding="utf-8") as f:
         for a in csv.DictReader(f):
             try:
-                n, s, w, e, blk, _ = decode(a["code"], blocks)
+                n, s, w, e, _blk, _ = decode(a["code"], blocks)
             except (ValueError, LookupError) as err:
                 print(f"{a['id']:4} {a['code']:9} {err}")
                 bad += 1

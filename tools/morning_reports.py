@@ -48,7 +48,8 @@ import time
 import urllib.parse
 import urllib.request
 
-from records import CACHE, rel  # noqa: E402
+from records import CACHE, rel
+
 NARA = CACHE / "nara"
 PROXY = "https://catalog.archives.gov/proxy"
 SERIES = 85713825
@@ -329,7 +330,7 @@ def locate(phrases, pattern, start, end):
     out.parent.mkdir(parents=True, exist_ok=True)
     import csv
     with out.open("w", newline="") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(["month", "page", "date_ocr", "org_ocr", "station_ocr"])
         w.writerows(rows)
     print(f"draft -> {rel(out)} ({len(rows)} pages)")

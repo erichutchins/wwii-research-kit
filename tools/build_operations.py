@@ -35,7 +35,7 @@ from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-import records  # noqa: E402
+import records
 
 OPS = records.RECORDS / "operations"
 OUT = OPS / "operations.json"
@@ -193,7 +193,7 @@ def main():
         files = [a for a in args[1:] if a.endswith(".md")]
         chk = Checker(fam)
         for f in files:
-            fm, body = split(Path(f))
+            _fm, body = split(Path(f))
             chk.links(body, f)
         report(chk, f"{len(files)} file(s) checked")
         return

@@ -34,7 +34,8 @@ import re
 import sys
 from datetime import date
 
-from grid_ref import GRIDS, decode as grid_decode
+from grid_ref import GRIDS
+from grid_ref import decode as grid_decode
 from records import RECORDS
 
 ARMY = RECORDS / "army"

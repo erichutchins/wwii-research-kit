@@ -21,7 +21,6 @@ import io
 import json
 import math
 import urllib.request
-from pathlib import Path
 
 from PIL import Image, ImageFilter
 
