@@ -96,5 +96,59 @@ const EV = (() => {
     sighted: c => `<svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="4.5" fill="none" stroke="${c}" stroke-width="1.8"/></svg>`,
   };
 
-  return { esc, showTip, moveTip, hideTip, cite, sil, category, silWords, land, LAND_10M, LAND_50M, graticule, shape, outcomeMark, legendMark };
+  // ---------- the chronology (guides/OPERATIONS-VIEWER.md, 3): a spine of hours, days or months at the left, one column
+  // per record, every entry at its row in entry.css's block, the time (or "no time recorded", in italics) leading the
+  // who line, since the spine already gives the day and the block's own time column is folded away (chron.css). The
+  // rows and columns are Engage's (chronologyRows, chronologyColumns; engage.js must be loaded). A station starts a bar
+  // in the column's colour that runs down the column from its row; an entry whose kind is a hit on the unit
+  // (Engage.hitKind) has its kind in the hit red. The DOM is rows of side groups of cells: on a desktop the groups are
+  // `display: contents`, so the cells sit in one grid under the headers; on a phone chron.css stacks each row's sides
+  // and names the record on each cell. Every entry links to its page (EV.cite).
+  const SIDE_WORDS = { us: "US", jp: "Japanese", allied: "Allied", axis: "Axis", de: "German", it: "Italian", uk: "British", fr: "French", press: "Press", geo: "Place" };
+  function chronology(el, { rows, columns, tempo = "dated", sideName = s => SIDE_WORDS[s] || s || "", nameOf = a => a } = {}) {
+    const sides = [...new Set(columns.map(c => c.side))];
+    const ordered = sides.flatMap(s => columns.filter(c => c.side === s));   // the header's order is the cells'
+    const colOf = new Map();
+    ordered.forEach(c => c.entries.forEach(e => colOf.set(e, c)));
+    const corner = { clocked: "GMT", dated: "dated", monthly: "month" }[tempo] || "";
+    const parts = [`<div class="chron-h chron-corner">${esc(corner)}</div>`];
+    ordered.forEach(c => parts.push(`<div class="chron-h" style="--bar:${c.colour}"><b>${esc(c.name)}</b><span class="chip">${esc([c.record, sideName(c.side)].filter(Boolean).join(" · "))}</span></div>`));
+    const hold = new Set();   // the columns a station's bar is running down
+    rows.forEach(r => {
+      parts.push(`<div class="chron-row"><div class="chron-d">${esc(r.label)}${r.day ? `<small>${esc(r.day)}</small>` : ""}</div>`);
+      sides.forEach(s => {
+        const cs = ordered.filter(c => c.side === s), any = r.entries.some(e => cs.includes(colOf.get(e)));
+        parts.push(`<div class="chron-side${any ? "" : " empty"}" data-side="${esc(sideName(s))}">`);
+        cs.forEach(c => {
+          const es = r.entries.filter(e => colOf.get(e) === c);
+          if (es.some(e => e.kind === "station")) hold.add(c.key);
+          parts.push(`<div class="chron-c${hold.has(c.key) ? " hold" : ""}" style="--bar:${c.colour}" data-col="${esc(c.name)}">${es.map(e => chronEntry(e, c, nameOf)).join("")}</div>`);
+        });
+        parts.push("</div>");
+      });
+      parts.push("</div>");
+    });
+    el.classList.add("chron");
+    el.style.setProperty("--n", ordered.length);
+    el.innerHTML = parts.join("");
+  }
+  function chronEntry(e, c, nameOf) {
+    const timed = e.local && e.local.length > 10;
+    const t = timed ? `<span class="t">${esc(e.local.slice(11))}</span>` : `<span class="t placed">no time recorded</span>`;
+    const actor = String(nameOf(e.actor) || ""), h = Engage.head(actor);
+    const who = actor && !(h === Engage.head(c.name) && h === actor.trim()) ? `<b>${esc(actor)}</b>` : "";   // named when it isn't the column's own name
+    const what = e.title && e.title !== actor ? e.title : e.kind && e.kind !== "log" ? e.kind.replace(/_/g, " ") : "";
+    const toWhom = e.to ? `<span class="what">to ${e.to.map(r => esc(nameOf(r))).join(" and ")}</span>` : e.from ? `<span class="what">from ${esc(nameOf(e.from))}</span>` : "";
+    const lang = e.lang || "ja";   // an original is Japanese unless the build says otherwise (a German one is typed)
+    const words = e.original ? `<div class="${lang === "ja" ? "ja" : "said"}" lang="${esc(lang)}">${esc(e.original)}</div><div class="tr">${esc(e.translation || e.words || "")}</div>`
+                             : `<div class="said">${esc(e.words || e.title || "")}</div>`;
+    const outcome = (e.outcome || []).map(o => `<div class="note"><b>Japanese side (${esc(String(o.relation || "").replace(/_/g, " "))}).</b> ${esc(o.note)}</div>`).join("");
+    const placed = e.placed && e.placed !== "seq" ? `<div class="assume">${esc(e.placed)}</div>` : "";
+    return `<div class="entry${Engage.hitKind(e.kind) ? " hit" : ""}${e.kind === "station" ? " stn" : ""}${e.basis === "assumed" ? " assumed" : ""}" style="--bar:${c.colour}"><div class="body">
+      <div class="who">${t}${who}${what ? `<span class="what">${esc(what)}</span>` : ""}${toWhom}</div>
+      ${words}${outcome}${e.note ? `<div class="note">${esc(e.note)}</div>` : ""}${placed}
+      ${e.source ? `<span class="src">${esc(e.source)}</span>` : ""} ${cite(e.cite, "src alone")}</div></div>`;
+  }
+
+  return { esc, showTip, moveTip, hideTip, cite, sil, category, silWords, land, LAND_10M, LAND_50M, graticule, shape, outcomeMark, legendMark, chronology };
 })();

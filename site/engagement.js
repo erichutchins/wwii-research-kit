@@ -41,6 +41,15 @@
   const timed = D.events.filter(e => e.ms != null && !Number.isNaN(e.ms));
   let t0 = D.window ? E.T(D.window.from) : d3.min(timed, e => e.ms), t1 = D.window ? E.T(D.window.to) : d3.max(timed, e => e.ms);
   if (t1 - t0 < 3600e3) { t0 -= 1800e3; t1 += 1800e3; }
+  // ---------- the tempo decides which view leads (guides/OPERATIONS-VIEWER.md, 3). Clocked: the map plays and the log
+  // follows it, as below. Dated or monthly: there is no clock to play, so the time controls and the log go, the map
+  // stands still with every mark shown, and the chronology leads, full width, where the log was.
+  const TEMPO = E.tempo(D.events), CLOCKED = TEMPO === "clocked";
+  if (!CLOCKED) {
+    document.querySelector(".time").hidden = true;
+    document.querySelector(".side").hidden = true;
+    document.getElementById("action").classList.add("dated");
+  }
   const OWN = D.clock && D.gmt ? D.clock : (D.theater === "pacific" && D.gmt ? "I" : "");
   const OWN_NAME = { I: "Item (Tokyo time)", B: "Baker", K: "King", H: "How" };
   document.getElementById("clock-zone").textContent = D.gmt ? "GMT" : "local time (the records give no zone)";
@@ -202,7 +211,7 @@
         rows.push({ id: p.id, cls: "past", pts: past }, { id: p.id, cls: "ahead", pts: ahead });
       });
       gTrk.selectAll("path").data(rows).join("path").attr("class", d => "trk " + d.cls).attr("stroke", d => colour(d.id)).attr("d", d => d.pts.length > 1 ? line(d.pts) : null);
-      gMk.selectAll("g.mk").classed("future", d => d.ms > t);
+      gMk.selectAll("g.mk").classed("future", d => CLOCKED && d.ms > t);   // no clock: everything is shown
       if (lastT !== null && t !== lastT) fires.filter(f => (f.ms > lastT && f.ms <= t && t - lastT < 3 * 3600e3) || f.ms === t).forEach(pulse);
       lastT = t;
       drawMessages();
@@ -228,6 +237,7 @@
   const lanes = d3.select("#lanes");
   let lx = null;
   function drawLanes() {
+    if (!CLOCKED) return;
     const laneH = 17, top = 4, left = 104;
     lanes.style("height", `${top + LANES.length * laneH + 24}px`);
     const w = lanes.node().clientWidth;
@@ -259,8 +269,21 @@
   lanes.on("click", ev => { if (!lx) return; stop(); setTime(+lx.invert(d3.pointer(ev)[0])); });
   document.getElementById("scrub").addEventListener("input", e => { stop(); setTime(+e.target.value); });
 
+  // ---------- the chronology, when the frame has no clock to play: Engage's rows and columns, EV's drawing
+  function drawChronology() {
+    document.getElementById("chron-card").hidden = CLOCKED;
+    if (CLOCKED) return;
+    EV.chronology(document.getElementById("chron"), { rows: E.chronologyRows(D.events, TEMPO), columns: E.chronologyColumns(D.events, PARTS), tempo: TEMPO, sideName: s => SIDE_NAME[s] || s, nameOf });
+    document.getElementById("chron-title").textContent = TEMPO === "monthly" ? "The records, by the month" : "The records, by the day";
+    document.getElementById("chron-note").textContent = (TEMPO === "monthly"
+      ? "The entries carry months and days, not times, so there is no clock to play: the map shows every place and position at once, and each column is one record, its entries at the month they are dated. "
+      : "The entries carry days, not times, so there is no clock to play: the map shows every place and position at once, and each column is one record, its entries at the day they are dated. ")
+      + "A time is as the record wrote it; an entry with none is placed by the order of the account and says so. A station starts a bar in the unit's colour; a casualty or a shelling is named in red.";
+  }
+
   // ---------- the two-sided log
   function drawLog() {
+    if (!CLOCKED) return;
     document.getElementById("log").innerHTML = D.events.map((e, i) => {
       const who = byId[e.actor];
       const shape = who && who.sil ? EV.sil(who.sil, evColour(e), { ftPx: 0.1, width: 40 }) : e.side === "jp" ? EV.sil("cargo", "var(--japan)", { width: 40 }) : "";
@@ -392,6 +415,6 @@
   });
   gMk.on("click.observer", ev => { const d = d3.select(ev.target.closest("g.mk")).datum(); const e = d && d.es && d.es.find(sheetOf); if (e) observer.pick(e.actor, e.title.replace(" (narrative)", "")); });
 
-  drawOOB(); drawClaims(); drawLog(); drawStatic(); drawLanes(); drawClosing(); drawFrame();
+  drawOOB(); drawClaims(); drawLog(); drawChronology(); drawStatic(); drawLanes(); drawClosing(); drawFrame();
   new ResizeObserver(() => { if (D.box) drawStatic(); drawLanes(); drawClosing(); drawFrame(); }).observe(document.querySelector(".wrap"));
 })();
