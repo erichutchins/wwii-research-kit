@@ -54,7 +54,18 @@ const EV = (() => {
     return "The kind of ship only (no plate in the library yet)";
   }
 
-  const land = world => topojson.feature(world, world.objects.land);
+  // world-atlas's land; d3 reads a ring wound the other way as the whole globe less that island, and land-10m has a few
+  // (its area came to 41 steradians, the sphere is 12.6), which filled the sea with land: turn any polygon that claims
+  // more than half the globe the right way round
+  const land = world => {
+    const f = topojson.feature(world, world.objects.land);
+    const right = poly => d3.geoArea({ type: "Polygon", coordinates: poly }) > 2 * Math.PI ? poly.map(r => r.slice().reverse()) : poly;
+    for (const g of (f.features || [f]).map(x => x.geometry)) {
+      if (g?.type === "MultiPolygon") g.coordinates = g.coordinates.map(right);
+      else if (g?.type === "Polygon") g.coordinates = right(g.coordinates);
+    }
+    return f;
+  };
   const LAND_10M = "https://cdn.jsdelivr.net/npm/world-atlas@2/land-10m.json";
   const LAND_50M = "https://cdn.jsdelivr.net/npm/world-atlas@2/land-50m.json";
 

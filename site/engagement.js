@@ -195,7 +195,8 @@
     const el = svg.node(); W = el.clientWidth; H = el.clientHeight;
     if (W < 120 || H < 120) return;   // not laid out yet (a resize in progress): a fit to nothing would draw inside out
     const b = D.box, m = Math.min(44, W * 0.06);
-    proj = d3.geoMercator().fitExtent([[m, 26], [W - m, H - 34]], { type: "MultiPoint", coordinates: [[b[0], b[1]], [b[2], b[3]], [b[0], b[3]], [b[2], b[1]]] });
+    // clipped to the frame (and a frame's width around it, for panning): the world's coast at this scale is otherwise megabytes
+    proj = d3.geoMercator().clipExtent([[-W, -H], [2 * W, 2 * H]]).fitExtent([[m, 26], [W - m, H - 34]], { type: "MultiPoint", coordinates: [[b[0], b[1]], [b[2], b[3]], [b[0], b[3]], [b[2], b[1]]] });
     view.bound(W, H);
     BASE = { scale: proj.scale(), translate: proj.translate() };   // the fit before the reader's zoom, for zoomToBox
     mapZoom.scaled(proj, BASE, view.transform());
