@@ -526,6 +526,12 @@ engagement (frupac.yml isn't built into the JSON; the other two live in notes), 
 where the mockup drew six: building `frupac.yml` into the engagement as `intelligence` entries is the next records task,
 and the view already takes them. Phase 5 is next.
 
+**Done** (3 November 2026): the FRUPAC notes. The build reads each tracked boat's `frupac.yml` inside the window into
+intelligence entries (zone I assumed, said on each; the position estimated from the mark on the map, drawn hatched) and
+beside each attack's pairing: 26 entries across nine Pacific engagements. Attack 1 on TAMA-17 now has the five columns
+the mockup drew. A note tied to an attack with no Japanese pairing is an entry and a mark but no moment, since moments
+are pairings.
+
 ## 10. Open questions
 
 - **Colour for more than three followed subjects.** The 62nd CA (AA) has fourteen units with stations around Oran and
