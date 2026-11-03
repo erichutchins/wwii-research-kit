@@ -1,13 +1,18 @@
-# Methods: from patrol report scans to an interactive record
+# Methods: from a war patrol report's scans to a checked, cited record
 
-How the USS BANG (SS-385) data in this repository was collected, transcribed,
-checked, enriched and presented. Written so the same process can be repeated
-for other submarines, by a person or by Claude.
+The method the kit follows for a submarine's war patrol reports: how the records are
+collected, transcribed, checked, enriched with outside data and presented, in the order
+the work is done. USS BANG (SS-385), the first boat transcribed, is the worked example
+throughout: her six patrols are the numbers in the tables below, and every rule here was
+set by a problem one of her pages raised. The same steps apply to any boat, by a person
+or by Claude.
 
-The work was done in October 2026 using Claude (Anthropic) in Claude Code:
-Claude read the page scans and wrote the code. Every number on the pages traces back to a specific
-scanned page, and every correction to the 1944–45 originals is recorded next
-to the value as it was typed.
+Every number on the pages traces back to a specific scanned page, and every correction
+to the 1944–45 originals is recorded next to the value as it was typed.
+
+When this was written: October 2026, with Claude (Anthropic) in Claude Code reading the
+page scans and writing the code. Later boats follow the skill `transcribe-patrol-report`,
+which is this method as a checklist.
 
 ---
 

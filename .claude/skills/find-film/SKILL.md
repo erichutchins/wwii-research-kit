@@ -5,7 +5,7 @@ description: >
   records/film/clips.csv: search the US National Archives' moving images and the listed archives' YouTube channels with
   tools/film.py, read each find on its shot list or Signal Corps shot card, date it, label it as the place or as the
   unit's day, cite it, and check it on the theatre's page. Use when asked for film, newsreels or footage of a place or
-  date, or when a lead (L63) works a theatre's film.
+  date, or when a research lead (L63 in the family repository) works a theatre's film.
 ---
 
 # Finding film of a place and day
