@@ -198,29 +198,48 @@ near(E.apart(sheet1, j03).nm, 7.6, 0.05, "apart: 19-26N 118-45E and 19-20N 118-5
 near(E.apart(j03, sheet1).minutes, -5, 0, "apart: the other way round is negative");
 ok(E.apart(sheet1, { utc: "1944-04-29T13:01Z" }).nm === null && E.apart({ lat: 1, lon: 1 }, j03).minutes === null, "apart: null where either lacks a position or a time");
 
-// The Sources view's moments from a frame's JSON, in TAMA-17's shape: a pair's sources are the sheet, the record and the
-// entries of other kinds within two hours that name the ship; the arithmetic between the sheet and each
+// The Sources view's moments from a frame's JSON, in TAMA-17's shape: a pair's sources are the sheet, the record, the
+// FRUPAC notes the boat's frupac.yml ties to the attack (the pair's `intelligence`) and the entries of other kinds within
+// two hours that name the ship; the arithmetic between the sheet and each. F01 is the build's shape: the note as written,
+// its time with zone I assumed (2215/29 -> 1315 GMT), its position read off the map, its zoom view as its page.
+const f01 = { id: "F01", event: "torpedoed", ship: "Yashima Maru", relation: "candidate", note: "Place and time fit Takegawa Maru but the name does not", map: "metapth1733008", map_date: "1944-04-29",
+              view: "resolution=1&lat=6300&lon=4150", zoom: "https://texashistory.unt.edu/ark:/67531/metapth1733008/m1/1/zoom/?resolution=1&lat=6300&lon=4150", text: "292215 / Yoshima Maru / att. by torp / 2215/29", dtg: "292215",
+              date: "1944-04-29", time: "2215", local: "1944-04-29 2215 I", utc: "1944-04-29T13:15Z", lat: 19.4, lon: 118.7, cite: { ref: "metapth1733008", href: "#", label: "map", kind: "intelligence", of: "us" } };
+const f02 = { ...f01, id: "F02", event: "sinking", text: "292215 / YASHIMA @ / 2215/29 IN / DANGER OF / SINKING", lat: null, lon: null, note: "No dot of its own" };
 const tama = {
   participants: [{ id: "bang", name: "BANG", of: "us", track: "ss-385-bang/1", colour: 1, followed: true }],
   fixes: [{ who: "bang", ref: "Attack 1", utc: "1944-04-29T12:56Z", lat: 19.4333, lon: 118.75, raw: "19-26N 118-45E", local: "1944-04-29 2256 K", on_track: true, assumed: false, fix: "", note: "Torpedo attack No. 1", cite: { ref: "rg367-74802746/p16", href: "#", label: "p. 16", kind: "record", of: "us" } }],
   sheets: { bang: { "Attack 1": { torpedoes: [{ date: "1944-04-29", time: "2256", zone: "K" }], words: [{ description: "Convoy consisting of at least 12 ships", sunk: "None.", damaged: "One 7000 ton AK probably sunk." }], cite: { ref: "rg367-74802746/p16", href: "#", label: "p. 16", kind: "record", of: "us" } } } },
   events: [
-    { actor: "FRUPAC", title: "Yoshima Maru", kind: "report", words: "Yoshima Maru / att. by torp / 2215/29", note: "frupac.yml ties this note to BANG's Attack 1", local: "1944-04-29 2215", utc: "1944-04-29T13:15Z", lat: 19.4, lon: 118.7, basis: "estimated", source: "FRUPAC overlay, 29 April", source_kind: "intelligence", source_of: "us", cite: { ref: "metapth1733008", href: "#", label: "map", kind: "intelligence", of: "us" } },
+    // the same note as an entry of the engagement (origin frupac): the pair already carries it, so the two-hour rule leaves it alone
+    { origin: "frupac", actor: "FRUPAC", about: "Yashima Maru", title: "Yashima Maru", kind: "hit", words: f01.text, local: f01.local, utc: f01.utc, lat: 19.4, lon: 118.7, basis: "assumed", source: "FRUPAC war map, 1944-04-29", source_kind: "intelligence", source_of: "us", frupac: { id: "F01", attack: "Attack 1", relation: "candidate" }, cite: f01.cite },
     { actor: "combinedfleet", title: "Takegawa Maru", kind: "sank", words: "Takegawa Maru sunk by BANG", local: "1944-04-29 2155 I", utc: "1944-04-29T12:55Z", source: "combinedfleet.com", source_kind: "secondary", source_of: "", cite: { ref: "combinedfleet:Nittatsu_t", href: "#", label: "page", kind: "secondary", of: "" } },
     { actor: "JANAC", title: "Kinrei Maru", kind: "loss", words: "Kinrei Maru to BANG", local: "1944-05-04", utc: "1944-05-03T16:06Z", source: "JANAC", source_kind: "assessment", source_of: "us", cite: { ref: "janac:4/p59", href: "#", label: "p. 59", kind: "assessment", of: "us" } },
     { origin: "japanese", record: "J03", actor: "Takegawa Maru", kind: "torpedoed", utc: "1944-04-29T13:01Z", source_kind: "record", source_of: "jp" },
     { actor: "bang", kind: "attack", title: "Attack 1", words: "Torpedo attack No. 1", utc: "1944-04-29T12:56Z", source_kind: "record", source_of: "us" }],
-  pairs: [{ attack: "Attack 1", boat: "bang", utc: "1944-04-29T12:56Z", relation: "hit", note: "Takegawa Maru (1,930 GRT), TAMA-17",
+  pairs: [{ attack: "Attack 1", boat: "bang", utc: "1944-04-29T12:56Z", relation: "hit", note: "Takegawa Maru (1,930 GRT), TAMA-17", intelligence: [f01, f02],
             record: { id: "J03", event: "torpedoed", ship: "Takegawa Maru", date: "1944-04-29", time: "2201", zone: "I", local: "1944-04-29 2201 I", utc: "1944-04-29T13:01Z", lat: 19.3333, lon: 118.8333, lat_raw: "19-20N", lon_raw: "118-50E",
                       original: "二九日二二時〇一分…竹川丸敵潜水艦ノ魚雷攻撃ヲ受ケ", lang: "ja", translation: "At 2201 on the 29th … Takegawa Maru was torpedoed", note: "Nittatsu Maru's own movement log", cite: { ref: "jacar:C08050103200 p23", href: "#", label: "p. 23", source_title: "JACAR", kind: "record", of: "jp" } } }] };
 const M = E.pairMoments(tama);
-ok(M.length === 1 && M[0].sources.length === 4, "moments: one pair, four sources (the sheet, the record, FRUPAC and combinedfleet; JANAC is days away)");
-ok(M[0].sources.map(s => s.role + ":" + E.sourceKindWord(s.kind, s.of)).join("|") === "attack:record · US|record:record · Japanese|near:intelligence · US|near:secondary", "moments: the sources' kinds, in order");
+ok(M.length === 1 && M[0].sources.length === 5, "moments: one pair, five sources (the sheet, the record, FRUPAC's F01 and F02, combinedfleet; JANAC is days away, and F01's entry isn't counted twice)");
+ok(M[0].sources.map(s => s.role + ":" + E.sourceKindWord(s.kind, s.of)).join("|") === "attack:record · US|record:record · Japanese|intelligence:intelligence · US|intelligence:intelligence · US|near:secondary", "moments: the sources' kinds, in order");
 ok(M[0].sources[0].typed === "1944-04-29 2256 K" && M[0].sources[0].raw === "19-26N 118-45E" && M[0].sources[0].words.map(w => w.typed).join("|") === "Convoy consisting of at least 12 ships|Sunk: None.|Damaged: One 7000 ton AK probably sunk.", "moments: the sheet as typed, its position and its words");
 ok(M[0].sources[1].words[0].lang === "ja" && M[0].sources[1].raw === "19-20N 118-50E" && M[0].sources[1].zone === "I", "moments: the record in its own language, its position as written, its zone");
+const F = M[0].sources[2];
+ok(F.name === "FRUPAC F01" && F.sub === "war map, 1944-04-29 · torpedoed · DTG 292215" && F.zone === "" && F.typed === "1944-04-29 2215" && F.assumed === "FRUPAC's zone assumed I", "moments: FRUPAC's note as typed, no zone written, its zone assumed I");
+ok(F.position === "a blue dot on the overlay, read against the printed grid" && F.basis === "estimated, about ±0.2°" && F.raw === "", "moments: FRUPAC's position is read off the map, estimated");
+ok(F.words.map(w => w.typed || w.ours).join("|") === "292215 / Yoshima Maru / att. by torp / 2215/29|candidate: Place and time fit Takegawa Maru but the name does not" && F.cite.href === f01.zoom && F.cite.label === "map", "moments: FRUPAC's words as written, the relation ours, the zoom view as its page");
+ok(M[0].sources[3].lat == null && M[0].sources[3].position === "" && M[0].sources[3].basis === "", "moments: a note with no dot of its own has no position");
 near(M[0].apart[0].minutes, 5, 0, "moments: the sheet and the log, 5 minutes"); near(M[0].apart[0].nm, 7.6, 0.05, "moments: and 7.6 nm");
 near(M[0].apart[1].minutes, 19, 0, "moments: the sheet and FRUPAC, 19 minutes"); near(M[0].apart[1].nm, 3.46, 0.05, "moments: and 3.5 nm (2' of latitude, 3' of longitude at 19.4°)");
-ok(M[0].apart[2].nm === null && M[0].apart[2].minutes === -1, "moments: combinedfleet has no position, and is a minute before the sheet");
+ok(M[0].apart[2].minutes === 19 && M[0].apart[2].nm === null, "moments: F02, 19 minutes and no distance");
+ok(M[0].apart[3].nm === null && M[0].apart[3].minutes === -1, "moments: combinedfleet has no position, and is a minute before the sheet");
+// a column of intelligence in the chronology is its own group, in the lighter ink, chipped by its kind and nationality
+const intel = E.chronologyColumns([{ actor: "bang", of: "us", local: "1944-04-29 2256 K", source: "" },
+  { origin: "frupac", actor: "FRUPAC", of: "us", local: "1944-04-29 2215 I", source: "FRUPAC war map, 1944-04-29", source_kind: "intelligence", source_of: "us" },
+  { actor: "Takegawa Maru", of: "jp", opposed: true, local: "1944-04-29 2201 I", source: "", source_kind: "record", source_of: "jp" }],
+  [{ id: "bang", name: "BANG", of: "us", track: "ss-385-bang/1", colour: 1, followed: true }]);
+ok(intel.map(c => c.name).join("|") === "BANG|FRUPAC war map|Takegawa Maru" && intel[1].colour === "var(--ink-3)" && !intel[1].opposed && E.columnChip(intel[1]) === "intelligence · US", "columns: FRUPAC's own column, chipped intelligence · US, in the lighter ink, not the other side");
 ok(M[0].ours.relation === "hit" && /^a hit/.test(M[0].ours.words) && M[0].ours.note === "Takegawa Maru (1,930 GRT), TAMA-17", "moments: what we make of it is the pairing's relation and note");
 ok(E.pairMoments({ participants: [], fixes: [], events: [], pairs: [] }).length === 0, "moments: none without pairs");
 

@@ -43,6 +43,13 @@ code) and `translation` instead of `words`; a patrol's japanese.yml entries arri
                Sources view (guides/OPERATIONS-VIEWER.md 7.1): {attack, boat, utc, relation, note, record: {id, event,
                ship, date, time, zone, local, utc, lat, lon, lat_raw, lon_raw, original, lang, translation, note, cite}}.
                The minutes and miles between the two are computed on the page (Engage.apart), as check_crossrefs.py does.
+               `intelligence` on a pair: the FRUPAC notes tied to its attack (frupac.yml's `attack`), each as written with
+               its own time, estimated position, relation and zoom view.
+US radio intelligence is read like the Japanese records: a tracked boat's frupac.yml inside the window becomes entries
+(`origin: frupac`, actor FRUPAC, `of: us`, `about` the ship the note names, the words as written, `source_kind:
+intelligence` through the map's citation), on the clock with zone I assumed and on the map at the position read off the
+map, both said to be ours (`basis: assumed`, `pos_basis: approx`, the note). A source about the convoy, not a participant:
+no track, no lane of its own on the map.
 """
 import csv
 import json
@@ -87,9 +94,29 @@ KINDS = {"position", "sighting", "contact_report", "received", "order", "attack"
          # the Army's and Haynsworth's timelines
          "station", "scout", "launch", "cap", "turnback", "fight", "radar", "loss", "casualty", "report", "burial",
          "departure", "arrival", "shelled", "assignment", "move", "engage", "claim", "witness", "context", "air",
-         "communique", "patrol", "warning", "raid", "fire", "kill", "probable", "silence", "scramble", "bulletin", "visit"}
+         "communique", "patrol", "warning", "raid", "fire", "kill", "probable", "silence", "scramble", "bulletin", "visit",
+         # US radio intelligence (a FRUPAC note of a ship attacked; the note's own word stays in `frupac.event`)
+         "attacked"}
 # a Japanese record's event -> the mark the pages draw: sunk (red cross), hit (red ring), miss (open ring)
 MARK = {"sank": "sunk", "torpedoed": "hit", "attacked_no_damage": "miss"}
+# a FRUPAC note (records/README.md, frupac.yml): its fields, and its `event` -> the kind the pages know (KINDS). A note
+# whose event isn't here fails the build: add the word here (and its kind to KINDS if none fits) rather than in a file.
+FRUPAC = {"id", "map", "map_date", "view", "text", "dtg", "date", "time", "lat_est", "lon_est", "ship", "event", "attack",
+          "relation", "note"}
+FRUPAC_KIND = {"torpedoed": "hit", "sank": "sank", "sinking": "damage", "attacked": "attacked", "torpedo_attack": "attacked",
+               "attack_reported": "attacked", "torpedo_track": "sighting", "sub_contact": "sighting", "sub_sighted": "sighting",
+               "df_sub": "position", "position": "position", "convoy": "position", "arrival": "arrival", "claim": "claim",
+               "contact_report": "report"}
+# the entry's title where the note names no ship: the event in words
+FRUPAC_TITLE = {"df_sub": "D/F fix on a submarine", "sub_contact": "Submarine contact", "sub_sighted": "Submarine sighted",
+                "torpedo_track": "Torpedo track", "torpedo_attack": "Torpedo attack", "attack_reported": "Attack reported",
+                "attacked": "Ship attacked", "torpedoed": "Ship torpedoed", "sinking": "In danger of sinking", "sank": "Ship sunk",
+                "convoy": "Convoy", "position": "Position", "arrival": "Arrival", "claim": "Claim", "contact_report": "Contact report"}
+FRUPAC_RELATION = {"match", "candidate", "context"}
+FRUPAC_ZOOM = "https://texashistory.unt.edu/ark:/67531/{map}/m1/1/zoom/"
+# what is ours in a FRUPAC entry, said on the entry (the README's assumption paragraph): the zone, and the position
+FRUPAC_ZONE = "Zone I (Tokyo time) assumed: the note writes no zone letter, and the matched notes bear it out."
+FRUPAC_POS = "The position is read off the map from where the mark sits (about ±0.1–0.3°), not the note's."
 AT = re.compile(r"(\d{4}-\d{2}(?:-\d{2})?)(?: (\d{4})(?: ([A-Z]{1,2}))?)?")
 
 
@@ -257,6 +284,85 @@ class Build:
                 pairs.append({**x, "unit": other or unit, "attack_ref": ref, "attack_utc": a["utc"], "ja": ja[x["record"]]})
         return rows, ja, pairs
 
+    def frupac(self, unit, rows, path=None):
+        """A boat's FRUPAC notes (frupac.yml, records/README.md "US radio intelligence"), each checked and read for the
+        pages: its time in GMT with zone I assumed (the notes write no zone; the README's assumption), its position as
+        estimated from the map (`lat_est`/`lon_est`, or none), the attack it is tied to (a row in `rows`, or another
+        boat's as `<boat>/<n>:<ref>`) and its map's citation. `path` names the file when it isn't the patrol's own (tests)."""
+        path = path or patrol_dir(unit) / "frupac.yml"
+        out = []
+        for i, f in enumerate(records.load_yaml(path) or [] if path.exists() else [], 1):
+            w = f"{rel(path)} {f.get('id') or f'#{i}'}"
+            for k in set(f) - FRUPAC:
+                self.bad(w, f"unknown field {k!r} (known: {', '.join(sorted(FRUPAC))})")
+            if f.get("event") not in FRUPAC_KIND:
+                self.bad(w, f"event {f.get('event')!r} has no kind in FRUPAC_KIND; add it there rather than in a file")
+            if f.get("relation") and f["relation"] not in FRUPAC_RELATION:
+                self.bad(w, f"relation {f['relation']!r} is not one of {', '.join(sorted(FRUPAC_RELATION))}")
+            if not f.get("text"):
+                self.bad(w, "no `text` (the note as written)")
+            dd = f["date"].isoformat() if isinstance(f.get("date"), date) else str(f.get("date", ""))
+            time = str(f.get("time") or "")
+            local, t, key = self.when(f"{dd} {time} I" if time else dd, "I", w)
+            lat, lon = num(f.get("lat_est")), num(f.get("lon_est"))
+            if (lat is None) != (lon is None):
+                self.bad(w, "`lat_est` and `lon_est` go together")
+            attack_unit, attack_utc = "", None
+            other, _, ref = str(f.get("attack") or "").rpartition(":")
+            if ref:
+                arows = rows if not other else load(other)
+                a = next((r for r in arows if r["ref"] == ref), None)
+                if a is None:
+                    self.bad(w, f"no attack {ref!r} in {other or unit}'s positions.csv")
+                else:
+                    attack_unit, attack_utc = other or unit, a["utc"]
+            m = str(f.get("map", ""))
+            zoom = FRUPAC_ZOOM.format(map=m) + (f"?{f['view']}" if f.get("view") else "")
+            cite = {**self.cite(m, w), "href": zoom, "label": "map"}   # the map, framed on the note: where it is legible
+            out.append({**f, "id": str(f.get("id", "")), "date": dd, "time": time, "map": m, "map_date": str(f.get("map_date", "")),
+                        "dtg": str(f.get("dtg") or ""), "ship": str(f.get("ship") or ""), "local": local, "utc": t, "key": key,
+                        "unit": unit, "lat": lat, "lon": lon, "attack_ref": ref, "attack_unit": attack_unit, "attack_utc": attack_utc,
+                        "zoom": zoom, "cite": cite})
+        return out
+
+    def frupac_events(self, notes, start, end):
+        """The FRUPAC notes inside the window as entries: US intelligence about the other side's ship (`about`), its words
+        as written, placed on the clock with zone I assumed and on the map at its estimated position, and said to be so
+        (`basis: assumed`, `pos_basis: approx`, the note). A note of one day's event with no time is drawn at the time of
+        the attack it is tied to, and says so; one tied to nothing stays off the clock. `frupac` carries the note's own
+        fields (its id, event, relation, attack, map and zoom view) for the pages."""
+        out = []
+        for f in notes:
+            t, untimed = f["utc"], ""
+            if not t and f["attack_utc"] and len(f["date"]) == 10:
+                t = f["attack_utc"]
+                untimed = f"The note gives no time; drawn at the time of the attack it is tied to ({f['attack_ref']})."
+            if not (t and start <= t <= end):
+                continue
+            ship = f["ship"]
+            ev = {"origin": "frupac", "of": "us", "actor": "FRUPAC", "about": ship, "kind": FRUPAC_KIND.get(f.get("event"), "report"),
+                  "title": ship.replace("; ", " and ") or FRUPAC_TITLE.get(f.get("event"), str(f.get("event", "")).replace("_", " ")),
+                  "words": f.get("text", ""), "local": f["local"], "utc": iso(t), "key": iso(t), "unit": f["unit"],
+                  "source": f"FRUPAC war map, {f['map_date']}", "cite": f["cite"], "basis": "assumed",
+                  "note": " ".join(x for x in (untimed, FRUPAC_ZONE if f["utc"] else "", FRUPAC_POS if f["lat"] is not None else "",
+                                               f.get("note", "")) if x),
+                  "frupac": {k: f.get(k, "") for k in ("id", "ship", "event", "attack", "relation", "map", "map_date", "view", "zoom", "dtg")}}
+            if f["lat"] is not None:
+                ev.update({"lat": round(f["lat"], 4), "lon": round(f["lon"], 4), "pos_basis": "approx", "pos_note": FRUPAC_POS})
+            out.append(ev)
+        return out
+
+    @staticmethod
+    def intel(f):
+        """A FRUPAC note beside the attack it is tied to, for a pair's `intelligence` (the Sources view): the note as
+        written, its own time (none when it gives none: the view says so, and computes nothing from a placed time), its
+        estimated position, how it relates to the attack (`relation`, `note`), and its map's zoom view."""
+        return {"id": f["id"], "event": f.get("event", ""), "ship": f["ship"], "relation": f.get("relation", ""), "note": f.get("note", ""),
+                "map": f["map"], "map_date": f["map_date"], "view": f.get("view", ""), "zoom": f["zoom"], "text": f.get("text", ""),
+                "dtg": f["dtg"], "date": f["date"], "time": f["time"], "local": f["local"], "utc": iso(f["utc"]),
+                "lat": round(f["lat"], 4) if f["lat"] is not None else None, "lon": round(f["lon"], 4) if f["lon"] is not None else None,
+                "cite": f["cite"]}
+
     def sheets(self, p, refs):
         """A boat's attack data sheets (attacks.csv and attack_sheets.yml) for the attacks in `refs`: the torpedoes'
         rows as typed, the sheet's words, and its page. The observer view computes from them; nothing is changed."""
@@ -399,11 +505,12 @@ class Build:
                 e["outside"] = bool(e["utc"]) and not start <= parse_iso(e["utc"]) <= end
 
         # each participant's own record, inside the window
-        tracks, fixes, seen_ja, japanese, pairs, sheets = {}, [], set(), [], [], {}
+        tracks, fixes, seen_ja, japanese, pairs, sheets, notes = {}, [], set(), [], [], {}, []
         for p in parts:
             if not p.get("track") or not start:
                 continue
             rows, ja, prs = self.patrol(p["track"])
+            notes += self.frupac(p["track"], rows)
             on = [r for r in rows if r["on_track"] == "yes"]
             inside = [r for r in rows if start <= r["utc"] <= end]
             on_inside = [r for r in inside if r["on_track"] == "yes"]
@@ -425,8 +532,14 @@ class Build:
         for x in pairs:
             outcome.setdefault((by_unit.get(x["unit"]), x["attack_ref"]), []).append(x)
         moments = [self.pair(x, by_unit) for x in pairs if x["unit"] in by_unit and start <= x["attack_utc"] <= end]
+        intel = self.frupac_events(notes, start, end)
+        inside = {(e["unit"], e["frupac"]["id"]) for e in intel}
+        for m in moments:   # the FRUPAC notes tied to the pair's attack, among those inside the window
+            m["intelligence"] = [self.intel(f) for f in notes if (f["unit"], f["id"]) in inside
+                                 and by_unit.get(f["attack_unit"]) == m["boat"] and f["attack_ref"] == m["attack"]]
         events += self.fix_events(fixes, outcome)
         events += self.japanese_events(japanese, pairs, start, end)
+        events += intel
         events = [self.tagged({**e, "opposed": opposed(e.get("of", ""))}) for e in events]
         events.sort(key=lambda e: e["key"])
 

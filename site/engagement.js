@@ -37,17 +37,20 @@
   const PARTS = D.participants;
   const byId = Object.fromEntries(PARTS.map(p => [p.id, p]));
   const opposedOf = of => D.against ? D.against.includes(of) : !!of && !(D.own || []).includes(of);
-  const inkOf = x => x.source_kind === "press" ? "var(--ink-3)" : x.opposed ? "var(--japan)" : x.of ? "var(--ink-2)" : "var(--ink-3)";   // no `of`: a place
+  const LIGHTER = new Set(["press", "intelligence"]);   // not a record: the lighter ink, whichever side's
+  const inkOf = x => LIGHTER.has(x.source_kind) ? "var(--ink-3)" : x.opposed ? "var(--japan)" : x.of ? "var(--ink-2)" : "var(--ink-3)";   // no `of`: a place
   const colour = id => byId[id]?.colour ? `var(--c${byId[id].colour})` : byId[id] ? inkOf(byId[id]) : "var(--ink-2)";
   const evColour = e => byId[e.actor] ? colour(e.actor) : inkOf(e);
   const nameOf = a => byId[a]?.name || a;
   const TRACKED = PARTS.filter(p => (D.tracks[p.id] || []).length);
-  // one lane per tracked ship or boat, then one per nationality for everyone else (the press its own), named as the
-  // records name it (E.nation: Japanese, German), never as a bloc
-  const laneOf = e => byId[e.actor] && TRACKED.includes(byId[e.actor]) ? e.actor : e.source_kind === "press" ? "press" : "of:" + (e.of || "");
+  // one timeline lane per tracked ship or boat, then one per nationality for everyone else, named as the records name it
+  // (E.nation: Japanese, German), never as a bloc; the press its own, and radio intelligence its own under its name
+  // (FRUPAC): a source about the other side, not a subject, so never in a followed subject's lane
+  const laneOf = e => byId[e.actor] && TRACKED.includes(byId[e.actor]) ? e.actor : e.source_kind === "press" ? "press"
+    : e.source_kind === "intelligence" ? "intel:" + (e.actor || "") : "of:" + (e.of || "");
   const LANES = [...TRACKED.map(p => ({ id: p.id, name: p.name, colour: colour(p.id) })),
-    ...[...new Set(D.events.map(e => laneOf(e)).filter(l => l === "press" || l.startsWith("of:")))].map(l => (l === "press"
-      ? { id: l, name: "Press", colour: "var(--ink-3)" }
+    ...[...new Set(D.events.map(e => laneOf(e)).filter(l => l === "press" || l.startsWith("of:") || l.startsWith("intel:")))].map(l => (l === "press"
+      ? { id: l, name: "Press", colour: "var(--ink-3)" } : l.startsWith("intel:") ? { id: l, name: l.slice(6), colour: "var(--ink-3)" }
       : { id: l, name: E.nation(l.slice(3)), colour: opposedOf(l.slice(3)) ? "var(--japan)" : "var(--ink-2)" }))];
 
   // ---------- time: GMT where the records give a zone; otherwise the records' own local clock
@@ -119,7 +122,8 @@
     has(e => e.mark === "sunk" && e.lat != null) && `<span>${EV.legendMark.sunk}Sunk (Japanese record)</span>`,
     has(e => e.mark === "hit" && e.lat != null) && `<span>${EV.legendMark.hit}Hit, not sunk</span>`,
     has(e => e.mark === "miss" && e.lat != null) && `<span>${EV.legendMark.miss}Attacked, no damage</span>`,
-    has(e => e.kind === "contact_report") && `<span><svg width="24" height="10"><line x1="1" y1="5" x2="23" y2="5" class="msg" stroke="var(--ink-2)"/></svg>Contact report, sender to each boat it went to</span>`,
+    has(e => e.kind === "contact_report" && e.origin !== "frupac") && `<span><svg width="24" height="10"><line x1="1" y1="5" x2="23" y2="5" class="msg" stroke="var(--ink-2)"/></svg>Contact report, sender to each boat it went to</span>`,
+    has(e => e.origin === "frupac" && e.lat != null) && `<span>${EV.legendMark.intel}Estimated by FRUPAC (US radio intelligence; the position read from the map)</span>`,
     D.fixes.some(f => !f.on_track && f.kind !== "ship") && `<span><svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="4.5" fill="none" stroke="var(--ink-2)" stroke-width="1.4" stroke-dasharray="2 2"/></svg>Contradicted in the report</span>`,
     D.positions.length && `<span><svg width="10" height="10" viewBox="-5 -5 10 10"><rect x="-3" y="-3" width="6" height="6" fill="var(--ink-3)"/></svg>A place in the records</span>`,
     IN("account") && PATH.length > 1 && `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--ink-3)" stroke-width="1.4" stroke-dasharray="2 4"/></svg><i>The convoy's path as the boats saw it (ours)</i></span>`,
@@ -127,6 +131,7 @@
 
   // ---------- map
   const svg = d3.select("#map");
+  const HATCH = EV.hatchDef(svg);   // the intelligence estimates' hatch (inferred, never solid)
   const gLand = svg.append("g"), gGrat = svg.append("g"), gPlace = svg.append("g"), gPath = svg.append("g"), gTrk = svg.append("g"), gMsg = svg.append("g"),
         gNowName = svg.append("g"), gMk = svg.append("g"), gNow = svg.append("g"), gPulse = svg.append("g");
   let proj = null, W = 0, H = 0, quiet = false, t = t1, playing = false, raf = 0, lastT = null;
@@ -165,8 +170,11 @@
       .forEach(([, es]) => items.push({ k: "attack", es, ms: d3.min(es, e => e.ms), lon: es[0].lon, lat: es[0].lat, who: es[0].actor, doubt: es.every(e => e.note) }));
     d3.groups(D.events.filter(e => e.origin === "japanese" && e.lat != null), e => e.lat + "," + e.lon)
       .forEach(([, es]) => items.push({ k: "jp", es, ms: d3.min(es, e => e.ms), lon: es[0].lon, lat: es[0].lat }));
+    // US radio intelligence's estimates (FRUPAC's notes with a mark of their own): hatched, under the records' marks
+    d3.groups(D.events.filter(e => e.origin === "frupac" && e.lat != null), e => e.lat + "," + e.lon)
+      .forEach(([, es]) => items.push({ k: "intel", es, ms: d3.min(es, e => e.ms), lon: es[0].lon, lat: es[0].lat }));
     D.positions.filter(r => r.lat != null).forEach(r => items.push({ k: "pos", r, ms: -Infinity, lon: r.lon, lat: r.lat }));
-    const order = { pos: 0, off: 1, ship: 2, fix: 3, jp: 4, attack: 5 };
+    const order = { pos: 0, intel: 1, off: 2, ship: 3, fix: 4, jp: 5, attack: 6 };
     items.sort((a, b) => order[a.k] - order[b.k]);
     const sel = gMk.selectAll("g.mk").data(items).join("g").attr("class", d => "mk " + d.k)
       .attr("transform", d => `translate(${P(d.lon, d.lat).map(v => v.toFixed(1))})`);
@@ -191,6 +199,7 @@
           g.append("text").attr("class", "mk-label").attr("x", -9).attr("y", 4).attr("text-anchor", "end").text([...new Set(names)].join(" + "));
         }
       }
+      if (d.k === "intel") EV.intelMark(g, HATCH);
       if (d.k === "pos") {
         g.append("rect").attr("x", -3).attr("y", -3).attr("width", 6).attr("height", 6).attr("fill", inkOf(d.r))
           .attr("fill-opacity", d.r.basis === "assumed" || d.r.basis === "approx" || d.r.basis === "hand-placed" ? 0.35 : 1);
@@ -203,8 +212,16 @@
   }
 
   const srcLine = c => c && c.href ? `<div class="i">${esc(c.source_title || "")} ${esc(c.label || "")} · click a log entry for the page</div>` : "";
+  // a FRUPAC note's relation to the attack its frupac.yml ties it to (records/README.md), in words before the relation itself
+  const INTEL_RELATION = { match: "The same event as the attack: ", candidate: "A candidate for the attack (time and place fit; something doesn't): ", context: "Context, probably not this boat: " };
   function tipHTML(d) {
     if (d.k === "attack" || d.k === "jp") return d.es.map(e => `<div class="v">${esc(nameOf(e.actor))} · ${esc(e.title)}</div><div class="k">${clockText(e.ms)} ${D.gmt ? "GMT" : ""} · ${esc(e.local)}</div><div class="m">${esc(e.words)}</div>${(e.outcome || []).map(o => `<div class="m"><b>Japanese side (${esc(o.relation)}).</b> ${esc(o.note)}</div>`).join("")}${e.note ? `<div class="i">${esc(e.note)}</div>` : ""}`).join("<hr>");
+    // US radio intelligence: the note as written, its relation to the attack it is tied to (ours), the map's zoom view
+    if (d.k === "intel") return d.es.map(e => {
+      const f = e.frupac || {}, boat = PARTS.find(p => p.track === e.unit);
+      const tie = f.attack ? `${INTEL_RELATION[f.relation] || ""}<i>${esc(f.relation || "tied to")}</i> · ${esc(boat ? boat.name : "the boat")}'s ${esc(f.attack)}` : "tied to no attack";
+      return `<div class="v">FRUPAC ${esc(f.id || "")} · ${esc(e.title)}</div><div class="k">${clockText(e.ms)} ${D.gmt ? "GMT" : ""} · ${esc(e.local)} <i>(zone assumed)</i></div><div class="m">${esc(e.words)}</div>`
+        + `<div class="i">${tie}. US radio intelligence; the position is read from the map, not the note's.${f.zoom ? ` <a href="${esc(f.zoom)}" target="_blank" rel="noopener">the map ↗</a>` : ""}</div>`; }).join("<hr>");
     if (d.k === "pos") return `<div class="v">${esc(d.r.label)}</div><div class="k">${esc([d.r.date, d.r.time].filter(Boolean).join(" "))}${d.r.basis ? " · " + esc(d.r.basis) : ""}${d.r.resolved ? " · " + esc(d.r.resolved) : ""}</div>${d.r.note ? `<div class="m">${esc(d.r.note)}</div>` : ""}<div class="i">${esc(d.r.source || "")}</div>`;
     const f = d.f, what = d.k === "ship" ? "Sighted: the target's position, not the boat's" : d.k === "off" ? "Left off the track" : "Reported position";
     return `<div class="v">${esc(nameOf(f.who))} · ${esc(f.ref)}</div><div class="k">${esc(f.raw)} · ${clockText(E.T(f.utc))} GMT · ${esc(f.local)}</div><div class="m">${what}. ${esc(f.note)}</div>${f.fix ? `<div class="i">${esc(f.fix)}</div>` : ""}`;
@@ -332,6 +349,8 @@
       const who = byId[e.actor];
       const shape = who && who.sil ? EV.sil(who.sil, evColour(e), { ftPx: 0.1, width: 40 }) : e.of === "jp" ? EV.sil("cargo", "var(--japan)", { width: 40 }) : "";
       const name = who ? who.name : e.actor || E.nation(e.of);
+      // a source that isn't a record wears its kind and nationality ("intelligence · US"), as the chronology's columns do
+      const chip = e.source_kind && e.source_kind !== "record" ? `<span class="chip">${esc(E.sourceKindWord(e.source_kind, e.source_of))}</span>` : "";
       const lang = e.lang || "ja";   // the record's own language: Japanese in its face, any other typed
       const what = e.title && e.title !== name ? `<span class="what">${esc(e.title)}</span>` : e.kind && e.kind !== "log" ? `<span class="what">${esc(e.kind.replace(/_/g, " "))}</span>` : "";
       const toWhom = e.to ? ` <span class="what">to ${e.to.map(r => esc(nameOf(r))).join(" and ")}</span>` : e.from ? ` <span class="what">from ${esc(nameOf(e.from))}</span>` : "";
@@ -339,7 +358,7 @@
       return `<div class="row entry${e.basis === "assumed" ? " assumed" : ""}" tabindex="0" data-t="${e.ms ?? ""}" style="--bar:${evColour(e)}">
         <div class="t${e.placed ? " placed" : ""}">${e.ms != null && e.local.length > 10 ? E.hhmm(e.ms) : ""}<small>${e.ms != null ? E.day(e.ms) : esc(e.local)}</small></div>
         <div class="body">
-          <div class="who">${shape}<b>${esc(name)}</b>${what}${toWhom}<span class="own">${esc(e.local.slice(11))}</span></div>
+          <div class="who">${shape}<b>${esc(name)}</b>${chip}${what}${toWhom}<span class="own">${esc(e.local.slice(11))}</span></div>
           ${e.original ? `<div class="${lang === "ja" ? "ja" : "said"}" lang="${esc(lang)}" data-tr="${esc(e.translation || e.words || "")}">${esc(e.original)}</div><div class="tr">${esc(e.translation || e.words || "")} (translated)</div>` : `<div class="said">${esc(e.words || e.title || "")}</div>`}
           ${(e.outcome || []).map(o => `<div class="note"><b>Japanese side (${esc(o.relation.replace(/_/g, " "))}).</b> ${esc(o.note)}</div>`).join("")}
           ${e.note ? `<div class="assume">${esc(e.note)}</div>` : ""}${placed}
@@ -551,7 +570,7 @@
       return "";
     };
     const journeys = PARTS.map(journey).filter(Boolean);
-    const recordNames = [...RECS.values()], shown = recordNames.slice(0, 6);
+    const recordNames = [...new Set(RECS.values())], shown = recordNames.slice(0, 6);   // two FRUPAC maps are one name
     document.getElementById("doors").innerHTML = `
       <a class="door" href="${esc(address(id, "records"))}"><b>The records</b><span class="n"><span class="typed">${D.events.length}</span> ${D.events.length === 1 ? "entry" : "entries"} from ${esc(kindsLine)} in ${n(LANGS, "language")}${D.fixes.length ? `, and <span class="typed">${D.fixes.length}</span> ${D.fixes.length === 1 ? "fix" : "fixes"}` : ""}</span>
         <span class="list">${esc(shown.join(" · "))}${recordNames.length > shown.length ? ` · and ${recordNames.length - shown.length} more` : ""} · ${PLAYS || CLOCKED ? "the map with the clock, one lane per subject, and the two-sided log" : "the map, and the chronology by the day"}</span></a>

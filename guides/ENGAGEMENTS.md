@@ -65,7 +65,9 @@ new format is converted for good: no reader for the old one is kept.
 2. **The other side.** A patrol's `japanese.yml` (the records as written, with translations) and `claims.yml` (which
    attack goes with which record, and how sure the pairing is); `check_crossrefs.py` prints the minutes and miles
    between each pair. The skill `find-the-other-side` is the method. A convoy gets its own `convoy.md`: route, voyage,
-   ships, each cited.
+   ships, each cited. What US radio intelligence knew of the convoy, a patrol's `frupac.yml` (each note as written, tied
+   to an attack where it speaks to one), is read into the engagement the same way: a source about the convoy, not a
+   participant.
 3. **`engagement.md`.** The front matter names the participants and the window, the body tells the story. At most
    three participants have a US track, because the page has three checked colours and no fourth hue. An Army unit is
    named by its id in `army/units.csv` so the pages' breadcrumb (`site/chapter.js`) can follow it to its engagements
@@ -106,6 +108,7 @@ new format is converted for good: no reader for the old one is kept.
 | From the record | solid |
 | From a secondary source (combinedfleet.com and the like) | outlined, or an italic name |
 | Inferred | hatched |
+| US radio intelligence's estimate (a FRUPAC note's mark, read off the map) | a hatched ring in the lighter ink, never solid; its entries chipped *intelligence · US* |
 | Not recorded; an assumed route | dotted |
 | Straight between known points, nothing recorded between | dashed |
 | A ship sunk (the Japanese record) | red ✕ |
@@ -169,8 +172,15 @@ hue. Colour follows the boat across every view of a page; text never wears it ex
 ## Open work, by engagement
 
 - **TAMA-17 and TE-04** (`tama-17-1944-04-29`, `te-04-1944-05-03`):
-  1. The FRUPAC notes (`ss-385-bang/patrol-1/frupac.yml`, F01–F10) as a third side, US radio intelligence, with its
-     own lane and estimated positions.
+  1. *Done.* The FRUPAC notes (`ss-385-bang/patrol-1/frupac.yml`, F01–F10) are read into the engagements like the
+     Japanese records: every note inside the window is an entry (`actor: FRUPAC`, `of: us`, its source `intelligence ·
+     US` through the map's citation, `about` the ship it names), and a note tied to an attack joins that attack's pairing
+     as `intelligence` for the Sources view (BANG's Attack 1 beside J03 and F01–F03: 19 min and 4 nm from F01's dot, zone
+     I assumed). Not as a third side with a lane of its own, as first planned: FRUPAC is a source about the convoy, not a
+     participant, so it gets a column in the chronology and the Sources view, chipped *intelligence · US*, and on the map
+     hatched rings in the lighter ink at the positions read off the maps (the inferred encoding, never solid), with their
+     own legend line. The front page's replay lists the records alone. Still open: the museum's full-resolution scans
+     (item 4) would turn the estimated positions into read ones.
   2. Who sank Kinrei Maru: a Japanese primary record (her movement log, or TE-04's escorts' reports: CD-1, Kazan
      Maru, Maeshima). The 3–4 May sinking times and attributions are still combinedfleet.com's.
   3. PARCHE's and TINOSA's depth logs (TINOSA: 55 depth charges on 3–4 May).

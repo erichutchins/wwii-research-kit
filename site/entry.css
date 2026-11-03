@@ -26,6 +26,7 @@
 .entry .who { display: flex; align-items: baseline; gap: 8px; font: 19px/1.3 var(--serif); margin-bottom: 3px; }
 .entry .who b { font-weight: 700; letter-spacing: .02em; }
 .entry .who .what { color: var(--ink-2); font-style: italic; }
+.entry .who .chip { font-size: 12.5px; font-style: italic; color: var(--ink-3); border: 1px solid var(--rule); border-radius: 10px; padding: 0 7px; white-space: nowrap; }   /* a source's kind and nationality, when it isn't a record */
 .entry .who .own { margin-left: auto; padding-left: 8px; font: 15.5px var(--typed); color: var(--ink-3); white-space: nowrap; }
 .entry .who svg { flex: none; align-self: center; }
 .entry .said { display: block; font: 16px/1.55 var(--typed); overflow-wrap: anywhere; }
