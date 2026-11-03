@@ -505,6 +505,18 @@ depths. What the data taught: six of the hand-built frames have no *Outcome* sec
 rather than inventing one; and counting "records" from an entry's `source` text is phase 4's heuristic again. Phase 4
 is next, and it is the first to touch the records.
 
+**Done** (3 November 2026): phase 4, the records and the build. Every one of the 99 sources in `SOURCES.yml` carries a
+`kind` and most an `of`; `check_sources.py` fails without a kind. `side` is gone: every participant, entry and position
+carries `of`, the nationality as the record gives it, and the build derives `followed` (a participant with a track or a
+unit), `own`, `opposed`, `source_kind` and `source_of`. Twenty-six entries' originals moved out of `words` into
+`original`, `lang` and `translation` (German at Venafro and Filignano; French and Italian at Algiers, translated for the
+first time; Japanese at Haynsworth). What the data taught: a convoy is not a followed subject (it is the other side's
+record, read against the boats' sightings), and nationality alone cannot say who faced whom once three nationalities
+meet, so an engagement may name `against:` (Algiers: `[de, it]`, so No. 153 Squadron's record is not coloured as the
+enemy's); and 46 catalogue-URL citations on Haynsworth and Corzine still resolve to the generic `url` entry, whose kind
+is `secondary`, until they are written in the archive's short form. The Sources view and the chips by kind are the
+phase's second half.
+
 ## 10. Open questions
 
 - **Colour for more than three followed subjects.** The 62nd CA (AA) has fourteen units with stations around Oran and
