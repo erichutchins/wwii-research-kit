@@ -11,65 +11,65 @@
   .graticule { fill: none; stroke: var(--coast); stroke-opacity: 0.45; }
   .map-wrap svg { cursor: grab; }
   .map-wrap svg:active { cursor: grabbing; }
-  .deg text { fill: var(--text-muted); pointer-events: none; }
+  .deg text { fill: var(--ink-3); pointer-events: none; }
   /* naval blocks: one hue; how each was obtained is the line and the pattern, not the colour */
   .blk { stroke: var(--series-track); fill: var(--series-track); fill-opacity: 0.08; }
   .blk.measured-lon { fill: url(#hatch-lon); fill-opacity: 1; }
   .blk.read { fill-opacity: 0.03; }
   .blk.assumed { fill: url(#hatch-assumed); fill-opacity: 1; }
-  a:hover > .blk { stroke: var(--text-primary); }
+  a:hover > .blk { stroke: var(--ink); }
   .sq2 { fill: none; stroke: var(--series-track); stroke-opacity: 0.35; pointer-events: none; }
   .bl, .sl2, .lsq, .ptl, .bkl, .town { font-family: var(--typed); pointer-events: none; paint-order: stroke;
-         stroke: var(--surface-1); stroke-linejoin: round; }
+         stroke: var(--surface); stroke-linejoin: round; }
   .bl { fill: var(--series-track); }
   .sl2 { fill: var(--series-track); fill-opacity: 0.75; text-anchor: middle; dominant-baseline: central; }
   .lsq { fill: var(--series-track); fill-opacity: 0.35; text-anchor: middle; dominant-baseline: central; font-weight: 700; stroke: none; }
-  .stated { fill: var(--text-primary); }
+  .stated { fill: var(--ink); }
   .cell { fill: var(--series-attack); fill-opacity: 0.35; stroke: var(--series-attack); }
-  .miss { stroke: var(--text-primary); stroke-opacity: 0.6; pointer-events: none; }
-  a:hover > .stated, a:hover > .cell, a:hover > .pt { stroke: var(--text-primary); }
+  .miss { stroke: var(--ink); stroke-opacity: 0.6; pointer-events: none; }
+  a:hover > .stated, a:hover > .cell, a:hover > .pt { stroke: var(--ink); }
   .probe .lvl { fill: var(--series-air); fill-opacity: 0.08; stroke: var(--series-air); pointer-events: none; }
   .probe .lvl.last { fill-opacity: 0.45; }
-  .probe .ctr { fill: var(--surface-1); stroke: var(--text-primary); pointer-events: none; }
-  .probe .crn { fill: var(--text-primary); pointer-events: none; }
-  .probe text { font-size: 14.5px; font-weight: 600; fill: var(--text-primary); paint-order: stroke;
-                stroke: var(--surface-1); pointer-events: none; }
-  .probe .arrow { stroke: var(--text-primary); fill: none; pointer-events: none; }
+  .probe .ctr { fill: var(--surface); stroke: var(--ink); pointer-events: none; }
+  .probe .crn { fill: var(--ink); pointer-events: none; }
+  .probe text { font-size: 14.5px; font-weight: 600; fill: var(--ink); paint-order: stroke;
+                stroke: var(--surface); pointer-events: none; }
+  .probe .arrow { stroke: var(--ink); fill: none; pointer-events: none; }
   /* reference points: every position provisional, so each carries its ~0.4 km ring, dashed */
-  .pt { fill: var(--c); stroke: var(--surface-1); }
-  .pt.uncertain { fill: var(--surface-1); stroke: var(--c); }
+  .pt { fill: var(--c); stroke: var(--surface); }
+  .pt.uncertain { fill: var(--surface); stroke: var(--c); }
   .ring { fill: var(--c); fill-opacity: 0.05; stroke: var(--c); stroke-opacity: 0.5; pointer-events: none; }
   .ptl { fill: var(--c); text-anchor: start; }
   .bkl { fill: var(--c); fill-opacity: 0.7; text-anchor: middle; font-weight: 700; }
-  .town { fill: var(--text-primary); font-family: var(--serif); font-style: italic; }
-  .expect { fill: var(--text-primary); stroke: var(--surface-1); }
+  .town { fill: var(--ink); font-family: var(--serif); font-style: italic; }
+  .expect { fill: var(--ink); stroke: var(--surface); }
   .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
   .zoom-btns button { font: 21.5px var(--serif); width: 30px; height: 30px; border-radius: 2px; cursor: pointer;
-                      background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
-  .hint { position: absolute; left: 12px; top: 8px; color: var(--text-muted); font-size: 14.5px; pointer-events: none; }
+                      background: var(--surface); color: var(--ink-2); border: 1px solid var(--rule); }
+  .hint { position: absolute; left: 12px; top: 8px; color: var(--ink-3); font-size: 14.5px; pointer-events: none; }
   .anatomy { font: 29px var(--typed); letter-spacing: 0.04em; margin: 6px 0 2px; }
   .anatomy .a { color: var(--series-track); font-weight: 700; }
   .anatomy .b { color: var(--series-attack); }
   .anatomy .c { color: var(--series-air); }
-  .anatomy .muted { color: var(--text-muted); }
+  .anatomy .muted { color: var(--ink-3); }
   .decoder input { font: 19px var(--typed); padding: 6px 10px; width: 22ch;
-                   border: 1px solid var(--border); border-radius: 3px; background: var(--page); color: var(--text-primary); }
-  .decoder select { font: inherit; padding: 5px 6px; border: 1px solid var(--border); border-radius: 3px;
-                    background: var(--page); color: var(--text-primary); margin-left: 6px; }
-  .decoder .try { font: inherit; font-size: 15px; background: none; border: 1px solid var(--border); border-radius: 3px;
-                  color: var(--text-secondary); padding: 3px 8px; cursor: pointer; margin: 4px 4px 0 0; }
+                   border: 1px solid var(--rule); border-radius: 3px; background: var(--page); color: var(--ink); }
+  .decoder select { font: inherit; padding: 5px 6px; border: 1px solid var(--rule); border-radius: 3px;
+                    background: var(--page); color: var(--ink); margin-left: 6px; }
+  .decoder .try { font: inherit; font-size: 15px; background: none; border: 1px solid var(--rule); border-radius: 3px;
+                  color: var(--ink-2); padding: 3px 8px; cursor: pointer; margin: 4px 4px 0 0; }
   .decoder .out { margin-top: 8px; }
-  .decoder .err { color: var(--text-secondary); font-style: italic; }
+  .decoder .err { color: var(--ink-2); font-style: italic; }
   .keypad { display: inline-grid; grid-template-columns: repeat(3, 34px); gap: 2px; margin: 4px 18px 4px 0; vertical-align: middle; }
-  .keypad span { font: 17px var(--typed); text-align: center; padding: 4px 0; border: 1px solid var(--border); }
+  .keypad span { font: 17px var(--typed); text-align: center; padding: 4px 0; border: 1px solid var(--rule); }
   .keypad span.on { border-color: var(--series-air); color: var(--series-air); font-weight: 700; }
   .titleblock { font-family: var(--typed); font-size: 16px; line-height: 1.6; }
-  .titleblock .tr { font-family: var(--serif); font-size: 17px; color: var(--text-secondary); font-style: italic; }
+  .titleblock .tr { font-family: var(--serif); font-size: 17px; color: var(--ink-2); font-style: italic; }
   .typed { font-size: 15px; }
   td .typed { font-size: 14.5px; }
   .doc h3 { font-size: 19px; font-weight: 400; font-style: italic; margin: 22px 0 4px; }
   .doc table.wide { max-width: 100%; }
-  .prov { font-style: italic; color: var(--text-secondary); }
+  .prov { font-style: italic; color: var(--ink-2); }
 </style>
 </head>
 <body class="viz-root">

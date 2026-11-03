@@ -20,7 +20,7 @@
     <tbody>${CV.map(c => {
       const merch = c.ships.filter(s => !/escort/.test(s.role)), esc_ = c.ships.filter(s => /escort/.test(s.role));
       const sailing = c.voyage.find(v => v.event === "sailed");
-      return `<tr data-id="${esc(c.id)}" tabindex="0"><td class="nm">${esc(c.convoy)} ${c.name_ja ? `<span lang="ja">${esc(c.name_ja)}</span>` : ""}</td><td>${esc(route(c))}</td>
+      return `<tr data-id="${esc(c.id)}" tabindex="0"><td class="nm">${esc(c.convoy)} ${c.name_ja ? `<span lang="ja" data-tr="Convoy ${esc(c.convoy)}, as the Japanese records write it">${esc(c.name_ja)}</span>` : ""}</td><td>${esc(route(c))}</td>
         <td>${c.engagements.map(e => `<a href="engagement.html?e=${esc(e.id)}">${esc(e.short)}</a>`).join(", ")}</td><td>${esc(c.boats.map(b => b.name).join(", "))}</td>
         <td class="num">${c.ships.length}</td><td class="num">${sunk(c)}</td>
         ${dot(sailing ? (sailing.basis === "secondary" ? "◐" : "●") : /secondary/.test(c.sailed || "") ? "◐" : c.sailed ? "●" : "○", "Sailing")}

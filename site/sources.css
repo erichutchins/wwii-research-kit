@@ -1,0 +1,67 @@
+/* The Sources view and the claims board (engage-views.js, EV.sources; guides/OPERATIONS-VIEWER.md 3, 4.3 and 7.1), on
+   the working depth of engagement.html. One table per moment: a column per source, as typed and in its own language, on
+   its own clock; the rows are the record's but two in our voice, *in GMT* and *placed*, washed in the first subject
+   colour so they read as ours, and the last, *what we make of it*, hatched, as every reconstruction on these pages is.
+   Under the table the minutes and miles between the sources, computed on the page (Engage.apart). The board under it:
+   each answer badged with the kind of evidence it is (record, assessment, intelligence, secondary, inference), the marks
+   the mockup's (guides/mockups/mock.css). Uses the page's one token vocabulary (site/viz.css); a phone scrolls a table
+   sideways rather than folding it, since the columns are the point. */
+.moments { padding: 0 14px 4px; display: grid; gap: 22px; min-width: 0; }
+.moment { min-width: 0; }
+.moment h3 { font-weight: 400; font-size: 17px; margin: 0 0 8px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.moment h3 b { font-weight: 700; }
+.moment h3 span { color: var(--ink-3); font-size: 14.5px; font-style: italic; }
+.srcs { border: 1px solid var(--rule); border-radius: 8px; overflow-x: auto; max-width: 100%; }
+.srcs table { border-collapse: collapse; table-layout: fixed; width: 100%; min-width: calc(11ch + var(--n, 2) * 230px); font-size: 15px; line-height: 1.45; }
+.srcs col.row-head { width: 11ch; }
+.srcs th, .srcs td { vertical-align: top; text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); border-right: 1px solid var(--rule); min-width: 0; }
+.srcs th:last-child, .srcs td:last-child { border-right: 0; }
+.srcs tbody tr:last-child th, .srcs tbody tr:last-child td { border-bottom: 0; }
+.srcs thead th { font-weight: 400; background: var(--wash); }
+.srcs thead th b { display: block; font-weight: 700; }
+.srcs .chip { display: inline-block; font-size: 12.5px; font-style: italic; color: var(--ink-3); border: 1px solid var(--rule); border-radius: 10px; padding: 0 7px; margin: 4px 2px 0 0; }
+.srcs tbody th { font-weight: 400; font-style: italic; color: var(--ink-3); font-size: 13.5px; width: 11ch; background: var(--wash); }
+.srcs .same { background: color-mix(in srgb, var(--c1) 8%, transparent); }
+.srcs .ours-row td { font-style: italic; color: var(--ink-2); background: repeating-linear-gradient(135deg, transparent 0 6px, var(--wash) 6px 7px); }
+.srcs .ours-row .src { font-style: normal; }
+.srcs .none { color: var(--ink-3); font-style: italic; }
+.srcs .typed { font-family: var(--typed); font-size: .92em; overflow-wrap: anywhere; }
+.srcs .ja { display: block; font-family: var(--ja); font-weight: 500; font-size: 1.05em; line-height: 1.7; }
+.srcs .tr { display: block; color: var(--ink-2); font-size: .95em; }
+.srcs .ours { font-style: italic; color: var(--ink-3); }
+.srcs .said + .said, .srcs .said + .ja, .srcs .tr + .ja, .srcs .tr + .said, .srcs .tr + .ours, .srcs .said + .ours { margin-top: 6px; }
+.srcs .said, .srcs .ours { display: block; }
+.srcs .src, .srcs .src a { font-size: 13.5px; color: var(--ink-3); white-space: normal; }
+.srcs .src a { text-decoration: none; border-bottom: 1px dotted var(--ink-3); }
+.srcs .a b { font-weight: 600; }
+.srcs .a .n { display: block; color: var(--ink-2); font-size: 14.5px; }
+.srcs .a + .a { margin-top: 8px; padding-top: 8px; border-top: 1px dotted var(--rule); }
+.cross { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 8px 0 0; font-size: 15px; color: var(--ink-2); }
+.cross b { color: var(--ink); font-family: var(--typed); font-weight: 400; font-size: .92em; }
+.cross .ours { font-style: italic; color: var(--ink-3); }
+.moment .cap { border-top: 0; padding: 6px 0 0; }
+/* the claims board */
+.board { padding: 0 14px; display: grid; gap: 10px; }
+.q { border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }
+.q h3 { margin: 0 0 6px; font-weight: 400; font-size: 17px; }
+.ans { display: grid; grid-template-columns: minmax(11ch, max-content) minmax(0, 1fr); gap: 4px 12px; font-size: 15px; }
+.ans .w { font-size: 13px; font-style: italic; color: var(--ink-3); padding-top: 2px; white-space: nowrap; }
+.ans .w::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 6px; border: 1.5px solid var(--ink-2); vertical-align: -1px; box-sizing: border-box; }
+.ans .w.record::before { background: var(--ink-2); }
+.ans .w.assessment::before { background: var(--ink-2); border-radius: 50%; }
+.ans .w.intelligence::before { background: repeating-linear-gradient(135deg, var(--ink-2) 0 2px, transparent 2px 4px); }
+.ans .w.secondary::before { border-style: dashed; }
+.ans .w.inference::before { transform: rotate(45deg) scale(.9); }
+.ans .w.press::before { border-style: dotted; }
+.ans .w.recollection::before { border-radius: 50%; }
+.ans .w.reference::before { border-color: var(--ink-3); }
+.ans .a b { font-weight: 600; }
+.ans .a .n { color: var(--ink-2); font-size: 14.5px; }
+.ans .a .src { font-size: 13.5px; color: var(--ink-3); }
+.ans .a .src a { text-decoration: none; border-bottom: 1px dotted var(--ink-3); }
+.board-note { margin: 8px 14px 0; }
+@media (max-width: 760px) {
+  .ans { grid-template-columns: minmax(0, 1fr); gap: 2px 0; }
+  .ans .w { padding-top: 6px; }
+  .ans .w:first-child { padding-top: 0; }
+}

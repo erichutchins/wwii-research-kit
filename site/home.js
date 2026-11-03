@@ -32,7 +32,8 @@ async function replay() {
   const cv = D.convoys["tama-17"], outcome = D.sections.find(s => s.heading === "Outcome");
   const act = { start: D.window.from, end: D.window.to, box: D.box, tracks: D.tracks, fixes: D.fixes.map(f => ({ ...f, boat: f.who })),
     convoy: `Convoy ${cv.convoy}`, route: `${cv.from} → ${cv.to}, sailed ${cv.sailed}.`, outcome: outcome ? outcome.paras.map(p => p.text).join(" ") : "",
-    events: D.events.map(e => ({ ...e, side: e.side === "jp" ? "japan" : e.actor, title: e.title || e.kind, text: e.words, page: e.cite.ref, scan: e.cite.href })),
+    // `side` here is the replay's own key: the boat that wrote the entry, or "japan" for the other side's record (the build's `opposed`)
+    events: D.events.map(e => ({ ...e, side: e.opposed ? "japan" : e.actor, title: e.title || e.kind, text: e.translation || e.words, page: e.cite.ref, scan: e.cite.href })),
     sinkings: [] };
   const battle = { places: D.places };
   const boats = D.participants.filter(p => p.kind === "submarine").map((b, i) => ({ ...b, color: `var(--c${i + 1})` }));
@@ -83,7 +84,7 @@ async function replay() {
   const trails = Object.fromEntries(boats.map(b => [b.id, gTrail.append("path").attr("class", "trail").attr("stroke", b.color)]));
   const boatG = Object.fromEntries(boats.map(b => {
     const g = gBoats.append("g");
-    g.append("circle").attr("r", 5).attr("fill", b.color).attr("stroke", "var(--paper)").attr("stroke-width", 1.5);
+    g.append("circle").attr("r", 5).attr("fill", b.color).attr("stroke", "var(--page)").attr("stroke-width", 1.5);
     g.append("text").attr("class", "boat-label").attr("x", 9).attr("y", 4).attr("fill", b.color).text(b.name);
     return [b.id, g];
   }));
@@ -134,7 +135,7 @@ async function replay() {
     const own = /^\S+ (\d{4}) ([A-Z]{1,2})/.exec(e.local || "");   // "1944-04-29 2300 K" -> 2300 K
     const cite = u ? ` <a class="src" href="${esc(u)}" target="_blank" rel="noopener" title="${esc(e.page || "")}">${pageOf(e.page)}</a>` : "";
     const words = e.original
-      ? `<span class="ja" lang="ja">${esc(e.original)}</span><span class="tr">${esc(e.text)} (translated)${cite}</span>`
+      ? `<span class="ja" lang="ja" data-tr="${esc(e.text)}">${esc(e.original)}</span><span class="tr">${esc(e.text)} (translated)${cite}</span>`
       : `<span class="said">${esc(boat && titleAdds(e) ? e.text : (e.text && e.text !== e.title ? e.text : e.title))}${cite}</span>`;
     return `<li class="entry" style="--bar:${boat ? boat.color : "var(--ink)"}" title="${esc(e.local || "")}">
       <span class="t">${d3.utcFormat("%H%M")(e.t)}</span>
@@ -219,7 +220,7 @@ async function haynsworth() {
       .on("click", () => open(pageUrl(c.ref))).on("keydown", e => { if (e.key === "Enter") open(pageUrl(c.ref)); });
     g.append("line").attr("class", "leader").attr("x1", x(t)).attr("x2", x(t)).attr("y1", y).attr("y2", ly - 14);
     g.append("circle").attr("class", bound ? "mark-dash" : late ? "mark-open" : "mark").attr("cx", x(t)).attr("cy", y).attr("r", 7);
-    if (i === 0) g.append("circle").attr("cx", x(t)).attr("cy", y).attr("r", 13).attr("fill", "none").attr("stroke", "var(--fire)").attr("stroke-width", 1.5);
+    if (i === 0) g.append("circle").attr("cx", x(t)).attr("cy", y).attr("r", 13).attr("fill", "none").attr("stroke", "var(--hit)").attr("stroke-width", 1.5);
     const anchor = x(t) > W - 260 ? "end" : "start";
     g.append("text").attr("class", "lab-t").attr("x", x(t) + (anchor === "end" ? 6 : -6)).attr("y", ly).attr("text-anchor", anchor).text(c.claim.replace(/ \(.*\)$/, "").replace(/ Item$/, ""));
     g.append("text").attr("class", "lab-2").attr("x", x(t) + (anchor === "end" ? 6 : -6)).attr("y", ly + 19).attr("text-anchor", anchor).text(c.source.replace(/\s*\(.*\)$/, ""));
@@ -466,7 +467,7 @@ async function lists() {
   const periodStart = dates => { const [a, b = a] = dates.split("–").map(x => x.trim()); const yr = /\d{4}/.exec(b)?.[0];
     return Date.parse(/\d{4}/.test(a) ? `${a} UTC` : /[A-Za-z]/.test(a) ? `${a} ${yr} UTC` : `${a} ${b.replace(/^\d+\s*/, "")} UTC`); };
   const pac = [];
-  for (const b of battles) pac.push([Date.parse(b.from), row(month(Date.parse(b.from)), `<a href="engagement.html?e=${b.id}">${esc(b.title)}</a>`, "both sides, one clock")]);
+  for (const b of battles) pac.push([Date.parse(b.from), row(month(Date.parse(b.from)), `<a href="engagement.html?e=${b.id}&amp;view=records">${esc(b.title)}</a>`, "both sides, one clock")]);
   for (const s of ships.filter(s => s.alias !== "solar")) {
     const d = d3.min(s.periods, p => periodStart(p.dates));
     const sub = s.kind === "submarine";

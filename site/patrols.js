@@ -525,10 +525,10 @@ function drawStrip() {
   tr.all.filter(d => d.cls === "air" || d.cls === "attack").forEach(d => {
     strip.append("path").attr("transform", `translate(${x(d.utc)},${d.cls === "attack" ? 9 : 12})`)
       .attr("d", d3.symbol(SHAPE[d.cls].type, d.cls === "attack" ? 60 : 30)())
-      .attr("fill", `var(--series-${d.cls})`).attr("stroke", "var(--surface-1)").attr("stroke-width", 1);
+      .attr("fill", `var(--series-${d.cls})`).attr("stroke", "var(--surface)").attr("stroke-width", 1);
   });
   strip.append("line").attr("class", "playhead").attr("y1", 0).attr("y2", 20)
-    .attr("stroke", "var(--text-primary)").attr("stroke-width", 1.5);
+    .attr("stroke", "var(--ink)").attr("stroke-width", 1.5);
   strip.on("click", ev => { stop(); setTime(+x.invert(d3.pointer(ev)[0])); });
 }
 
@@ -558,11 +558,11 @@ function renderSide() {
   // Each entry (entry.css): the date as the report gives it; a bar in the colour of its mark on the map (dashed for a
   // position left off the track); the mark and what it is, with the report's own clock; the position as typed; notes;
   // a correction in blue pencil; the page.
-  const BAR = { fix: "var(--text-muted)", event: "var(--text-primary)", air: "var(--series-air)", attack: "var(--series-attack)",
-                ship: "var(--text-secondary)", off: "var(--text-muted)" };
+  const BAR = { fix: "var(--ink-3)", event: "var(--ink)", air: "var(--series-air)", attack: "var(--series-attack)",
+                ship: "var(--ink-2)", off: "var(--ink-3)" };
   rows.forEach(d => {
     const row = el("div", "row entry" + (d.cls === "off" ? " assumed" : ""));
-    row.style.setProperty("--bar", BAR[d.cls] || "var(--text-muted)");
+    row.style.setProperty("--bar", BAR[d.cls] || "var(--ink-3)");
     row.dataset.t = +d.utc;
     row.tabIndex = 0;
     row.setAttribute("role", "button");
@@ -635,8 +635,8 @@ function renderLegend() {
     lg.append(s);
   };
   const shape = cls => g => g.append("path").attr("d", d3.symbol(SHAPE[cls].type, SHAPE[cls].size * 0.7)())
-    .attr("class", "shape").attr("fill", { fix: "var(--text-secondary)", event: "var(--text-primary)", air: "var(--series-air)", attack: "var(--series-attack)" }[cls] || "none")
-    .attr("stroke", cls === "ship" ? "var(--text-secondary)" : cls === "off" ? "var(--text-muted)" : null)
+    .attr("class", "shape").attr("fill", { fix: "var(--ink-2)", event: "var(--ink)", air: "var(--series-air)", attack: "var(--series-attack)" }[cls] || "none")
+    .attr("stroke", cls === "ship" ? "var(--ink-2)" : cls === "off" ? "var(--ink-3)" : null)
     .attr("stroke-width", 1.5).attr("stroke-dasharray", cls === "off" ? "2 2" : null);
   if (state.patrol === null) {
     item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("stroke", "var(--track-other)").attr("stroke-width", 2), "Patrol track");
@@ -650,7 +650,7 @@ function renderLegend() {
     .forEach(l => item(shape(l.cls), l.cls === "attack" && current().all.some(d => d.kind === "gun") ? "Torpedo or gun attack" : l.text));
   item(g => { g.append("circle").attr("r", 7).attr("fill", "var(--series-track)").attr("opacity", 0.25);
               g.append("path").attr("d", "M0,-10 L6.5,7 L0,3.5 L-6.5,7 Z").attr("transform", "rotate(45) scale(0.6)")
-                .attr("fill", "var(--text-primary)"); }, `${SHIP.short}, pointing along her course`);
+                .attr("fill", "var(--ink)"); }, `${SHIP.short}, pointing along her course`);
 }
 
 // ── Tooltip & scan viewer ───────────────────────────────────────────────────
@@ -744,8 +744,8 @@ function iconFor(d) {
   const v = d3.create("svg").attr("width", 16).attr("height", 16);
   const s = SHAPE[d.cls];
   v.append("path").attr("transform", "translate(8,8)").attr("d", d3.symbol(s.type, s.size * 0.6)())
-    .attr("fill", { fix: "var(--text-secondary)", event: "var(--text-primary)", air: "var(--series-air)", attack: "var(--series-attack)" }[d.cls] || "none")
-    .attr("stroke", d.cls === "ship" ? "var(--text-secondary)" : d.cls === "off" ? "var(--text-muted)" : null)
+    .attr("fill", { fix: "var(--ink-2)", event: "var(--ink)", air: "var(--series-air)", attack: "var(--series-attack)" }[d.cls] || "none")
+    .attr("stroke", d.cls === "ship" ? "var(--ink-2)" : d.cls === "off" ? "var(--ink-3)" : null)
     .attr("stroke-width", 1.5).attr("stroke-dasharray", d.cls === "off" ? "2 2" : null);
   return v.node();
 }

@@ -116,4 +116,128 @@ near(E.light(dark).day, 0, 0, "no daylight with the sun 30° down"); near(E.ligh
 near(E.light(dark, true).L, 0.5, 0.001, "night vision lifts the light"); near(E.light(dark, true).V, 8000, 0, "night vision: a ship shows farther");
 near(E.light({ sun: { bearing: 180, altitude: 60 }, moon: dark.moon }, true).L, 1, 0, "night vision leaves daylight as it was");
 
+// The chronology (guides/OPERATIONS-VIEWER.md 2.3 and 3). The tempo is derived from the entries, never stored.
+const ok = (cond, what) => console.log(cond ? "ok  " : (failed++, "FAIL"), what);
+const ev = (local, extra = {}) => ({ local, key: local.replace(" ", "T").replace(/(\d\d)(\d\d)$/, "$1:$2"), utc: null, ...extra });
+// Venafro's shape: days, times as typed with no zone, the German reports placed by the account's order; three batteries followed
+// (`of` is each actor's nationality; `opposed` and `source_kind` are the build's, from the followed subjects and SOURCES.yml)
+const PARTS = [{ id: "battery-e", name: "Battery E, 67th CA (AA)", of: "us", unit: "67ca-e", followed: true }, { id: "battery-h", name: "Battery H, 67th CA (AA)", of: "us", unit: "67ca-h", followed: true },
+               { id: "battery-a", name: "Battery A, 67th CA (AA)", of: "us", unit: "67ca-a", followed: true }];
+const venafro = [
+  ev("1944-01-17 1610", { actor: "Battery E", kind: "station", of: "us", source_kind: "record", n: 1, source: "Battery E, 67th CA (AA), morning report (record of events), 17 Jan 1944" }),
+  ev("1944-02-12 0900", { actor: "Battery H", kind: "station", of: "us", source_kind: "record", n: 4, source: "Battery H, 67th CA (AA), morning report (record of events), 12 Feb 1944" }),
+  ev("1944-02-14", { actor: "5. Geb.Div.", kind: "report", of: "de", opposed: true, source_kind: "record", n: 6, placed: "seq", source: "XIV Panzer Corps, tactical reports: 5. Geb.Div., Tagesmeldung vom 14.2.44" }),
+  ev("1944-02-14 1740", { actor: "Battery E", kind: "casualty", of: "us", source_kind: "record", n: 5, source: "Battery E morning report, 14 Feb 1944" }),
+  ev("1944-02-14", { actor: "5. Geb.Div.", kind: "report", of: "de", opposed: true, source_kind: "record", n: 7, placed: "seq", source: "XIV Panzer Corps, tactical reports: 5. Geb.Div., Nachmeldung zur Tagesmeldung vom 14.2.44" }),
+  ev("1944-02-14 0900", { actor: "Battery A (1st Bn)", kind: "shelled", of: "us", source_kind: "record", n: 8, source: "Battery A morning report, 14 Feb 1944" }),
+  ev("1944-02-21", { actor: "Arko 414", kind: "report", of: "de", opposed: true, source_kind: "record", n: 9, placed: "seq", source: "XIV Panzer Corps, tactical reports: Arko 414, Tagesmeldung vom 21.2.44" }),
+];
+ok(E.tempo(venafro) === "dated", "tempo: days and times as typed, no zone -> dated");
+const clocked = [{ local: "1944-04-29 1603 K", key: "1944-04-29T06:03Z", utc: "1944-04-29T06:03Z" }, { local: "1944-04-29 1640 K", key: "1944-04-29T06:40Z", utc: "1944-04-29T06:40Z" }, { local: "1944-04-29 1710 K", key: "1944-04-29T07:10Z", utc: "1944-04-29T07:10Z" }];
+ok(E.tempo(clocked) === "clocked", "tempo: every entry on GMT -> clocked");
+// Remagen's shape: ten entries timed in zone A, fifteen "the period 110600 to 120600" over ten days: more than half untimed, so dated
+const remagen = [...Array(10)].map((_, i) => ({ local: `1945-03-0${(i % 3) + 7} 1${i}00 A`, key: `1945-03-0${(i % 3) + 7}T0${i}:00Z`, utc: `1945-03-0${(i % 3) + 7}T0${i}:00Z` }))
+  .concat([...Array(15)].map((_, i) => ({ local: `1945-03-${String(7 + (i % 10)).padStart(2, "0")}`, key: `1945-03-${String(7 + (i % 10)).padStart(2, "0")}`, utc: null, placed: "The day's total; no times typed" })));
+ok(E.tempo(remagen) === "dated", "tempo: ten timed entries of twenty-five -> dated, not clocked");
+ok(E.tempo([ev("1942-09-10"), ev("1943-02-01")]) === "monthly", "tempo: a span of more than 90 days with no times -> monthly");
+ok(E.tempo([]) === "dated", "tempo: nothing -> dated");
+// the spine: days with entries, timed entries first by the time as typed, then the placed ones in the account's order
+const rows = E.chronologyRows(venafro, "dated");
+ok(rows.map(r => r.key).join() === "1944-01-17,1944-02-12,1944-02-14,1944-02-21", "rows: one per day that has entries, in order");
+ok(rows[0].label === "17 Jan" && rows[2].label === "14 Feb", "rows: labelled by the day, no year within one year");
+ok(rows[2].entries.map(e => e.actor + (e.n ? ":" + e.n : "")).join("|") === "Battery A (1st Bn):8|Battery E:5|5. Geb.Div.:6|5. Geb.Div.:7", "rows: 0900, 1740, then the placed entries by n");
+ok(E.chronologyRows([ev("1942-12-30 0800"), ev("1943-01-02")], "dated")[0].label === "30 Dec 1942", "rows: the year is said when the rows cross one");
+const hours = E.chronologyRows(clocked, "clocked");
+ok(hours.map(r => r.label).join() === "0600,0700" && hours[0].entries.length === 2 && hours[0].day === "29 Apr", "rows, clocked: one per GMT hour, the day beside it");
+ok(E.chronologyRows([ev("1944-02-14"), ev("1944-02-20"), ev("1944-03-01")], "monthly").map(r => r.label).join() === "Feb 1944,Mar 1944", "rows, monthly: one per month");
+// the columns: the followed batteries first in the participants' order and colours, then the German record by its source's stem
+const cols = E.chronologyColumns(venafro, PARTS);
+ok(cols.map(c => c.name).join("|") === "Battery E, 67th CA (AA)|Battery H, 67th CA (AA)|Battery A, 67th CA (AA)|XIV Panzer Corps", "columns: the subjects, then the other side's record");
+ok(cols.map(c => c.colour).join() === "var(--c1),var(--c2),var(--c3),var(--ink)", "columns: the three checked colours for the subjects, ink for the other side");
+ok(cols.map(c => c.of).join() === "us,us,us,de" && cols[3].opposed && !cols[0].opposed && cols[3].entries.length === 3, "columns: each carries its nationality and whether it is the other side; the three German reports share one column");
+// Algiers' shape: the city's paper (a press source, by its kind) in the lighter ink; the Allied communiqué it prints is a column of its own by its actor
+const algiers = E.chronologyColumns([
+  ev("1943-05-13", { actor: "L'Écho d'Alger", kind: "report", of: "fr", source_kind: "press", source_of: "fr", n: 1, source: "L'Écho d'Alger, 13 May 1943" }),
+  ev("1943-05-13", { actor: "Luftflotte 2", kind: "raid", of: "de", opposed: true, source_kind: "record", source_of: "de", n: 2, source: "German Naval Staff war diary, 13 May 1943, vol. 45, p. 163" }),
+  ev("1943-05-14", { actor: "L'Écho d'Alger", kind: "report", of: "fr", source_kind: "press", source_of: "fr", n: 3, source: "L'Écho d'Alger, 14 May 1943" }),
+  ev("1943-06-05", { actor: "Comando Supremo", kind: "bulletin", of: "it", opposed: true, source_kind: "press", source_of: "it", n: 4, source: "La Stampa, 6 June 1943, p. 1" }),
+], [{ id: "battery-c", name: "Battery C, 62nd CA (AA)", of: "us", unit: "62ca-c", followed: true }]);
+ok(algiers.map(c => c.name + ":" + c.colour + ":" + c.source_kind).join("|") === "L'Écho d'Alger:var(--ink-3):press|German Naval Staff war diary:var(--ink):record|La Stampa:var(--ink):press",
+   "columns: the press in the lighter ink by its source's kind; the other side's record, and its bulletins in print, in ink");
+ok(E.nation("de") === "German" && E.nation("jp") === "Japanese" && E.nation("uk") === "British" && E.nation("") === "" && E.nation("xx") === "XX", "nation: a code as the records give it, in a word; never a bloc");
+ok(cols[2].entries.length === 1 && cols[2].participant === "battery-a", "columns: 'Battery A (1st Bn)' is Battery A's");
+ok(/^morning report/.test(cols[0].record) && cols[3].record === "tactical reports", "columns: the record in the sources' words");
+const boats = E.chronologyColumns([{ actor: "bang", of: "us", local: "1944-04-29 1603 K", source: "" }, { actor: "Nittatsu Maru", of: "jp", opposed: true, local: "1944-04-29", source: "" }],
+                                   [{ id: "bang", name: "BANG", of: "us", colour: 2, track: "ss-385-bang/1", followed: true }, { id: "tama-17", name: "Convoy TAMA-17", of: "jp", convoy: "tama-17", followed: false }]);
+ok(boats.map(c => c.name + ":" + c.colour).join("|") === "BANG:var(--c2)|Nittatsu Maru:var(--ink)", "columns: a boat by its id in the build's colour; a ship with no source by its actor");
+ok(E.recordWords(["German Naval Staff war diary, 12 May 1943 (ONI translation), vol. 45, p. 152"], "German Naval Staff war diary") === "", "record words: a name, a date and a page say nothing more");
+ok(E.recordWords(["No. 153 Squadron RAF, operations record book, Form 540 (summary of events), AIR 27/1027/37, p. 3"], "No. 153 Squadron RAF") === "operations record book", "record words: the record book");
+ok(E.recordWords(["La Stampa, 14 Jan 1944, p. 1 (the German communiqué, Berlin, 13 Jan)"], "La Stampa") === "", "record words: a bracketed note's commas don't make pieces");
+ok(E.hitKind("casualty") && E.hitKind("shelled") && !E.hitKind("station") && !E.hitKind("report"), "hit kinds: a casualty and a shelling, not a station or a report");
+ok(E.head("Battery A (1st Bn)") === "Battery A" && E.head("Battery E, sections 2, 4, 6, 8") === "Battery E", "head: the name before a comma or a bracket");
+
+// Sources and voices (guides/OPERATIONS-VIEWER.md 2.4, 7.1): a source's kind and whose it is, in a chip's words; never a bloc
+ok(E.sourceKindWord("record", "us") === "record · US" && E.sourceKindWord("intelligence", "us") === "intelligence · US" && E.sourceKindWord("assessment", "us") === "assessment · US", "source kind: a record, intelligence, an assessment, with whose it is");
+ok(E.sourceKindWord("press", "fr") === "French press" && E.sourceKindWord("press", "") === "press", "source kind: the press by its nationality");
+ok(E.sourceKindWord("secondary", "us") === "secondary" && E.sourceKindWord("reference", "us") === "reference" && E.sourceKindWord("recollection", "us") === "recollection", "source kind: a later history, a reference, a recollection by the kind alone");
+ok(E.sourceKindWord("record", "") === "record" && E.sourceKindWord("", "jp") === "Japanese" && E.sourceKindWord("", "") === "", "source kind: without a nationality, the kind; without a kind, the nationality");
+ok(!/axis|allied/i.test(Object.values({ a: E.sourceKindWord("record", "de"), b: E.sourceKindWord("record", "jp"), c: E.sourceKindWord("press", "it") }).join()), "source kind: the other side named as the records name it");
+// the column chips: the record's own words, then its source's kind and nationality where the entries carry one
+ok(E.columnChip(cols[0]) === "morning report (record of events) · record · US" || /^morning report.* · record · US$/.test(E.columnChip(cols[0])), "column chip: 'morning report · record · US' (" + E.columnChip(cols[0]) + ")");
+ok(E.columnChip(cols[3]) === "tactical reports · record · German", "column chip: the other side's record by its nationality");
+ok(E.columnChip(algiers[0]) === "French press" && E.columnChip(algiers[2]) === "Italian press", "column chip: the press by its nationality, no record words");
+ok(E.columnChip(boats[1]) === "Japanese", "column chip: an entry with no citation falls back to the nationality alone");
+ok(cols[3].source_of === "" && algiers[0].source_of === "fr", "columns: each carries its source's nationality where its entries do");
+
+// The cross-references' arithmetic (tools/check_crossrefs.py, moved here): BANG's Attack 1 at 2256 K, 29 April 1944, at
+// 19-26N 118-45E; Nittatsu Maru's log has Takegawa Maru torpedoed at 2201 I at 19-20N 118-50E. By hand: 1256 and 1301 GMT,
+// 5 minutes; 6' of latitude and 5' of longitude at 19.4° (4.72 nm) are 7.6 nm apart
+const sheet1 = { utc: "1944-04-29T12:56Z", lat: E.coord("19-26N"), lon: E.coord("118-45E") }, j03 = { utc: "1944-04-29T13:01Z", lat: E.coord("19-20N"), lon: E.coord("118-50E") };
+near(E.apart(sheet1, j03).minutes, 5, 0, "apart: the sheet at 2256 K and the log at 2201 I are 5 minutes apart");
+near(E.apart(sheet1, j03).nm, 7.6, 0.05, "apart: 19-26N 118-45E and 19-20N 118-50E are 7.6 nm apart");
+near(E.apart(j03, sheet1).minutes, -5, 0, "apart: the other way round is negative");
+ok(E.apart(sheet1, { utc: "1944-04-29T13:01Z" }).nm === null && E.apart({ lat: 1, lon: 1 }, j03).minutes === null, "apart: null where either lacks a position or a time");
+
+// The Sources view's moments from a frame's JSON, in TAMA-17's shape: a pair's sources are the sheet, the record and the
+// entries of other kinds within two hours that name the ship; the arithmetic between the sheet and each
+const tama = {
+  participants: [{ id: "bang", name: "BANG", of: "us", track: "ss-385-bang/1", colour: 1, followed: true }],
+  fixes: [{ who: "bang", ref: "Attack 1", utc: "1944-04-29T12:56Z", lat: 19.4333, lon: 118.75, raw: "19-26N 118-45E", local: "1944-04-29 2256 K", on_track: true, assumed: false, fix: "", note: "Torpedo attack No. 1", cite: { ref: "rg367-74802746/p16", href: "#", label: "p. 16", kind: "record", of: "us" } }],
+  sheets: { bang: { "Attack 1": { torpedoes: [{ date: "1944-04-29", time: "2256", zone: "K" }], words: [{ description: "Convoy consisting of at least 12 ships", sunk: "None.", damaged: "One 7000 ton AK probably sunk." }], cite: { ref: "rg367-74802746/p16", href: "#", label: "p. 16", kind: "record", of: "us" } } } },
+  events: [
+    { actor: "FRUPAC", title: "Yoshima Maru", kind: "report", words: "Yoshima Maru / att. by torp / 2215/29", note: "frupac.yml ties this note to BANG's Attack 1", local: "1944-04-29 2215", utc: "1944-04-29T13:15Z", lat: 19.4, lon: 118.7, basis: "estimated", source: "FRUPAC overlay, 29 April", source_kind: "intelligence", source_of: "us", cite: { ref: "metapth1733008", href: "#", label: "map", kind: "intelligence", of: "us" } },
+    { actor: "combinedfleet", title: "Takegawa Maru", kind: "sank", words: "Takegawa Maru sunk by BANG", local: "1944-04-29 2155 I", utc: "1944-04-29T12:55Z", source: "combinedfleet.com", source_kind: "secondary", source_of: "", cite: { ref: "combinedfleet:Nittatsu_t", href: "#", label: "page", kind: "secondary", of: "" } },
+    { actor: "JANAC", title: "Kinrei Maru", kind: "loss", words: "Kinrei Maru to BANG", local: "1944-05-04", utc: "1944-05-03T16:06Z", source: "JANAC", source_kind: "assessment", source_of: "us", cite: { ref: "janac:4/p59", href: "#", label: "p. 59", kind: "assessment", of: "us" } },
+    { origin: "japanese", record: "J03", actor: "Takegawa Maru", kind: "torpedoed", utc: "1944-04-29T13:01Z", source_kind: "record", source_of: "jp" },
+    { actor: "bang", kind: "attack", title: "Attack 1", words: "Torpedo attack No. 1", utc: "1944-04-29T12:56Z", source_kind: "record", source_of: "us" }],
+  pairs: [{ attack: "Attack 1", boat: "bang", utc: "1944-04-29T12:56Z", relation: "hit", note: "Takegawa Maru (1,930 GRT), TAMA-17",
+            record: { id: "J03", event: "torpedoed", ship: "Takegawa Maru", date: "1944-04-29", time: "2201", zone: "I", local: "1944-04-29 2201 I", utc: "1944-04-29T13:01Z", lat: 19.3333, lon: 118.8333, lat_raw: "19-20N", lon_raw: "118-50E",
+                      original: "二九日二二時〇一分…竹川丸敵潜水艦ノ魚雷攻撃ヲ受ケ", lang: "ja", translation: "At 2201 on the 29th … Takegawa Maru was torpedoed", note: "Nittatsu Maru's own movement log", cite: { ref: "jacar:C08050103200 p23", href: "#", label: "p. 23", source_title: "JACAR", kind: "record", of: "jp" } } }] };
+const M = E.pairMoments(tama);
+ok(M.length === 1 && M[0].sources.length === 4, "moments: one pair, four sources (the sheet, the record, FRUPAC and combinedfleet; JANAC is days away)");
+ok(M[0].sources.map(s => s.role + ":" + E.sourceKindWord(s.kind, s.of)).join("|") === "attack:record · US|record:record · Japanese|near:intelligence · US|near:secondary", "moments: the sources' kinds, in order");
+ok(M[0].sources[0].typed === "1944-04-29 2256 K" && M[0].sources[0].raw === "19-26N 118-45E" && M[0].sources[0].words.map(w => w.typed).join("|") === "Convoy consisting of at least 12 ships|Sunk: None.|Damaged: One 7000 ton AK probably sunk.", "moments: the sheet as typed, its position and its words");
+ok(M[0].sources[1].words[0].lang === "ja" && M[0].sources[1].raw === "19-20N 118-50E" && M[0].sources[1].zone === "I", "moments: the record in its own language, its position as written, its zone");
+near(M[0].apart[0].minutes, 5, 0, "moments: the sheet and the log, 5 minutes"); near(M[0].apart[0].nm, 7.6, 0.05, "moments: and 7.6 nm");
+near(M[0].apart[1].minutes, 19, 0, "moments: the sheet and FRUPAC, 19 minutes"); near(M[0].apart[1].nm, 3.46, 0.05, "moments: and 3.5 nm (2' of latitude, 3' of longitude at 19.4°)");
+ok(M[0].apart[2].nm === null && M[0].apart[2].minutes === -1, "moments: combinedfleet has no position, and is a minute before the sheet");
+ok(M[0].ours.relation === "hit" && /^a hit/.test(M[0].ours.words) && M[0].ours.note === "Takegawa Maru (1,930 GRT), TAMA-17", "moments: what we make of it is the pairing's relation and note");
+ok(E.pairMoments({ participants: [], fixes: [], events: [], pairs: [] }).length === 0, "moments: none without pairs");
+
+// The questions the records leave open: answers by source for the view, merged by their words for the board, each badged
+// by its source's kind, the weight kept where it differs; an inference keeps its own mark
+const claims = [
+  { question: "When was she hit?", answer: "1250 Item", weight: "record", source: "Haynsworth action report, p. 3", source_kind: "record", source_of: "us", cite: { ref: "a" } },
+  { question: "When was she hit?", answer: "1250 Item", weight: "record", source: "Haynsworth war diary, p. 3", source_kind: "record", source_of: "us", cite: { ref: "b" } },
+  { question: "When was she hit?", answer: "1245", weight: "recollection", source: "Irons, Phalanx", source_kind: "secondary", source_of: "", note: "told later", cite: { ref: "c" } },
+  { question: "Who flew it?", answer: "a Judy of the 210th", weight: "inference", source: "the two records together", source_kind: "record", source_of: "jp", cite: { ref: "d" } }];
+const Q = E.claimMoments(claims);
+ok(Q.length === 2 && Q[0].question === "When was she hit?", "questions: one moment per question, in order");
+ok(Q[0].columns.map(c => c.name + ":" + c.kind).join("|") === "Haynsworth action report:record|Haynsworth war diary:record|Irons:secondary", "questions: the answers by source, each with its source's kind");
+ok(Q[0].answers.length === 2 && Q[0].answers[0].cites.length === 2 && Q[0].answers[0].sources.length === 2, "board: two answers in the same words are one line with both citations");
+ok(Q[0].answers[0].mark === "record" && Q[0].answers[0].words === "record", "board: badged by the source's kind where the weight agrees");
+ok(Q[0].answers[1].mark === "secondary" && Q[0].answers[1].words === "secondary · as recollection" && Q[0].answers[1].notes[0] === "told later", "board: the weight kept where it differs from the kind");
+ok(Q[1].answers[0].mark === "inference" && Q[1].answers[0].words === "inference", "board: an inference keeps its own mark");
+ok(E.badge({ weight: "record", source_kind: "" }).mark === "record" && E.badge({ weight: "photo", source_kind: "secondary" }).words === "secondary · as photo", "badge: without a kind the weight; a photo in a later history");
+
 process.exit(failed ? 1 : 0);

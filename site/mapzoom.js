@@ -13,20 +13,20 @@ function mapZoom(svgNode, host, onZoom, { capture = false, max = 16, min = 1, at
   if (!document.getElementById("mapzoom-style")) {
     const style = document.createElement("style");
     style.id = "mapzoom-style";
-    // either page family's colours: viz.css (--text-..., --border) or home.css, engage.css, haynsworth.html (--ink...)
+    // the pages' shared tokens (viz.css): --ink..., --rule, --surface, --wash
     style.textContent = `
       .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; z-index: 3; }
       .zoom-btns.bottom-right { top: auto; bottom: 30px; }
       .zoom-btns.top-left { right: auto; left: 10px; }
       .zoom-btns.row { flex-direction: row; }
-      .zoom-btns button { font: 21.5px/1 var(--serif, Georgia, serif); width: 30px; height: 30px; padding: 0; border-radius: 2px;
-        cursor: pointer; background: var(--surface-1, var(--surface, var(--paper)));
-        color: var(--text-secondary, var(--ink-2)); border: 1px solid var(--border, var(--rule)); }
-      .zoom-btns button:hover { background: var(--wash); color: var(--text-primary, var(--ink)); }
+      .zoom-btns button { font: 21.5px/1 var(--serif); width: 30px; height: 30px; padding: 0; border-radius: 2px;
+        cursor: pointer; background: var(--surface);
+        color: var(--ink-2); border: 1px solid var(--rule); }
+      .zoom-btns button:hover { background: var(--wash); color: var(--ink); }
       .zoom-note { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 3; pointer-events: none;
-        padding: 6px 12px; border-radius: 3px; font: 16px var(--serif, Georgia, serif); white-space: nowrap;
-        background: color-mix(in srgb, var(--surface-1, var(--surface, var(--paper))) 92%, transparent);
-        color: var(--text-primary, var(--ink)); border: 1px solid var(--border, var(--rule));
+        padding: 6px 12px; border-radius: 3px; font: 16px var(--serif); white-space: nowrap;
+        background: color-mix(in srgb, var(--surface) 92%, transparent);
+        color: var(--ink); border: 1px solid var(--rule);
         box-shadow: 0 2px 10px rgba(0,0,0,0.12); opacity: 0; transition: opacity 180ms; }
       .zoom-note.on { opacity: 1; }
       svg.zoomable { cursor: grab; }

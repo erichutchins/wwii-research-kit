@@ -126,7 +126,7 @@ new format is converted for good: no reader for the old one is kept.
 | The second | #008f78 | #22a58e |
 | The third | #6a3a9e | #a07fe0 |
 | Hit | #c8323c | #e8525a |
-| The Japanese side | ink (#1c1c1a / #ecebe5) | |
+| The other side, whatever its nationality (the Japanese record, a German corps' report) | ink (#1c1c1a / #ecebe5) | |
 
 Checked with the dataviz validator, every pair, both modes. The older dark blue #5b93e0 passes with the teal and the
 red but fails beside the purple, so it isn't used. More than three boats: small multiples or a picker, never a fourth

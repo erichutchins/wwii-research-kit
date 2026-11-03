@@ -12,12 +12,28 @@
 <link rel="stylesheet" href="entry.css">
 <link rel="stylesheet" href="chapter.css">
 <link rel="stylesheet" href="engage.css">
+<link rel="stylesheet" href="chron.css">
+<link rel="stylesheet" href="sources.css">
 <style>
-/* One page for every engagement (engagement.html?e=<id>; records/engagements/<id>/engagement.json, built by
-   tools/build_engagement.py). A chart-room working sheet: the map and the two-sided log side by side at one height,
-   so playback never moves the page; one timeline lane per participant under the map; then how the boats closed in,
-   the questions the records leave open, the order of battle in silhouettes, and the story. */
+/* One page for every engagement (engagement.html?e=<id>&view=account|records|working; records/engagements/<id>/
+   engagement.json, built by tools/build_engagement.py), at three depths (guides/OPERATIONS-VIEWER.md, 4), chosen by the
+   address and the switch under the breadcrumb. The account (the default): the static map beside the outcome, the
+   subjects and the span, then three doors. The records: a chart-room working sheet. When the frame is clocked: the map
+   and the two-sided log side by side at one height, so playback never moves the page; one timeline lane per
+   participant under the map. When it is dated or monthly (the guide, 3): the map alone, static, and the chronology
+   full width under it in the log's place; then the order of battle in silhouettes, and the story. The working: the
+   periscope, how the boats closed in, the Sources view (one moment at a time, source by source; sources.css), the claims
+   board, and how this was read. */
 .main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 420px); gap: 14px; }
+.main.dated { grid-template-columns: minmax(0, 1fr); }
+.main.dated .map-box { height: clamp(300px, 46vh, 460px); }
+.main.account { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
+.main.account .map-box { height: clamp(320px, 52vh, 540px); }
+.cap { font-size: 14.5px; color: var(--ink-3); margin: 0; padding: 8px 14px 10px; line-height: 1.4; border-top: 1px solid var(--rule); }
+.chron-card { padding-bottom: 14px; }
+.chron-card h2 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.chron-card h2 span { font-style: normal; color: var(--ink-3); font-size: 14.5px; }
+.chron-card .chron { margin: 0 14px; }
 .map-card { display: grid; grid-template-rows: auto auto auto; overflow: hidden; }
 .map-box { position: relative; height: clamp(340px, calc(100vh - 260px), 660px); }
 #map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: hidden; }
@@ -36,7 +52,9 @@
 .row.current { background: var(--wash); }
 .row.future { opacity: 0.45; }
 .row .who .sil { width: 40px; height: 8px; }
-.closing-card, .claims-card, .oob-card, .story { padding-bottom: 14px; }
+.closing-card, .claims-card, .moments-card, .oob-card, .story { padding-bottom: 14px; }
+.moments-card h2 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.moments-card h2 span { font-style: normal; color: var(--ink-3); font-size: 14.5px; }
 #closing { width: 100%; height: 220px; display: block; overflow: visible; }
 .below { color: var(--ink-2); font-size: 15px; margin: 6px 14px 0; max-width: 95ch; }
 /* the observer view (observer.js): the scope keeps its own night colours in both modes */
@@ -119,7 +137,8 @@
 @media (max-width: 980px) { .obs-stage { grid-template-columns: minmax(0, 1fr); row-gap: 14px; } .obs-read { grid-template-columns: repeat(3, minmax(0, 1fr)); } .obs-read > div:nth-child(3) { border-right: 0; } }
 @media (max-width: 760px) { #obs-torps { overflow-x: auto; } .obs-table { min-width: 680px; } }
 @media (max-width: 760px) {
-  .main { grid-template-columns: minmax(0, 1fr); }
+  .main, .main.account { grid-template-columns: minmax(0, 1fr); }
+  .main.account .map-box { height: 50vh; }
   .side { height: 60vh; min-height: 320px; }
   .map-box { height: 58vh; }
 }
@@ -132,6 +151,7 @@
     <nav class="nav" aria-label="The kit" data-nav></nav>
     <script src="nav.js"></script>
     <nav class="crumb" id="crumb" aria-label="Where this falls in Algiers to Germany" hidden></nav>
+    <nav class="depths" id="depths" aria-label="How deep to read"></nav>
     <div class="eyebrow" id="eyebrow"></div>
     <h1 id="title">Engagements</h1>
     <p class="lede" id="lede"></p>
@@ -145,6 +165,7 @@
     <div class="card map-card">
       <div class="legend" id="legend"></div>
       <div class="map-box"><svg id="map" role="img" aria-label="Map of the engagement"></svg></div>
+      <p class="cap" id="cap" hidden></p>
       <div class="time">
         <button id="play" aria-label="Play">▶</button>
         <div class="readout"><span><b id="clock"></b> <span id="clock-zone">GMT</span></span><span id="clock-own"></span></div>
@@ -156,7 +177,23 @@
       <h2>Both sides' records <span>Follows the clock; click an entry to go there</span></h2>
       <div class="log" id="log"></div>
     </div>
+    <div class="card account" id="account" hidden>
+      <h3>Outcome, by the records</h3>
+      <div class="out" id="outcome"></div>
+      <h3>Who</h3>
+      <div id="who"></div>
+      <h3>When</h3>
+      <p id="when"></p>
+    </div>
   </div>
+
+  <div class="doors" id="doors" hidden></div>
+
+  <section class="card chron-card" id="chron-card" hidden aria-labelledby="chron-h">
+    <h2 id="chron-h"><span id="chron-title">The records, by the day</span> <span>One column per record; every entry at the day it is dated; each links to its page</span></h2>
+    <div id="chron"></div>
+    <p class="below" id="chron-note"></p>
+  </section>
 
   <section class="card observer-card" id="observer-card" hidden aria-labelledby="observer-h">
     <h2 id="observer-h">At the periscope <span>Each attack from its data sheet, second by second</span></h2>
@@ -205,12 +242,25 @@
     <p class="below" id="closing-note"></p>
   </section>
 
-  <section class="card claims-card" id="claims-card" hidden aria-labelledby="claims-h">
-    <h2 id="claims-h">What the records leave open</h2>
-    <div class="claims" id="claims"></div>
+  <section class="card moments-card" id="moments-card" hidden aria-labelledby="moments-h">
+    <h2 id="moments-h">Source by source <span id="moments-sub">One moment at a time: each column is one source, as typed, in its own language and on its own clock</span></h2>
+    <div class="moments" id="moments"></div>
+    <p class="below" id="moments-note">Columns are sources, not sides. The chips under each name say what kind of source it is (record, intelligence, press, assessment, recollection, secondary) and whose: one field each in SOURCES.yml, read through the citation. The two rows in blue are ours: the zone letter to GMT, and the position placed from the words. The hatched row is ours and says so. Nothing in a column is corrected to agree with another.</p>
   </section>
 
-  <section class="card oob-card" aria-labelledby="oob-h">
+  <section class="card claims-card" id="claims-card" hidden aria-labelledby="claims-h">
+    <h2 id="claims-h">What the records leave open</h2>
+    <div class="board" id="claims"></div>
+    <p class="below board-note">The board ranks nothing. Each answer carries the kind of evidence it is, from its source's entry in SOURCES.yml; where a record is used for something else (as a recollection, an inference), its weight is said beside the kind. Two answers in the same words from the same list are one line with both pages: repetition isn't corroboration.</p>
+  </section>
+
+  <section class="card sources-card" id="sources-card" hidden aria-labelledby="sources-h">
+    <h2 id="sources-h">Sources <span>How this was read: the story's sources, and what is still missing</span></h2>
+    <div class="story" id="sources"></div>
+  </section>
+  <p class="none" id="working-none" hidden></p>
+
+  <section class="card oob-card" id="oob-card" aria-labelledby="oob-h">
     <h2 id="oob-h">Order of battle</h2>
     <div class="oob" id="oob"></div>
   </section>

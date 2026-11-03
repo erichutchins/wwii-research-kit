@@ -404,7 +404,7 @@ function render() {
   const hatch = defs.append("pattern").attr("id", "hatch").attr("patternUnits", "userSpaceOnUse")
     .attr("width", 6).attr("height", 6).attr("patternTransform", "rotate(45)");
   hatch.append("line").attr("x1", 0).attr("y1", 0).attr("x2", 0).attr("y2", 6)
-    .attr("stroke", "var(--text-muted)").attr("stroke-width", 1).attr("opacity", 0.5);
+    .attr("stroke", "var(--ink-3)").attr("stroke-width", 1).attr("opacity", 0.5);
   const grad = defs.append("linearGradient").attr("id", "layer-grad").attr("x1", 0).attr("x2", 0).attr("y1", 0).attr("y2", 1);
   grad.append("stop").attr("offset", "0%").attr("stop-color", "var(--layer)").attr("stop-opacity", 0.05);
   grad.append("stop").attr("offset", "100%").attr("stop-color", "var(--layer)").attr("stop-opacity", 0.32);
@@ -880,7 +880,7 @@ function renderLegend() {
     s.append(v.node(), document.createTextNode(text));
     lg.append(s);
   };
-  const swatch = (fill, stroke = "var(--border)") => g => g.append("rect").attr("x", -9).attr("y", -6).attr("width", 18).attr("height", 12)
+  const swatch = (fill, stroke = "var(--rule)") => g => g.append("rect").attr("x", -9).attr("y", -6).attr("width", 18).attr("height", 12)
     .attr("fill", fill).attr("stroke", stroke);
   item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("stroke", "var(--series-track)").attr("stroke-width", 2), "BANG's depth");
   item(g => g.append("circle").attr("r", 3.5).attr("fill", "var(--series-track)"), "Depth ordered");
@@ -889,7 +889,7 @@ function renderLegend() {
   item(g => { g.append("rect").attr("x", -9).attr("y", -6).attr("width", 18).attr("height", 12).attr("fill", "url(#layer-grad)");
               g.append("line").attr("x1", -9).attr("x2", 9).attr("y1", -6).attr("y2", -6).attr("class", "layer-top"); },
        "Temperature layer (report)");
-  item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("stroke", "var(--text-muted)").attr("stroke-dasharray", "4 3"), "Test depth");
+  item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("stroke", "var(--ink-3)").attr("stroke-dasharray", "4 3"), "Test depth");
   item(swatch("var(--seafloor)", "var(--seafloor-edge)"), "Seafloor");
   item(swatch("var(--night)"), "Night");
   item(g => g.append("path").attr("d", "M-9,5 L-4,0 L1,2 L9,-5 L9,6 L-9,6 Z").attr("class", "wind-area"), "Wind (ERA5)");
@@ -996,9 +996,9 @@ function iconFor(e) {
   const v = d3.create("svg").attr("width", 16).attr("height", 16);
   const g = v.append("g").attr("transform", "translate(8,8)");
   if (e.charges || e.event === "charges") g.append("path").attr("d", d3.symbol(d3.symbolStar, 60)()).attr("fill", "var(--series-attack)");
-  else if (e.event === "quake") g.append("path").attr("d", d3.symbol(d3.symbolDiamond, 50)()).attr("fill", "var(--text-primary)");
-  else if (e.event === "surface") g.append("path").attr("d", "M-5,3 L0,-4 L5,3").attr("fill", "none").attr("stroke", "var(--text-secondary)").attr("stroke-width", 1.5);
-  else if (["dive", "periscope", "radar_depth"].includes(e.event)) g.append("path").attr("d", "M-5,-3 L0,4 L5,-3").attr("fill", "none").attr("stroke", "var(--text-secondary)").attr("stroke-width", 1.5);
+  else if (e.event === "quake") g.append("path").attr("d", d3.symbol(d3.symbolDiamond, 50)()).attr("fill", "var(--ink)");
+  else if (e.event === "surface") g.append("path").attr("d", "M-5,3 L0,-4 L5,3").attr("fill", "none").attr("stroke", "var(--ink-2)").attr("stroke-width", 1.5);
+  else if (["dive", "periscope", "radar_depth"].includes(e.event)) g.append("path").attr("d", "M-5,-3 L0,4 L5,-3").attr("fill", "none").attr("stroke", "var(--ink-2)").attr("stroke-width", 1.5);
   else g.append("circle").attr("r", 4).attr("fill", "var(--series-track)");
   return v.node();
 }

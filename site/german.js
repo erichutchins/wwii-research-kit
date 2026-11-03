@@ -513,7 +513,7 @@ Promise.all([
   };
   document.getElementById("nlegend").innerHTML = Object.keys(METHOD).map(mth =>
     `<span title="${METHOD[mth].what}">${sw(mth)}<i>${METHOD[mth].name}</i>&nbsp;(${count.get(mth) || 0})</span>`).join("") +
-    `<span><svg width="34" height="12"><circle cx="5" cy="6" r="3.5" fill="var(--text-primary)"/><line x1="9" y1="6" x2="22" y2="6" stroke="var(--text-primary)" stroke-opacity="0.6" stroke-dasharray="3 2"/><rect x="23" y="1" width="10" height="10" fill="var(--series-attack)" fill-opacity="0.35" stroke="var(--series-attack)"/></svg>place the diary names, and the cell its code decodes to</span>` +
+    `<span><svg width="34" height="12"><circle cx="5" cy="6" r="3.5" fill="var(--ink)"/><line x1="9" y1="6" x2="22" y2="6" stroke="var(--ink)" stroke-opacity="0.6" stroke-dasharray="3 2"/><rect x="23" y="1" width="10" height="10" fill="var(--series-attack)" fill-opacity="0.35" stroke="var(--series-attack)"/></svg>place the diary names, and the cell its code decodes to</span>` +
     `<span><svg width="14" height="14"><rect x="1" y="1" width="12" height="12" fill="var(--series-air)" fill-opacity="0.45" stroke="var(--series-air)"/></svg>the code you typed</span>`;
   const ex = nDecode("CJ 9472"), exA = NAV.anchors.find(a => a.code === "CJ 9472");
   document.getElementById("ex-n-src").href = srcUrl("skl:55/p397");
@@ -556,8 +556,8 @@ Promise.all([
     `<span class="prov">provisional, about 0.4 km</span>.`;
   document.getElementById("alegend").innerHTML =
     ED_ORDER.map(k => [k, EDITION[k]]).map(([k, e]) => `<span><svg width="22" height="14"><circle cx="11" cy="7" r="6" fill="${e.color}" fill-opacity="0.05" stroke="${e.color}" stroke-opacity="0.5" stroke-dasharray="2 2"/><circle cx="11" cy="7" r="3.2" fill="${e.color}"/></svg>${e.name}: a point, its ring the provisional ~${k === "jan1944" ? "0.4 km (block C, 1.3 km)" : "0.4 km"}</span>`).join("") +
-    `<span><svg width="14" height="14"><circle cx="7" cy="7" r="3.2" fill="var(--surface-1)" stroke="var(--text-secondary)" stroke-width="1.2"/></svg>number read with doubt</span>` +
-    `<span><svg width="34" height="12"><rect x="1" y="2.5" width="7" height="7" fill="var(--text-primary)"/><line x1="8" y1="6" x2="30" y2="6" stroke="var(--text-primary)" stroke-opacity="0.6" stroke-dasharray="3 2"/></svg>the named place (modern position), to its decoded point</span>`;
+    `<span><svg width="14" height="14"><circle cx="7" cy="7" r="3.2" fill="var(--surface)" stroke="var(--ink-2)" stroke-width="1.2"/></svg>number read with doubt</span>` +
+    `<span><svg width="34" height="12"><rect x="1" y="2.5" width="7" height="7" fill="var(--ink)"/><line x1="8" y1="6" x2="30" y2="6" stroke="var(--ink)" stroke-opacity="0.6" stroke-dasharray="3 2"/></svg>the named place (modern position), to its decoded point</span>`;
 
   nTables(); aTables(); buildEdSeg();
   nmap = makeMap({ svg: "#nmap", wrap: "#nwrap", focus: NFOCUS, units: ["nm"], draw: nDraw, scale: nScale, max: 60 });

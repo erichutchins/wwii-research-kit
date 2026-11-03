@@ -413,7 +413,7 @@ function drawStrip() {
   strip.append("g").attr("class", "axis").attr("transform", `translate(0,${AXIS})`)
     .call(d3.axisBottom(x).ticks(Math.max(3, Math.floor(W / 90))).tickFormat(d3.utcFormat("%b %Y")).tickSizeOuter(0));
   strip.append("line").attr("class", "playhead").attr("y1", 0).attr("y2", AXIS)
-    .attr("stroke", "var(--text-primary)").attr("stroke-width", 1.5);
+    .attr("stroke", "var(--ink)").attr("stroke-width", 1.5);
   strip.on("click", ev => { stop(); setTime(+x.invert(d3.pointer(ev)[0])); });
 }
 
@@ -429,7 +429,7 @@ function renderSide() {
 // there's none); where, and which part of the battalion; the roll's words as typed; notes; the pages.
 function stationRow(r) {
   const row = el("div", "row entry" + (!r.lonlat || r.hollow ? " assumed" : ""));
-  row.style.setProperty("--bar", r.lonlat ? "var(--series-track)" : "var(--text-muted)");
+  row.style.setProperty("--bar", r.lonlat ? "var(--series-track)" : "var(--ink-3)");
   row.tabIndex = 0;
   row.setAttribute("role", "button");
   row.dataset.t = r.t;
@@ -505,15 +505,15 @@ function renderLegend() {
   const item = (draw, text) => { const s = lg.append("span"); const v = s.append("svg").attr("width", 22).attr("height", 12); draw(v); s.append("span").text(text); };
   item(v => v.append("circle").attr("cx", 11).attr("cy", 6).attr("r", 5).attr("fill", "var(--series-track)"), "Station, as the record places it");
   if (U.placed.some(r => r.hollow))
-    item(v => v.append("circle").attr("cx", 11).attr("cy", 6).attr("r", 4).attr("fill", "var(--surface-1)").attr("stroke", "var(--series-track)").attr("stroke-width", 2.5),
+    item(v => v.append("circle").attr("cx", 11).attr("cy", 6).attr("r", 4).attr("fill", "var(--surface)").attr("stroke", "var(--series-track)").attr("stroke-width", 2.5),
          "Position assumed: a stand-in point");
   item(v => v.append("line").attr("x1", 1).attr("x2", 21).attr("y1", 6).attr("y2", 6).attr("stroke", "var(--series-track)").attr("stroke-width", 2), "Between stations, or a ship's logged track");
   item(v => v.append("line").attr("x1", 1).attr("x2", 21).attr("y1", 6).attr("y2", 6).attr("stroke", "var(--series-track)").attr("stroke-width", 2).attr("stroke-dasharray", "5 4"), "An end assumed");
-  item(v => { v.append("rect").attr("x", 5).attr("y", -1).attr("width", 13).attr("height", 13).attr("fill", "var(--surface-1)").attr("stroke", "var(--text-primary)").attr("stroke-width", 1.5);
-              v.append("text").attr("x", 11.5).attr("y", 5.5).attr("dy", "0.36em").attr("text-anchor", "middle").attr("font-size", 10).attr("font-weight", 600).attr("fill", "var(--text-primary)").text("1"); },
+  item(v => { v.append("rect").attr("x", 5).attr("y", -1).attr("width", 13).attr("height", 13).attr("fill", "var(--surface)").attr("stroke", "var(--ink)").attr("stroke-width", 1.5);
+              v.append("text").attr("x", 11.5).attr("y", 5.5).attr("dy", "0.36em").attr("text-anchor", "middle").attr("font-size", 10).attr("font-weight", 600).attr("fill", "var(--ink)").text("1"); },
        "A main project: click for its section (hover for how precisely it's placed)");
   item(v => { v.append("circle").attr("cx", 8).attr("cy", 6).attr("r", 5).attr("fill", "var(--series-track)").attr("opacity", 0.25);
-              v.append("circle").attr("cx", 8).attr("cy", 6).attr("r", 3).attr("fill", "var(--text-primary)"); },
+              v.append("circle").attr("cx", 8).attr("cy", 6).attr("r", 3).attr("fill", "var(--ink)"); },
        "Where each part was that day");
 }
 

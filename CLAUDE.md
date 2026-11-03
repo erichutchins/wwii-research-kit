@@ -131,12 +131,16 @@ Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page
   or work to its printed dimensions, and cite it.
 - Type has three voices, each with one job: ET Book for the kit's own words, TT2020 style E for the records' typed
   words (`.typed`, `.mono`, `code`; `--typed`), Shippori Mincho for Japanese (`[lang="ja"]`; the original before our
-  translation). Fonts are in `site/fonts/fonts.css`. Special Elite only for the front page's masthead. No capitals for
+  translation; the element carries `lang` and `data-tr`, the translation, so `glossary.js` opens the English in its card on
+  hover, focus or tap). Fonts are in `site/fonts/fonts.css`. Special Elite only for the front page's masthead. No capitals for
   labels: italics instead.
 - Every page has the same navigation bar, at the top of its header: an empty `<nav class="nav" aria-label="The kit"
   data-nav></nav>` followed by `<script src="nav.js"></script>`, which `site/nav.js` fills as the page is parsed (so
   nothing shifts) and marks the current page on. The bar's links live in `nav.js` alone: a new page is added there, once.
-- Colours are CSS variables in `site/viz.css` with light and dark values. The three categorical
+- Colours and fonts are one set of CSS variables, named in `site/viz.css` (`--page`, `--surface`, `--ink`, `--ink-2`,
+  `--ink-3`, `--rule`, `--wash`, `--land`, `--coast`, `--sea-grid`, `--pencil`; `--serif`, `--typed`, `--ja`), light
+  and dark; `site/engage.css`, `site/home.css` and the two story pages set the same names to their own checked values,
+  so a shared script writes `var(--ink)` and gets the page's, never a fallback chain. The three categorical
   colours were checked for colour-blind separation: don't add hues without checking again. The engagement pages
   (`engagement.html`, `convoys.html`, `lanes.html`) share `site/engage.css`, whose boat colours were checked with the
   hit red, every pair, both modes; their encodings (solid, outlined, hatched, dotted; red only for hits) are in

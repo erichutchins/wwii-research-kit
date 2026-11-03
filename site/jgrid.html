@@ -11,46 +11,46 @@
   .graticule { fill: none; stroke: var(--coast); stroke-opacity: 0.45; }
   #map { cursor: grab; }
   #map:active { cursor: grabbing; }
-  .deg text { fill: var(--text-muted); pointer-events: none; }
+  .deg text { fill: var(--ink-3); pointer-events: none; }
   .strip { fill: var(--c); fill-opacity: 0.07; stroke: var(--c); stroke-opacity: 0.7; }
   .sl { fill: var(--c); font-weight: 700; text-anchor: middle; cursor: default;
-        paint-order: stroke; stroke: var(--surface-1); stroke-linejoin: round; }
+        paint-order: stroke; stroke: var(--surface); stroke-linejoin: round; }
   .cl { fill: var(--c); fill-opacity: 0.8; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
-  .base { fill: var(--surface-1); stroke: var(--text-primary); }
-  .base-label { fill: var(--text-secondary); pointer-events: none; paint-order: stroke; stroke: var(--surface-1); stroke-linejoin: round; }
-  .anchor { fill: var(--c); stroke: var(--surface-1); cursor: pointer; }
-  .anchor.open { fill: var(--surface-1); stroke: var(--c); }
-  .anchor:hover { stroke: var(--text-primary); }
-  .flight { fill: var(--surface-1); stroke: var(--text-primary); cursor: default; }
-  .miss { stroke: var(--text-primary); stroke-opacity: 0.55; stroke-dasharray: 4 3; pointer-events: none; }
+  .base { fill: var(--surface); stroke: var(--ink); }
+  .base-label { fill: var(--ink-2); pointer-events: none; paint-order: stroke; stroke: var(--surface); stroke-linejoin: round; }
+  .anchor { fill: var(--c); stroke: var(--surface); cursor: pointer; }
+  .anchor.open { fill: var(--surface); stroke: var(--c); }
+  .anchor:hover { stroke: var(--ink); }
+  .flight { fill: var(--surface); stroke: var(--ink); cursor: default; }
+  .miss { stroke: var(--ink); stroke-opacity: 0.55; stroke-dasharray: 4 3; pointer-events: none; }
   .hotsq path, .probe path { fill: var(--c); fill-opacity: 0.18; stroke: var(--c); pointer-events: none; }
   .probe path.partial { fill-opacity: 0.12; stroke-dasharray: 6 3; }
   .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
   .zoom-btns button { font: 21.5px var(--serif); width: 30px; height: 30px; border-radius: 2px; cursor: pointer;
-                      background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
-  .hint { position: absolute; left: 12px; bottom: 8px; color: var(--text-muted); font-size: 14.5px; pointer-events: none; }
+                      background: var(--surface); color: var(--ink-2); border: 1px solid var(--rule); }
+  .hint { position: absolute; left: 12px; bottom: 8px; color: var(--ink-3); font-size: 14.5px; pointer-events: none; }
   .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
   .anatomy { font-size: 31px; letter-spacing: 0.08em; margin: 4px 0 6px; }
   .anatomy .a { color: var(--series-track); font-weight: 700; }
   .anatomy .b { color: var(--series-attack); font-weight: 700; }
   .anatomy .c { color: var(--series-air); }
-  .decoder input { font: 500 21.5px var(--ja); padding: 5px 10px; width: 9em; border: 1px solid var(--border);
-                   border-radius: 3px; background: var(--page); color: var(--text-primary); }
-  .decoder select { font: inherit; padding: 5px 6px; border: 1px solid var(--border); border-radius: 3px;
-                    background: var(--page); color: var(--text-primary); margin-left: 6px; }
-  .decoder .try { font: inherit; font-size: 15.5px; background: none; border: 1px solid var(--border); border-radius: 3px;
-                  color: var(--text-secondary); padding: 3px 8px; cursor: pointer; margin-left: 4px; }
+  .decoder input { font: 500 21.5px var(--ja); padding: 5px 10px; width: 9em; border: 1px solid var(--rule);
+                   border-radius: 3px; background: var(--page); color: var(--ink); }
+  .decoder select { font: inherit; padding: 5px 6px; border: 1px solid var(--rule); border-radius: 3px;
+                    background: var(--page); color: var(--ink); margin-left: 6px; }
+  .decoder .try { font: inherit; font-size: 15.5px; background: none; border: 1px solid var(--rule); border-radius: 3px;
+                  color: var(--ink-2); padding: 3px 8px; cursor: pointer; margin-left: 4px; }
   .keytab { margin: 14px 0 18px; }
   .keytab h3 { font-size: 17px; margin: 0 0 6px; }
   .letters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 3px; margin: 4px 0; }
   .letters > .muted { width: 150px; font-size: 14.5px; align-self: center; }
   .lt { display: inline-flex; flex-direction: column; align-items: center; min-width: 46px; padding: 3px 4px;
-        border: 1.5px solid var(--c); border-radius: 3px; background: var(--surface-1); }
+        border: 1.5px solid var(--c); border-radius: 3px; background: var(--surface); }
   .lt b { font-size: 20.5px; color: var(--c); }
-  .lt small { font-size: 12.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .lt small { font-size: 12.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
   .lt.probable { border-style: dashed; }
   .lt.tentative { border-style: dotted; }
-  .gap { color: var(--text-muted); width: 10px; text-align: center; align-self: center; }
+  .gap { color: var(--ink-3); width: 10px; text-align: center; align-self: center; }
 </style>
 </head>
 <body class="viz-root">
@@ -88,9 +88,9 @@
     <div class="legend">
       <span><svg width="26" height="14"><rect x="1" y="1" width="24" height="12" fill="var(--series-track)" fill-opacity="0.12" stroke="var(--series-track)"/></svg>A column or row whose letter is placed: solid good, dashed probable, dotted tentative</span>
       <span><svg width="14" height="14"><circle cx="7" cy="7" r="4.5" fill="var(--series-track)"/></svg>Anchor: a code whose position is known</span>
-      <span><svg width="14" height="14"><circle cx="7" cy="7" r="4" fill="var(--surface-1)" stroke="var(--series-track)" stroke-width="1.5"/></svg>Anchor with a letter not yet placed</span>
-      <span><svg width="34" height="12"><circle cx="5" cy="6" r="3" fill="var(--surface-1)" stroke="var(--text-primary)"/><line x1="8" y1="6" x2="30" y2="6" stroke="var(--text-primary)" stroke-opacity="0.55" stroke-dasharray="4 3"/></svg>Where the flight itself put the contact</span>
-      <span><svg width="14" height="14"><path transform="translate(7,8)" d="M0,-5L4.5,3.5L-4.5,3.5Z" fill="var(--surface-1)" stroke="var(--text-primary)"/></svg>Base point</span>
+      <span><svg width="14" height="14"><circle cx="7" cy="7" r="4" fill="var(--surface)" stroke="var(--series-track)" stroke-width="1.5"/></svg>Anchor with a letter not yet placed</span>
+      <span><svg width="34" height="12"><circle cx="5" cy="6" r="3" fill="var(--surface)" stroke="var(--ink)"/><line x1="8" y1="6" x2="30" y2="6" stroke="var(--ink)" stroke-opacity="0.55" stroke-dasharray="4 3"/></svg>Where the flight itself put the contact</span>
+      <span><svg width="14" height="14"><path transform="translate(7,8)" d="M0,-5L4.5,3.5L-4.5,3.5Z" fill="var(--surface)" stroke="var(--ink)"/></svg>Base point</span>
     </div>
     <div class="map-wrap">
       <svg id="map" role="img" aria-label="Map of the 20-minute squares placed so far in three Japanese position-code keys, with the anchors that placed them"></svg>

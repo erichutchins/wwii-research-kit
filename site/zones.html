@@ -8,23 +8,23 @@
 <link rel="stylesheet" href="viz.css">
 <style>
   .land { fill: var(--land); stroke: var(--coast); stroke-width: 0.6; }
-  .graticule { fill: none; stroke: var(--grid); stroke-width: 1; }
+  .graticule { fill: none; stroke: var(--sea-grid); stroke-width: 1; }
   .band { fill: none; stroke: var(--coast); stroke-width: 0.8; stroke-dasharray: 2 3; }
   .band.alt { fill: var(--wash); }
   .band.on { fill: var(--series-track); fill-opacity: 0.10; stroke: var(--series-track); stroke-dasharray: none; stroke-width: 1.5; }
   .band-hit { fill: transparent; cursor: pointer; }
-  .zl { font-size: 18px; font-weight: 700; fill: var(--text-secondary); text-anchor: middle; pointer-events: none; }
+  .zl { font-size: 18px; font-weight: 700; fill: var(--ink-2); text-anchor: middle; pointer-events: none; }
   .zl.on { fill: var(--series-track); }
-  .zo { font-size: 13px; fill: var(--text-muted); text-anchor: middle; pointer-events: none; }
-  .dateline { fill: none; stroke: var(--text-secondary); stroke-width: 1.2; stroke-dasharray: 6 3; }
-  .dl-label { font-size: 13px; fill: var(--text-secondary); pointer-events: none; }
+  .zo { font-size: 13px; fill: var(--ink-3); text-anchor: middle; pointer-events: none; }
+  .dateline { fill: none; stroke: var(--ink-2); stroke-width: 1.2; stroke-dasharray: 6 3; }
+  .dl-label { font-size: 13px; fill: var(--ink-2); pointer-events: none; }
   .track { fill: none; stroke: var(--track-other); stroke-width: 1; stroke-opacity: 0.6; }
   .pt { fill: var(--track-other); fill-opacity: 0.55; cursor: pointer; }
-  .pt.on { fill: var(--series-track); fill-opacity: 1; stroke: var(--surface-1); stroke-width: 1; }
-  .port { fill: var(--surface-1); stroke: var(--text-secondary); stroke-width: 1.2; }
-  .port-label, .place { font-size: 13px; fill: var(--text-secondary); pointer-events: none;
-                        paint-order: stroke; stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round; }
-  .place { fill: var(--text-muted); letter-spacing: 0.06em; }
+  .pt.on { fill: var(--series-track); fill-opacity: 1; stroke: var(--surface); stroke-width: 1; }
+  .port { fill: var(--surface); stroke: var(--ink-2); stroke-width: 1.2; }
+  .port-label, .place { font-size: 13px; fill: var(--ink-2); pointer-events: none;
+                        paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+  .place { fill: var(--ink-3); letter-spacing: 0.06em; }
   .clocks td.big { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .clocks tr.boat td { background: var(--wash); }
   .seg.small button { padding: 4px 10px; font-size: 15.5px; }
@@ -64,7 +64,7 @@
       <span><svg width="12" height="12"><circle cx="6" cy="6" r="4" fill="var(--series-track)"/></svg>Position logged in the chosen zone</span>
       <span><svg width="12" height="12"><circle cx="6" cy="6" r="3" fill="var(--track-other)"/></svg>Logged in another zone</span>
       <span><svg width="30" height="12"><rect x="1" y="1" width="28" height="10" fill="var(--series-track)" fill-opacity="0.1" stroke="var(--series-track)"/></svg>Where that zone's clock matches the sun</span>
-      <span><svg width="24" height="12"><line x1="0" y1="6" x2="24" y2="6" stroke="var(--text-secondary)" stroke-width="1.2" stroke-dasharray="6 3"/></svg>Date line (drawn on the 180th meridian)</span>
+      <span><svg width="24" height="12"><line x1="0" y1="6" x2="24" y2="6" stroke="var(--ink-2)" stroke-width="1.2" stroke-dasharray="6 3"/></svg>Date line (drawn on the 180th meridian)</span>
     </div>
     <div class="map-wrap"><svg id="map" role="img" aria-label="Map of the Pacific time zones, with the ships' positions coloured by the zone they were logged in"></svg></div>
     <div class="caption" id="caption"></div>

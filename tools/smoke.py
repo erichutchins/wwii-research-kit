@@ -4,8 +4,9 @@
 # ///
 """Open every page of the site in a headless browser and fail on anything that breaks it.
 
-Every page in site/, and every view a page opens from the address (each engagement, convoy, ship and patrol, Army
-unit, Seabee battalion and project, BANG's dives by patrol), in light and dark mode, at desktop and phone width.
+Every page in site/, and every view a page opens from the address (each engagement at its depths, each convoy, ship
+and patrol, Army unit, Seabee battalion and project, BANG's dives by patrol), in light and dark mode, at desktop and
+phone width.
 A view fails on:
   - an error in the console, or an uncaught exception;
   - a request to this site that fails or answers 4xx/5xx (a missing data file, a renamed script);
@@ -51,12 +52,26 @@ def kit_views(root=KIT):
     """Every page in site/ and every view the address opens, as paths from the server's root."""
     rec, site = root / "records", root / "site"
     out = [f"site/{p.name}" for p in sorted(site.glob("*.html"))]
-    out += [f"site/engagement.html?e={x['id']}" for x in load(rec / "engagements/index.json")]
+    out += engagement_views(rec / "engagements", "site/engagement.html")
     out += [f"site/convoys.html?c={c['id']}" for c in load(rec / "convoys/convoys.json")["convoys"]]
     out += [f"site/patrols.html?ship={s['key']}&patrol={n}" for s in load(rec / "ships.json") for n in (p["n"] for p in s["periods"])]
     out += [f"site/dives.html?patrol={p['patrol']}" for p in load(rec / "boats/ss-385-bang/dives.json")["patrols"]]
     out += army_views(rec / "army/army.json", "site/army.html")
     out += seabee_views(rec / "seabees/seabees.json", "site/seabees.html")
+    return out
+
+
+def engagement_views(folder, page):
+    """Each engagement at its depths (engagement.html?e=<id>&view=account|records|working): the account (the default)
+    and the records (the map with the clock and the log, or the chronology) for every one, and the working where the
+    frame has something to show there (an attack sheet's periscope, a convoy to close on, a pairing of an attack with the
+    other side's record or a question the records leave open, for the Sources view), from its engagement.json."""
+    out = []
+    for x in load(folder / "index.json"):
+        d = load(folder / x["id"] / "engagement.json")
+        out += [f"{page}?e={x['id']}", f"{page}?e={x['id']}&view=records"]
+        if d.get("sheets") or d.get("convoys") or d.get("pairs") or d.get("claims"):
+            out.append(f"{page}?e={x['id']}&view=working")
     return out
 
 

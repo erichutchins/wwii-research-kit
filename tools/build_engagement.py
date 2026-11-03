@@ -23,6 +23,26 @@ the engagements that met it and where the boats saw it, for site/convoys.html).
 It checks that every participant, convoy, silhouette and position named exists; that every time parses, with a zone
 letter or the engagement's `clock`; that every entry and claim is cited, in a form SOURCES.yml knows; that every
 [[link]] in the story resolves; and that every pairing in a patrol's claims.yml names an attack and a record that exist.
+
+Sides are not stored (guides/OPERATIONS-VIEWER.md 2.4: a nationality as the record gives it, never a bloc). The records
+carry `of`, the nationality of a participant, of an entry's actor (left out when the actor is a participant, whose `of`
+it takes) and of a position (empty for a place); SOURCES.yml carries each source's `kind` and `of`. From those the
+build derives, for the pages, what `side` used to say:
+  followed     on a participant: it has a track or a unit, a subject the page follows and colours. A convoy is the other
+               side's record, read against the followed boats' sightings of it, and is not followed here.
+  own          on the engagement: the nationalities of the followed subjects.
+  against      on the engagement: whom the subjects faced, as the records name them. Hand-edited in the front matter only
+               when more than two nationalities meet (Algiers: `against: [de, it]`, with the RAF and the French press
+               beside Battery C); left out, it is every nationality that isn't the subjects' own.
+  opposed      on a participant, an entry and a position: its `of` (or its actor's) is among `against`.
+  source_kind  on an entry, a claim and a position: its citation's SOURCES.yml `kind` (record, press, secondary, ...);
+  source_of    and that source's nationality. The press is told apart by its source's kind, not by a side.
+A record's own language stays its own: an entry whose record isn't in English carries `original`, `lang` (a two-letter
+code) and `translation` instead of `words`; a patrol's japanese.yml entries arrive the same way (`lang: ja`).
+  pairs        on the engagement: each pairing in a tracked boat's claims.yml whose attack falls in the window, for the
+               Sources view (guides/OPERATIONS-VIEWER.md 7.1): {attack, boat, utc, relation, note, record: {id, event,
+               ship, date, time, zone, local, utc, lat, lon, lat_raw, lon_raw, original, lang, translation, note, cite}}.
+               The minutes and miles between the two are computed on the page (Engage.apart), as check_crossrefs.py does.
 """
 import csv
 import json
@@ -47,10 +67,10 @@ with open(RECORDS / "army" / "units.csv", encoding="utf-8", newline="") as f:
     ARMY_UNITS = {r["unit"] for r in csv.DictReader(f)}   # a participant's `unit:` (followed from one engagement to the next)
 MAX_BOATS = 3   # the page's three categorical colours are checked for three boats; check again before a fourth
 
-FM = {"title", "short", "eyebrow", "theater", "clock", "window", "participants", "places"}
-PART = {"id", "name", "side", "kind", "sil", "hull", "co", "track", "convoy", "unit", "basis", "note"}
-EVENT = {"at", "placed", "side", "actor", "kind", "to", "from", "title", "words", "original", "source", "ref", "pos",
-         "step", "basis", "note"}
+FM = {"title", "short", "eyebrow", "theater", "clock", "window", "participants", "places", "against"}
+PART = {"id", "name", "of", "kind", "sil", "hull", "co", "track", "convoy", "unit", "basis", "note"}
+EVENT = {"at", "placed", "of", "actor", "kind", "to", "from", "title", "words", "original", "lang", "translation", "source",
+         "ref", "pos", "step", "basis", "note"}
 CLAIM = {"question", "answer", "weight", "source", "ref", "note"}
 SHIP = {"ship", "role", "number", "from", "to", "cargo", "cargo_t", "cargo_for", "fate", "source", "page", "basis",
         "note", "sil", "sil_basis"}
@@ -58,7 +78,7 @@ CONVOY_FM = {"convoy", "name_ja", "from", "to", "via", "sailed", "arrived", "siz
              "route", "voyage", "ships"}
 STOP = {"at", "place", "event", "words", "source", "basis", "approx"}
 LANES = records.load_yaml(records.REFERENCE / "lanes" / "lanes.yml")["nodes"]
-SIDES = {"us", "jp", "allied", "axis", "de", "press", "geo"}
+NATION = re.compile(r"[a-z]{2}")   # `of` and `lang`: a two-letter code (us, jp, de, it, uk, fr; de, it, ja)
 WEIGHTS = {"record", "photo", "recollection", "inference", "secondary"}
 BASIS = {"reported", "derived", "inferred", "assumed", "secondary"}
 # what an entry is; add a word here (and to records/README.md) rather than inventing one in a single file
@@ -116,7 +136,19 @@ class Build:
         href = SCANS.get(full) or (full if full.startswith("http") else r["href"])
         pg = page.lstrip("p") if page else r["page"]
         label = f"p. {int(pg)}" if pg and pg.isdigit() else (r["short"] if not full.startswith("http") else "page")
-        return {"ref": full, "href": href, "label": label, "source_title": r["short"]}
+        src = self.source(full) or self.source(ref)
+        return {"ref": full, "href": href, "label": label, "source_title": r["short"],
+                "kind": src.get("kind", ""), "of": src.get("of", "")}
+
+    def source(self, cite):
+        """The SOURCES.yml entry a citation resolves to (the first whose `match` fits), or {}."""
+        return next((s for pat, s in self.chk.srcs.values() if pat.match(cite)), {})
+
+    @staticmethod
+    def tagged(row):
+        """A row with a `cite` -> the same row with its source's kind and nationality beside it."""
+        c = row.get("cite") or {}
+        return {**row, "source_kind": c.get("kind", ""), "source_of": c.get("of", "")}
 
     # ------------------------------------------------------------------ times
     def when(self, at, clock, where):
@@ -137,6 +169,28 @@ class Build:
             return local, t, iso(t)
         key = f"{day}T{hhmm[:2]}:{hhmm[2:]}" if hhmm else day
         return local, None, key
+
+    # ------------------------------------------------------------------ nationalities and voices
+    def nation(self, code, field, where, required=False):
+        """`of` (and `lang`, `against`): a two-letter code as the records give a nationality, or nothing."""
+        if code is None:
+            if required:
+                self.bad(where, f"no `{field}` (a nationality as the record gives it: us, jp, de, it, uk, fr, ...)")
+            return
+        if not isinstance(code, str) or not NATION.fullmatch(code):
+            self.bad(where, f"{field} {code!r} is not a two-letter code (us, jp, de, it, uk, fr, ...)")
+
+    def voice(self, e, where):
+        """An entry's words: `words` (English, or our words quoting the record), or the record's own language in
+        `original` with `lang` and our `translation`; one or the other, never neither."""
+        if e.get("original"):
+            if not e.get("translation"):
+                self.bad(where, "`original` (the record's own words) needs our `translation` beside it")
+            self.nation(e.get("lang"), "lang", where, required=True)
+        elif e.get("translation") or e.get("lang"):
+            self.bad(where, "`translation` and `lang` go with `original` (the record's words in its own language)")
+        if not (e.get("words") or e.get("original")):
+            self.bad(where, "no `words` and no `original`: an entry carries the record's words, or ours quoting it")
 
     # ------------------------------------------------------------------ a convoy
     def convoy(self, d):
@@ -200,7 +254,7 @@ class Build:
             if x.get("record") not in ja:
                 self.bad(w, f"no record {x.get('record')!r} in japanese.yml")
             if a is not None and x.get("record") in ja:
-                pairs.append({**x, "unit": other or unit, "attack_ref": ref, "attack_utc": a["utc"]})
+                pairs.append({**x, "unit": other or unit, "attack_ref": ref, "attack_utc": a["utc"], "ja": ja[x["record"]]})
         return rows, ja, pairs
 
     def sheets(self, p, refs):
@@ -239,8 +293,7 @@ class Build:
             if p.get("id") in ids:
                 self.bad(w, "id given twice")
             ids.add(p.get("id"))
-            if p.get("side") not in SIDES:
-                self.bad(w, f"side {p.get('side')!r} is not one of {', '.join(sorted(SIDES))}")
+            self.nation(p.get("of"), "of", w, required=True)
             p = dict(p)
             if p.get("track"):
                 try:
@@ -261,12 +314,28 @@ class Build:
             if p.get("sil") and p["sil"] not in SIL_IDS:
                 self.bad(w, f"silhouette {p['sil']!r} is not in silhouettes.yml")
             parts.append(p)
-        # the US ships and boats with a track take the page's categorical colours, in order (colour follows the boat)
-        coloured = [p for p in parts if p.get("track") and p.get("side") == "us"]
+        # the ships and boats with a track take the page's categorical colours, in order (colour follows the boat)
+        coloured = [p for p in parts if p.get("track")]
         if len(coloured) > MAX_BOATS:
             self.bad(where, f"{len(coloured)} tracks; the page's colours are checked for {MAX_BOATS}: split it or check a fourth")
         for i, b in enumerate(coloured, 1):
             b["colour"] = i
+        # who the page follows, whose they are, and whom they faced (the docstring: derived, never stored, but for `against`)
+        for p in parts:
+            p["followed"] = bool(p.get("track") or p.get("unit"))
+        own = sorted({p["of"] for p in parts if p["followed"] and p.get("of")})
+        against = fm.get("against")
+        if against is not None:
+            if not isinstance(against, list) or not against:
+                self.bad(where, "`against` is a list of nationalities, as the records name the other side ([de, it])")
+                against = None
+            else:
+                for x in against:
+                    self.nation(x, "against", where)
+        opposed = (lambda of: of in against) if against else (lambda of: bool(of) and of not in own)
+        of_actor = {p["id"]: p.get("of", "") for p in parts}
+        for p in parts:
+            p["opposed"] = opposed(p.get("of", ""))
         self.chk.links(body, where)
         secs = sections(body)
         cites = {c: resolve_cite(c, self.chk.srcs) for c in re.findall(r"\[\[cite:([^\]|]+)", body)}
@@ -275,8 +344,12 @@ class Build:
         positions = {}
         pos_path = d / "positions.csv"
         for r in csv.DictReader(open(pos_path, encoding="utf-8")) if pos_path.exists() else []:
-            positions[r["id"]] = {**r, "lat": num(r.get("lat")), "lon": num(r.get("lon")),
-                                  "cite": self.cite(r.get("ref"), f"{rel(pos_path)} {r['id']}")}
+            w = f"{rel(pos_path)} {r['id']}"
+            if "of" not in r:
+                self.bad(w, "positions.csv has no `of` column (the nationality of whose position it is; empty for a place)")
+            self.nation(r.get("of") or None, "of", w)
+            positions[r["id"]] = self.tagged({**r, "of": r.get("of", ""), "opposed": opposed(r.get("of", "")),
+                                             "lat": num(r.get("lat")), "lon": num(r.get("lon")), "cite": self.cite(r.get("ref"), w)})
         for r in positions.values():
             self.place(r, positions, f"{rel(pos_path)} {r['id']}")
 
@@ -289,8 +362,12 @@ class Build:
                 self.bad(w, f"unknown field {k!r} (known: {', '.join(sorted(EVENT))})")
             if e.get("kind") not in KINDS:
                 self.bad(w, f"kind {e.get('kind')!r} is not in the vocabulary (KINDS); add it there if it's new")
-            if e.get("side") not in SIDES:
-                self.bad(w, f"side {e.get('side')!r} is not one of {', '.join(sorted(SIDES))}")
+            of = e.get("of") or of_actor.get(e.get("actor"), "")
+            if not of:
+                self.bad(w, f"no `of` (the actor's nationality), and actor {e.get('actor')!r} is not a participant to take it from")
+            else:
+                self.nation(of, "of", w)
+            self.voice(e, w)
             for k in ("to", "from"):
                 for x in ([e[k]] if isinstance(e.get(k), str) else e.get(k) or []):
                     if x not in ids:
@@ -301,7 +378,7 @@ class Build:
                 self.bad(w, f"basis {e['basis']!r} is not one of {', '.join(sorted(BASIS))}")
             local, t, key = self.when(e.get("at"), clock, w)
             ev = {k: v for k, v in e.items() if k != "at"}
-            ev.update({"origin": "events", "n": i, "local": local, "utc": iso(t), "key": key, "cite": self.cite(e.get("ref"), w)})
+            ev.update({"origin": "events", "n": i, "of": of, "local": local, "utc": iso(t), "key": key, "cite": self.cite(e.get("ref"), w)})
             if e.get("pos") in positions and positions[e["pos"]].get("lat") is not None:
                 ev["lat"], ev["lon"] = positions[e["pos"]]["lat"], positions[e["pos"]]["lon"]
             events.append(ev)
@@ -347,8 +424,10 @@ class Build:
         outcome = {}
         for x in pairs:
             outcome.setdefault((by_unit.get(x["unit"]), x["attack_ref"]), []).append(x)
+        moments = [self.pair(x, by_unit) for x in pairs if x["unit"] in by_unit and start <= x["attack_utc"] <= end]
         events += self.fix_events(fixes, outcome)
         events += self.japanese_events(japanese, pairs, start, end)
+        events = [self.tagged({**e, "opposed": opposed(e.get("of", ""))}) for e in events]
         events.sort(key=lambda e: e["key"])
 
         # the map's extent: tracks inside the window, sightings, Japanese positions, this engagement's places
@@ -368,14 +447,31 @@ class Build:
                 self.bad(w, f"unknown field {k!r}")
             if c.get("weight") not in WEIGHTS:
                 self.bad(w, f"weight {c.get('weight')!r} is not one of {', '.join(sorted(WEIGHTS))}")
-            claims.append({**c, "cite": self.cite(c.get("ref"), w)})
+            claims.append(self.tagged({**c, "cite": self.cite(c.get("ref"), w)}))
 
         conv = {p["convoy"]: convoys[p["convoy"]] for p in parts if p.get("convoy") in convoys}
         return {"id": d.name, **{k: fm.get(k, "") for k in ("title", "short", "eyebrow", "theater", "clock")},
                 "window": {"from": iso(start), "to": iso(end)} if start else None, "gmt": bool(start),
-                "participants": parts, "places": fm.get("places") or [], "sections": secs, "cites": cites, "box": box,
-                "tracks": tracks, "fixes": fixes, "events": events, "claims": claims,
+                "participants": parts, "own": own, "against": against,
+                "places": fm.get("places") or [], "sections": secs, "cites": cites, "box": box,
+                "tracks": tracks, "fixes": fixes, "events": events, "claims": claims, "pairs": moments,
                 "positions": list(positions.values()), "convoys": conv, "sheets": sheets}
+
+    @staticmethod
+    def pair(x, by_unit):
+        """A pairing from a patrol's claims.yml, for the Sources view: the attack (its ref and GMT), the boat, the
+        Japanese record it is paired with as written (its time, position, original and translation, its page), and
+        how (`relation`, `note`). The page does the arithmetic between the two (Engage.apart), never the build."""
+        j = x["ja"]
+        return {"attack": x["attack_ref"], "boat": by_unit[x["unit"]], "utc": iso(x["attack_utc"]),
+                "relation": x.get("relation", ""), "note": x.get("note", ""),
+                "record": {"id": j["id"], "event": j.get("event", ""), "ship": j.get("ship", ""), "convoy": j.get("convoy", ""),
+                           "date": j["date"], "time": str(j.get("time") or ""), "zone": j.get("zone", "I") if j.get("time") else "",
+                           "local": j["local"], "utc": iso(j["utc"]),
+                           "lat": round(j["lat"], 4) if j["lat"] is not None else None, "lon": round(j["lon"], 4) if j["lon"] is not None else None,
+                           "lat_raw": j.get("lat_raw", ""), "lon_raw": j.get("lon_raw", ""),
+                           "original": j.get("original", ""), "lang": "ja" if j.get("original") else "",
+                           "translation": j.get("translation", ""), "note": j.get("note", ""), "cite": j["cite"]}}
 
     def place(self, r, positions, where):
         """A positions.csv row -> lat/lon: its own, or bearing and distance from another row."""
@@ -393,7 +489,7 @@ class Build:
                 r["resolved"] = f"{brg:g}° {dist:g} nm from {base.get('label') or r['from']}"
 
     def fix(self, p, r):
-        return {"who": p["id"], "utc": iso(r["utc"]), "lat": round(r["lat"], 4), "lon": round(r["lon"], 4),
+        return {"who": p["id"], "of": p.get("of", ""), "utc": iso(r["utc"]), "lat": round(r["lat"], 4), "lon": round(r["lon"], 4),
                 "kind": r["source"], "ref": r["ref"], "on_track": r["on_track"] == "yes",
                 "local": f"{r['date_fix'] or r['date']} {r['time_fix'] or r['time']} {r['zone']}",
                 "raw": f"{r['lat_raw']} {r['lon_raw']}", "note": r["note"], "fix": r["fix_note"],
@@ -404,13 +500,13 @@ class Build:
         for f in fixes:
             if f["kind"] == "attack" or f["ref"].endswith(" fired"):
                 paired = outcome.get((f["who"], f["ref"].replace(" fired", "")), [])
-                out.append({"origin": "track", "side": "us", "actor": f["who"], "kind": "attack",
+                out.append({"origin": "track", "of": f["of"], "actor": f["who"], "kind": "attack",
                             "title": f["ref"].replace(" fired", " (narrative)"), "words": f["note"], "local": f["local"],
                             "utc": f["utc"], "key": f["utc"], "lat": f["lat"], "lon": f["lon"], "cite": f["cite"],
                             "note": f["fix"] if (not f["on_track"] or f["fix"]) else "",
                             "outcome": [{"relation": x["relation"], "record": x["record"], "note": x.get("note", "")} for x in paired]})
             elif f["kind"] in ("ship", "air"):
-                out.append({"origin": "track", "side": "us", "actor": f["who"], "kind": "sighting",
+                out.append({"origin": "track", "of": f["of"], "actor": f["who"], "kind": "sighting",
                             "title": {"ship": "Ship contact", "air": "Aircraft contact"}[f["kind"]] + f" ({f['ref'].split()[-1]})",
                             "words": f["note"], "local": f["local"], "utc": f["utc"], "key": f["utc"], "cite": f["cite"],
                             "target": f["kind"] == "ship", "lat": f["lat"], "lon": f["lon"]})
@@ -427,7 +523,7 @@ class Build:
             deep = r["event"] == "depth" and r["depth_ft"] and int(r["depth_ft"]) >= 300
             if start <= t <= end and (r["event"] in ("charges", "passing") or deep):
                 title = {"charges": "Depth charges", "passing": f"Passing {r['depth_ft']} ft", "depth": f"Ordered {r['depth_ft']} ft"}[r["event"]]
-                out.append({"origin": "depths", "side": "us", "actor": p["id"],
+                out.append({"origin": "depths", "of": p.get("of", ""), "actor": p["id"],
                             "kind": "depth_charge" if r["event"] == "charges" else "status",
                             "title": title + (f" ({r['charges']})" if r["charges"] else ""), "words": r["quote"],
                             "local": f"{r['date']} {r['time']} {r['zone']}", "utc": iso(t), "key": iso(t),
@@ -450,10 +546,11 @@ class Build:
             if not (t and start <= t <= end):
                 continue
             secondary = str(j.get("source", "")).startswith("combinedfleet")
-            ev = {"origin": "japanese", "side": "jp", "actor": j.get("ship", "") or j.get("convoy", ""),
+            ev = {"origin": "japanese", "of": "jp", "actor": j.get("ship", "") or j.get("convoy", ""),
                   "kind": j.get("event", ""), "mark": MARK.get(j.get("event", "")), "record": j["id"], "unit": j["unit"],
                   "title": (j.get("ship", "") or "").replace("; ", " and ") or j.get("convoy", ""), "ship": j.get("ship", ""),
                   "convoy": j.get("convoy", ""), "words": j.get("translation", ""), "original": j.get("original", ""),
+                  "lang": "ja" if j.get("original") else "", "translation": j.get("translation", ""),
                   "local": f"{j['date']} {j.get('time') or 'no time'} I", "utc": iso(t), "key": iso(t), "cite": j["cite"],
                   "basis": "secondary" if secondary else "reported",
                   "note": " ".join(x for x in ("Secondary source (combinedfleet.com)." if secondary else "", untimed, j.get("note", "")) if x)}

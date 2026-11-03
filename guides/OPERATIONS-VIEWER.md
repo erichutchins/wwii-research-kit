@@ -477,7 +477,7 @@ light and dark on a desktop and a phone.
 
 | Phase | Build | Delete | Proves |
 |---|---|---|---|
-| 1. One skin | one token set and one nav fragment on every page; `entry.css`'s bridge becomes the only set | `viz.css`'s tokens; the seventeen copies of the nav | the two page families were one |
+| 1. One skin | one token set and one nav fragment on every page: the vocabulary defined once in `viz.css`'s header, each page family keeping its own values under the one set of names | the second set of names and every fallback chain (`entry.css`, `glossary.js`); the seventeen copies of the nav | the two page families were one |
 | 2. The depths | the account on `engagement.html` (static map, outcome, doors) with the present page as its records depth, `?view=`; the working gathers the claims, the computed layers, the figures | nothing yet | progressive disclosure on the existing data |
 | 3. Chronology | the day-column chronology as a shared view; tempo derived; the dated frames (Venafro, Algiers, Remagen) lead with it | `algiers.html`'s own timeline | the clock is one view's device |
 | 4. Voices | `kind`/`of` in SOURCES.yml; entries tagged through citations; `original`/`lang`/`translation` for German; the Sources view for TAMA-17 and Algiers | `side` and `SIDES` | sources as columns; press beside the records; the other side named as the records name it |
@@ -487,6 +487,44 @@ light and dark on a desktop and a phone.
 
 Phases 1–3 need no change to the records. Phase 4 touches `SOURCES.yml` and two engagements' `events.yml`. Phases 6 and
 7 are the large ones and come last, when the earlier phases have shown the model holds on the pages that exist.
+
+**Done** (3 November 2026): phase 1 (`site/nav.js`; one token vocabulary, `site/viz.css`, every page's colours unchanged
+to the pixel) and phase 3 (`Engage.tempo`, `chronologyRows`, `chronologyColumns` in `engage.js`, tested; `EV.chronology`
+in `engage-views.js` with `site/chron.css`; Venafro, Filignano, Remagen and Algiers lead with it on `engagement.html`,
+and `algiers.html`'s own timeline is gone). Two things the data taught: a frame counts as clocked when *more than half*
+its entries carry a time with a zone, not any of them, because Remagen's corps report times ten entries of twenty-five
+and is a dated frame all the same; and the columns group by the record named in each entry's `source` (the text before
+its first comma or colon) until phase 4 gives every source a `kind`, which should replace that heuristic.
+
+**Done** (3 November 2026): phase 2. `engagement.html?e=<id>&view=account|records|working`, the account by default: the
+static map at the window's end with the convoy's observed path drawn dotted as ours, the outcome in the records' words,
+who (colour bar, hull, kind, CO, silhouette), when, and three doors whose counts come from the engagement's own JSON;
+the records depth is the page as it was; the working gathers the periscope and TDC, closing in, the claims and the
+story's sources. `&at=<ISO>` opens the records at a minute. The smoke test opens every engagement at two or three
+depths. What the data taught: six of the hand-built frames have no *Outcome* section yet, so their account says so
+rather than inventing one; and counting "records" from an entry's `source` text is phase 4's heuristic again. Phase 4
+is next, and it is the first to touch the records.
+
+**Done** (3 November 2026): phase 4, the records and the build. Every one of the 99 sources in `SOURCES.yml` carries a
+`kind` and most an `of`; `check_sources.py` fails without a kind. `side` is gone: every participant, entry and position
+carries `of`, the nationality as the record gives it, and the build derives `followed` (a participant with a track or a
+unit), `own`, `opposed`, `source_kind` and `source_of`. Twenty-six entries' originals moved out of `words` into
+`original`, `lang` and `translation` (German at Venafro and Filignano; French and Italian at Algiers, translated for the
+first time; Japanese at Haynsworth). What the data taught: a convoy is not a followed subject (it is the other side's
+record, read against the boats' sightings), and nationality alone cannot say who faced whom once three nationalities
+meet, so an engagement may name `against:` (Algiers: `[de, it]`, so No. 153 Squadron's record is not coloured as the
+enemy's); and 46 catalogue-URL citations on Haynsworth and Corzine still resolve to the generic `url` entry, whose kind
+is `secondary`, until they are written in the archive's short form.
+
+**Done** (3 November 2026): phase 4, the pages. The build emits each pairing of an attack with the other side's record
+(`pairs`, from the patrols' `claims.yml` and `japanese.yml`, inside the window); the working depth shows a Sources view
+per moment (a pair on a clocked frame, a claim's question on a dated one) with the rows as typed, in GMT and placed
+marked as ours, and the minutes and miles computed on the page (`Engage.apart`, tested on Attack 1: 5 min, 7.6 nm); the
+claims board badges each answer by its source's kind and merges repeated answers; every chip names a source by kind
+and nationality. What the data taught: TAMA-17's FRUPAC notes, JANAC and combinedfleet are not entries of the
+engagement (frupac.yml isn't built into the JSON; the other two live in notes), so Attack 1's table has two columns
+where the mockup drew six: building `frupac.yml` into the engagement as `intelligence` entries is the next records task,
+and the view already takes them. Phase 5 is next.
 
 ## 10. Open questions
 

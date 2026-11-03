@@ -8,7 +8,9 @@ Each transcribed row names where it came from in a citation column (CITES below)
 Archives page (rg367-74802746/p05), a JACAR reference code (jacar:C08030140600), a museum item
 (ok45th-17552/p06), a URL... Every citation must match one entry's `match` pattern in SOURCES.yml,
 and every row of a cited file must carry at least one. Files whose rows need no citation of their
-own say why in UNCITED. The `sources:` lists in dives.yml and silhouettes.yml must name SOURCES.yml entries. And
+own say why in UNCITED. The `sources:` lists in dives.yml and silhouettes.yml must name SOURCES.yml entries. Every
+SOURCES.yml entry says what kind of source it is (`kind`, the vocabulary in records.SOURCE_KINDS; `of`, its author's
+nationality, is optional), since the builds tag every row with both through its citation. And
 records/inventory.yml must agree with the folders: every patrol folder listed as transcribed,
 verified or mapped, and every patrol so listed present. And every ship.yml `silhouette:` must name a
 ship profile in silhouettes.yml.
@@ -94,10 +96,29 @@ def resolver(sources):
     return resolve
 
 
+def check_kinds(sources):
+    """Every SOURCES.yml entry says what kind of source it is (`kind`, one of records.SOURCE_KINDS), and its author's
+    nationality (`of`), when given, is a two-letter code: the builds tag every row with both through its citation."""
+    out = []
+    for sid, s in sources.items():
+        if not isinstance(s, dict):
+            continue
+        kind = s.get("kind")
+        if kind is None:
+            out.append(f"SOURCES.yml: {sid} has no `kind` (one of {', '.join(sorted(records.SOURCE_KINDS))})")
+        elif kind not in records.SOURCE_KINDS:
+            out.append(f"SOURCES.yml: {sid} has kind {kind!r}, not one of {', '.join(sorted(records.SOURCE_KINDS))}")
+        of = s.get("of")
+        if of is not None and not re.fullmatch(r"[a-z]{2}", str(of)):
+            out.append(f"SOURCES.yml: {sid} has of {of!r}; a nationality is a two-letter code (us, jp, de, it, uk, fr, ...)")
+    return out
+
+
 def main():
     sources = records.load_yaml(RECORDS / "SOURCES.yml")
     resolve = resolver(sources)
     used, bad, uncited, unknown_files = Counter(), [], defaultdict(int), []
+    bad += check_kinds(sources)
     nara = defaultdict(set)   # catalog ID -> cited pages
     files = sorted(RECORDS.rglob("*.csv")) + sorted(REFERENCE.rglob("*.csv"))
     for path in files:
