@@ -39,6 +39,10 @@ build derives, for the pages, what `side` used to say:
   source_of    and that source's nationality. The press is told apart by its source's kind, not by a side.
 A record's own language stays its own: an entry whose record isn't in English carries `original`, `lang` (a two-letter
 code) and `translation` instead of `words`; a patrol's japanese.yml entries arrive the same way (`lang: ja`).
+  pairs        on the engagement: each pairing in a tracked boat's claims.yml whose attack falls in the window, for the
+               Sources view (guides/OPERATIONS-VIEWER.md 7.1): {attack, boat, utc, relation, note, record: {id, event,
+               ship, date, time, zone, local, utc, lat, lon, lat_raw, lon_raw, original, lang, translation, note, cite}}.
+               The minutes and miles between the two are computed on the page (Engage.apart), as check_crossrefs.py does.
 """
 import csv
 import json
@@ -250,7 +254,7 @@ class Build:
             if x.get("record") not in ja:
                 self.bad(w, f"no record {x.get('record')!r} in japanese.yml")
             if a is not None and x.get("record") in ja:
-                pairs.append({**x, "unit": other or unit, "attack_ref": ref, "attack_utc": a["utc"]})
+                pairs.append({**x, "unit": other or unit, "attack_ref": ref, "attack_utc": a["utc"], "ja": ja[x["record"]]})
         return rows, ja, pairs
 
     def sheets(self, p, refs):
@@ -420,6 +424,7 @@ class Build:
         outcome = {}
         for x in pairs:
             outcome.setdefault((by_unit.get(x["unit"]), x["attack_ref"]), []).append(x)
+        moments = [self.pair(x, by_unit) for x in pairs if x["unit"] in by_unit and start <= x["attack_utc"] <= end]
         events += self.fix_events(fixes, outcome)
         events += self.japanese_events(japanese, pairs, start, end)
         events = [self.tagged({**e, "opposed": opposed(e.get("of", ""))}) for e in events]
@@ -449,8 +454,24 @@ class Build:
                 "window": {"from": iso(start), "to": iso(end)} if start else None, "gmt": bool(start),
                 "participants": parts, "own": own, "against": against,
                 "places": fm.get("places") or [], "sections": secs, "cites": cites, "box": box,
-                "tracks": tracks, "fixes": fixes, "events": events, "claims": claims,
+                "tracks": tracks, "fixes": fixes, "events": events, "claims": claims, "pairs": moments,
                 "positions": list(positions.values()), "convoys": conv, "sheets": sheets}
+
+    @staticmethod
+    def pair(x, by_unit):
+        """A pairing from a patrol's claims.yml, for the Sources view: the attack (its ref and GMT), the boat, the
+        Japanese record it is paired with as written (its time, position, original and translation, its page), and
+        how (`relation`, `note`). The page does the arithmetic between the two (Engage.apart), never the build."""
+        j = x["ja"]
+        return {"attack": x["attack_ref"], "boat": by_unit[x["unit"]], "utc": iso(x["attack_utc"]),
+                "relation": x.get("relation", ""), "note": x.get("note", ""),
+                "record": {"id": j["id"], "event": j.get("event", ""), "ship": j.get("ship", ""), "convoy": j.get("convoy", ""),
+                           "date": j["date"], "time": str(j.get("time") or ""), "zone": j.get("zone", "I") if j.get("time") else "",
+                           "local": j["local"], "utc": iso(j["utc"]),
+                           "lat": round(j["lat"], 4) if j["lat"] is not None else None, "lon": round(j["lon"], 4) if j["lon"] is not None else None,
+                           "lat_raw": j.get("lat_raw", ""), "lon_raw": j.get("lon_raw", ""),
+                           "original": j.get("original", ""), "lang": "ja" if j.get("original") else "",
+                           "translation": j.get("translation", ""), "note": j.get("note", ""), "cite": j["cite"]}}
 
     def place(self, r, positions, where):
         """A positions.csv row -> lat/lon: its own, or bearing and distance from another row."""

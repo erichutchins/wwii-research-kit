@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="chapter.css">
 <link rel="stylesheet" href="engage.css">
 <link rel="stylesheet" href="chron.css">
+<link rel="stylesheet" href="sources.css">
 <style>
 /* One page for every engagement (engagement.html?e=<id>&view=account|records|working; records/engagements/<id>/
    engagement.json, built by tools/build_engagement.py), at three depths (guides/OPERATIONS-VIEWER.md, 4), chosen by the
@@ -21,7 +22,8 @@
    and the two-sided log side by side at one height, so playback never moves the page; one timeline lane per
    participant under the map. When it is dated or monthly (the guide, 3): the map alone, static, and the chronology
    full width under it in the log's place; then the order of battle in silhouettes, and the story. The working: the
-   periscope, how the boats closed in, the questions the records leave open, and the sources. */
+   periscope, how the boats closed in, the Sources view (one moment at a time, source by source; sources.css), the claims
+   board, and how this was read. */
 .main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 420px); gap: 14px; }
 .main.dated { grid-template-columns: minmax(0, 1fr); }
 .main.dated .map-box { height: clamp(300px, 46vh, 460px); }
@@ -50,7 +52,9 @@
 .row.current { background: var(--wash); }
 .row.future { opacity: 0.45; }
 .row .who .sil { width: 40px; height: 8px; }
-.closing-card, .claims-card, .oob-card, .story { padding-bottom: 14px; }
+.closing-card, .claims-card, .moments-card, .oob-card, .story { padding-bottom: 14px; }
+.moments-card h2 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.moments-card h2 span { font-style: normal; color: var(--ink-3); font-size: 14.5px; }
 #closing { width: 100%; height: 220px; display: block; overflow: visible; }
 .below { color: var(--ink-2); font-size: 15px; margin: 6px 14px 0; max-width: 95ch; }
 /* the observer view (observer.js): the scope keeps its own night colours in both modes */
@@ -238,9 +242,16 @@
     <p class="below" id="closing-note"></p>
   </section>
 
+  <section class="card moments-card" id="moments-card" hidden aria-labelledby="moments-h">
+    <h2 id="moments-h">Source by source <span id="moments-sub">One moment at a time: each column is one source, as typed, in its own language and on its own clock</span></h2>
+    <div class="moments" id="moments"></div>
+    <p class="below" id="moments-note">Columns are sources, not sides. The chips under each name say what kind of source it is (record, intelligence, press, assessment, recollection, secondary) and whose: one field each in SOURCES.yml, read through the citation. The two rows in blue are ours: the zone letter to GMT, and the position placed from the words. The hatched row is ours and says so. Nothing in a column is corrected to agree with another.</p>
+  </section>
+
   <section class="card claims-card" id="claims-card" hidden aria-labelledby="claims-h">
     <h2 id="claims-h">What the records leave open</h2>
-    <div class="claims" id="claims"></div>
+    <div class="board" id="claims"></div>
+    <p class="below board-note">The board ranks nothing. Each answer carries the kind of evidence it is, from its source's entry in SOURCES.yml; where a record is used for something else (as a recollection, an inference), its weight is said beside the kind. Two answers in the same words from the same list are one line with both pages: repetition isn't corroboration.</p>
   </section>
 
   <section class="card sources-card" id="sources-card" hidden aria-labelledby="sources-h">

@@ -176,4 +176,68 @@ ok(E.recordWords(["La Stampa, 14 Jan 1944, p. 1 (the German communiqué, Berlin,
 ok(E.hitKind("casualty") && E.hitKind("shelled") && !E.hitKind("station") && !E.hitKind("report"), "hit kinds: a casualty and a shelling, not a station or a report");
 ok(E.head("Battery A (1st Bn)") === "Battery A" && E.head("Battery E, sections 2, 4, 6, 8") === "Battery E", "head: the name before a comma or a bracket");
 
+// Sources and voices (guides/OPERATIONS-VIEWER.md 2.4, 7.1): a source's kind and whose it is, in a chip's words; never a bloc
+ok(E.sourceKindWord("record", "us") === "record · US" && E.sourceKindWord("intelligence", "us") === "intelligence · US" && E.sourceKindWord("assessment", "us") === "assessment · US", "source kind: a record, intelligence, an assessment, with whose it is");
+ok(E.sourceKindWord("press", "fr") === "French press" && E.sourceKindWord("press", "") === "press", "source kind: the press by its nationality");
+ok(E.sourceKindWord("secondary", "us") === "secondary" && E.sourceKindWord("reference", "us") === "reference" && E.sourceKindWord("recollection", "us") === "recollection", "source kind: a later history, a reference, a recollection by the kind alone");
+ok(E.sourceKindWord("record", "") === "record" && E.sourceKindWord("", "jp") === "Japanese" && E.sourceKindWord("", "") === "", "source kind: without a nationality, the kind; without a kind, the nationality");
+ok(!/axis|allied/i.test(Object.values({ a: E.sourceKindWord("record", "de"), b: E.sourceKindWord("record", "jp"), c: E.sourceKindWord("press", "it") }).join()), "source kind: the other side named as the records name it");
+// the column chips: the record's own words, then its source's kind and nationality where the entries carry one
+ok(E.columnChip(cols[0]) === "morning report (record of events) · record · US" || /^morning report.* · record · US$/.test(E.columnChip(cols[0])), "column chip: 'morning report · record · US' (" + E.columnChip(cols[0]) + ")");
+ok(E.columnChip(cols[3]) === "tactical reports · record · German", "column chip: the other side's record by its nationality");
+ok(E.columnChip(algiers[0]) === "French press" && E.columnChip(algiers[2]) === "Italian press", "column chip: the press by its nationality, no record words");
+ok(E.columnChip(boats[1]) === "Japanese", "column chip: an entry with no citation falls back to the nationality alone");
+ok(cols[3].source_of === "" && algiers[0].source_of === "fr", "columns: each carries its source's nationality where its entries do");
+
+// The cross-references' arithmetic (tools/check_crossrefs.py, moved here): BANG's Attack 1 at 2256 K, 29 April 1944, at
+// 19-26N 118-45E; Nittatsu Maru's log has Takegawa Maru torpedoed at 2201 I at 19-20N 118-50E. By hand: 1256 and 1301 GMT,
+// 5 minutes; 6' of latitude and 5' of longitude at 19.4° (4.72 nm) are 7.6 nm apart
+const sheet1 = { utc: "1944-04-29T12:56Z", lat: E.coord("19-26N"), lon: E.coord("118-45E") }, j03 = { utc: "1944-04-29T13:01Z", lat: E.coord("19-20N"), lon: E.coord("118-50E") };
+near(E.apart(sheet1, j03).minutes, 5, 0, "apart: the sheet at 2256 K and the log at 2201 I are 5 minutes apart");
+near(E.apart(sheet1, j03).nm, 7.6, 0.05, "apart: 19-26N 118-45E and 19-20N 118-50E are 7.6 nm apart");
+near(E.apart(j03, sheet1).minutes, -5, 0, "apart: the other way round is negative");
+ok(E.apart(sheet1, { utc: "1944-04-29T13:01Z" }).nm === null && E.apart({ lat: 1, lon: 1 }, j03).minutes === null, "apart: null where either lacks a position or a time");
+
+// The Sources view's moments from a frame's JSON, in TAMA-17's shape: a pair's sources are the sheet, the record and the
+// entries of other kinds within two hours that name the ship; the arithmetic between the sheet and each
+const tama = {
+  participants: [{ id: "bang", name: "BANG", of: "us", track: "ss-385-bang/1", colour: 1, followed: true }],
+  fixes: [{ who: "bang", ref: "Attack 1", utc: "1944-04-29T12:56Z", lat: 19.4333, lon: 118.75, raw: "19-26N 118-45E", local: "1944-04-29 2256 K", on_track: true, assumed: false, fix: "", note: "Torpedo attack No. 1", cite: { ref: "rg367-74802746/p16", href: "#", label: "p. 16", kind: "record", of: "us" } }],
+  sheets: { bang: { "Attack 1": { torpedoes: [{ date: "1944-04-29", time: "2256", zone: "K" }], words: [{ description: "Convoy consisting of at least 12 ships", sunk: "None.", damaged: "One 7000 ton AK probably sunk." }], cite: { ref: "rg367-74802746/p16", href: "#", label: "p. 16", kind: "record", of: "us" } } } },
+  events: [
+    { actor: "FRUPAC", title: "Yoshima Maru", kind: "report", words: "Yoshima Maru / att. by torp / 2215/29", note: "frupac.yml ties this note to BANG's Attack 1", local: "1944-04-29 2215", utc: "1944-04-29T13:15Z", lat: 19.4, lon: 118.7, basis: "estimated", source: "FRUPAC overlay, 29 April", source_kind: "intelligence", source_of: "us", cite: { ref: "metapth1733008", href: "#", label: "map", kind: "intelligence", of: "us" } },
+    { actor: "combinedfleet", title: "Takegawa Maru", kind: "sank", words: "Takegawa Maru sunk by BANG", local: "1944-04-29 2155 I", utc: "1944-04-29T12:55Z", source: "combinedfleet.com", source_kind: "secondary", source_of: "", cite: { ref: "combinedfleet:Nittatsu_t", href: "#", label: "page", kind: "secondary", of: "" } },
+    { actor: "JANAC", title: "Kinrei Maru", kind: "loss", words: "Kinrei Maru to BANG", local: "1944-05-04", utc: "1944-05-03T16:06Z", source: "JANAC", source_kind: "assessment", source_of: "us", cite: { ref: "janac:4/p59", href: "#", label: "p. 59", kind: "assessment", of: "us" } },
+    { origin: "japanese", record: "J03", actor: "Takegawa Maru", kind: "torpedoed", utc: "1944-04-29T13:01Z", source_kind: "record", source_of: "jp" },
+    { actor: "bang", kind: "attack", title: "Attack 1", words: "Torpedo attack No. 1", utc: "1944-04-29T12:56Z", source_kind: "record", source_of: "us" }],
+  pairs: [{ attack: "Attack 1", boat: "bang", utc: "1944-04-29T12:56Z", relation: "hit", note: "Takegawa Maru (1,930 GRT), TAMA-17",
+            record: { id: "J03", event: "torpedoed", ship: "Takegawa Maru", date: "1944-04-29", time: "2201", zone: "I", local: "1944-04-29 2201 I", utc: "1944-04-29T13:01Z", lat: 19.3333, lon: 118.8333, lat_raw: "19-20N", lon_raw: "118-50E",
+                      original: "二九日二二時〇一分…竹川丸敵潜水艦ノ魚雷攻撃ヲ受ケ", lang: "ja", translation: "At 2201 on the 29th … Takegawa Maru was torpedoed", note: "Nittatsu Maru's own movement log", cite: { ref: "jacar:C08050103200 p23", href: "#", label: "p. 23", source_title: "JACAR", kind: "record", of: "jp" } } }] };
+const M = E.pairMoments(tama);
+ok(M.length === 1 && M[0].sources.length === 4, "moments: one pair, four sources (the sheet, the record, FRUPAC and combinedfleet; JANAC is days away)");
+ok(M[0].sources.map(s => s.role + ":" + E.sourceKindWord(s.kind, s.of)).join("|") === "attack:record · US|record:record · Japanese|near:intelligence · US|near:secondary", "moments: the sources' kinds, in order");
+ok(M[0].sources[0].typed === "1944-04-29 2256 K" && M[0].sources[0].raw === "19-26N 118-45E" && M[0].sources[0].words.map(w => w.typed).join("|") === "Convoy consisting of at least 12 ships|Sunk: None.|Damaged: One 7000 ton AK probably sunk.", "moments: the sheet as typed, its position and its words");
+ok(M[0].sources[1].words[0].lang === "ja" && M[0].sources[1].raw === "19-20N 118-50E" && M[0].sources[1].zone === "I", "moments: the record in its own language, its position as written, its zone");
+near(M[0].apart[0].minutes, 5, 0, "moments: the sheet and the log, 5 minutes"); near(M[0].apart[0].nm, 7.6, 0.05, "moments: and 7.6 nm");
+near(M[0].apart[1].minutes, 19, 0, "moments: the sheet and FRUPAC, 19 minutes"); near(M[0].apart[1].nm, 3.46, 0.05, "moments: and 3.5 nm (2' of latitude, 3' of longitude at 19.4°)");
+ok(M[0].apart[2].nm === null && M[0].apart[2].minutes === -1, "moments: combinedfleet has no position, and is a minute before the sheet");
+ok(M[0].ours.relation === "hit" && /^a hit/.test(M[0].ours.words) && M[0].ours.note === "Takegawa Maru (1,930 GRT), TAMA-17", "moments: what we make of it is the pairing's relation and note");
+ok(E.pairMoments({ participants: [], fixes: [], events: [], pairs: [] }).length === 0, "moments: none without pairs");
+
+// The questions the records leave open: answers by source for the view, merged by their words for the board, each badged
+// by its source's kind, the weight kept where it differs; an inference keeps its own mark
+const claims = [
+  { question: "When was she hit?", answer: "1250 Item", weight: "record", source: "Haynsworth action report, p. 3", source_kind: "record", source_of: "us", cite: { ref: "a" } },
+  { question: "When was she hit?", answer: "1250 Item", weight: "record", source: "Haynsworth war diary, p. 3", source_kind: "record", source_of: "us", cite: { ref: "b" } },
+  { question: "When was she hit?", answer: "1245", weight: "recollection", source: "Irons, Phalanx", source_kind: "secondary", source_of: "", note: "told later", cite: { ref: "c" } },
+  { question: "Who flew it?", answer: "a Judy of the 210th", weight: "inference", source: "the two records together", source_kind: "record", source_of: "jp", cite: { ref: "d" } }];
+const Q = E.claimMoments(claims);
+ok(Q.length === 2 && Q[0].question === "When was she hit?", "questions: one moment per question, in order");
+ok(Q[0].columns.map(c => c.name + ":" + c.kind).join("|") === "Haynsworth action report:record|Haynsworth war diary:record|Irons:secondary", "questions: the answers by source, each with its source's kind");
+ok(Q[0].answers.length === 2 && Q[0].answers[0].cites.length === 2 && Q[0].answers[0].sources.length === 2, "board: two answers in the same words are one line with both citations");
+ok(Q[0].answers[0].mark === "record" && Q[0].answers[0].words === "record", "board: badged by the source's kind where the weight agrees");
+ok(Q[0].answers[1].mark === "secondary" && Q[0].answers[1].words === "secondary · as recollection" && Q[0].answers[1].notes[0] === "told later", "board: the weight kept where it differs from the kind");
+ok(Q[1].answers[0].mark === "inference" && Q[1].answers[0].words === "inference", "board: an inference keeps its own mark");
+ok(E.badge({ weight: "record", source_kind: "" }).mark === "record" && E.badge({ weight: "photo", source_kind: "secondary" }).words === "secondary · as photo", "badge: without a kind the weight; a photo in a later history");
+
 process.exit(failed ? 1 : 0);

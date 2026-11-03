@@ -104,8 +104,9 @@ const EV = (() => {
   // (Engage.hitKind) has its kind in the hit red. The DOM is rows of groups of cells, one group per nationality (the
   // press of a nationality its own group, since its voice is its source's kind, not a side): on a desktop the groups
   // are `display: contents`, so the cells sit in one grid under the headers; on a phone chron.css stacks each row's
-  // groups and names the record on each cell. Every entry links to its page (EV.cite). The other side is named as the
-  // records name it (Engage.nation: German, Italian, Japanese), never as a bloc.
+  // groups and names the record on each cell. Every entry links to its page (EV.cite). The chip under a column's name
+  // is the record's own words and its source's kind and nationality (Engage.columnChip: "morning report · record · US",
+  // "French press"); the other side is named as the records name it (Engage.nation), never as a bloc.
   const groupOf = c => (c.source_kind === "press" ? "press:" : "") + (c.of || "");
   const groupName = c => (c.source_kind === "press" ? [Engage.nation(c.of), "press"] : [Engage.nation(c.of)]).filter(Boolean).join(" ");
   function chronology(el, { rows, columns, tempo = "dated", nameOf = a => a } = {}) {
@@ -115,7 +116,7 @@ const EV = (() => {
     ordered.forEach(c => c.entries.forEach(e => colOf.set(e, c)));
     const corner = { clocked: "GMT", dated: "dated", monthly: "month" }[tempo] || "";
     const parts = [`<div class="chron-h chron-corner">${esc(corner)}</div>`];
-    ordered.forEach(c => parts.push(`<div class="chron-h" style="--bar:${c.colour}"><b>${esc(c.name)}</b><span class="chip">${esc([c.record, groupName(c)].filter(Boolean).join(" · "))}</span></div>`));
+    ordered.forEach(c => parts.push(`<div class="chron-h" style="--bar:${c.colour}"><b>${esc(c.name)}</b><span class="chip">${esc(Engage.columnChip(c))}</span></div>`));
     const hold = new Set();   // the columns a station's bar is running down
     rows.forEach(r => {
       parts.push(`<div class="chron-row"><div class="chron-d">${esc(r.label)}${r.day ? `<small>${esc(r.day)}</small>` : ""}</div>`);
@@ -153,5 +154,66 @@ const EV = (() => {
       ${e.source ? `<span class="src">${esc(e.source)}</span>` : ""} ${cite(e.cite, "src alone")}</div></div>`;
   }
 
-  return { esc, showTip, moveTip, hideTip, cite, sil, category, silWords, land, LAND_10M, LAND_50M, graticule, shape, outcomeMark, legendMark, chronology };
+
+  // ---------- the Sources view (guides/OPERATIONS-VIEWER.md 3 and 7.1; the look: guides/mockups/tama-17-working.html): one
+  // moment, every source that speaks to it, as a table whose columns are sources (sources.css). A pair moment
+  // (Engage.pairMoments) has the rows as typed, in GMT (ours), position as typed, placed (ours), the words, the page, and
+  // last, hatched, what we make of it: the pairing's relation and note from the boat's claims.yml; under the table the
+  // minutes and miles between the first source and each other, computed on the page (Engage.apart). A question moment
+  // (Engage.claimMoments) has its answers grouped by source, as typed with their notes, and their pages; the hatched row is
+  // left out, since the engagement's claims.yml weighs each answer and says nothing of the question as a whole. Each
+  // column's chips are its source's kind and nationality (Engage.sourceKindWord) and its clock. Nothing in a column is
+  // corrected to agree with another.
+  const chips = (...xs) => xs.filter(Boolean).map(x => `<span class="chip">${esc(x)}</span>`).join("");
+  const colHead = (name, sub, ...cs) => `<th><b>${esc(name)}</b>${sub ? esc(sub) : ""}${cs.some(Boolean) ? "<br>" : ""}${chips(...cs)}</th>`;
+  const none = words => `<span class="none">${esc(words)}</span>`;
+  const words = ws => ws.map(w => w.original ? `<span class="${w.lang === "ja" ? "ja" : "said typed"}" lang="${esc(w.lang)}">${esc(w.original)}</span><span class="tr">${esc(w.translation || "")}</span>`
+                            : w.typed ? `<span class="said typed">${esc(w.typed)}</span>` : w.ours ? `<span class="ours">${esc(w.ours)}</span>` : "").join("");
+  const dayOf = utc => { const ms = Engage.T(utc); return ms == null || Number.isNaN(ms) ? "" : `${Engage.day(ms)} ${new Date(ms).getUTCFullYear()}`; };
+  const deg = (v, pos, neg) => `${Math.abs(v).toFixed(3)} ${v >= 0 ? pos : neg}`;
+  const short = name => String(name || "").split(",")[0];
+  // the page as cited, with its item ("rg367-74802746/p16 ↗", "jacar:C08050103200 p23 ↗"; a catalogue address by its label)
+  const pageOf = c => c && c.href ? [c, ...(c.more || [])].map(x => `<a href="${esc(x.href)}" target="_blank" rel="noopener">${esc(/^https?:/.test(x.ref || "") ? x.label || "page" : x.ref || x.label)} ↗</a>`).join(" ") : cite(c);
+  function sources(el, m) {
+    const parts = [];
+    if (m.sources) {   // a pair: an attack and the record of the same minutes
+      const S = m.sources, n = S.length;
+      parts.push(`<h3><span><b>${esc(short(S[0].name))}, ${esc(m.attack)}</b> · ${esc(dayOf(m.utc))}: the same minutes, source by source</span><span>minutes and miles computed here</span></h3>`);
+      parts.push(`<div class="srcs"><table style="--n:${n}"><colgroup><col class="row-head"></colgroup><thead><tr><th></th>${S.map(s => colHead(s.name, s.sub, Engage.sourceKindWord(s.kind, s.of), s.zone ? `zone ${s.zone}` : s.utc ? "no zone written" : "no time")).join("")}</tr></thead><tbody>`);
+      parts.push(`<tr><th>as typed</th>${S.map(s => `<td>${s.typed ? `<span class="typed">${esc(s.typed)}</span>` : none("no time")}</td>`).join("")}</tr>`);
+      parts.push(`<tr class="same"><th>in GMT <span class="ours">(ours)</span></th>${S.map(s => `<td>${s.utc ? `${Engage.hhmm(Engage.T(s.utc))} GMT, ${esc(dayOf(s.utc))}${s.zone ? "" : ` <span class="ours">zone assumed</span>`}` : none("no time")}</td>`).join("")}</tr>`);
+      parts.push(`<tr><th>position as typed</th>${S.map(s => `<td>${s.raw ? `<span class="typed">${esc(s.raw)}</span>${s.role === "record" ? ` <span class="ours">(read from the original)</span>` : ""}` : s.lat != null ? `<span class="ours">a position placed by its entry</span>` : none("none")}</td>`).join("")}</tr>`);
+      parts.push(`<tr class="same"><th>placed <span class="ours">(ours)</span></th>${S.map(s => `<td>${s.lat != null ? `${deg(s.lat, "N", "S")} ${deg(s.lon, "E", "W")} · <i>${esc(s.basis || "placed")}</i>` : none("—")}</td>`).join("")}</tr>`);
+      parts.push(`<tr><th>the words</th>${S.map(s => `<td>${words(s.words) || none("none")}</td>`).join("")}</tr>`);
+      parts.push(`<tr><th>page</th>${S.map(s => `<td class="src">${pageOf(s.cite) || none("no page")}</td>`).join("")}</tr>`);
+      if (m.ours && (m.ours.words || m.ours.note)) parts.push(`<tr class="ours-row"><th>what we make of it</th><td colspan="${n}">${esc(m.ours.words)}${m.ours.note ? `. ${esc(m.ours.note)}` : ""} <span class="src">(the boat's claims.yml: ${esc(m.attack)} → ${esc(m.record)}, <i>${esc(m.ours.relation)}</i>)</span></td></tr>`);
+      parts.push("</tbody></table></div>");
+      const cross = m.apart.filter(x => x.minutes != null || x.nm != null).map(x => {
+        const a = S[x.a], b = S[x.b];
+        return `<span>${esc(short(a.name))}'s ${/sheet/.test(a.name) ? "sheet" : "entry"} ↔ ${esc(short(b.name))}'s ${b.role === "record" ? "record" : "entry"}: `
+          + [x.minutes != null && `<b>${x.minutes} min</b>`, x.nm != null && `<b>${x.nm.toFixed(1)} nm</b>`].filter(Boolean).join(", ")
+          + (b.zone ? "" : ` <span class="ours">(its zone assumed)</span>`) + "</span>";
+      });
+      if (cross.length) parts.push(`<div class="cross">${cross.join("")}</div>`);
+      else parts.push(`<p class="cap">The record gives no time and no position for this moment, so there is nothing to compute between the two.</p>`);
+    } else {   // a question: its answers by source
+      const C = m.columns, n = C.length;
+      parts.push(`<h3><span><b>${esc(m.question)}</b></span><span>each source's answer, as typed</span></h3>`);
+      parts.push(`<div class="srcs"><table style="--n:${n}"><colgroup><col class="row-head"></colgroup><thead><tr><th></th>${C.map(c => colHead(c.name, "", Engage.sourceKindWord(c.kind, c.of))).join("")}</tr></thead><tbody>`);
+      parts.push(`<tr><th>as typed</th>${C.map(c => `<td>${c.answers.map(a => `<div class="a"><b>${esc(a.answer)}</b>${a.note ? `<span class="n">${esc(a.note)}</span>` : ""}${a.weight && a.weight !== c.kind ? `<span class="ours">as ${esc(a.weight)}</span>` : ""}</div>`).join("")}</td>`).join("")}</tr>`);
+      parts.push(`<tr><th>page</th>${C.map(c => `<td class="src">${[...new Set(c.answers.map(a => pageOf(a.cite)))].filter(Boolean).join(" ") || none("no page")}</td>`).join("")}</tr>`);
+      parts.push("</tbody></table></div>");
+    }
+    el.classList.add("moment");
+    el.innerHTML = parts.join("");
+  }
+  // The claims board under the Sources view (7.1): each question's answers merged by their words (Engage.claimMoments),
+  // badged by the kind of evidence each is (Engage.badge; the marks in sources.css), with every citation.
+  function board(el, questions) {
+    el.classList.add("board");
+    el.innerHTML = questions.map(q => `<div class="q"><h3>${esc(q.question)}</h3><div class="ans">${q.answers.map(a =>
+      `<span class="w ${esc(a.mark)}">${esc(a.words || "unweighed")}</span><span class="a"><b>${esc(a.answer)}</b>${a.notes.length ? ` <span class="n">${a.notes.map(esc).join(" ")}</span>` : ""} <span class="src">${[...new Set(a.sources)].filter(Boolean).map(esc).join("; ")} ${a.cites.map(c => cite(c)).join(" ")}</span></span>`).join("")}</div></div>`).join("");
+  }
+
+  return { esc, showTip, moveTip, hideTip, cite, sil, category, silWords, land, LAND_10M, LAND_50M, graticule, shape, outcomeMark, legendMark, chronology, sources, board };
 })();

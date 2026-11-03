@@ -104,14 +104,7 @@ button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible
 .plate.secondary .nm { font-weight: 400; font-style: italic; }
 .plate .fate { color: var(--hit); font-size: 14.5px; }
 
-/* claims, story */
-.claims { padding: 0 14px; display: grid; gap: 14px; }
-.claim h3 { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
-.claim ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.claim li { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 0 12px; }
-.claim .w { color: var(--ink-3); font-style: italic; font-size: 15px; }
-.claim .a b { font-weight: 600; }
-.claim .n { color: var(--ink-2); font-size: 15.5px; }
+/* the story (the claims board is sources.css's) */
 .story { display: grid; gap: 4px; max-width: 95ch; color: var(--ink-2); font-size: 16px; }
 .story h2 { padding: 10px 0 2px; }
 .story p { margin: 0 0 6px; }
@@ -160,7 +153,7 @@ p.none { margin: 0; font-style: italic; color: var(--ink-3); }
 #tip .i { color: var(--ink-3); font-style: italic; margin-top: 4px; }
 #tip hr { border: 0; border-top: 1px solid var(--rule); }
 
-@media (max-width: 760px) { .oob { grid-template-columns: minmax(0, 1fr); } .claim li { grid-template-columns: minmax(0, 1fr); } .doors { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .oob { grid-template-columns: minmax(0, 1fr); } .doors { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 600px) {
   nav.nav { font-size: 16.5px; gap: 2px 13px; margin-bottom: 12px; }
   nav.nav .home { flex-basis: 100%; font-size: 18.5px; }

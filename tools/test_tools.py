@@ -551,6 +551,47 @@ class SourceKinds(unittest.TestCase):
         self.assertEqual(check_sources.check_kinds(records.load_yaml(records.RECORDS / "SOURCES.yml")), [])
 
 
+class EngagementPairs(unittest.TestCase):
+    """Build.pair: a pairing from a patrol's claims.yml (as Build.patrol reads it, with the Japanese record beside it) ->
+    the engagement's `pairs` entry for the Sources view: the attack, the boat, the record as written, and how they
+    go together. The page computes the minutes and miles between the two; the build stores none."""
+
+    def pairing(self, **ja):
+        record = {"id": "J03", "source": "jacar:C08050103200", "page": "p23", "ship": "Takegawa Maru", "convoy": "TAMA-17",
+                  "event": "torpedoed", "date": "1944-04-29", "time": "2201", "zone": "I", "lat_raw": "19-20N", "lon_raw": "118-50E",
+                  "original": "二九日二二時〇一分…竹川丸敵潜水艦ノ魚雷攻撃ヲ受ケ", "translation": "At 2201 on the 29th … torpedoed",
+                  "note": "Nittatsu Maru's own movement log", "local": "1944-04-29 2201 I", "utc": datetime(1944, 4, 29, 13, 1),
+                  "lat": 19 + 20 / 60, "lon": 118 + 50 / 60, "cite": {"ref": "jacar:C08050103200 p23", "href": "h", "label": "p. 23"}}
+        record.update(ja)
+        return {"attack": "Attack 1", "record": "J03", "relation": "hit", "note": "Takegawa Maru (1,930 GRT), TAMA-17",
+                "unit": "ss-385-bang/1", "attack_ref": "Attack 1", "attack_utc": datetime(1944, 4, 29, 12, 56), "ja": record}
+
+    def test_bangs_attack_1_and_takegawa_marus_torpedoing(self):
+        out = build_engagement.Build.pair(self.pairing(), {"ss-385-bang/1": "bang"})
+        self.assertEqual({k: v for k, v in out.items() if k != "record"},
+                         {"attack": "Attack 1", "boat": "bang", "utc": "1944-04-29T12:56Z", "relation": "hit", "note": "Takegawa Maru (1,930 GRT), TAMA-17"})
+        r = out["record"]
+        self.assertEqual((r["id"], r["event"], r["ship"], r["date"], r["time"], r["zone"]), ("J03", "torpedoed", "Takegawa Maru", "1944-04-29", "2201", "I"))
+        self.assertEqual((r["local"], r["utc"]), ("1944-04-29 2201 I", "1944-04-29T13:01Z"))   # 2201 I is 1301 GMT, five minutes after the attack
+        self.assertEqual((r["lat"], r["lon"], r["lat_raw"], r["lon_raw"]), (19.3333, 118.8333, "19-20N", "118-50E"))
+        self.assertEqual((r["lang"], r["original"][:5], r["translation"][:7]), ("ja", "二九日二二", "At 2201"))
+        self.assertEqual(r["cite"]["ref"], "jacar:C08050103200 p23")
+        self.assertNotIn("minutes", out)   # the arithmetic is the page's (Engage.apart), never stored
+
+    def test_a_loss_list_has_no_time_and_no_position(self):
+        # J10, the April loss table: dated to a month, no time, no position; the record keeps its month and nothing is invented
+        out = build_engagement.Build.pair(self.pairing(id="J10", event="loss_list", ship="", date="1944-04", time=None, zone=None, lat_raw="", lon_raw="",
+                                                       local="1944-04", utc=None, lat=None, lon=None), {"ss-385-bang/1": "bang"})
+        r = out["record"]
+        self.assertEqual((r["id"], r["date"], r["time"], r["zone"], r["local"], r["utc"], r["lat"], r["lon"]), ("J10", "1944-04", "", "", "1944-04", None, None, None))
+
+    def test_another_boats_attack_takes_that_boats_id(self):
+        x = self.pairing()
+        x.update({"attack": "ss-384-parche/1:Attack 2", "unit": "ss-384-parche/1", "attack_ref": "Attack 2", "relation": "possible"})
+        out = build_engagement.Build.pair(x, {"ss-385-bang/1": "bang", "ss-384-parche/1": "parche"})
+        self.assertEqual((out["attack"], out["boat"], out["relation"]), ("Attack 2", "parche", "possible"))
+
+
 class EngagementCheck(unittest.TestCase):
     def test_what_check_compares(self):
         # `check` compares each JSON file's text to text(obj): compact JSON, UTF-8 as is, dates as strings, one newline

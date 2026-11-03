@@ -64,12 +64,13 @@ def kit_views(root=KIT):
 def engagement_views(folder, page):
     """Each engagement at its depths (engagement.html?e=<id>&view=account|records|working): the account (the default)
     and the records (the map with the clock and the log, or the chronology) for every one, and the working where the
-    frame draws a figure there (an attack sheet's periscope, a convoy to close on), from its engagement.json."""
+    frame has something to show there (an attack sheet's periscope, a convoy to close on, a pairing of an attack with the
+    other side's record or a question the records leave open, for the Sources view), from its engagement.json."""
     out = []
     for x in load(folder / "index.json"):
         d = load(folder / x["id"] / "engagement.json")
         out += [f"{page}?e={x['id']}", f"{page}?e={x['id']}&view=records"]
-        if d.get("sheets") or d.get("convoys"):
+        if d.get("sheets") or d.get("convoys") or d.get("pairs") or d.get("claims"):
             out.append(f"{page}?e={x['id']}&view=working")
     return out
 

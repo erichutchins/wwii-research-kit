@@ -11,8 +11,9 @@ Inputs per patrol (records/boats/<boat>/patrol-N/):
   frupac.yml     notes read off the FRUPAC war maps, each tied to an attack (hand-edited)
 
 For each pairing it prints both times in GMT, the difference in minutes, and the distance between the two positions
-where both records give one. tools/build_engagement.py reads the same pairings for the engagement pages and fails on
-one that names an attack or a record that doesn't exist.
+where both records give one. tools/build_engagement.py reads the same pairings for the engagement pages (`pairs` in
+engagement.json) and fails on one that names an attack or a record that doesn't exist; the page's Sources view does this
+same arithmetic in the browser (site/engage.js, Engage.apart), tested against Attack 1 and J03 below (5 min, 7.6 nm).
 
 Japanese records are assumed to be in Tokyo time (zone I, -9), the time the Imperial Navy and its convoys kept.
 Nittatsu Maru's 0419 I torpedoing against BANG's Attack 4 at 0518 K (one minute apart) supports that. FRUPAC notes

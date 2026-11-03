@@ -29,7 +29,14 @@
 //   Engage.chronologyRows(events, tempo)        the chronology's spine: hours, days or months, each with its entries in order
 //   Engage.chronologyColumns(events, participants)   one column per record, the followed subjects first, each with its nationality and colour
 //   Engage.nation(code)                             a nationality code as the records give it -> its word ("de" -> "German"), never a bloc
+//   Engage.sourceKindWord(kind, of)   a source's kind and nationality in a chip's words ("record · US", "French press", "secondary")
+//   Engage.columnChip(column)         a chronology column's chip: the record's own words, then its source's kind and nationality
 //   Engage.hitKind(kind)              whether an entry's kind is a hit (named in the hit red on the chronology)
+//   Engage.apart(a, b)                {minutes, nm} between two placed records ({utc, lat, lon}): check_crossrefs.py's arithmetic
+//   Engage.pairMoments(D)             the Sources view's moments of a clocked frame: each attack-record pair with every source that speaks to it
+//   Engage.claimMoments(claims)       the questions the records leave open, each with its answers by source (the Sources view) and
+//                                     merged by their words (the claims board)
+//   Engage.badge(claim)               an answer's badge: its source's kind, and its weight where that differs
 const Engage = (() => {
   const ZONE_LETTERS_E = "ABCDEFGHIKLM", ZONE_LETTERS_W = "NOPQRSTUVWXY";
   // the half-hour zones the war diaries type (tools/check_track.py ZONES)
@@ -398,6 +405,7 @@ const Engage = (() => {
     const most = (es, f) => { const n = new Map(); es.forEach(e => n.set(f(e), (n.get(f(e)) || 0) + 1)); return [...n].sort((a, b) => b[1] - a[1])[0][0]; };
     all.forEach(c => {
       c.of = most(c.entries, e => e.of || ""); c.opposed = most(c.entries, e => !!e.opposed); c.source_kind = most(c.entries, e => e.source_kind || "");
+      c.source_of = most(c.entries, e => e.source_of || "");
       c.record = recordWords(c.entries.map(e => e.source), c.name);
     });
     const subjects = parts.map(p => all.find(c => c.participant === p && c.subject)).filter(Boolean);
@@ -412,7 +420,7 @@ const Engage = (() => {
     const order = [...new Set([...subjects, ...others].map(c => c.of))];
     others.sort((a, b) => order.indexOf(a.of) - order.indexOf(b.of) || a.first - b.first);
     others.forEach(c => { c.colour = !c.opposed && c.source_kind === "press" ? "var(--ink-3)" : "var(--ink)"; });   // the other side's claims, even in print, in ink
-    return [...subjects, ...others].map(c => ({ key: c.key, name: c.name, of: c.of, opposed: c.opposed, source_kind: c.source_kind, colour: c.colour,
+    return [...subjects, ...others].map(c => ({ key: c.key, name: c.name, of: c.of, opposed: c.opposed, source_kind: c.source_kind, source_of: c.source_of, colour: c.colour,
                                                 subject: c.subject, participant: c.participant ? c.participant.id : null, record: c.record, entries: c.entries }));
   }
   // A nationality as the records give it, in a word: the other side is named as the records name it (German, Italian,
@@ -420,6 +428,20 @@ const Engage = (() => {
   const NATIONS = { us: "US", jp: "Japanese", de: "German", it: "Italian", uk: "British", fr: "French", au: "Australian", nz: "New Zealand",
                     ca: "Canadian", nl: "Dutch", pl: "Polish", in: "Indian", za: "South African" };
   const nation = code => NATIONS[code] || (code ? String(code).toUpperCase() : "");
+  // A source's kind and whose it is, as a chip says it (2.4): "record · US", "intelligence · US", "assessment · US", "French
+  // press"; a later history, a reference, a recollection or a derivation by its kind alone, since its author's nationality is
+  // not a voice in the records. Never "Axis" or "Allied".
+  const KIND_ALONE = new Set(["secondary", "reference", "recollection", "derived"]);
+  function sourceKindWord(kind, of) {
+    const k = String(kind || ""), n = nation(of);
+    if (!k) return n;
+    if (k === "press") return n ? `${n} press` : k;
+    if (KIND_ALONE.has(k)) return k;
+    return n ? `${k} · ${n}` : k;
+  }
+  // The chip under a chronology column's name: the record's own words where its sources give them ("morning report"), then
+  // its source's kind and nationality where its entries carry a citation's kind; without one, the nationality alone.
+  const columnChip = c => [c.record, c.source_kind ? sourceKindWord(c.source_kind, c.source_of || c.of) : nation(c.of)].filter(Boolean).join(" · ");
   // The record in the sources' own words: of each source text's pieces (anything in brackets dropped, then split at
   // commas, colons and semicolons), the first that isn't the column's name or its head, a date, a page, a folio or a
   // volume ("morning report", "tactical reports", "operations record book"); the most common across the column, or ""
@@ -444,8 +466,98 @@ const Engage = (() => {
   const HIT_KINDS = new Set(["casualty", "shelled", "hit", "damage", "loss", "sank", "sunk", "torpedoed", "kill"]);
   const hitKind = kind => HIT_KINDS.has(String(kind || "").toLowerCase());
 
+  // ---------- the Sources view (guides/OPERATIONS-VIEWER.md 3 and 7.1): for a moment, every source that speaks to it, side by
+  // side, with the arithmetic between them done here and never stored.
+  // The minutes and nautical miles between two placed records, as tools/check_crossrefs.py prints them: `b` after `a` is
+  // positive; a value either lacks (no time, no position) is null. Each is {utc, lat, lon}.
+  const placed = x => !!x && x.lat != null && x.lon != null;
+  function apart(a, b) {
+    const ta = a && a.utc ? T(a.utc) : null, tb = b && b.utc ? T(b.utc) : null;
+    return { minutes: ta != null && tb != null ? Math.round((tb - ta) / 60000) : null,
+             nm: placed(a) && placed(b) ? nm([a.lon, a.lat], [b.lon, b.lat]) : null };
+  }
+  // A clocked frame's moments: each pairing of an attack with a Japanese record (`pairs`, from the boat's claims.yml). Its
+  // sources, in order: the boat's attack data sheet (its typed time, position and words; her narrative's attack entry where
+  // no sheet is transcribed), the record as written, then every entry of another kind of source (intelligence, an
+  // assessment, a later history, the press) within two hours that names the same ship or the same attack. A source is
+  // {role, name, sub, kind, of, zone, typed, utc, lat, lon, raw, basis, words: [{typed} | {original, lang, translation} |
+  // {ours}], cite}; `apart` holds the arithmetic between the first source and each other; `ours` is the pairing's relation
+  // and note, the one row in our voice besides the GMT and placed rows.
+  const NEAR_MS = 2 * 3600e3;
+  const zoneOf = local => { const m = /\s([A-Z]{1,2})$/.exec(String(local || "")); return m ? m[1] : ""; };
+  const RELATION = { hit: "a hit: the attack caused this record", miss: "a miss: the same moment, no damage",
+                     probable: "probable: time and place point to this attack, but another boat is credited or was attacking too",
+                     possible: "possible: the times fit, but more than one attack could explain the record",
+                     no_loss: "no loss: a claimed sinking with no matching entry in the loss list" };
+  function pairMoments(D) {
+    const byId = Object.fromEntries((D.participants || []).map(p => [p.id, p]));
+    const nameOf = id => byId[id] ? byId[id].name : id;
+    return (D.pairs || []).map(x => {
+      const ref = x.attack.replace(/ fired$/, ""), r = x.record, fixes = D.fixes || [];
+      const fix = fixes.find(f => f.who === x.boat && f.ref === x.attack) || fixes.find(f => f.who === x.boat && f.ref === ref) || {};
+      const sheet = D.sheets && D.sheets[x.boat] && D.sheets[x.boat][ref];
+      const narrative = (D.events || []).find(e => e.actor === x.boat && e.kind === "attack" && e.title === x.attack.replace(/ fired$/, " (narrative)"));
+      const t0 = sheet && sheet.torpedoes[0] || {}, w = sheet && sheet.words[0] || {};
+      const typedSheet = t0.time ? [t0.date, t0.time, t0.zone || zoneOf(fix.local)].filter(Boolean).join(" ") : fix.local || x.utc;
+      const attack = {
+        role: "attack", name: `${nameOf(x.boat)}, ${sheet ? "attack data sheet" : "narrative"}, ${ref}`, sub: byId[x.boat] && byId[x.boat].track ? "war patrol report" : "",
+        kind: (fix.cite && fix.cite.kind) || "record", of: (fix.cite && fix.cite.of) || (byId[x.boat] && byId[x.boat].of) || "", zone: t0.zone || zoneOf(fix.local),
+        typed: typedSheet, utc: fix.utc || x.utc, lat: fix.lat, lon: fix.lon, raw: fix.raw || "", basis: fix.fix || (fix.assumed ? "assumed" : fix.lat != null ? "reported" : ""),
+        words: sheet ? [w.description && { typed: w.description }, w.sunk && { typed: `Sunk: ${w.sunk}` }, w.damaged && { typed: `Damaged: ${w.damaged}` }].filter(Boolean)
+                     : [narrative && narrative.words && { typed: narrative.words }, fix.note && !narrative && { typed: fix.note }].filter(Boolean),
+        cite: (sheet && sheet.cite) || fix.cite || (narrative && narrative.cite) || null };
+      const record = {
+        role: "record", name: `${r.ship || r.convoy || "Japanese record"}, ${r.id}`, sub: [r.cite && r.cite.source_title, String(r.event || "").replace(/_/g, " ")].filter(Boolean).join(" · "),
+        kind: (r.cite && r.cite.kind) || "record", of: (r.cite && r.cite.of) || "jp", zone: r.zone || "",
+        typed: [r.date, r.time, r.zone].filter(Boolean).join(" "), utc: r.utc, lat: r.lat, lon: r.lon, raw: [r.lat_raw, r.lon_raw].filter(Boolean).join(" "),
+        basis: r.lat != null ? "reported" : "", words: [r.original ? { original: r.original, lang: r.lang || "ja", translation: r.translation } : r.translation && { typed: r.translation }, r.note && { ours: r.note }].filter(Boolean),
+        cite: r.cite || null };
+      const ships = String(r.ship || "").split(/;\s*/).filter(Boolean), boatName = nameOf(x.boat), at = T(x.utc);
+      const near = (D.events || []).filter(e => e.source_kind && e.source_kind !== "record" && !(e.record === r.id && e.origin === "japanese") && e.actor !== x.boat
+          && e.utc && Math.abs(T(e.utc) - at) <= NEAR_MS).filter(e => {
+        const text = [e.title, e.actor, e.ship, e.words, e.translation, e.note].map(v => String(v || "")).join(" ");
+        return ships.some(n => text.includes(n)) || (text.includes(ref) && text.includes(boatName));
+      }).map(e => ({
+        role: "near", name: e.title && e.title !== e.actor ? `${nameOf(e.actor)}, ${e.title}` : nameOf(e.actor), sub: head(e.source) || (e.cite && e.cite.source_title) || "",
+        kind: e.source_kind, of: e.source_of || "", zone: zoneOf(e.local), typed: e.local || "", utc: e.utc, lat: e.lat, lon: e.lon, raw: "",
+        basis: e.lat != null ? (e.basis || "placed") : "",
+        words: [e.original ? { original: e.original, lang: e.lang || "ja", translation: e.translation || e.words } : e.words && { typed: e.words }, e.note && { ours: e.note }].filter(Boolean),
+        cite: e.cite || null }));
+      const sources = [attack, record, ...near];
+      return { key: `${x.boat}:${x.attack}:${r.id}`, boat: x.boat, attack: ref, record: r.id, utc: x.utc, sources,
+               apart: sources.slice(1).map((s, i) => ({ a: 0, b: i + 1, ...apart(attack, s) })),
+               ours: { relation: x.relation, words: RELATION[x.relation] || x.relation, note: x.note || "" } };
+    });
+  }
+  // The questions the records leave open (claims.yml), each with its answers twice over: by source, for the Sources view
+  // (one column per record named in `source`, its answers as typed with their pages), and merged by their words, for the
+  // claims board (repetition isn't corroboration: two answers in the same words are one line with both citations).
+  function claimMoments(claims) {
+    const qs = new Map();
+    (claims || []).forEach(c => {
+      if (!qs.has(c.question)) qs.set(c.question, { question: c.question, columns: [], answers: [] });
+      const q = qs.get(c.question), src = head(c.source) || (c.cite && c.cite.source_title) || "?";
+      let col = q.columns.find(k => k.name === src);
+      if (!col) q.columns.push(col = { name: src, kind: c.source_kind || "", of: c.source_of || "", answers: [] });
+      col.answers.push(c);
+      const same = q.answers.find(a => a.answer === c.answer);
+      if (same) { same.cites.push(c.cite); same.sources.push(c.source || ""); if (c.note && !same.notes.includes(c.note)) same.notes.push(c.note); }
+      else q.answers.push({ answer: c.answer, notes: c.note ? [c.note] : [], sources: [c.source || ""], cites: [c.cite], ...badge(c) });
+    });
+    return [...qs.values()];
+  }
+  // An answer's badge (7.1): its source's kind, from the citation, in place of its own weight where the two agree; the weight
+  // kept beside it where they differ (a record used as a recollection, a later history quoting a record). An inference is
+  // ours and no source's, so it keeps its own mark.
+  function badge(c) {
+    const kind = c.source_kind || c.weight || "", w = c.weight || "";
+    const mark = w === "inference" ? "inference" : kind;
+    return { mark, words: w && w !== mark ? `${mark} · as ${w}` : mark };
+  }
+
   return { zoneHours, toUTC, T, coord, offset, nm, posAt, observedPath, closing, fireControl, apparentSize, sky, localNoon, light, story, hhmm, day,
            gyroOf, coursesOf, offsetOf, firingTimes, torpedoKnots, attackSheet, attackAt, tdcAt,
-           tempo, chronologyRows, chronologyColumns, recordWords, hitKind, head, nation };
+           tempo, chronologyRows, chronologyColumns, recordWords, hitKind, head, nation, sourceKindWord, columnChip,
+           apart, pairMoments, claimMoments, badge };
 })();
 if (typeof module !== "undefined") module.exports = Engage;

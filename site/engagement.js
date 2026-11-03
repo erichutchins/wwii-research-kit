@@ -5,7 +5,8 @@
 // subjects, the span, the map with every mark shown, and three doors. The records is the chart-room sheet: the map
 // with its clock and lanes and the two-sided log when the frame is clocked, the chronology when it is dated, the order
 // of battle and the story; `&at=<ISO minute>` sets its clock. The working is where our voice leads, labelled: the
-// periscope, closing in, the open questions and the sources. Each is a part of this one page, shown by the address.
+// periscope, closing in, the Sources view (one moment at a time, source by source), the claims board and how this was
+// read. Each is a part of this one page, shown by the address.
 (async () => {
   const E = Engage, esc = EV.esc;
   const index = await fetch(RECORDS + "engagements/index.json").then(r => r.json());
@@ -397,11 +398,23 @@
   }
   function updateClosing() { if (cx) d3.select("#closing-cursor").attr("x1", cx(t)).attr("x2", cx(t)); }
 
-  // ---------- what the records leave open
+  // ---------- the Sources view and the claims board (guides/OPERATIONS-VIEWER.md 3, 4.3, 7.1): one table per moment. A
+  // moment is a pairing of an attack with a Japanese record (the boat's claims.yml, `pairs`), or a question the
+  // engagement's claims.yml leaves open; the computation is Engage's, the drawing EV's.
+  const QUESTIONS_BY = E.claimMoments(D.claims);
+  const MOMENTS = [...E.pairMoments(D), ...QUESTIONS_BY];
+  function drawMoments() {
+    const card = document.getElementById("moments-card");
+    card.hidden = !(IN("working") && MOMENTS.length);
+    if (card.hidden) return;
+    const el = document.getElementById("moments");
+    el.innerHTML = "";
+    MOMENTS.forEach(m => { const div = document.createElement("div"); el.appendChild(div); EV.sources(div, m); });
+    document.getElementById("moments-sub").textContent = `${n(MOMENTS.length, "moment")}: each column is one source, as typed, in its own language and on its own clock`;
+  }
   function drawClaims() {
     document.getElementById("claims-card").hidden = !(IN("working") && D.claims.length);
-    document.getElementById("claims").innerHTML = d3.groups(D.claims, c => c.question).map(([q, cs]) => `<div class="claim"><h3>${esc(q)}</h3><ul>${cs.map(c =>
-      `<li><span class="w">${esc(c.weight)}</span><span><span class="a"><b>${esc(c.answer)}</b></span>${c.note ? ` <span class="n">${esc(c.note)}</span>` : ""} <span class="src">${esc(c.source || "")}</span> ${EV.cite(c.cite)}</span></li>`).join("")}</ul></div>`).join("");
+    if (D.claims.length) EV.board(document.getElementById("claims"), QUESTIONS_BY);
   }
 
   // ---------- order of battle: the kit's silhouettes, true relative size where the library has the class
@@ -462,27 +475,34 @@
 
   // ---------- the depths: the switch under the breadcrumb, with each depth's count; the account's card and doors
   // (guides/OPERATIONS-VIEWER.md, 4.1). Every number is counted from the frame's own JSON, never written in.
-  const refStem = e => String(e.cite?.ref || "").split("/")[0].replace(/\s+p\d.*$/, "");
-  // the record an entry was read from: the record its source names (the text before the first comma or bracket), or,
-  // for an entry built from a boat's own files (no source written: its patrol report) or a Japanese item, its citation's
-  // item; a boat's track, depths and narrative share one report and count once
-  const recordKey = e => E.head(e.source) || refStem(e) || String(e.actor || "");
+  // the item an entry was read from: its citation's stem (the archive's item: a microfilm roll, a JACAR reference, a
+  // catalog page without its page number), so that a boat's track, depths, sheets and narrative, all one report, count
+  // once; an entry with no citation counts by the record its source names
+  const refStem = e => { const r = String(e.cite?.ref || ""); return /^https?:/.test(r) ? r.replace(/[?#].*$/, "") : r.split("/")[0].replace(/\s+p\d.*$/, ""); };
+  const recordKey = e => refStem(e) || E.head(e.source) || String(e.actor || "");
   const ITEM = { jacar: "JACAR ", combinedfleet: "combinedfleet.com, " };
   const recordName = e => E.head(e.source) || (byId[e.actor] && /^rg\d/.test(refStem(e)) ? `${nameOf(e.actor)}'s report` : refStem(e).replace(/^(\w+):/, (m, k) => ITEM[k] || k + " ")) || nameOf(e.actor);
-  const RECS = new Map();   // key -> name
+  const RECS = new Map();   // item -> name
   D.events.forEach(e => { if (!RECS.has(recordKey(e))) RECS.set(recordKey(e), recordName(e)); });
-  const LANGS = 1 + (D.events.some(e => e.original) ? 1 : 0);
+  // "records" only for the items whose source is a record (SOURCES.yml's kind, through the citation); every other kind
+  // of source is counted apart, in the guide's order ("5 records · 1 intelligence · 2 secondary"); never "Axis", "Allied"
+  const KIND_ORDER = ["record", "intelligence", "press", "assessment", "recollection", "secondary", "reference", "derived"];
+  const ITEMS = new Map();   // source kind -> the items of that kind
+  D.events.forEach(e => { const k = e.source_kind || "unsourced"; if (!ITEMS.has(k)) ITEMS.set(k, new Set()); ITEMS.get(k).add(recordKey(e)); });
   const n = (k, one, many = one + "s") => `${k} ${k === 1 ? one : many}`;
+  const kindsLine = [...ITEMS].sort((a, b) => KIND_ORDER.indexOf(a[0]) - KIND_ORDER.indexOf(b[0]))
+    .map(([k, items]) => k === "record" ? n(items.size, "record") : `${items.size} ${k}`).join(" · ");
+  const LANGS = 1 + (D.events.some(e => e.original) ? 1 : 0);
   const SHEETS = Object.entries(D.sheets || {}).flatMap(([actor, byRef]) => Object.keys(byRef).map(ref => ({ actor, ref })));
-  const QUESTIONS = new Set(D.claims.map(c => c.question)).size;
+  const QUESTIONS = QUESTIONS_BY.length;
   const CLOSING = !!(Object.keys(D.convoys).length && series.length);
-  const working = [SHEETS.length && n(SHEETS.length, "attack sheet"), CLOSING && "closing in", QUESTIONS && n(QUESTIONS, "open question"), SOURCES_HTML && "sources"].filter(Boolean);
-  const recordsLine = `${n(D.events.length, "entry", "entries")} · ${n(RECS.size, "record")} · ${n(LANGS, "language")}`;
+  const working = [SHEETS.length && n(SHEETS.length, "attack sheet"), CLOSING && "closing in", MOMENTS.length && n(MOMENTS.length, "moment"), QUESTIONS && n(QUESTIONS, "open question"), SOURCES_HTML && "sources"].filter(Boolean);
+  const recordsLine = `${n(D.events.length, "entry", "entries")} · ${kindsLine} · ${n(LANGS, "language")}`;
   document.getElementById("depths").innerHTML = [["account", "The account", "one screen, nothing moves"], ["records", "The records", recordsLine],
     ["working", "The working", working.length ? working.join(" · ") : "nothing to show yet"]]
     .map(([v, name, line]) => `<a href="${esc(address(id, v))}"${IN(v) ? ' aria-current="page"' : ""}>${name}<small>${esc(line)}</small></a>`).join("");
   document.getElementById("working-none").hidden = !(IN("working") && !working.length);
-  document.getElementById("working-none").textContent = "The working has nothing to show for this engagement yet: no attack sheet is transcribed, there is no convoy to close on, the records leave no question listed, and the story has no sources section.";
+  document.getElementById("working-none").textContent = "The working has nothing to show for this engagement yet: no attack sheet is transcribed, there is no convoy to close on, no attack is paired with a record of the other side, the records leave no question listed, and the story has no sources section.";
 
   if (IN("account")) {
     // the outcome, in the records' terms: the story's Outcome section, its citations links as in the story
@@ -533,15 +553,15 @@
     const journeys = PARTS.map(journey).filter(Boolean);
     const recordNames = [...RECS.values()], shown = recordNames.slice(0, 6);
     document.getElementById("doors").innerHTML = `
-      <a class="door" href="${esc(address(id, "records"))}"><b>The records</b><span class="n"><span class="typed">${D.events.length}</span> ${D.events.length === 1 ? "entry" : "entries"} from ${n(RECS.size, "record")} in ${n(LANGS, "language")}${D.fixes.length ? `, and <span class="typed">${D.fixes.length}</span> ${D.fixes.length === 1 ? "fix" : "fixes"}` : ""}</span>
+      <a class="door" href="${esc(address(id, "records"))}"><b>The records</b><span class="n"><span class="typed">${D.events.length}</span> ${D.events.length === 1 ? "entry" : "entries"} from ${esc(kindsLine)} in ${n(LANGS, "language")}${D.fixes.length ? `, and <span class="typed">${D.fixes.length}</span> ${D.fixes.length === 1 ? "fix" : "fixes"}` : ""}</span>
         <span class="list">${esc(shown.join(" · "))}${recordNames.length > shown.length ? ` · and ${recordNames.length - shown.length} more` : ""} · ${PLAYS || CLOCKED ? "the map with the clock, one lane per subject, and the two-sided log" : "the map, and the chronology by the day"}</span></a>
       <a class="door" href="${esc(address(id, "working"))}"><b>The working</b><span class="n">${working.length ? esc(working.join("; ")) : "nothing to show yet"}</span>
-        <span class="list">${esc([SHEETS.length && `at the periscope: ${SHEETS.map(s => `${nameOf(s.actor)} ${s.ref}`).join(", ")}`, CLOSING && "closing in", QUESTIONS && "what the records leave open", SOURCES_HTML && "how this was read"].filter(Boolean).join(" · ")) || "no attack sheet, no closing in, no open question, no sources section"}</span></a>
+        <span class="list">${esc([SHEETS.length && `at the periscope: ${SHEETS.map(s => `${nameOf(s.actor)} ${s.ref}`).join(", ")}`, CLOSING && "closing in", MOMENTS.length && `source by source: ${n(MOMENTS.length, "moment")}`, QUESTIONS && "what the records leave open", SOURCES_HTML && "how this was read"].filter(Boolean).join(" · ")) || "no attack sheet, no closing in, no pair, no open question, no sources section"}</span></a>
       <div class="door"><b>Journeys</b><span class="n">each subject's own record, before and after</span>
         <span class="list">${journeys.length ? journeys.join(" · ") : "no subject here has a page of its own yet"}</span></div>`;
   }
 
-  drawOOB(); drawClaims(); drawLog(); drawChronology(); drawStatic(); drawLanes(); drawClosing();
+  drawOOB(); drawMoments(); drawClaims(); drawLog(); drawChronology(); drawStatic(); drawLanes(); drawClosing();
   if (AT != null && !Number.isNaN(AT)) { t = Math.max(t0, Math.min(t1, AT)); drawFrame(); highlightRow(t); } else drawFrame();
   new ResizeObserver(() => { if (D.box) drawStatic(); drawLanes(); drawClosing(); drawFrame(); }).observe(document.querySelector(".wrap"));
 })();
