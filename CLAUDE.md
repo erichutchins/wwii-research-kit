@@ -130,6 +130,9 @@ an engagement, a convoy, a patrol's japanese.yml or claims.yml, or any track, `b
 
 ## Pages
 
+Where the pages are going (subjects, frames, the three depths; the design, checked against TAMA-17 and the 67th CA (AA)'s
+Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page or a view.
+
 - Every mark links to its source page (the scan viewer falls back to the archive's URL from
   `records/scans.json`).
 - Silhouettes are data, not drawing code: shapes in `records/silhouettes/silhouettes.yml`; `site/silhouettes.js`
