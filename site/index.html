@@ -14,7 +14,8 @@
 </head>
 <body>
 <div class="page">
-  <nav class="nav" aria-label="The kit"><a class="home" href="index.html" aria-current="page">WWII research kit</a><span class="grp"><a class="lbl" href="#pacific">Pacific</a><a href="convoys.html">Convoys</a><a href="lanes.html">Sea lanes</a><a href="haynsworth.html">Haynsworth</a><a href="seabees.html">Seabees</a><a href="dives.html">Dives</a></span><span class="grp"><a class="lbl" href="#europe">Algiers to Germany</a><a href="#stage-algiers">Algiers</a><a href="#stage-sicily">Sicily</a><a href="#stage-italy">Italy</a><a href="#stage-france">France</a><a href="#stage-germany">Germany</a><a href="army.html">Army units</a></span><span class="grp ref"><a class="lbl" href="#ships">Every theater</a><a href="patrols.html">Ship tracks</a><a href="engagement.html">Engagements</a></span><span class="grp"><a class="lbl" href="#reference">Reading the records</a><a href="zones.html">Time zones</a><span class="sub"><span class="lbl">Grids:</span><a href="jgrid.html">Japanese</a><a href="grids.html">US Army</a><a href="german.html">German</a></span><span class="sub"><span class="lbl">How it worked:</span><a href="torpedo.html">Torpedoes</a></span><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
+  <nav class="nav" aria-label="The kit" data-nav></nav>
+  <script src="nav.js"></script>
 
   <header class="mast">
     <h1>Charting WWII History</h1>
@@ -141,7 +142,11 @@
       <a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/MORNING-REPORTS.md">Army morning reports</a>,
       <a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/MUSTER-ROLLS.md">Navy muster rolls</a>,
       <a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/ENGAGEMENTS.md">building an engagement from both sides</a>,
-      <a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/JAPANESE-GRID.md">the Japanese grid</a> and
+      <a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/JAPANESE-GRID.md">the Japanese grid</a>,
+      <a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/NAVAL-GRID.md">the Kriegsmarine's naval squares</a>,
+      <a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/BEZUGSPUNKTE.md">the German Army's reference points</a>,
+      <a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/GOOGLEBOOKS.md">Google Books</a>,
+      <a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/OPERATIONS-VIEWER.md">where the pages are going</a> and
       <a href="https://github.com/erichutchins/wwii-research-kit/blob/main/guides/FLEET.md">finding a boat's pack-mates</a>.</p>
   </section>
 
@@ -176,8 +181,8 @@
   <div class="end"></div>
 </div>
 <script src="config.js"></script>
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
 <script src="mapzoom.js"></script>
 <script src="scalebar.js"></script>
 <script src="engage.js"></script>

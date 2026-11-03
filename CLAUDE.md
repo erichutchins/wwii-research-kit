@@ -36,7 +36,9 @@ For film of a place and date, follow the skill `find-film` (rules in `records/fi
 - `reference/lanes/lanes.yml`: the convoy lanes' ports and (assumed) waypoints, which a convoy's `route:` runs through.
 - `reference/glossary.yml`: the terms the pages explain on hover, each citing its source (`tools/build_glossary.py` writes
   `glossary.json`, which `site/glossary.js` reads).
-- `site/`: static pages, D3 v7 from a CDN, no build step. `config.js` holds the paths.
+- `site/`: static pages, no build step. D3 7.9.0, topojson-client, js-yaml and suncalc come from a CDN, each at the one
+  pinned address listed at the top of `config.js` (a page's `<script src>` must match it exactly); `config.js` also holds
+  the paths.
 - `sources/`: downloaded scans and caches. **Git-ignored. Never commit.**
 
 ## Transcription rules
@@ -131,7 +133,9 @@ Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page
   words (`.typed`, `.mono`, `code`; `--typed`), Shippori Mincho for Japanese (`[lang="ja"]`; the original before our
   translation). Fonts are in `site/fonts/fonts.css`. Special Elite only for the front page's masthead. No capitals for
   labels: italics instead.
-- Every page has the same navigation bar, at the top of its header (copy it from any page).
+- Every page has the same navigation bar, at the top of its header: an empty `<nav class="nav" aria-label="The kit"
+  data-nav></nav>` followed by `<script src="nav.js"></script>`, which `site/nav.js` fills as the page is parsed (so
+  nothing shifts) and marks the current page on. The bar's links live in `nav.js` alone: a new page is added there, once.
 - Colours are CSS variables in `site/viz.css` with light and dark values. The three categorical
   colours were checked for colour-blind separation: don't add hues without checking again. The engagement pages
   (`engagement.html`, `convoys.html`, `lanes.html`) share `site/engage.css`, whose boat colours were checked with the

@@ -138,7 +138,8 @@
 <body class="viz-root">
 <div class="app">
   <header>
-    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a class="lbl" href="index.html#pacific">Pacific</a><a href="convoys.html">Convoys</a><a href="lanes.html">Sea lanes</a><a href="haynsworth.html">Haynsworth</a><a href="seabees.html">Seabees</a><a href="dives.html" aria-current="page">Dives</a></span><span class="grp"><a class="lbl" href="index.html#europe">Algiers to Germany</a><a href="index.html#stage-algiers">Algiers</a><a href="index.html#stage-sicily">Sicily</a><a href="index.html#stage-italy">Italy</a><a href="index.html#stage-france">France</a><a href="index.html#stage-germany">Germany</a><a href="army.html">Army units</a></span><span class="grp ref"><a class="lbl" href="index.html#ships">Every theater</a><a href="patrols.html" id="to-map">Ship tracks</a><a href="engagement.html">Engagements</a></span><span class="grp"><a class="lbl" href="index.html#reference">Reading the records</a><a href="zones.html">Time zones</a><span class="sub"><span class="lbl">Grids:</span><a href="jgrid.html">Japanese</a><a href="grids.html">US Army</a><a href="german.html">German</a></span><span class="sub"><span class="lbl">How it worked:</span><a href="torpedo.html">Torpedoes</a></span><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
+    <nav class="nav" aria-label="The kit" data-nav></nav>
+    <script src="nav.js"></script>
     <div>
       <h1>USS BANG (SS-385) — dive profile</h1>
       <p>BANG's depth from the war patrol reports — every dive, depth order and depth charge the captains logged —
@@ -207,7 +208,7 @@
 </dialog>
 
 <script src="config.js"></script>
-<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="dives.js"></script>
 <script src="glossary.js"></script>
 <script src="footer.js"></script>

@@ -129,7 +129,8 @@
 
 <div class="wrap">
   <header>
-    <nav class="nav" aria-label="The kit"><a class="home" href="index.html">WWII research kit</a><span class="grp"><a class="lbl" href="index.html#pacific">Pacific</a><a href="convoys.html">Convoys</a><a href="lanes.html">Sea lanes</a><a href="haynsworth.html">Haynsworth</a><a href="seabees.html">Seabees</a><a href="dives.html">Dives</a></span><span class="grp"><a class="lbl" href="index.html#europe">Algiers to Germany</a><a href="index.html#stage-algiers">Algiers</a><a href="index.html#stage-sicily">Sicily</a><a href="index.html#stage-italy">Italy</a><a href="index.html#stage-france">France</a><a href="index.html#stage-germany">Germany</a><a href="army.html">Army units</a></span><span class="grp ref"><a class="lbl" href="index.html#ships">Every theater</a><a href="patrols.html">Ship tracks</a><a href="engagement.html" aria-current="page">Engagements</a></span><span class="grp"><a class="lbl" href="index.html#reference">Reading the records</a><a href="zones.html">Time zones</a><span class="sub"><span class="lbl">Grids:</span><a href="jgrid.html">Japanese</a><a href="grids.html">US Army</a><a href="german.html">German</a></span><span class="sub"><span class="lbl">How it worked:</span><a href="torpedo.html">Torpedoes</a></span><a href="silhouettes.html">Silhouettes</a></span><a href="relatives.html">Researching a relative</a></nav>
+    <nav class="nav" aria-label="The kit" data-nav></nav>
+    <script src="nav.js"></script>
     <nav class="crumb" id="crumb" aria-label="Where this falls in Algiers to Germany" hidden></nav>
     <div class="eyebrow" id="eyebrow"></div>
     <h1 id="title">Engagements</h1>
@@ -219,8 +220,8 @@
 <div id="tip" hidden></div>
 
 <script src="config.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
 <script src="silhouettes.js"></script>
 <script src="scalebar.js"></script>
 <script src="mapzoom.js"></script>
