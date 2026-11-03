@@ -7,7 +7,9 @@ them; the sources each claim rests on; and three depths of reading, from a clean
 changes a transcription rule. Everything here is checked against two cases: convoy TAMA-17 in the Luzon Strait, 29–30
 April 1944 (three patrol reports, a Japanese escort diary and a ship's movement log, the FRUPAC overlays, two secondary
 sources), and the Medical Detachment, 67th Coast Artillery (AA), from Paterson, New Jersey in September 1942 to
-Hüttenfeld, Germany in May 1945.
+Hüttenfeld, Germany in May 1945. Four screens of it are drawn, from the records' own values, in `guides/mockups/`
+(open them in a browser; nothing in them is live): the TAMA-17 account and its Sources view for Attack 1, the Medical
+Detachment's account, and Venafro's chronology.
 
 The rules of `CLAUDE.md`, `guides/METHODS.md` and `guides/ENGAGEMENTS.md` stand throughout: cite every entry, keep each
 record's own structure, compute rather than store, label every assumption, repetition isn't corroboration, no numbers on
@@ -25,7 +27,8 @@ shows where the records don't fit that sentence.
 | Hand-built pages beside the generic one | `haynsworth.html` (1,146 lines of its own script), `algiers.html` (479), each with steps, a day-column timeline, scale drawings, an evidence board; `chapter.js` names them as the engagement's "own page" | The generic page has no place for a story told in steps, a chronology in day columns, or a frame-specific working figure, so each one grew a page |
 | Four side-list apps for one idea | `patrols.html`, `army.html`, `seabees.html`, `convoys.html` each draw one subject's own record: a map, a date strip, a list of its entries, a scan viewer. Two families of CSS tokens (`viz.css` `--text-primary`; `engage.css` `--ink`), bridged by `entry.css` | The subject's own page is one page type with record-specific panels, not four |
 | The nav lists a ship | The bar on every page: theatres (Pacific), places (Algiers, Sicily, …), record types (Ship tracks, Army units), one ship (Haynsworth), one view (Dives), and the explainers | There is no navigation model, so the bar is a list of what exists. It can't take a tenth engagement or a second destroyer |
-| `side` does three jobs | `us, jp, allied, axis, de, press, geo`: a nationality, a belligerent, a kind of source (the press), and "a place" | The press is not a side. A newspaper, a radio-intelligence overlay, a postwar assessment and an escort's diary are *kinds of source*, each with its own weight, and the page should show them as such |
+| `side` does three jobs | `us, jp, allied, axis, de, press, geo`: a nationality, a belligerent, a kind of source (the press), and "a place" | The press is not a side. A newspaper, a radio-intelligence overlay, a postwar assessment and an escort's diary are *kinds of source*, each with its own weight, and the page should show them as such. And a coalition word is vaguer than the records, which always name a navy, a corps, a squadron |
+| The units' names are opaque | "Medical Detachment, 67th CA (AA) / 894th AAA AW Bn", "Btry D, 106th AAA AW Bn (SP)": the designations are the records', and with the family's names kept out of the public repository they are the only names there are | A reader needs to be told, in a line, what each unit was before its designation means anything |
 | The other side's words are typed two ways | A Japanese entry has `original` and `translation`; a German one quotes the original inside `words` with the translation in parentheses | One rule for every language the records speak |
 | The reconstruction sits inside the record | The convoy's observed path, "closing in", the estimated kamikaze path, the periscope view are drawn from the records but are ours; they share the page with the entries as typed | The reader needs to see at a glance which marks are the record's and which are our working. The encodings (solid, hatched, dotted) carry this on the map; the page's structure doesn't yet |
 | Organization lives in three shapes | `army/relations.csv` (part of, attached to, under command, took part), `seabees/parts.csv` (echelons and sections), a convoy's `ships:` list, ComSubPac's task organization | One idea, dated membership of one subject in another, each row cited |
@@ -58,7 +61,15 @@ build.
 **People are not subjects here.** The kit's rule stands: the records are the units', no one is followed by name, and
 names the records carry stay as written in the entry that carries them. A family's own site attaches a person to a
 subject by date (`[[who:…]]` in `site/links.js`, `army.html?who=`); the model leaves that seam where it is and puts
-nothing on the kit's side of it.
+nothing on the kit's side of it. The family site is not built yet; the seam is reserved, not used.
+
+**Name a unit first by what it was.** With people's names out of the public records, a unit's designation is its only
+name, and "Medical Detachment, 67th CA (AA) / 894th AAA AW Bn" tells a reader nothing. Each subject gets a `plain` line
+in our voice (in `units.csv`, `ship.yml`, `convoy.md`): what kind of thing it was and what it did, in a sentence a reader
+without the Army's vocabulary can follow (*the aid men of an anti-aircraft regiment, a section with each battalion*;
+*a fleet submarine of the Balao class, on her first patrol*; *a Takao–Manila convoy of seventeen ships and escorts*). The
+pages lead with the plain line as the eyebrow and give the designation as the title; lists and breadcrumbs show both.
+The designation stays exactly as the records write it, and a redesignation is an organization row, not a second name.
 
 ### 2.2 Movements, stations and events
 
@@ -115,8 +126,15 @@ source entry there** (not per row): what kind of source it is, and whose.
 
 and `of`: the nationality of the source's author (`us`, `jp`, `de`, `it`, `uk`, `fr`, …), which is what today's `side`
 mostly means. The build then tags every entry, claim, station and fix with its source's kind and nationality through
-its citation, and `side` on an entry becomes what it should be in a frame: which belligerent the actor fought for
-(`allied`, `axis`), with `press` and `geo` retired. `check_sources.py` fails on a source without a kind.
+its citation. `side` goes altogether: an entry's actor is a subject (whose nationality the registry knows) or a name as
+the record gives it with its nationality beside it, and who faced whom in a frame follows from its subjects.
+`check_sources.py` fails on a source without a kind.
+
+Not "Axis" and "Allied". They are the period's own words for the coalitions and historians still use them, so they are
+not dated; but they are coalition words, and the records are never that vague: the other side in these records is the
+Imperial Navy's 1st Surface Escort Division, XIV Panzer Corps, Luftflotte 2, an Italian bulletin. The pair is also wrong
+at the edges the records reach: the French at Oran in November 1942, Italy after September 1943. The rule already
+says it: name the other side as the records do. So a nationality, as the record gives it, and never a bloc.
 
 This gives the pages two **voices**, and the type already has them (`CLAUDE.md`, Pages):
 
@@ -430,7 +448,8 @@ Additive, and small; nothing is re-transcribed.
 |---|---|---|
 | `kind` and `of` on every source entry | `records/SOURCES.yml` (99 entries); `check_sources.py` fails on a missing kind | the voices (§2.4): the build tags every row through its citation |
 | `original`, `lang`, `translation` on every entry whose record isn't in English; `words` keeps the translation for a German entry until it is moved | `events.yml` | one rule for every language; the German entries at Venafro and Neuburg move first |
-| `side` restricted to the belligerent (`allied`, `axis`); `press` and `geo` retired | `events.yml`, `build_engagement.py`'s `SIDES` | the press is a source kind; a place is a position, not a side |
+| `side` retired; an actor's nationality `of` on an entry whose actor isn't a subject | `events.yml`, `build_engagement.py`'s `SIDES` | the press is a source kind; a place is a position; a bloc is vaguer than the record |
+| `plain` on every subject: what it was, in a line, ours | `army/units.csv`, `seabees/units.csv`, `ship.yml`, `convoy.md` | the opaque designations get a name a reader can follow (§2.1) |
 | a relations file beside each dataset read into one registry: `convoys/<id>` ships, `seabees/parts.csv`, ComSubPac's task organization, a pack's boats | the build (`subjects.json`, generated) | organizations (§2.1); the subject page's card |
 | `subjects.json`: every subject across `boats/`, `ships/`, `army/units.csv`, `seabees/units.csv`, `convoys/`, `commands/`, with kind, periods, status and relations | generated by the build; `ships.json` is its first half | one registry for the subject page, the breadcrumb and the lint's deep links |
 | `leads.yml` beside `claims.yml` (and in `army/`, `seabees/`): `statement`, `said_by`, `searched`, `still`, `ref` | hand-edited; the README tables move into it | the working shows them; a lead resolved becomes a row |
@@ -450,7 +469,7 @@ explainers; the Europe chapter's stages.
 
 **Goes, once replaced** (the kit's rule: a file converted is converted for good): `haynsworth.html` and `algiers.html`
 as pages (their steps and figures become their engagements' story and working); the per-page nav fragment; `viz.css`'s
-token set; `OWN_PAGE` and the Europe-only test in `chapter.js`; `side: press` and `side: geo`.
+token set; `OWN_PAGE` and the Europe-only test in `chapter.js`; `side` and its `SIDES` vocabulary.
 
 Each phase deletes something and ends with the checks green (`lint.py`, `smoke.py`, `check_builds.sh`,
 `test_tools.py`, `engage.test.js`), the lint's REF002 rewritten for the new addresses, and every page looked at in
@@ -461,7 +480,7 @@ light and dark on a desktop and a phone.
 | 1. One skin | one token set and one nav fragment on every page; `entry.css`'s bridge becomes the only set | `viz.css`'s tokens; the seventeen copies of the nav | the two page families were one |
 | 2. The depths | the account on `engagement.html` (static map, outcome, doors) with the present page as its records depth, `?view=`; the working gathers the claims, the computed layers, the figures | nothing yet | progressive disclosure on the existing data |
 | 3. Chronology | the day-column chronology as a shared view; tempo derived; the dated frames (Venafro, Algiers, Remagen) lead with it | `algiers.html`'s own timeline | the clock is one view's device |
-| 4. Voices | `kind`/`of` in SOURCES.yml; entries tagged through citations; `original`/`lang`/`translation` for German; the Sources view for TAMA-17 and Algiers | `side: press`, `side: geo` | sources as columns; press beside the records |
+| 4. Voices | `kind`/`of` in SOURCES.yml; entries tagged through citations; `original`/`lang`/`translation` for German; the Sources view for TAMA-17 and Algiers | `side` and `SIDES` | sources as columns; press beside the records; the other side named as the records name it |
 | 5. Stories folded in | `[[step:]]`; Haynsworth's and Algiers' figures as working panels of their engagements | `haynsworth.html`, `algiers.html`, `OWN_PAGE` | one engagement page for every tempo and every kind of figure |
 | 6. Subjects | `subjects.json`; `subject.html` with the four apps as panels; relations from every dataset; leads | `patrols.html`, `army.html`, `seabees.html`, `convoys.html` as pages (their scripts live on as panels); the README lead tables | one journey page for a boat, a ship, a unit, a battalion, a convoy |
 | 7. Theatres | `theatre.html` from `chapter.js` for all four; the front page as an index; the breadcrumb everywhere; notations in the glossary | the front page's inline replays and fleet list | the ladder theatre → operation → engagement → entry, and the subject thread across it |
