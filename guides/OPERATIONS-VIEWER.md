@@ -514,8 +514,17 @@ first time; Japanese at Haynsworth). What the data taught: a convoy is not a fol
 record, read against the boats' sightings), and nationality alone cannot say who faced whom once three nationalities
 meet, so an engagement may name `against:` (Algiers: `[de, it]`, so No. 153 Squadron's record is not coloured as the
 enemy's); and 46 catalogue-URL citations on Haynsworth and Corzine still resolve to the generic `url` entry, whose kind
-is `secondary`, until they are written in the archive's short form. The Sources view and the chips by kind are the
-phase's second half.
+is `secondary`, until they are written in the archive's short form.
+
+**Done** (3 November 2026): phase 4, the pages. The build emits each pairing of an attack with the other side's record
+(`pairs`, from the patrols' `claims.yml` and `japanese.yml`, inside the window); the working depth shows a Sources view
+per moment (a pair on a clocked frame, a claim's question on a dated one) with the rows as typed, in GMT and placed
+marked as ours, and the minutes and miles computed on the page (`Engage.apart`, tested on Attack 1: 5 min, 7.6 nm); the
+claims board badges each answer by its source's kind and merges repeated answers; every chip names a source by kind
+and nationality. What the data taught: TAMA-17's FRUPAC notes, JANAC and combinedfleet are not entries of the
+engagement (frupac.yml isn't built into the JSON; the other two live in notes), so Attack 1's table has two columns
+where the mockup drew six: building `frupac.yml` into the engagement as `intelligence` entries is the next records task,
+and the view already takes them. Phase 5 is next.
 
 ## 10. Open questions
 
