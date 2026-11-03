@@ -494,7 +494,16 @@ in `engage-views.js` with `site/chron.css`; Venafro, Filignano, Remagen and Algi
 and `algiers.html`'s own timeline is gone). Two things the data taught: a frame counts as clocked when *more than half*
 its entries carry a time with a zone, not any of them, because Remagen's corps report times ten entries of twenty-five
 and is a dated frame all the same; and the columns group by the record named in each entry's `source` (the text before
-its first comma or colon) until phase 4 gives every source a `kind`, which should replace that heuristic. Phase 2 is next.
+its first comma or colon) until phase 4 gives every source a `kind`, which should replace that heuristic.
+
+**Done** (3 November 2026): phase 2. `engagement.html?e=<id>&view=account|records|working`, the account by default: the
+static map at the window's end with the convoy's observed path drawn dotted as ours, the outcome in the records' words,
+who (colour bar, hull, kind, CO, silhouette), when, and three doors whose counts come from the engagement's own JSON;
+the records depth is the page as it was; the working gathers the periscope and TDC, closing in, the claims and the
+story's sources. `&at=<ISO>` opens the records at a minute. The smoke test opens every engagement at two or three
+depths. What the data taught: six of the hand-built frames have no *Outcome* section yet, so their account says so
+rather than inventing one; and counting "records" from an entry's `source` text is phase 4's heuristic again. Phase 4
+is next, and it is the first to touch the records.
 
 ## 10. Open questions
 
