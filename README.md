@@ -22,7 +22,7 @@ Values are recorded exactly as typed; corrections go beside them with a reason, 
 | Folder | What |
 |---|---|
 | `tools/` | Python: find and download records (National Archives catalog, JACAR, Google Books, FRUPAC maps), crop scans for reading, check transcriptions, build the pages' data |
-| `guides/` | How each archive works and how the records were read: [METHODS](guides/METHODS.md), [morning reports](guides/MORNING-REPORTS.md), [Navy muster rolls](guides/MUSTER-ROLLS.md), [engagements](guides/ENGAGEMENTS.md), [the Japanese grid](guides/JAPANESE-GRID.md), [Google Books](guides/GOOGLEBOOKS.md), [expanding to the fleet](guides/FLEET.md); where the pages are going: [the operations viewer](guides/OPERATIONS-VIEWER.md) |
+| `guides/` | How each archive works and how the records were read: [METHODS](guides/METHODS.md), [morning reports](guides/MORNING-REPORTS.md), [Navy muster rolls](guides/MUSTER-ROLLS.md), [engagements](guides/ENGAGEMENTS.md), [the Japanese grid](guides/JAPANESE-GRID.md), [the Kriegsmarine's naval squares](guides/NAVAL-GRID.md), [the German Army's reference points](guides/BEZUGSPUNKTE.md), [Google Books](guides/GOOGLEBOOKS.md), [expanding to the fleet](guides/FLEET.md); where the pages are going: [the operations viewer](guides/OPERATIONS-VIEWER.md) |
 | `reference/` | Reference tables: the Japanese kana grid keys and the positions they were worked out from |
 | `site/` | The pages (static HTML and D3, no build step) |
 | `records/` | The data: the [wwii-unit-records](https://github.com/erichutchins/wwii-unit-records) repository, a submodule |
@@ -55,6 +55,21 @@ python3 tools/grid_ref.py lambert2 J-762365         # an Army grid reference -> 
 
 To work on your own boat or unit, point the tools at your own records folder with
 `WWII_RECORDS=/path/to/records`.
+
+### Two repositories
+
+The kit and its data are two repositories. `records/` is a submodule, the
+[wwii-unit-records](https://github.com/erichutchins/wwii-unit-records) repository, with its own hooks
+(`records/.pre-commit-config.yaml`), which call the kit's tools from `../tools/`, so they run in a checkout of the kit.
+A change that touches the records is committed and pushed in `records/` first; the kit then commits the new submodule
+pointer. The CI (`.github/workflows/pages.yml`) checks out recursively, runs the kit's checks and publishes `site/`,
+`reference/` and `records/` together, so a pointer to a records commit that was never pushed fails it. The generated
+files live in `records/`, so `tools/check_builds.sh` compares them there (`git -C records diff`).
+
+There is a third layer above these two: a private family repository holds the kit as `kit/` (`tools/serve.py` runs
+from either). It writes the private list, `sources/private-terms.txt`, that the lint's rule PRV001 reads (without it
+the rule checks nothing, and says so), and it runs the kit's `tools/smoke.py` over its own pages through `views()` and
+`run()`. Nothing in the kit or the records depends on it.
 
 ## Licence
 

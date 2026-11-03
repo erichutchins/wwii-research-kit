@@ -10,8 +10,11 @@ The convoys the boats met have their own records (`records/convoys/<id>/convoy.m
 timetable). Haynsworth and Algiers are also told as stories (`haynsworth.html`, `algiers.html`), read from the same
 engagement.
 
-Fields are in `records/README.md` ("An engagement", "A convoy", "A patrol's Japanese record");
-`tools/build_engagement.py` checks them all and builds the JSON the pages read.
+This guide holds the reasons and the method. The schema, every file and every field, is `records/README.md` ("An
+engagement", "A convoy", "A patrol's Japanese record"), and the validator is `tools/build_engagement.py`: it checks
+that every participant, convoy, silhouette and position named exists, that every time parses with a zone, that every
+entry and claim is cited in a form `SOURCES.yml` knows and every `[[link]]` resolves, and only then writes the JSON the
+pages read. The fields aren't repeated here: when one is in question, read the README.
 
 ## What a page answers, at three scales
 
@@ -60,17 +63,19 @@ new format is converted for good: no reader for the old one is kept.
    sheets as `source=attack`, ship contacts at the target's position, `on_track=no`), a ship's war diary
    (`check_track.py`, 0 too-fast legs). `depths.csv` adds depth charges and deep dives where it exists.
 2. **The other side.** A patrol's `japanese.yml` (the records as written, with translations) and `claims.yml` (which
-   attack goes with which record, and how: `hit`, `miss`, `probable`, `possible`, `no_loss`); `check_crossrefs.py`
-   prints the minutes and miles between each pair. The skill `find-the-other-side` is the method. A convoy gets its own
-   `convoy.md`: route, voyage, ships, each cited.
-3. **`engagement.md`.** The participants (at most three with a US track: the page's checked colours; an Army unit as
-   `kind: army` with its `unit:` from `army/units.csv`, and `basis: inferred` when no entry names it, so the pages' breadcrumb,
-   `site/chapter.js`, can follow it to its engagements and entries before and after), the window in
-   GMT, map labels, and the story: a lede, then `##` sections (the outcome, the convoy as the boats saw it, reading the
-   map, the clocks, the sources).
-4. **`events.yml`** for what belongs to the engagement alone: a boat's narrative entries (contact reports with `to:`,
-   messages received with `from:`), another record's entries (an air group's action report), and for an Army or a
-   destroyer engagement, every entry of the day. **`claims.yml`** for the questions the records leave open.
+   attack goes with which record, and how sure the pairing is); `check_crossrefs.py` prints the minutes and miles
+   between each pair. The skill `find-the-other-side` is the method. A convoy gets its own `convoy.md`: route, voyage,
+   ships, each cited.
+3. **`engagement.md`.** The front matter names the participants and the window, the body tells the story. At most
+   three participants have a US track, because the page has three checked colours and no fourth hue. An Army unit is
+   named by its id in `army/units.csv` so the pages' breadcrumb (`site/chapter.js`) can follow it to its engagements
+   and entries before and after; when no entry of the day names the unit itself, the participant says it is inferred,
+   and why. The window is in GMT, like every clock on the pages. The story is a lede, then `##` sections (the outcome,
+   the convoy as the boats saw it, reading the map, the clocks, the sources).
+4. **`events.yml`** for what belongs to the engagement alone: a boat's narrative entries (contact reports and the
+   messages received, each naming its sender and recipients), another record's entries (an air group's action report),
+   and for an Army or a destroyer engagement, every entry of the day. **`claims.yml`** for the questions the records
+   leave open.
 5. **Build and look.** `uv run tools/build_engagement.py` (0 problems), `uv run tools/check_sources.py`, then the page
    in light and dark mode, with no console errors.
 
@@ -149,7 +154,8 @@ hue. Colour follows the boat across every view of a page; text never wears it ex
     parallax, so the forward and after solvers differ as they did; the Mark 4's face (OP 1442, not yet found);
   - the narrative's timed bearings and ranges (`bearings.csv`), so the approach before firing is the record's and not
     the target held steady on the sheet's course;
-  - TINOSA's own and target courses from her narrative (her report has only the summary table; family lead L73);
+  - TINOSA's own and target courses from her narrative (her report has only the summary table; reading it is a
+    research lead, L73 in the family repository);
   - the Mark 14's and 23's speeds, and the periscope's fields of view (the *Submarine Periscope Manual*, NAVPERS
     16165), from primary sources;
   - the torpedo's straight run and turn out of the tube (USF 25(A)), and each target's own silhouette and size where the

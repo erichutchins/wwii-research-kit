@@ -28,7 +28,10 @@ For film of a place and date, follow the skill `find-film` (rules in `records/fi
     `army/army.json`, `army/seafloor.csv`, `seabees/seabees.json`, `reference/glossary.json`.
 - `tools/`: Python. Every file opens with a PEP 723 header giving the oldest Python it runs on and the packages it
   imports (`dependencies = []` for the standard library alone; a shared module like `records.py` too), so `uv run`
-  builds its environment and ty checks it against exactly that. `tools/records.py` finds the records and the cache.
+  builds its environment and ty checks it against exactly that. The floors differ on purpose: most tools run on 3.9,
+  a few claim 3.10 or 3.11 for something they use (`tomllib` in `lint.py` and `typecheck.py`), ruff targets 3.11
+  because uv runs the newest Python, and ty checks each tool at its own header's floor, so a header that claims older
+  than the code needs fails. `tools/records.py` finds the records and the cache.
 - `reference/jgrid/`: the Japanese kana grid keys and anchors (hand-edited; `guides/JAPANESE-GRID.md`).
 - `reference/lanes/lanes.yml`: the convoy lanes' ports and (assumed) waypoints, which a convoy's `route:` runs through.
 - `reference/glossary.yml`: the terms the pages explain on hover, each citing its source (`tools/build_glossary.py` writes
@@ -67,6 +70,13 @@ The hooks run by themselves once installed (`uv tool install prek`, then `prek i
 computation's tests. Before a push (minutes), and in the CI: everything, with every build, the land check and every page
 in a browser. A hook that fails is fixed, not skipped.
 
+Two repositories, three layers. `records/` is its own repository (wwii-unit-records) with its own hooks, which call the
+kit's tools from `../tools/`. A change that touches the records is committed and pushed in `records/` first, then the
+kit commits the new submodule pointer; the CI (`.github/workflows/pages.yml`) checks out recursively, so a pointer to
+an unpushed records commit fails it, and `check_builds.sh` compares the generated files inside `records/`. Above the
+kit sits a private family repository that holds it as `kit/`: it writes `sources/private-terms.txt` for the lint's
+PRV001 and runs the kit's `smoke.py` over its own pages (`views()` and `run()`).
+
 - `tools/lint.py`, in the manner of ruff: rule codes, `file:line` findings, settings and allowed exceptions (each with
   its reason) in `lint.toml`. References that point at nothing (REF), orphans nothing uses (ORF), file forms (FMT, CSV,
   YML), records that disagree (CON), the private list (PRV), ships inland (ACC). `--explain CODE`, `--rules`. Nothing
@@ -75,7 +85,10 @@ in a browser. A hook that fails is fixed, not skipped.
   browser; fails on a console error, a failed request or an empty figure.
 - `tools/test_tools.py`: the tools' computation against hand-worked cases (positions, zone letters, the grids'
   anchors, the land test); `site/engage.test.js` the engagement pages'.
-- `tools/check_builds.sh`: every build checks out and its generated JSON is committed.
+- `tools/check_builds.sh`: every build checks out, and every generated file a tool can rebuild from the committed records
+  alone (the tracks and `ships.json`, `citations.json`, `silhouettes.json`, the army, seabees, operations, dives,
+  engagement and glossary JSON) is committed and up to date, named with its build when it isn't; `scans.json` and the
+  downloaded seafloor, weather and relief files are not checked, since they need the network or `sources/`.
 - ruff (`ruff.toml`: defects and orphans, not style) and ty through `tools/typecheck.py`: ty checks a set of files
   against one environment and doesn't yet read PEP 723 headers for several scripts (astral-sh/ty#691), so this groups
   the files by header, has uv build each group's environment (`uv sync --script`, which honours `requires-python`) and
@@ -87,46 +100,22 @@ in a browser. A hook that fails is fixed, not skipped.
 
 ## Commands
 
+The ones an agent runs most. Every tool, what it does and when to run it: `tools/README.md`.
+
 ```bash
-uv run tools/lint.py [--select REF,ORF] [--statistics] [--explain CODE]   # lint.toml; must report no problems
-uv run tools/smoke.py [--quick] [--only engagement]   # every page in a browser (2-3 min; --quick under 1)
-uv run tools/test_tools.py                    # the tools' computation against hand-worked cases
-tools/check_builds.sh                         # every build: 0 problems, generated files up to date
-uv run tools/typecheck.py --baseline ty-baseline.json tools -- --config-file ty.toml --extra-search-path tools   # ty, per header
-prek run --all-files [--hook-stage pre-push]  # the hooks by hand
-uv run tools/check_track.py all --geojson     # every track: 0 too-fast legs; GeoJSON, ships.json
-uv run tools/check_track.py bang/1            # one patrol, leg by leg
+uv run tools/lint.py [--select REF,ORF] [--explain CODE]   # lint.toml; must report no problems
 uv run tools/check_sources.py [--fetch]       # citations resolve; inventory matches the folders
-uv run tools/check_crossrefs.py               # attacks vs japanese.yml, minutes and miles apart
-uv run tools/check_attacks.py [bang/2]        # attacks.csv: each torpedo's track against own course, gyro, target course
-uv run tools/fetch_seafloor.py; uv run tools/fetch_weather.py   # after positions change (cached)
-python3 tools/fetch_station_weather.py seabees  # a shore unit's daily weather: ISD stations + ERA5
-uv run tools/build_dives.py                   # records/boats/ss-385-bang/dives.json
-python3 tools/build_army.py                   # records/army/army.json (after editing records/army/); 0 problems
-uv run tools/army_seafloor.py                 # records/army/seafloor.csv: the seafloor under the LST crossings
-uv run tools/build_seabees.py                 # records/seabees/seabees.json (after records/seabees/ or its weather); 0 problems
-uv run tools/build_silhouettes.py             # records/silhouettes/silhouettes.json (then build_engagement.py)
-uv run tools/trace_silhouette.py PLATE.png --crop X Y W H [--symmetric] [--open 2] --preview /tmp/p.png   # trace a plate
-uv run tools/build_engagement.py             # engagements and convoys -> their JSON; `check` in CI; 0 problems
-uv run tools/build_glossary.py               # reference/glossary.yml -> glossary.json; every term cites its source
-node site/engage.test.js                      # the engagement pages' shared computation (engage.js)
-python3 tools/nara.py find "Bang" | fetch <id> | index
-uv run tools/crop_pages.py sheet|halves|zoom|heads ...
-python3 tools/morning_reports.py serial|unit|locate|changes|fetch ...
-python3 tools/jacar.py search|meta|fetch ...;  python3 tools/jgrid.py decode|check|key ...
-python3 tools/naval_grid.py decode|check|blocks ...   # Kriegsmarine naval squares, Mediterranean ("CJ 9472"; guides/NAVAL-GRID.md)
-python3 tools/bezugspunkt.py decode|block|check ... [--date YYYY-MM-DD]  # German Army reference points, Italy 1944 ("71 35", "XXIII 68", "M 28"; guides/BEZUGSPUNKTE.md)
-python3 tools/wayback.py list|fetch|crawl <domain> [--yes]   # an archived website -> sources/wayback/
-python3 tools/frupac.py find|date ...;  python3 tools/gbooks.py search|meta|fetch ...  (key in .env)
-python3 tools/grid_ref.py <grid> <ref>;  python3 tools/geocode_places.py [records/seabees/places.csv]
-python3 tools/film.py nara|shots|search|meta|index|find ...   # film of a place and date: NARA moving images, listed YouTube channels (index = their uploads, saved; find = search it)
-python3 tools/serve.py                        # http://localhost:8385/site/
+tools/check_builds.sh                         # every build: 0 problems, generated files up to date
+uv run tools/test_tools.py                    # the tools' computation against hand-worked cases
+uv run tools/smoke.py [--quick] [--only engagement]  # every page in a browser (2-3 min; --quick under 1)
+uv run tools/build_engagement.py              # engagements and convoys -> their JSON; `check` in CI; 0 problems
+prek run --all-files [--hook-stage pre-push]  # the hooks by hand
 ```
 
 After editing any CSV: `check_track.py all --geojson`, `build_dives.py`, `check_sources.py`; after `records/army/`,
 `build_army.py` (and `army_seafloor.py` if a crossing changed); after `records/seabees/`, `build_seabees.py`; after
-an engagement, a convoy, a patrol's japanese.yml or claims.yml, or any track, `build_engagement.py`; after
-`reference/glossary.yml` or `records/SOURCES.yml`, `build_glossary.py`.
+`records/operations/`, `build_operations.py`; after an engagement, a convoy, a patrol's japanese.yml or claims.yml, or
+any track, `build_engagement.py`; after `reference/glossary.yml` or `records/SOURCES.yml`, `build_glossary.py`.
 
 ## Pages
 

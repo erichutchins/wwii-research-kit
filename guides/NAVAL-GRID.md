@@ -3,7 +3,9 @@
 The German Naval Staff's war diary, the U-boat war diaries and the German signals give positions as naval grid
 squares: "three destroyers heading north in CJ 9472 at the northern coast of Sicily" (`skl:55/p397`). The decoder is
 `tools/naval_grid.py`. The blocks read so far are in `reference/naval-grid/squares.csv`, and the test positions are in
-`reference/naval-grid/anchors.csv`. Started 30 Oct 2026 (lead L67).
+`reference/naval-grid/anchors.csv`. The grid was first read to place the Naval Staff's war diary's squares off
+Sicily (a research lead; L67 in the family repository) and checked on 30 Oct 2026, the date the measurements below
+carry.
 
 ```bash
 python3 tools/naval_grid.py decode "CJ 9472" CN3282 "CJ 94"   # corners and centre of each cell
@@ -116,7 +118,7 @@ python3 tools/naval_grid.py blocks                             # what is digitiz
 
 ## How well: the second sheet (1892 G, f0074 and f0091)
 
-Measured 30 Oct 2026 the same way as f0200, on the full-resolution frames (9696 × 7088 and 9680 × 7072 px): the 10′
+Measured the same way as f0200 (checked on 30 Oct 2026), on the full-resolution frames (9696 × 7088 and 9680 × 7072 px): the 10′
 bars of the longitude scale located by image analysis, each bar's minutes counted from the printed degree labels,
 and each grid line read against the scale by interpolation between bar edges. Both frames are tilted by 1-2° and
 curled, so each line's own slope was measured (between two bands 300 px apart) and the line extended along it to
@@ -141,7 +143,7 @@ the scale. Only longitudes could be measured: neither frame shows a latitude sca
 
 ## How well: the rows east of 13°E (1892 G, f0348)
 
-Measured 30 Oct 2026. The 1892 G sheet's east end (f0348, 9696 × 7088 px) shows its right-hand margin: a latitude
+Checked on 30 Oct 2026. The 1892 G sheet's east end (f0348, 9696 × 7088 px) shows its right-hand margin: a latitude
 scale from 28° to 40°N beside the land east of CP (Syria, Iraq), about 1,100 px east of CP's east edge (38°54′E).
 - **The method.** The 10′ bars of the scale were located by image analysis, following the scale's border line down
   the frame. Each bar edge was given its minutes from the printed labels (36° read on a crop; the rest by a Mercator
@@ -190,7 +192,7 @@ What the anchors show:
 ## Not done (where to resume)
 
 1. **Rows north of 40°N east of 13°E** (CK 1-6, and CK's top at 45°36′N). Done south of 39°48′N (f0348, above).
-   Searched 30 Oct 2026 on reduced views of frames 111-229 and 319-728 (read from the TIFFs by byte ranges, every
+   Searched on 30 Oct 2026 on reduced views of frames 111-229 and 319-728 (read from the TIFFs by byte ranges, every
    20th row and column; scripts in `sources/drafts/naval-grid-rows/`): 168-206 are 1890 G sections (CH, CJ, CN);
    111-167 are sections of Italy, the Adriatic and the Aegean, many filmed sideways (BH along one side), with f0133
    and f0160 the Black Sea cut-out of 1892 G (BJ, BK, CL); 207-229 and 319-360 are mosaics and 1892 G sections, f0335,

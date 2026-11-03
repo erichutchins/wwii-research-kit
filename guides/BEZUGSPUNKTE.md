@@ -4,7 +4,8 @@ German reports from the Cassino and Garigliano front in 1944 don't give places a
 codes: "71 35", "2 km südwestl. 60 22", "61 t Panzer am Nordrand XXIII 89". Each code is a **block number plus a point
 number** on a secret overlay map, the *Bezugspunktkarte* (reference-point map). The decoder is `tools/bezugspunkt.py`.
 The points read so far are in `reference/bezugspunkte/ausgabe4.csv` and the tests in `reference/bezugspunkte/anchors.csv`.
-Started 30 Oct 2026 (lead L67).
+The key was first read to place those reports (a research lead; L67 in the family repository) and checked on
+30 Oct 2026, the date the readings below carry.
 
 ## The key
 
@@ -127,7 +128,7 @@ Villa S. Lucia, printed 39), both where the fighting was on 7 Feb (`t314-0547/f0
 
 1. **Sections.** Frames f0001-f0012 were downloaded at full resolution and identified from their cards and contents (table above).
 2. **Georeferencing: the printed km grid.** The margins carry kilometre-grid figures every 2 km, and the grid lines are
-   printed across the whole map. Read on full-resolution margin strips (30 Oct 2026):
+   printed across the whole map. Read on full-resolution margin strips (checked on 30 Oct 2026):
    - Section 6 (f0002), bottom margin, west to east: 66, 68, ... 98, then **"34 00"** (x ≈ 2815 px), 02, 04 ... 38, and
      "40" at the corner, where the right margin's corner figure is **"4558"**. Right margin, bottom to top: 4558, **"4560"**
      (y ≈ 3975 px), 62 ... 94. The sheet is pasted from several pieces (seams near x ≈ 760 and 2330 px).
