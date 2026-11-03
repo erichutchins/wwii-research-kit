@@ -1,0 +1,55 @@
+/* The chronology view (engage-views.js, EV.chronology; guides/OPERATIONS-VIEWER.md, 3): a spine of days (hours when the
+   frame is clocked, months when it spans years) at the left, one column per record, every entry at its row in entry.css's
+   block. Loaded by every page that draws it (engagement.html, algiers.html), each of which sets the one token
+   vocabulary (viz.css's header) to its own values, so the colours here are the page's. A station starts a bar in the
+   subject's colour that runs down its column. A casualty, a shelling, a loss is named in the hit red: red is reserved for
+   hits (ENGAGEMENTS.md, "Encodings"), and these are hits on the unit, so they may take it; nothing else here does.
+   Text wears no colour but a subject's own name in its header (the kit's rule). */
+.chron {
+  --ch-ink: var(--ink); --ch-ink-2: var(--ink-2); --ch-ink-3: var(--ink-3); --ch-rule: var(--rule);
+  --ch-wash: var(--wash); --ch-hit: var(--hit);
+  display: grid; grid-template-columns: 7ch repeat(var(--n, 1), minmax(0, 1fr));
+  border: 1px solid var(--ch-rule); font-size: 15px; line-height: 1.4;
+}
+.chron-row, .chron-side { display: contents; }
+.chron-h { padding: 8px 10px; background: var(--ch-wash); border-bottom: 1px solid var(--ch-rule); border-left: 1px solid var(--ch-rule); min-width: 0; }
+.chron-h b { display: block; font-weight: 600; color: var(--bar, var(--ch-ink)); overflow-wrap: anywhere; }
+.chron-h .chip { font-size: 13px; font-style: italic; color: var(--ch-ink-3); }
+.chron-corner { border-left: 0; font-style: italic; color: var(--ch-ink-3); text-align: right; }
+.chron-d { padding: 8px; border-bottom: 1px solid var(--ch-rule); background: var(--ch-wash); color: var(--ch-ink-3); font-size: 14px; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.chron-d small { display: block; font-size: 12.5px; white-space: normal; }
+.chron-c { padding: 3px 10px 5px; border-bottom: 1px solid var(--ch-rule); border-left: 1px solid var(--ch-rule); min-height: 34px; min-width: 0; }
+.chron-c.hold { box-shadow: inset 3px 0 0 var(--bar); }
+/* the entry, folded: the spine gives the day, so the block's time column goes and the time leads the who line */
+.chron .entry { grid-template-columns: minmax(0, 1fr); padding: 6px 0; font-size: 15px; }
+.chron .entry + .entry { border-top: 1px solid var(--ch-rule); }
+.chron .entry > .body { padding-left: 10px; }
+.chron .entry .who { font-size: 15px; flex-wrap: wrap; gap: 3px 8px; margin-bottom: 2px; }
+.chron .entry .who b { font-weight: 600; }
+.chron .entry .who .t { font: 13.5px var(--typed); color: var(--ch-ink-3); }
+.chron .entry .who .t.placed { font: italic 14px var(--serif); }
+.chron .entry.hit .who .what { color: var(--ch-hit); }
+.chron .entry .said { font-size: 14px; line-height: 1.5; }
+.chron .entry .ja { font-size: 16.5px; line-height: 1.6; }
+.chron .entry .tr, .chron .entry .note { font-size: 14px; line-height: 1.45; }
+.chron .entry .assume { font-size: 13.5px; }
+.chron .entry .src { font-size: 13px; white-space: normal; margin-left: 0; }
+.chron .entry .src.alone { margin: 2px 6px 0 0; }
+/* a phone: each row's sides stacked under its day, the record named on each cell in its colour */
+@media (max-width: 760px) {
+  .chron { display: block; border: 0; border-top: 1px solid var(--ch-rule); }
+  .chron-h { display: block; background: none; border: 0; padding: 4px 0; }
+  .chron-h b { display: inline; }
+  .chron-h .chip { margin-left: 6px; }
+  .chron-corner { display: none; }
+  .chron-row { display: block; border-top: 1px solid var(--ch-rule); padding: 4px 0 8px; }
+  .chron-d { background: none; border: 0; padding: 8px 0 2px; text-align: left; font-weight: 600; font-size: 15px; color: var(--ch-ink); }
+  .chron-d small { display: inline; margin-left: 6px; font-weight: 400; }
+  .chron-side { display: block; }
+  .chron-side.empty { display: none; }
+  .chron-side::before { content: attr(data-side); display: block; margin-top: 4px; font-style: italic; font-size: 14px; color: var(--ch-ink-3); }
+  .chron-c { border: 0; padding: 0; min-height: 0; }
+  .chron-c:empty { display: none; }
+  .chron-c.hold { box-shadow: none; }
+  .chron-c::before { content: attr(data-col); display: block; margin-top: 4px; font-weight: 600; font-size: 14px; color: var(--bar, var(--ch-ink)); }
+}

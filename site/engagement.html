@@ -12,12 +12,21 @@
 <link rel="stylesheet" href="entry.css">
 <link rel="stylesheet" href="chapter.css">
 <link rel="stylesheet" href="engage.css">
+<link rel="stylesheet" href="chron.css">
 <style>
 /* One page for every engagement (engagement.html?e=<id>; records/engagements/<id>/engagement.json, built by
-   tools/build_engagement.py). A chart-room working sheet: the map and the two-sided log side by side at one height,
-   so playback never moves the page; one timeline lane per participant under the map; then how the boats closed in,
-   the questions the records leave open, the order of battle in silhouettes, and the story. */
+   tools/build_engagement.py). A chart-room working sheet. When the frame is clocked: the map and the two-sided log side
+   by side at one height, so playback never moves the page; one timeline lane per participant under the map. When it is
+   dated or monthly (guides/OPERATIONS-VIEWER.md, 3): the map alone, static, and the chronology full width under it in
+   the log's place. Then how the boats closed in, the questions the records leave open, the order of battle in
+   silhouettes, and the story. */
 .main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 420px); gap: 14px; }
+.main.dated { grid-template-columns: minmax(0, 1fr); }
+.main.dated .map-box { height: clamp(300px, 46vh, 460px); }
+.chron-card { padding-bottom: 14px; }
+.chron-card h2 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.chron-card h2 span { font-style: normal; color: var(--ink-3); font-size: 14.5px; }
+.chron-card .chron { margin: 0 14px; }
 .map-card { display: grid; grid-template-rows: auto auto auto; overflow: hidden; }
 .map-box { position: relative; height: clamp(340px, calc(100vh - 260px), 660px); }
 #map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: hidden; }
@@ -157,6 +166,12 @@
       <div class="log" id="log"></div>
     </div>
   </div>
+
+  <section class="card chron-card" id="chron-card" hidden aria-labelledby="chron-h">
+    <h2 id="chron-h"><span id="chron-title">The records, by the day</span> <span>One column per record; every entry at the day it is dated; each links to its page</span></h2>
+    <div id="chron"></div>
+    <p class="below" id="chron-note"></p>
+  </section>
 
   <section class="card observer-card" id="observer-card" hidden aria-labelledby="observer-h">
     <h2 id="observer-h">At the periscope <span>Each attack from its data sheet, second by second</span></h2>

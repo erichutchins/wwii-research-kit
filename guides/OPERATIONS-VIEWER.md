@@ -477,7 +477,7 @@ light and dark on a desktop and a phone.
 
 | Phase | Build | Delete | Proves |
 |---|---|---|---|
-| 1. One skin | one token set and one nav fragment on every page; `entry.css`'s bridge becomes the only set | `viz.css`'s tokens; the seventeen copies of the nav | the two page families were one |
+| 1. One skin | one token set and one nav fragment on every page: the vocabulary defined once in `viz.css`'s header, each page family keeping its own values under the one set of names | the second set of names and every fallback chain (`entry.css`, `glossary.js`); the seventeen copies of the nav | the two page families were one |
 | 2. The depths | the account on `engagement.html` (static map, outcome, doors) with the present page as its records depth, `?view=`; the working gathers the claims, the computed layers, the figures | nothing yet | progressive disclosure on the existing data |
 | 3. Chronology | the day-column chronology as a shared view; tempo derived; the dated frames (Venafro, Algiers, Remagen) lead with it | `algiers.html`'s own timeline | the clock is one view's device |
 | 4. Voices | `kind`/`of` in SOURCES.yml; entries tagged through citations; `original`/`lang`/`translation` for German; the Sources view for TAMA-17 and Algiers | `side` and `SIDES` | sources as columns; press beside the records; the other side named as the records name it |
@@ -487,6 +487,14 @@ light and dark on a desktop and a phone.
 
 Phases 1–3 need no change to the records. Phase 4 touches `SOURCES.yml` and two engagements' `events.yml`. Phases 6 and
 7 are the large ones and come last, when the earlier phases have shown the model holds on the pages that exist.
+
+**Done** (3 November 2026): phase 1 (`site/nav.js`; one token vocabulary, `site/viz.css`, every page's colours unchanged
+to the pixel) and phase 3 (`Engage.tempo`, `chronologyRows`, `chronologyColumns` in `engage.js`, tested; `EV.chronology`
+in `engage-views.js` with `site/chron.css`; Venafro, Filignano, Remagen and Algiers lead with it on `engagement.html`,
+and `algiers.html`'s own timeline is gone). Two things the data taught: a frame counts as clocked when *more than half*
+its entries carry a time with a zone, not any of them, because Remagen's corps report times ten entries of twenty-five
+and is a dated frame all the same; and the columns group by the record named in each entry's `source` (the text before
+its first comma or colon) until phase 4 gives every source a `kind`, which should replace that heuristic. Phase 2 is next.
 
 ## 10. Open questions
 

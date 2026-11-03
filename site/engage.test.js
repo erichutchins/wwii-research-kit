@@ -116,4 +116,53 @@ near(E.light(dark).day, 0, 0, "no daylight with the sun 30° down"); near(E.ligh
 near(E.light(dark, true).L, 0.5, 0.001, "night vision lifts the light"); near(E.light(dark, true).V, 8000, 0, "night vision: a ship shows farther");
 near(E.light({ sun: { bearing: 180, altitude: 60 }, moon: dark.moon }, true).L, 1, 0, "night vision leaves daylight as it was");
 
+// The chronology (guides/OPERATIONS-VIEWER.md 2.3 and 3). The tempo is derived from the entries, never stored.
+const ok = (cond, what) => console.log(cond ? "ok  " : (failed++, "FAIL"), what);
+const ev = (local, extra = {}) => ({ local, key: local.replace(" ", "T").replace(/(\d\d)(\d\d)$/, "$1:$2"), utc: null, ...extra });
+// Venafro's shape: days, times as typed with no zone, the German reports placed by the account's order; three batteries followed
+const PARTS = [{ id: "battery-e", name: "Battery E, 67th CA (AA)", side: "us", unit: "67ca-e" }, { id: "battery-h", name: "Battery H, 67th CA (AA)", side: "us", unit: "67ca-h" },
+               { id: "battery-a", name: "Battery A, 67th CA (AA)", side: "us", unit: "67ca-a" }];
+const venafro = [
+  ev("1944-01-17 1610", { actor: "Battery E", kind: "station", side: "allied", n: 1, source: "Battery E, 67th CA (AA), morning report (record of events), 17 Jan 1944" }),
+  ev("1944-02-12 0900", { actor: "Battery H", kind: "station", side: "allied", n: 4, source: "Battery H, 67th CA (AA), morning report (record of events), 12 Feb 1944" }),
+  ev("1944-02-14", { actor: "5. Geb.Div.", kind: "report", side: "axis", n: 6, placed: "seq", source: "XIV Panzer Corps, tactical reports: 5. Geb.Div., Tagesmeldung vom 14.2.44" }),
+  ev("1944-02-14 1740", { actor: "Battery E", kind: "casualty", side: "allied", n: 5, source: "Battery E morning report, 14 Feb 1944" }),
+  ev("1944-02-14", { actor: "5. Geb.Div.", kind: "report", side: "axis", n: 7, placed: "seq", source: "XIV Panzer Corps, tactical reports: 5. Geb.Div., Nachmeldung zur Tagesmeldung vom 14.2.44" }),
+  ev("1944-02-14 0900", { actor: "Battery A (1st Bn)", kind: "shelled", side: "allied", n: 8, source: "Battery A morning report, 14 Feb 1944" }),
+  ev("1944-02-21", { actor: "Arko 414", kind: "report", side: "axis", n: 9, placed: "seq", source: "XIV Panzer Corps, tactical reports: Arko 414, Tagesmeldung vom 21.2.44" }),
+];
+ok(E.tempo(venafro) === "dated", "tempo: days and times as typed, no zone -> dated");
+const clocked = [{ local: "1944-04-29 1603 K", key: "1944-04-29T06:03Z", utc: "1944-04-29T06:03Z" }, { local: "1944-04-29 1640 K", key: "1944-04-29T06:40Z", utc: "1944-04-29T06:40Z" }, { local: "1944-04-29 1710 K", key: "1944-04-29T07:10Z", utc: "1944-04-29T07:10Z" }];
+ok(E.tempo(clocked) === "clocked", "tempo: every entry on GMT -> clocked");
+// Remagen's shape: ten entries timed in zone A, fifteen "the period 110600 to 120600" over ten days: more than half untimed, so dated
+const remagen = [...Array(10)].map((_, i) => ({ local: `1945-03-0${(i % 3) + 7} 1${i}00 A`, key: `1945-03-0${(i % 3) + 7}T0${i}:00Z`, utc: `1945-03-0${(i % 3) + 7}T0${i}:00Z` }))
+  .concat([...Array(15)].map((_, i) => ({ local: `1945-03-${String(7 + (i % 10)).padStart(2, "0")}`, key: `1945-03-${String(7 + (i % 10)).padStart(2, "0")}`, utc: null, placed: "The day's total; no times typed" })));
+ok(E.tempo(remagen) === "dated", "tempo: ten timed entries of twenty-five -> dated, not clocked");
+ok(E.tempo([ev("1942-09-10"), ev("1943-02-01")]) === "monthly", "tempo: a span of more than 90 days with no times -> monthly");
+ok(E.tempo([]) === "dated", "tempo: nothing -> dated");
+// the spine: days with entries, timed entries first by the time as typed, then the placed ones in the account's order
+const rows = E.chronologyRows(venafro, "dated");
+ok(rows.map(r => r.key).join() === "1944-01-17,1944-02-12,1944-02-14,1944-02-21", "rows: one per day that has entries, in order");
+ok(rows[0].label === "17 Jan" && rows[2].label === "14 Feb", "rows: labelled by the day, no year within one year");
+ok(rows[2].entries.map(e => e.actor + (e.n ? ":" + e.n : "")).join("|") === "Battery A (1st Bn):8|Battery E:5|5. Geb.Div.:6|5. Geb.Div.:7", "rows: 0900, 1740, then the placed entries by n");
+ok(E.chronologyRows([ev("1942-12-30 0800"), ev("1943-01-02")], "dated")[0].label === "30 Dec 1942", "rows: the year is said when the rows cross one");
+const hours = E.chronologyRows(clocked, "clocked");
+ok(hours.map(r => r.label).join() === "0600,0700" && hours[0].entries.length === 2 && hours[0].day === "29 Apr", "rows, clocked: one per GMT hour, the day beside it");
+ok(E.chronologyRows([ev("1944-02-14"), ev("1944-02-20"), ev("1944-03-01")], "monthly").map(r => r.label).join() === "Feb 1944,Mar 1944", "rows, monthly: one per month");
+// the columns: the followed batteries first in the participants' order and colours, then the German record by its source's stem
+const cols = E.chronologyColumns(venafro, PARTS);
+ok(cols.map(c => c.name).join("|") === "Battery E, 67th CA (AA)|Battery H, 67th CA (AA)|Battery A, 67th CA (AA)|XIV Panzer Corps", "columns: the subjects, then the other side's record");
+ok(cols.map(c => c.colour).join() === "var(--c1),var(--c2),var(--c3),var(--ink)", "columns: the three checked colours for the subjects, ink for the other side");
+ok(cols.map(c => c.side).join() === "allied,allied,allied,axis" && cols[3].entries.length === 3, "columns: each carries its side; the three German reports share one column");
+ok(cols[2].entries.length === 1 && cols[2].participant === "battery-a", "columns: 'Battery A (1st Bn)' is Battery A's");
+ok(/^morning report/.test(cols[0].record) && cols[3].record === "tactical reports", "columns: the record in the sources' words");
+const boats = E.chronologyColumns([{ actor: "bang", side: "us", local: "1944-04-29 1603 K", source: "" }, { actor: "Nittatsu Maru", side: "jp", local: "1944-04-29", source: "" }],
+                                   [{ id: "bang", name: "BANG", side: "us", colour: 2, track: "ss-385-bang/1" }, { id: "tama-17", name: "Convoy TAMA-17", side: "jp", convoy: "tama-17" }]);
+ok(boats.map(c => c.name + ":" + c.colour).join("|") === "BANG:var(--c2)|Nittatsu Maru:var(--ink)", "columns: a boat by its id in the build's colour; a ship with no source by its actor");
+ok(E.recordWords(["German Naval Staff war diary, 12 May 1943 (ONI translation), vol. 45, p. 152"], "German Naval Staff war diary") === "", "record words: a name, a date and a page say nothing more");
+ok(E.recordWords(["No. 153 Squadron RAF, operations record book, Form 540 (summary of events), AIR 27/1027/37, p. 3"], "No. 153 Squadron RAF") === "operations record book", "record words: the record book");
+ok(E.recordWords(["La Stampa, 14 Jan 1944, p. 1 (the German communiqué, Berlin, 13 Jan)"], "La Stampa") === "", "record words: a bracketed note's commas don't make pieces");
+ok(E.hitKind("casualty") && E.hitKind("shelled") && !E.hitKind("station") && !E.hitKind("report"), "hit kinds: a casualty and a shelling, not a station or a report");
+ok(E.head("Battery A (1st Bn)") === "Battery A" && E.head("Battery E, sections 2, 4, 6, 8") === "Battery E", "head: the name before a comma or a bracket");
+
 process.exit(failed ? 1 : 0);

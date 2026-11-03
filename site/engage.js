@@ -25,6 +25,10 @@
 //                                     torpedo's firing second, course and run, each target placed from the gyro and
 //                                     track, and the list of what's assumed
 //   Engage.attackAt(A, s)             the boat, the targets and the torpedoes s seconds after the first torpedo
+//   Engage.tempo(events)              "clocked", "dated" or "monthly": a frame's tempo, derived from its entries, never stored
+//   Engage.chronologyRows(events, tempo)        the chronology's spine: hours, days or months, each with its entries in order
+//   Engage.chronologyColumns(events, participants)   one column per record, the followed subjects first, each with its side and colour
+//   Engage.hitKind(kind)              whether an entry's kind is a hit (named in the hit red on the chronology)
 const Engage = (() => {
   const ZONE_LETTERS_E = "ABCDEFGHIKLM", ZONE_LETTERS_W = "NOPQRSTUVWXY";
   // the half-hour zones the war diaries type (tools/check_track.py ZONES)
@@ -305,7 +309,129 @@ const Engage = (() => {
   const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const hhmm = ms => { const d = new Date(ms); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()); };
   const day = ms => { const d = new Date(ms); return `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`; };
+
+  // ---------- the chronology (guides/OPERATIONS-VIEWER.md, 2.3 and 3). A frame's tempo is derived from its entries and
+  // never stored: "clocked" when more than half of them carry a GMT time (`utc`: a typed time with its zone, or on the
+  // engagement's clock), so that one clock is meaningful and the map plays; otherwise "monthly" when the entries span
+  // more than about 90 days (a unit's year); otherwise "dated", the entries carrying days (Venafro, Algiers). More than
+  // half, not any: Remagen's III Corps report times ten entries of twenty-five over ten days, the rest "the period
+  // 110600 to 120600", and a clock played over it would pass most of the record in silence.
+  const DAY_MS = 86400e3;
+  const dayOf = e => String(e.local || e.key || e.utc || "").slice(0, 10);            // the day as the record writes it
+  const typedTime = e => e.local && e.local.length > 10 ? e.local.slice(11, 15) : null;   // "1610"; null when none is written
+  function tempo(events) {
+    const es = (events || []).filter(e => dayOf(e));
+    if (!es.length) return "dated";
+    if (es.filter(e => e.utc).length > es.length / 2) return "clocked";
+    const ms = es.map(e => T(dayOf(e))).filter(x => x != null && !Number.isNaN(x));
+    return ms.length && Math.max(...ms) - Math.min(...ms) > 90 * DAY_MS ? "monthly" : "dated";
+  }
+  // The spine's rows: one per hour (clocked), day (dated) or month (monthly) that has entries, in time order, each
+  // with its entries: those with a time first, by the time (GMT when clocked, else as typed), then those the account
+  // places, in its order (`n`). A row is {key, ms, label, day, entries}; `day` names the day beside an hour's label.
+  // When clocked, an entry with no time of its own gets a row of the day's, at its start; an entry dated to a month
+  // alone gets the month's row.
+  const monthLabel = k => `${MON[+k.slice(5, 7) - 1]} ${k.slice(0, 4)}`;
+  function chronologyRows(events, tempo) {
+    const rows = new Map();
+    (events || []).forEach((e, i) => {
+      const d = dayOf(e);
+      if (!d) return;
+      let key, ms, label, dayName = null;
+      if (tempo === "clocked" && e.utc) {
+        const dt = new Date(T(e.utc));
+        ms = Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate(), dt.getUTCHours());
+        key = new Date(ms).toISOString().slice(0, 13); label = hhmm(ms); dayName = day(ms);
+      } else if (tempo === "monthly" || d.length < 10) {
+        key = d.slice(0, 7); ms = Date.UTC(+key.slice(0, 4), +key.slice(5, 7) - 1, 1); label = monthLabel(key);
+      } else {
+        key = d; ms = Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)); label = day(ms);
+      }
+      if (Number.isNaN(ms)) return;
+      if (!rows.has(key)) rows.set(key, { key, ms, label, day: dayName, entries: [] });
+      rows.get(key).entries.push({ e, i });
+    });
+    const out = [...rows.values()].sort((a, b) => a.ms - b.ms);
+    const years = new Set(out.map(r => r.key.slice(0, 4)));
+    const at = x => {
+      if (tempo === "clocked" && x.e.utc) return T(x.e.utc);
+      const hm = typedTime(x.e), t = hm ? T(`${dayOf(x.e)}T${hm.slice(0, 2)}:${hm.slice(2)}`) : null;
+      return t != null && !Number.isNaN(t) ? t : null;
+    };
+    out.forEach(r => {
+      if (years.size > 1 && r.key.length === 10) r.label += " " + r.key.slice(0, 4);
+      if (years.size > 1 && r.day) r.day += " " + r.key.slice(0, 4);
+      r.entries = r.entries.sort((a, b) => {
+        const ta = at(a), tb = at(b);
+        if (ta != null && tb != null) return ta - tb || a.i - b.i;
+        if (ta != null || tb != null) return ta != null ? -1 : 1;
+        return (a.e.n ?? a.i) - (b.e.n ?? b.i) || a.i - b.i;
+      }).map(x => x.e);
+    });
+    return out;
+  }
+  // One column per record. An entry joins a participant's column when its actor is that participant (its id or name,
+  // or the name's head: "Battery A (1st Bn)" is Battery A, 67th CA (AA)); else the column of its source's record, the
+  // text before the first comma or colon ("XIV Panzer Corps, tactical reports: 5. Geb.Div., ..." is XIV Panzer
+  // Corps'; the dates and pages after it vary from entry to entry); else its actor's. The followed subjects (a
+  // participant with a track, a unit or a colour) come first, in the participants' order, each in its colour (the
+  // build's, else the next free of the three checked ones; a fourth subject is ink), then the other columns by side,
+  // the subjects' side first and then in order of appearance, in ink (the press in the lighter ink). A column's side
+  // is its entries' (the most common). A column is {key, name, side, colour, subject, participant, record, entries}.
+  const head = s => String(s || "").split(/,| \(/)[0].trim();
+  const stem = s => String(s || "").split(/[,:;]/)[0].trim();
+  function chronologyColumns(events, participants) {
+    const parts = participants || [], lc = s => head(s).toLowerCase();
+    const match = e => parts.find(p => p.id === e.actor || p.name === e.actor) || (head(e.actor) ? parts.find(p => lc(p.name) === lc(e.actor)) : null);
+    const cols = new Map();
+    (events || []).forEach((e, i) => {
+      const p = match(e), key = p ? "p:" + p.id : e.source ? "s:" + stem(e.source) : "a:" + (head(e.actor) || "?");
+      if (!cols.has(key)) cols.set(key, { key, name: p ? p.name : key.slice(2), participant: p || null, subject: !!(p && (p.track || p.unit || p.colour)), entries: [], sides: new Map(), first: i });
+      const c = cols.get(key); c.entries.push(e); c.sides.set(e.side || "", (c.sides.get(e.side || "") || 0) + 1);
+    });
+    const all = [...cols.values()];
+    all.forEach(c => { c.side = [...c.sides].sort((a, b) => b[1] - a[1])[0][0]; c.record = recordWords(c.entries.map(e => e.source), c.name); });
+    const subjects = parts.map(p => all.find(c => c.participant === p && c.subject)).filter(Boolean);
+    const used = new Set(parts.map(p => p.colour).filter(Boolean));
+    let slot = 1;
+    subjects.forEach(c => {
+      let n = c.participant.colour;
+      if (!n) { while (used.has(slot)) slot++; n = slot <= 3 ? slot++ : null; }
+      c.colour = n ? `var(--c${n})` : "var(--ink)";
+    });
+    const others = all.filter(c => !subjects.includes(c)).sort((a, b) => a.first - b.first);
+    const sideOrder = [...new Set([...subjects, ...others].map(c => c.side))];
+    others.sort((a, b) => sideOrder.indexOf(a.side) - sideOrder.indexOf(b.side) || a.first - b.first);
+    others.forEach(c => { c.colour = c.side === "press" || c.side === "geo" ? "var(--ink-3)" : "var(--ink)"; });
+    return [...subjects, ...others].map(c => ({ key: c.key, name: c.name, side: c.side, colour: c.colour, subject: c.subject,
+                                                participant: c.participant ? c.participant.id : null, record: c.record, entries: c.entries }));
+  }
+  // The record in the sources' own words: of each source text's pieces (anything in brackets dropped, then split at
+  // commas, colons and semicolons), the first that isn't the column's name or its head, a date, a page, a folio or a
+  // volume ("morning report", "tactical reports", "operations record book"); the most common across the column, or ""
+  // when the sources carry only a name, a date and a page (a newspaper's issue, a war diary's page).
+  const NOISE = [/^(\d{1,2} )?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*( \d{4})?\b/i, /^\d{1,2}\b.*\b(19|20)\d\d\b/, /^\d{4}\b/,
+                 /^(p|pp|f|ff|vol|no|nos|image|images|form|frame|frames|air|rg|t)\b\.?\s*\d/i, /^\d+(\.|$)/];
+  function recordWords(sources, name) {
+    const unbracket = s => String(s || "").replace(/\s*\([^)]*\)/g, "");
+    const names = new Set(unbracket(name).split(/,\s*/).map(x => x.trim().toLowerCase()));
+    const h = head(name).toLowerCase(), counts = new Map();
+    sources.forEach(s => {
+      const pieces = unbracket(s).split(/[,:;]\s*/).map(x => x.trim()).filter(Boolean)
+        .map(x => h && x.toLowerCase().startsWith(h) ? x.slice(h.length).replace(/^[\s,:;-]+/, "") : x)
+        .filter(x => x && !names.has(x.toLowerCase()) && !NOISE.some(re => re.test(x)));
+      if (pieces.length) counts.set(pieces[0], (counts.get(pieces[0]) || 0) + 1);
+    });
+    const best = [...counts].sort((a, b) => b[1] - a[1])[0];
+    return best ? best[0] : "";
+  }
+  // The kinds the chronology names in the hit red. Red is reserved for hits (ENGAGEMENTS.md, "Encodings"); a casualty,
+  // a shelling, a loss or a ship torpedoed is a hit on the unit or the ship, so these take it, and nothing else does.
+  const HIT_KINDS = new Set(["casualty", "shelled", "hit", "damage", "loss", "sank", "sunk", "torpedoed", "kill"]);
+  const hitKind = kind => HIT_KINDS.has(String(kind || "").toLowerCase());
+
   return { zoneHours, toUTC, T, coord, offset, nm, posAt, observedPath, closing, fireControl, apparentSize, sky, localNoon, light, story, hhmm, day,
-           gyroOf, coursesOf, offsetOf, firingTimes, torpedoKnots, attackSheet, attackAt, tdcAt };
+           gyroOf, coursesOf, offsetOf, firingTimes, torpedoKnots, attackSheet, attackAt, tdcAt,
+           tempo, chronologyRows, chronologyColumns, recordWords, hitKind, head };
 })();
 if (typeof module !== "undefined") module.exports = Engage;

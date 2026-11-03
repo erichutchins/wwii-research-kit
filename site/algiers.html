@@ -7,6 +7,7 @@
 <title>Algiers under the night bombers, May–June 1943</title>
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="entry.css">
+<link rel="stylesheet" href="chron.css">
 <link rel="stylesheet" href="chapter.css">
 <style>
 /* Three raid nights on Algiers told from both sides' records: Battery C, 62nd CA (AA), 4 mi west of the city; No. 153
@@ -188,19 +189,6 @@ h3 { font-size: 18px; margin: 0; font-weight: 650; }
 .place { text-transform: none; letter-spacing: 0.02em; font-style: italic; font-size: 13.5px; }
 .schem-note { font-size: 14.5px; color: var(--ink-3); margin: 10px 0 0; max-width: 90ch; }
 .entry .who .what.seq { font-style: italic; color: var(--ink-3); }
-/* the three nights side by side */
-.tl { display: grid; gap: 0; }
-.tl-head, .tl-row { display: grid; grid-template-columns: 110px repeat(3, minmax(0, 1fr)); gap: 0 16px; }
-.tl-head { font-style: italic; color: var(--ink-3); font-size: 15.5px; border-bottom: 1px solid var(--rule); padding: 0 0 6px; }
-.tl-row { border-bottom: 1px solid var(--rule); padding: 10px 0; }
-.tl-row .day { font: 700 15.5px var(--typed); color: var(--ink-2); padding-top: 10px; }
-.tl-row .col .entry:first-child { padding-top: 0; }
-.tl-row .col:empty::after { content: "nothing recorded"; font-style: italic; color: var(--ink-3); font-size: 15px; }
-@media (max-width: 900px) {
-  .tl-head { display: none; }
-  .tl-row { grid-template-columns: minmax(0, 1fr); }
-  .tl-row .col[data-side]::before { content: attr(data-side); display: block; font-style: italic; color: var(--ink-3); font-size: 15px; }
-}
 </style>
 </head>
 <body>
@@ -226,7 +214,7 @@ h3 { font-size: 18px; margin: 0; font-weight: 650; }
 
   <section class="sec" id="nights">
     <h2>The nights side by side</h2>
-    <p class="intro">Every dated entry, by the day it is dated, in three columns: the defenders (the battery, the night fighters, Allied Force HQ), the attackers (the German Naval Staff's war diary, the Italian and German bulletins), and the city's newspaper. Each links to its page.</p>
+    <p class="intro">Every entry by the day it is dated, one column per record: the battery's morning reports, the night fighters' record book, the German Naval Staff's war diary, and the newspapers that printed the communiqués and bulletins (L'Écho d'Alger, La Stampa). Times are as written, with no zone; an entry whose time isn't recorded says so. Each links to its page.</p>
     <div class="tl" id="timeline"></div>
   </section>
 
@@ -255,6 +243,7 @@ h3 { font-size: 18px; margin: 0; font-weight: 650; }
 <script src="mapzoom.js"></script>
 <script src="scalebar.js"></script>
 <script src="engage.js"></script>
+<script src="engage-views.js"></script>
 <script src="chapter.js"></script>
 <script src="algiers.js"></script>
 <script src="glossary.js"></script>

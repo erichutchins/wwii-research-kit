@@ -2,9 +2,10 @@
 // Reads records/engagements/algiers-1943/engagement.json (built from its events.yml and claims.yml by
 // tools/build_engagement.py) and its positions.csv, from RECORDS (config.js); the same engagement is on
 // engagement.html?e=algiers-1943 as a log and a map. The narrative steps are below (STEPS); the entries in each step
-// come from each event's `step`. Positions
-// given as direction and distance from another (`from`, `brg`, `nm`) are resolved here (dest). Silhouettes come from
-// records/silhouettes/ (SILHOUETTES, silhouettes.js). Modelled on haynsworth.js.
+// come from each event's `step`. The nights side by side are the shared chronology view (engage-views.js
+// EV.chronology, on engage.js's rows and columns; the frame is dated: times as written, no zone, so no clock plays).
+// Positions given as direction and distance from another (`from`, `brg`, `nm`) are resolved here (dest). Silhouettes
+// come from records/silhouettes/ (SILHOUETTES, silhouettes.js). Modelled on haynsworth.js.
 
 const ENG = RECORDS + "engagements/algiers-1943/";
 // Rows that cite by key rather than a page: points placed on a modern map
@@ -83,11 +84,12 @@ function dest([lon, lat], brg, nm) {
   return [l2 * 180 / Math.PI, p2 * 180 / Math.PI];
 }
 
-const engagement = d3.json(ENG + "engagement.json").then(Engage.story);   // engage.js
+const built = d3.json(ENG + "engagement.json"), engagement = built.then(Engage.story);   // engage.js
 Promise.all([
   engagement.then(x => x.timeline), d3.csv(ENG + "positions.csv"), engagement.then(x => x.claims),
   d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/land-10m.json"), SILHOUETTES, d3.json(RECORDS + "roads/oss967-primary.geojson").catch(() => null), Promise.all(RELIEFS.map(u => d3.json(u + "relief.json").then(j => ({ ...j, url: u })).catch(() => null))),
-]).then(([timeline, positions, claims, world, , roads, reliefs]) => {
+  built,
+]).then(([timeline, positions, claims, world, , roads, reliefs, D]) => {
   for (const rows of [timeline, positions, claims]) rows.forEach(r => { r.ref = refUrl(r.ref); });
   const P = new Map(positions.map(p => [p.id, p]));
   const resolve = (p, depth = 0) => {
@@ -101,7 +103,7 @@ Promise.all([
   buildSteps(timeline);
   const map = buildMap(world, positions, P, reliefs.filter(Boolean), roads);
   observeSteps(map);
-  buildTimeline(timeline);
+  buildChronology(D);
   buildBoard(claims);
   buildSources(timeline, positions, claims);
 });
@@ -422,19 +424,12 @@ function showTip(e, html) { tip.innerHTML = html; tip.hidden = false; const w = 
 function hideTip() { tip.hidden = true; }
 function openRef(u) { if (isUrl(u)) window.open(u, "_blank", "noopener"); }
 
-// ---------- the nights side by side ----------
-function buildTimeline(timeline) {
-  const host = d3.select("#timeline");
-  const cols = [["allied", "The defenders"], ["axis", "The attackers"], ["press", "The newspaper"]];
-  host.append("div").attr("class", "tl-head").html(`<span>Dated</span>${cols.map(([, n]) => `<span>${n}</span>`).join("")}`);
-  d3.groups(timeline, r => r.date).forEach(([date, rows]) => {
-    const row = host.append("div").attr("class", "tl-row");
-    row.append("div").attr("class", "day").text(dayOf(date) + " 1943");
-    cols.forEach(([side, name]) => {
-      const col = row.append("div").attr("class", "col").attr("data-side", name);
-      rows.filter(r => r.side === side).forEach(r => entry(col, r, { date: false }));
-    });
-  });
+// ---------- the nights side by side: the shared chronology (engage-views.js), one column per record ----------
+// The frame is dated (Engage.tempo): the records give times but no zone, and this page plays no clock, so the spine
+// is the days. The battery is the followed subject and takes the page's first colour; the other records are ink.
+function buildChronology(D) {
+  const tempo = Engage.tempo(D.events);
+  EV.chronology(document.getElementById("timeline"), { rows: Engage.chronologyRows(D.events, tempo), columns: Engage.chronologyColumns(D.events, D.participants), tempo });
 }
 
 // ---------- evidence board ----------
