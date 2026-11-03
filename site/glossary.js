@@ -18,11 +18,11 @@
     .gloss:hover, .gloss:focus-visible { text-decoration-color: currentColor; }
     .gloss-card { position: absolute; z-index: 1000; max-width: min(340px, calc(100vw - 24px)); padding: 9px 12px 10px;
       font: 15.5px/1.45 et-book, Palatino, "Palatino Linotype", Georgia, serif; font-style: normal; font-weight: normal;
-      color: var(--text-primary, var(--ink, #1d1d1b)); background: var(--surface-1, var(--paper, var(--page, #fcfcf9)));
-      border: 1px solid var(--border, var(--rule, #e1dfd5)); border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.12); }
+      color: var(--ink); background: var(--surface);
+      border: 1px solid var(--rule); border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.12); }
     .gloss-card b { display: block; font-weight: 600; margin-bottom: 2px; }
     .gloss-card a { color: inherit; display: inline-block; margin-top: 4px; }
-    .gloss-card .gloss-src { display: block; margin-top: 5px; font-size: 13px; color: var(--text-secondary, var(--muted, #5f5e5a)); }
+    .gloss-card .gloss-src { display: block; margin-top: 5px; font-size: 13px; color: var(--ink-2); }
     .gloss-card .gloss-src a { margin-top: 0; }`;
   document.head.append(style);
 

@@ -179,7 +179,7 @@ function render() {
 
   // Letters along the top: click a band to choose its zone
   const top = svg.append("g");
-  top.append("rect").attr("x", 0).attr("y", 0).attr("width", W).attr("height", 40).attr("fill", "var(--surface-1)").attr("opacity", 0.85);
+  top.append("rect").attr("x", 0).attr("y", 0).attr("width", W).attr("height", 40).attr("fill", "var(--surface)").attr("opacity", 0.85);
   for (const z of BANDS) {
     const [x] = proj([mid(z), 0]);
     if (x < 8 || x > W - 8) continue;

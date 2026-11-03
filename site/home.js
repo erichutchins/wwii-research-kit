@@ -83,7 +83,7 @@ async function replay() {
   const trails = Object.fromEntries(boats.map(b => [b.id, gTrail.append("path").attr("class", "trail").attr("stroke", b.color)]));
   const boatG = Object.fromEntries(boats.map(b => {
     const g = gBoats.append("g");
-    g.append("circle").attr("r", 5).attr("fill", b.color).attr("stroke", "var(--paper)").attr("stroke-width", 1.5);
+    g.append("circle").attr("r", 5).attr("fill", b.color).attr("stroke", "var(--page)").attr("stroke-width", 1.5);
     g.append("text").attr("class", "boat-label").attr("x", 9).attr("y", 4).attr("fill", b.color).text(b.name);
     return [b.id, g];
   }));
@@ -219,7 +219,7 @@ async function haynsworth() {
       .on("click", () => open(pageUrl(c.ref))).on("keydown", e => { if (e.key === "Enter") open(pageUrl(c.ref)); });
     g.append("line").attr("class", "leader").attr("x1", x(t)).attr("x2", x(t)).attr("y1", y).attr("y2", ly - 14);
     g.append("circle").attr("class", bound ? "mark-dash" : late ? "mark-open" : "mark").attr("cx", x(t)).attr("cy", y).attr("r", 7);
-    if (i === 0) g.append("circle").attr("cx", x(t)).attr("cy", y).attr("r", 13).attr("fill", "none").attr("stroke", "var(--fire)").attr("stroke-width", 1.5);
+    if (i === 0) g.append("circle").attr("cx", x(t)).attr("cy", y).attr("r", 13).attr("fill", "none").attr("stroke", "var(--hit)").attr("stroke-width", 1.5);
     const anchor = x(t) > W - 260 ? "end" : "start";
     g.append("text").attr("class", "lab-t").attr("x", x(t) + (anchor === "end" ? 6 : -6)).attr("y", ly).attr("text-anchor", anchor).text(c.claim.replace(/ \(.*\)$/, "").replace(/ Item$/, ""));
     g.append("text").attr("class", "lab-2").attr("x", x(t) + (anchor === "end" ? 6 : -6)).attr("y", ly + 19).attr("text-anchor", anchor).text(c.source.replace(/\s*\(.*\)$/, ""));

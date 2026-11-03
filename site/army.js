@@ -451,7 +451,7 @@ function drawStrip() {
   stripX = t => x(t);
   strip.append("defs").append("pattern").attr("id", "hatch").attr("width", 5).attr("height", 5)
     .attr("patternUnits", "userSpaceOnUse").attr("patternTransform", "rotate(45)")
-    .append("line").attr("y2", 5).attr("stroke", "var(--surface-1)").attr("stroke-width", 2);
+    .append("line").attr("y2", 5).attr("stroke", "var(--surface)").attr("stroke-width", 2);
   const [t0, t1] = span();
   if (t1 > ONLINE_UNTIL) {
     const a = x(Math.max(ONLINE_UNTIL, t0));
@@ -463,7 +463,7 @@ function drawStrip() {
   u.rows.forEach((r, j) => {
     const next = u.rows[j + 1], a = x(r.t), b = x(next ? next.t : u.t1 + DAY);
     const seg = strip.append("rect").attr("x", a).attr("y", y).attr("width", Math.max(1, b - a)).attr("height", 12)
-      .attr("fill", r.plotted ? "var(--series-track)" : "var(--text-muted)");
+      .attr("fill", r.plotted ? "var(--series-track)" : "var(--ink-3)");
     seg.append("title").text(`${fmtDay(new Date(r.t))}: ${r.station}${r.bn ? " (position assumed)" : ""}`);
     if (r.bn) strip.append("rect").attr("x", a).attr("y", y).attr("width", Math.max(0, b - a)).attr("height", 12)
       .attr("fill", "url(#hatch)").attr("pointer-events", "none");
@@ -471,12 +471,12 @@ function drawStrip() {
       .attr("stroke", "var(--series-track)");
   });
   actsOf(u).forEach(a => strip.append("path").attr("d", "M0,-2.5L2.5,0L0,2.5L-2.5,0Z")
-    .attr("transform", `translate(${x(a.t)},${y + 6})`).attr("fill", "var(--series-attack)").attr("stroke", "var(--text-primary)")
+    .attr("transform", `translate(${x(a.t)},${y + 6})`).attr("fill", "var(--series-attack)").attr("stroke", "var(--ink)")
     .attr("stroke-width", 1).append("title").text(`${fmtDay(new Date(a.t))}: ${a.station}`));
   strip.append("g").attr("class", "axis").attr("transform", `translate(0,${AXIS})`)
     .call(d3.axisBottom(x).ticks(Math.max(3, Math.floor((W - LEFT) / 90))).tickFormat(fmtMonth).tickSizeOuter(0));
   strip.append("line").attr("class", "playhead").attr("y1", 0).attr("y2", AXIS)
-    .attr("stroke", "var(--text-primary)").attr("stroke-width", 1.5);
+    .attr("stroke", "var(--ink)").attr("stroke-width", 1.5);
   strip.on("click", ev => { stop(); setTime(+x.invert(d3.pointer(ev)[0])); });
 }
 
@@ -505,7 +505,7 @@ function dayCol(t) {
 
 function stationRow(r) {
   const row = el("div", "row entry" + (!r.plotted || r.bn ? " assumed" : ""));
-  row.style.setProperty("--bar", r.plotted ? "var(--series-track)" : "var(--text-muted)");
+  row.style.setProperty("--bar", r.plotted ? "var(--series-track)" : "var(--ink-3)");
   row.tabIndex = 0;
   row.setAttribute("role", "button");
   row.dataset.t = r.t;
@@ -777,7 +777,7 @@ function renderLegend() {
               g.append("circle").attr("r", 3.5).attr("fill", "var(--series-track)"); },
        "Station on the unit's morning report or in its own records");
   if (u.rows.some(r => r.bn))
-    item(g => g.append("circle").attr("r", 3.5).attr("fill", "var(--surface-1)").attr("stroke", "var(--series-track)").attr("stroke-width", 2),
+    item(g => g.append("circle").attr("r", 3.5).attr("fill", "var(--surface)").attr("stroke", "var(--series-track)").attr("stroke-width", 2),
          "A headquarters' or division's position: the unit's own assumed, legs dashed");
   item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("stroke", "var(--series-track)")
     .attr("stroke-width", 2).attr("stroke-dasharray", "5 4"), "Route assumed: at sea, or along a 1942 road (no position given)");
@@ -790,13 +790,13 @@ function renderLegend() {
        "Beaches and landing places on OSS Map 967, Aug 1942 (solid: minor; hollow: extensive)");
   if (actsOf(u).length)
     item(g => g.append("path").attr("d", "M0,-5L5,0L0,5L-5,0Z").attr("fill", "var(--series-attack)")
-                .attr("stroke", "var(--text-primary)").attr("stroke-width", 1.2),
+                .attr("stroke", "var(--ink)").attr("stroke-width", 1.2),
          "In action, from the unit's own records (hollow: casualty)");
   item(g => { g.append("rect").attr("x", -10).attr("y", -5).attr("width", 20).attr("height", 10).attr("fill", "var(--series-track)");
               [-12, -6, 0, 6].forEach(x0 => g.append("line").attr("x1", x0).attr("y1", 5).attr("x2", x0 + 10).attr("y2", -5)
-                .attr("stroke", "var(--surface-1)").attr("stroke-width", 2));
+                .attr("stroke", "var(--surface)").attr("stroke-width", 2));
               g.append("rect").attr("x", -11).attr("y", -6).attr("width", 22).attr("height", 12).attr("fill", "none")
-                .attr("stroke", "var(--surface-1)").attr("stroke-width", 2); },
+                .attr("stroke", "var(--surface)").attr("stroke-width", 2); },
        "Timeline hatched: position assumed");
 }
 

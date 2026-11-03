@@ -224,14 +224,14 @@ Promise.all([
 function buildSteps(timeline) {
   const host = d3.select("#steps");
   if (!document.getElementById("feature-css")) d3.select("head").append("style").attr("id", "feature-css").text(`
-    .feature-head { margin: 40px 0 0; padding: 22px 0 6px; border-top: 3px double var(--ink, #222); }
-    .feature-head span { font: 700 15.5px var(--font-type, monospace); color: var(--ink-2, #555); }
+    .feature-head { margin: 40px 0 0; padding: 22px 0 6px; border-top: 3px double var(--ink); }
+    .feature-head span { font: 700 15.5px var(--typed); color: var(--ink-2); }
     .feature-head h2 { font-size: 34px; font-style: normal; margin: 4px 0 6px; }
-    .feature-head p { margin: 0; color: var(--ink-3, #666); font-style: italic; }
+    .feature-head p { margin: 0; color: var(--ink-3); font-style: italic; }
     .feature-head a.anchor { color: inherit; text-decoration: none; }
-    .feature-head a.anchor:hover::after { content: " #"; color: var(--ink-3, #888); }
-    .step.feature { min-height: 90vh; border-bottom: 3px double var(--ink, #222); margin-bottom: 30px; }
-    .step.feature .card { border: 2px solid var(--ink, #222); }`);
+    .feature-head a.anchor:hover::after { content: " #"; color: var(--ink-3); }
+    .step.feature { min-height: 90vh; border-bottom: 3px double var(--ink); margin-bottom: 30px; }
+    .step.feature .card { border: 2px solid var(--ink); }`);
   STEPS.forEach((s, i) => {
     const rows = timeline.filter(r => r.step === s.id);
     // a feature step gets its own heading and frame: it puts the steps before it together
@@ -245,7 +245,7 @@ function buildSteps(timeline) {
     c.append("p").html(rich(s.body));
     const ul = c.append("div").attr("class", "entries");
     rows.forEach(r => {
-      const bar = r.kind === "hit" ? "var(--fire)" : r.side === "jp" ? "var(--japan)" : "var(--c1)";
+      const bar = r.kind === "hit" ? "var(--hit)" : r.side === "jp" ? "var(--japan)" : "var(--c1)";
       const li = ul.append("div").attr("class", "entry").attr("style", `--bar:${bar}`);
       li.append("div").attr("class", "t" + (r.placed ? " placed" : ""))
         .attr("title", r.placed || null)
@@ -624,21 +624,21 @@ function buildMap(world, positions, P, hayTrack) {
   const rowsFor = b => b.rows.map(key => { const [t, kind] = key.split(" "); return TIMELINE.find(r => r.date === "1945-04-06" && r.time === t && r.kind === kind); }).filter(Boolean);
   const buildUI = () => {
     if (!document.getElementById("player-css")) d3.select("head").append("style").attr("id", "player-css").text(`
-      .beatcap { position: absolute; left: 10px; top: 10px; max-width: min(420px, 70%); background: var(--surface, #fff); border: 1px solid var(--rule, #ccc);
+      .beatcap { position: absolute; left: 10px; top: 10px; max-width: min(420px, 70%); background: var(--surface); border: 1px solid var(--rule);
         border-radius: 3px; padding: 8px 10px; font-size: 14.5px; line-height: 1.35; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
       .beatcap b { display: block; font-size: 15.5px; margin-bottom: 2px; }
-      .beatcap .src { margin-top: 4px; font-size: 13px; color: var(--ink-3, #666); }
+      .beatcap .src { margin-top: 4px; font-size: 13px; color: var(--ink-3); }
       .beatcap .src a { color: inherit; margin-right: 8px; }
-      .beatcap .held { margin-top: 4px; font-style: italic; color: var(--ink-3, #666); }
+      .beatcap .held { margin-top: 4px; font-style: italic; color: var(--ink-3); }
       .player { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; gap: 8px; align-items: center;
-        background: var(--surface, #fff); border: 1px solid var(--rule, #ccc); border-radius: 3px; padding: 5px 8px; font-size: 14px; }
-      .player button { font: inherit; background: none; color: inherit; border: 1px solid var(--rule, #ccc); border-radius: 3px; padding: 2px 9px; cursor: pointer; }
-      .player button[aria-pressed="true"] { font-weight: 700; background: var(--wash, rgba(0,0,0,.05)); }
+        background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: 5px 8px; font-size: 14px; }
+      .player button { font: inherit; background: none; color: inherit; border: 1px solid var(--rule); border-radius: 3px; padding: 2px 9px; cursor: pointer; }
+      .player button[aria-pressed="true"] { font-weight: 700; background: var(--wash); }
       .player .scrub { position: relative; flex: 1; min-width: 80px; }
       .player input[type=range] { width: 100%; margin: 0; }
-      .player .tick { position: absolute; top: -3px; width: 2px; height: 6px; background: var(--ink-3, #888); pointer-events: none; }
-      .player .tick.hit { background: var(--hit, #c33); height: 9px; top: -5px; }
-      .player .t { font-family: var(--font-type, monospace); min-width: 3.5em; text-align: right; }
+      .player .tick { position: absolute; top: -3px; width: 2px; height: 6px; background: var(--ink-3); pointer-events: none; }
+      .player .tick.hit { background: var(--hit); height: 9px; top: -5px; }
+      .player .t { font-family: var(--typed); min-width: 3.5em; text-align: right; }
       .beatcap[hidden], .player[hidden] { display: none; }`);
     const box = d3.select(svg.node().parentNode);
     const cap = box.append("div").attr("class", "beatcap").attr("aria-live", "polite").attr("hidden", true);
@@ -881,17 +881,17 @@ function buildProfile() {
   const band = [FR(88), FR(65)];
   svg.append("rect").attr("x", X(band[0])).attr("y", Y(48)).attr("width", (band[1] - band[0]) * k).attr("height", (48 - 13) * k).attr("class", "dmg").attr("opacity", 0.9);
   svg.append("path").attr("d", s.d).attr("class", "sil").attr("transform", `translate(${pad},${wl}) scale(${k})`);
-  svg.append("rect").attr("x", X(band[0])).attr("y", Y(48)).attr("width", (band[1] - band[0]) * k).attr("height", (48 - 13) * k).attr("fill", "url(#hatch-fire)").attr("stroke", "var(--fire)").attr("stroke-width", 1.5);
+  svg.append("rect").attr("x", X(band[0])).attr("y", Y(48)).attr("width", (band[1] - band[0]) * k).attr("height", (48 - 13) * k).attr("fill", "url(#hatch-fire)").attr("stroke", "var(--hit)").attr("stroke-width", 1.5);
   svg.append("line").attr("x1", X(0)).attr("x2", X(L)).attr("y1", wl).attr("y2", wl).attr("stroke", "var(--ink-3)");
   for (let f = 0; f <= 210; f += 10) {
     const x = X(FR(f)); if (x < pad - 1) continue;
     svg.append("line").attr("class", "frame-tick").attr("x1", x).attr("x2", x).attr("y1", wl + 4).attr("y2", wl + (f % 50 ? 9 : 14));
     if (f % 20 === 0 || f === 65 || f === 88) svg.append("text").attr("class", "frame-lab").attr("x", x).attr("y", wl + 26).attr("text-anchor", "middle").text(f);
   }
-  [65, 88].forEach(f => svg.append("text").attr("class", "frame-lab").attr("x", X(FR(f))).attr("y", wl + 40).attr("text-anchor", "middle").style("fill", "var(--fire)").text("fr. " + f));
+  [65, 88].forEach(f => svg.append("text").attr("class", "frame-lab").attr("x", X(FR(f))).attr("y", wl + 40).attr("text-anchor", "middle").style("fill", "var(--hit)").text("fr. " + f));
   svg.append("text").attr("class", "frame-lab").attr("x", X(L)).attr("y", wl + 56).attr("text-anchor", "end").text("frames from the FP, 21 in apart (BuShips plans)");
   const m41 = [X(FR(90)), Y(27)];
-  svg.append("circle").attr("cx", m41[0]).attr("cy", m41[1]).attr("r", 9).attr("fill", "var(--fire)").attr("stroke", "var(--surface)").attr("stroke-width", 2);
+  svg.append("circle").attr("cx", m41[0]).attr("cy", m41[1]).attr("r", 9).attr("fill", "var(--hit)").attr("stroke", "var(--surface)").attr("stroke-width", 2);
   const call = (x, y, tx, ty, lines, bold) => { svg.append("path").attr("class", "leader").attr("d", `M${x},${y}L${tx},${ty + 4}`); lines.forEach((l, i) => svg.append("text").attr("class", "callout" + (i === 0 && bold ? " b" : "")).attr("x", tx).attr("y", ty - (lines.length - 1 - i) * 15).attr("text-anchor", "middle").text(l)); };
   call(m41[0], m41[1] - 10, m41[0] - 110, 40, ["Mount 41, twin 40 mm (starboard)", EXTRA?.mount41 ?? "\"wrecked\""], true);
   call(X((band[0] + band[1]) / 2) + 40, Y(40), X((band[0] + band[1]) / 2) + 170, 30, ["Frames 65-88: radio transmitter room,", "Main Radio, CIC and plot"], false);

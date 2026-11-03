@@ -10,12 +10,12 @@ function scaleBar(host, { units = ["nm"], at = "bottom-left", max = 120 } = {}) 
   if (!document.getElementById("scalebar-style")) {
     const style = document.createElement("style");
     style.id = "scalebar-style";
-    // either page family's colours: viz.css (--text-..., --border) or home.css, engage.css, haynsworth.html (--ink...)
+    // the pages' shared tokens (viz.css): --ink..., --rule, --surface, --wash
     style.textContent = `
       .scalebar { position: absolute; left: 10px; bottom: var(--scalebar-bottom, 10px); z-index: 2; pointer-events: auto;
-        padding: 3px 6px 2px; border-radius: 2px; font: 12.5px/1.2 var(--font-ui, var(--serif, Georgia, serif));
-        color: var(--text-secondary, var(--ink-2)); background: color-mix(in srgb, var(--surface-1, var(--surface, var(--paper, #fff)))
-        85%, transparent); border: 1px solid var(--border, var(--rule)); }
+        padding: 3px 6px 2px; border-radius: 2px; font: 12.5px/1.2 var(--serif);
+        color: var(--ink-2); background: color-mix(in srgb, var(--surface)
+        85%, transparent); border: 1px solid var(--rule); }
       .scalebar.bottom-right { left: auto; right: 10px; }
       .scalebar.top-left { bottom: auto; top: 10px; }
       .scalebar .row { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
