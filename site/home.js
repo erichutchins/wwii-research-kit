@@ -33,7 +33,7 @@ async function replay() {
   const act = { start: D.window.from, end: D.window.to, box: D.box, tracks: D.tracks, fixes: D.fixes.map(f => ({ ...f, boat: f.who })),
     convoy: `Convoy ${cv.convoy}`, route: `${cv.from} → ${cv.to}, sailed ${cv.sailed}.`, outcome: outcome ? outcome.paras.map(p => p.text).join(" ") : "",
     // `side` here is the replay's own key: the boat that wrote the entry, or "japan" for the other side's record (the build's `opposed`)
-    events: D.events.map(e => ({ ...e, side: e.opposed ? "japan" : e.actor, title: e.title || e.kind, text: e.words, page: e.cite.ref, scan: e.cite.href })),
+    events: D.events.map(e => ({ ...e, side: e.opposed ? "japan" : e.actor, title: e.title || e.kind, text: e.translation || e.words, page: e.cite.ref, scan: e.cite.href })),
     sinkings: [] };
   const battle = { places: D.places };
   const boats = D.participants.filter(p => p.kind === "submarine").map((b, i) => ({ ...b, color: `var(--c${i + 1})` }));
@@ -135,7 +135,7 @@ async function replay() {
     const own = /^\S+ (\d{4}) ([A-Z]{1,2})/.exec(e.local || "");   // "1944-04-29 2300 K" -> 2300 K
     const cite = u ? ` <a class="src" href="${esc(u)}" target="_blank" rel="noopener" title="${esc(e.page || "")}">${pageOf(e.page)}</a>` : "";
     const words = e.original
-      ? `<span class="ja" lang="ja">${esc(e.original)}</span><span class="tr">${esc(e.text)} (translated)${cite}</span>`
+      ? `<span class="ja" lang="ja" data-tr="${esc(e.text)}">${esc(e.original)}</span><span class="tr">${esc(e.text)} (translated)${cite}</span>`
       : `<span class="said">${esc(boat && titleAdds(e) ? e.text : (e.text && e.text !== e.title ? e.text : e.title))}${cite}</span>`;
     return `<li class="entry" style="--bar:${boat ? boat.color : "var(--ink)"}" title="${esc(e.local || "")}">
       <span class="t">${d3.utcFormat("%H%M")(e.t)}</span>

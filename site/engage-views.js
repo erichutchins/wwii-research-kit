@@ -144,7 +144,7 @@ const EV = (() => {
     const what = e.title && e.title !== actor ? e.title : e.kind && e.kind !== "log" ? e.kind.replace(/_/g, " ") : "";
     const toWhom = e.to ? `<span class="what">to ${e.to.map(r => esc(nameOf(r))).join(" and ")}</span>` : e.from ? `<span class="what">from ${esc(nameOf(e.from))}</span>` : "";
     const lang = e.lang || "ja";   // the record's own language (the build's `lang`): Japanese in its face, any other typed
-    const words = e.original ? `<div class="${lang === "ja" ? "ja" : "said"}" lang="${esc(lang)}">${esc(e.original)}</div><div class="tr">${esc(e.translation || e.words || "")}</div>`
+    const words = e.original ? `<div class="${lang === "ja" ? "ja" : "said"}" lang="${esc(lang)}" data-tr="${esc(e.translation || e.words || "")}">${esc(e.original)}</div><div class="tr">${esc(e.translation || e.words || "")}</div>`
                              : `<div class="said">${esc(e.words || e.title || "")}</div>`;
     const outcome = (e.outcome || []).map(o => `<div class="note"><b>Japanese side (${esc(String(o.relation || "").replace(/_/g, " "))}).</b> ${esc(o.note)}</div>`).join("");
     const placed = e.placed && e.placed !== "seq" ? `<div class="assume">${esc(e.placed)}</div>` : "";
@@ -167,7 +167,7 @@ const EV = (() => {
   const chips = (...xs) => xs.filter(Boolean).map(x => `<span class="chip">${esc(x)}</span>`).join("");
   const colHead = (name, sub, ...cs) => `<th><b>${esc(name)}</b>${sub ? esc(sub) : ""}${cs.some(Boolean) ? "<br>" : ""}${chips(...cs)}</th>`;
   const none = words => `<span class="none">${esc(words)}</span>`;
-  const words = ws => ws.map(w => w.original ? `<span class="${w.lang === "ja" ? "ja" : "said typed"}" lang="${esc(w.lang)}">${esc(w.original)}</span><span class="tr">${esc(w.translation || "")}</span>`
+  const words = ws => ws.map(w => w.original ? `<span class="${w.lang === "ja" ? "ja" : "said typed"}" lang="${esc(w.lang)}" data-tr="${esc(w.translation || "")}">${esc(w.original)}</span><span class="tr">${esc(w.translation || "")}</span>`
                             : w.typed ? `<span class="said typed">${esc(w.typed)}</span>` : w.ours ? `<span class="ours">${esc(w.ours)}</span>` : "").join("");
   const dayOf = utc => { const ms = Engage.T(utc); return ms == null || Number.isNaN(ms) ? "" : `${Engage.day(ms)} ${new Date(ms).getUTCFullYear()}`; };
   const deg = (v, pos, neg) => `${Math.abs(v).toFixed(3)} ${v >= 0 ? pos : neg}`;

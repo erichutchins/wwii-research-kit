@@ -340,7 +340,7 @@
         <div class="t${e.placed ? " placed" : ""}">${e.ms != null && e.local.length > 10 ? E.hhmm(e.ms) : ""}<small>${e.ms != null ? E.day(e.ms) : esc(e.local)}</small></div>
         <div class="body">
           <div class="who">${shape}<b>${esc(name)}</b>${what}${toWhom}<span class="own">${esc(e.local.slice(11))}</span></div>
-          ${e.original ? `<div class="${lang === "ja" ? "ja" : "said"}" lang="${esc(lang)}">${esc(e.original)}</div><div class="tr">${esc(e.translation || e.words || "")} (translated)</div>` : `<div class="said">${esc(e.words || e.title || "")}</div>`}
+          ${e.original ? `<div class="${lang === "ja" ? "ja" : "said"}" lang="${esc(lang)}" data-tr="${esc(e.translation || e.words || "")}">${esc(e.original)}</div><div class="tr">${esc(e.translation || e.words || "")} (translated)</div>` : `<div class="said">${esc(e.words || e.title || "")}</div>`}
           ${(e.outcome || []).map(o => `<div class="note"><b>Japanese side (${esc(o.relation.replace(/_/g, " "))}).</b> ${esc(o.note)}</div>`).join("")}
           ${e.note ? `<div class="assume">${esc(e.note)}</div>` : ""}${placed}
           ${e.source ? `<span class="src">${esc(e.source)}</span>` : ""} ${EV.cite(e.cite, "src alone")}
@@ -427,7 +427,7 @@
     const convoyHTML = Object.values(D.convoys).map(c => {
       const route = [c.from, ...(c.via || []), c.to].filter(Boolean).join(" → ");
       const ships = [...c.ships].sort((a, b) => (a.role.startsWith("escort") ? 0 : 1) - (b.role.startsWith("escort") ? 0 : 1));
-      return `<h3><a href="convoys.html?c=${esc(c.id)}">Convoy ${esc(c.convoy)}</a> ${c.name_ja ? `<span lang="ja">${esc(c.name_ja)}</span>` : ""}</h3>
+      return `<h3><a href="convoys.html?c=${esc(c.id)}">Convoy ${esc(c.convoy)}</a> ${c.name_ja ? `<span lang="ja" data-tr="Convoy ${esc(c.convoy)}, as the Japanese records write it">${esc(c.name_ja)}</span>` : ""}</h3>
         <div class="muted" style="margin:-4px 0 10px">${esc(route)}${c.sailed ? ` · sailed ${esc(c.sailed)}` : ""}${c.cargo ? ` · ${esc(c.cargo)}` : ""}</div>
         <div class="plates">${ships.map(s => plate(s.ship, s.role, s.sil || EV.category(s.role), /sunk/.test(s.fate || "") ? "var(--ink)" : "var(--ink-3)",
           s.fate ? `<div class="fate">${esc(s.fate)}</div>` : "", s.basis === "secondary" ? "secondary" : "",

@@ -119,7 +119,7 @@ function entry(host, r, { date = true } = {}) {
   const d = li.append("div").attr("class", "body");
   d.append("div").attr("class", "who").html(`<b>${esc(r.actor)}</b>${r.placed === "seq" ? `<span class="what seq">time not recorded</span>` : ""}`);
   if (r.original) {   // the record in its own language, typed (Japanese in its face), with our translation under it
-    d.append("div").attr("class", r.lang === "ja" ? "ja" : "said").attr("lang", r.lang || "").text(r.original);
+    d.append("div").attr("class", r.lang === "ja" ? "ja" : "said").attr("lang", r.lang || "").attr("data-tr", r.translation || "").text(r.original);
     d.append("div").attr("class", "tr").text(r.translation);
   } else {
     // wholly the record's words: its typed face; otherwise our words, quoting it

@@ -253,7 +253,7 @@ function buildSteps(timeline) {
       const d = li.append("div").attr("class", "body");
       d.append("div").attr("class", "who").html(`<b>${esc(r.actor)}</b>${r.placed ? `<span class="what">${esc(r.placed)}</span>` : ""}`);
       if (r.original) {   // the record in its own language (Japanese in its face), with our translation under it
-        d.append("div").attr("class", r.lang === "ja" ? "ja" : "said").attr("lang", r.lang || "").text(r.original);
+        d.append("div").attr("class", r.lang === "ja" ? "ja" : "said").attr("lang", r.lang || "").attr("data-tr", r.translation || "").text(r.original);
         d.append("div").attr("class", "tr").html(rich(r.translation));
       } else {
         // wholly the record's words: its typed face; otherwise our words, quoting it

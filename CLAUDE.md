@@ -131,7 +131,8 @@ Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page
   or work to its printed dimensions, and cite it.
 - Type has three voices, each with one job: ET Book for the kit's own words, TT2020 style E for the records' typed
   words (`.typed`, `.mono`, `code`; `--typed`), Shippori Mincho for Japanese (`[lang="ja"]`; the original before our
-  translation). Fonts are in `site/fonts/fonts.css`. Special Elite only for the front page's masthead. No capitals for
+  translation; the element carries `lang` and `data-tr`, the translation, so `glossary.js` opens the English in its card on
+  hover, focus or tap). Fonts are in `site/fonts/fonts.css`. Special Elite only for the front page's masthead. No capitals for
   labels: italics instead.
 - Every page has the same navigation bar, at the top of its header: an empty `<nav class="nav" aria-label="The kit"
   data-nav></nav>` followed by `<script src="nav.js"></script>`, which `site/nav.js` fills as the page is parsed (so

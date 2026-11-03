@@ -4,6 +4,9 @@
 // colour. Pointing at it, focusing it or tapping it opens a small card with the explanation, its source (linked) and,
 // for a ship, a link to its track. Skipped: links, buttons, form controls, headings, the nav, the footer, SVG, Japanese,
 // the map tooltips (#tip), and anything inside [data-no-gloss].
+// The same card gives the English of any original quoted in its own language: an element with `lang` and `data-tr`
+// (the page's script sets the translation there as it draws the entry) opens it on hover, focus or tap, whatever the
+// page, even where the translation is also printed under the original.
 // Paths are relative to this script, so the family pages (which load it as kit/site/glossary.js) work too.
 (() => {
   const HERE = new URL(".", document.currentScript.src);
@@ -16,6 +19,11 @@
     .gloss { text-decoration: underline dotted; text-decoration-thickness: 1px; text-underline-offset: 3px;
              text-decoration-color: color-mix(in srgb, currentColor 55%, transparent); cursor: help; }
     .gloss:hover, .gloss:focus-visible { text-decoration-color: currentColor; }
+    [data-tr] { cursor: help; text-decoration: underline dotted; text-decoration-thickness: 1px; text-underline-offset: 4px;
+                text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); }
+    [data-tr]:hover, [data-tr]:focus-visible { text-decoration-color: currentColor; }
+    .gloss-card .gloss-tr { font-size: 16px; line-height: 1.45; }
+    .gloss-card .gloss-lang { display: block; margin-top: 5px; font-size: 13px; color: var(--ink-2); font-style: italic; }
     .gloss-card { position: absolute; z-index: 1000; max-width: min(340px, calc(100vw - 24px)); padding: 9px 12px 10px;
       font: 15.5px/1.45 et-book, Palatino, "Palatino Linotype", Georgia, serif; font-style: normal; font-weight: normal;
       color: var(--ink); background: var(--surface);
@@ -111,6 +119,20 @@
     }
   }
 
+  // An original in its own language: the translation the page's script put in data-tr opens the card too
+  const LANG = { ja: "Japanese", de: "German", fr: "French", it: "Italian" };
+  const OWNERS = ".gloss, [data-tr]";
+  function markTr(roots) {
+    for (const root of roots) {
+      if (!root || root.nodeType !== 1) continue;
+      const els = root.matches("[data-tr]") ? [root] : [];
+      els.push(...root.querySelectorAll("[data-tr]"));
+      for (const el of els) if (!el.hasAttribute("tabindex")) {
+        el.tabIndex = 0; el.setAttribute("role", "button"); el.setAttribute("aria-label", "the English of this");
+      }
+    }
+  }
+
   // The card: one, reused; hover or focus opens it, tap toggles it, Escape or a tap elsewhere closes it.
   const card = document.createElement("div");
   card.className = "gloss-card"; card.setAttribute("role", "tooltip"); card.hidden = true;
@@ -120,6 +142,15 @@
     if (owner !== span || card.hidden) shownAt = Date.now();
     const e = span.__gloss; owner = span;
     card.replaceChildren();
+    if (span.hasAttribute("data-tr")) {
+      const b = document.createElement("b"); b.textContent = "In English";
+      const t = document.createElement("span"); t.className = "gloss-tr"; t.textContent = span.getAttribute("data-tr");
+      card.append(b, t);
+      const from = LANG[span.getAttribute("lang")];
+      const s = document.createElement("span"); s.className = "gloss-lang";
+      s.textContent = from ? `Our translation; the ${from} is the record's own words.` : "Our translation; the original is the record's own words.";
+      card.append(s);
+    } else {
     const b = document.createElement("b"); b.textContent = e.title;
     card.append(b, document.createTextNode(e.says || ""));
     if (e.see) { const a = document.createElement("a"); a.href = e.see; a.textContent = `${e.seeText} →`; card.append(document.createElement("br"), a); }
@@ -134,6 +165,7 @@
       });
       card.append(src);
     }
+    }
     if (!card.isConnected) document.body.append(card);
     card.hidden = false;
     const r = span.getBoundingClientRect(), w = card.offsetWidth, h = card.offsetHeight;
@@ -142,12 +174,12 @@
     card.style.left = `${left + scrollX}px`; card.style.top = `${top + scrollY}px`;
   }
   const hide = () => { hideTimer = setTimeout(() => { card.hidden = true; owner = null; }, 120); };
-  document.addEventListener("mouseover", ev => { const s = ev.target.closest?.(".gloss"); if (s) show(s); else if (ev.target.closest?.(".gloss-card")) clearTimeout(hideTimer); });
-  document.addEventListener("mouseout", ev => { if (ev.target.closest?.(".gloss, .gloss-card")) hide(); });
-  document.addEventListener("focusin", ev => { if (ev.target.classList?.contains("gloss")) show(ev.target); });
-  document.addEventListener("focusout", ev => { if (ev.target.classList?.contains("gloss")) hide(); });
+  document.addEventListener("mouseover", ev => { const s = ev.target.closest?.(OWNERS); if (s) show(s); else if (ev.target.closest?.(".gloss-card")) clearTimeout(hideTimer); });
+  document.addEventListener("mouseout", ev => { if (ev.target.closest?.(OWNERS + ", .gloss-card")) hide(); });
+  document.addEventListener("focusin", ev => { if (ev.target.matches?.(OWNERS)) show(ev.target); });
+  document.addEventListener("focusout", ev => { if (ev.target.matches?.(OWNERS)) hide(); });
   document.addEventListener("click", ev => {
-    const s = ev.target.closest?.(".gloss");
+    const s = ev.target.closest?.(OWNERS);
     // a tap on a phone fires mouseover (which opens the card) just before click: that click must not close it again
     if (s) { ev.preventDefault(); ev.stopPropagation();
       if (owner === s && !card.hidden && Date.now() - shownAt > 500) { card.hidden = true; owner = null; } else show(s); return; }
@@ -155,14 +187,14 @@
   }, true);
   document.addEventListener("keydown", ev => {
     if (ev.key === "Escape") { card.hidden = true; owner = null; }
-    if ((ev.key === "Enter" || ev.key === " ") && ev.target.classList?.contains("gloss")) { ev.preventDefault(); show(ev.target); }
+    if ((ev.key === "Enter" || ev.key === " ") && ev.target.matches?.(OWNERS)) { ev.preventDefault(); show(ev.target); }
   });
 
   // The page as it loads, then whatever the page's script draws later (lists, panels, steps).
   ready.then(G => {
-    if (!G) return;
     const go = () => {
-      mark([document.body], G);
+      if (G) mark([document.body], G);
+      markTr([document.body]);
       const pending = new Set();
       let queued = false;
       const obs = new MutationObserver(records => {
@@ -174,7 +206,9 @@
           requestAnimationFrame(() => {
             obs.disconnect();
             // only the outermost of what was added (a list of 100 stations is walked once, not once per row)
-            mark([...pending].filter(n => n.isConnected && ![...pending].some(p => p !== n && p.contains(n))), G);
+            const outer = [...pending].filter(n => n.isConnected && ![...pending].some(p => p !== n && p.contains(n)));
+            if (G) mark(outer, G);
+            markTr(outer);
             pending.clear(); queued = false;
             obs.observe(document.body, { childList: true, subtree: true });
           });
