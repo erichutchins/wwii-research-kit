@@ -466,7 +466,7 @@ async function lists() {
   const periodStart = dates => { const [a, b = a] = dates.split("–").map(x => x.trim()); const yr = /\d{4}/.exec(b)?.[0];
     return Date.parse(/\d{4}/.test(a) ? `${a} UTC` : /[A-Za-z]/.test(a) ? `${a} ${yr} UTC` : `${a} ${b.replace(/^\d+\s*/, "")} UTC`); };
   const pac = [];
-  for (const b of battles) pac.push([Date.parse(b.from), row(month(Date.parse(b.from)), `<a href="engagement.html?e=${b.id}">${esc(b.title)}</a>`, "both sides, one clock")]);
+  for (const b of battles) pac.push([Date.parse(b.from), row(month(Date.parse(b.from)), `<a href="engagement.html?e=${b.id}&amp;view=records">${esc(b.title)}</a>`, "both sides, one clock")]);
   for (const s of ships.filter(s => s.alias !== "solar")) {
     const d = d3.min(s.periods, p => periodStart(p.dates));
     const sub = s.kind === "submarine";

@@ -1,11 +1,20 @@
-// engagement.html?e=<id>: one engagement from both sides' records. Reads records/engagements/index.json and
-// records/engagements/<id>/engagement.json (tools/build_engagement.py); the computation is engage.js's, the shared
-// drawing engage-views.js's. Encodings: guides/ENGAGEMENTS.md.
+// engagement.html?e=<id>&view=account|records|working: one engagement from both sides' records, at three depths
+// (guides/OPERATIONS-VIEWER.md, 4). Reads records/engagements/index.json and records/engagements/<id>/engagement.json
+// (tools/build_engagement.py); the computation is engage.js's, the shared drawing engage-views.js's. Encodings:
+// guides/ENGAGEMENTS.md. The account (the default) is one static screen: the outcome in the records' terms, the
+// subjects, the span, the map with every mark shown, and three doors. The records is the chart-room sheet: the map
+// with its clock and lanes and the two-sided log when the frame is clocked, the chronology when it is dated, the order
+// of battle and the story; `&at=<ISO minute>` sets its clock. The working is where our voice leads, labelled: the
+// periscope, closing in, the open questions and the sources. Each is a part of this one page, shown by the address.
 (async () => {
   const E = Engage, esc = EV.esc;
   const index = await fetch(RECORDS + "engagements/index.json").then(r => r.json());
-  const want = new URLSearchParams(location.search).get("e");
+  const params = new URLSearchParams(location.search), want = params.get("e");
   const id = index.some(x => x.id === want) ? want : "tama-17-1944-04-29";
+  const DEPTHS = ["account", "records", "working"];
+  const VIEW = DEPTHS.includes(params.get("view")) ? params.get("view") : "account";
+  const IN = v => VIEW === v;
+  const address = (eid, view) => `?e=${encodeURIComponent(eid)}&view=${view}`;
   const [D, world] = await Promise.all([fetch(`${RECORDS}engagements/${id}/engagement.json`).then(r => r.json()),
     d3.json(EV.LAND_10M), SILHOUETTES]);
   const LAND = EV.land(world);
@@ -19,7 +28,7 @@
     const xs = index.filter(x => x.theater === k);
     return xs.length ? `<optgroup label="${name}">${xs.map(x => `<option value="${x.id}"${x.id === id ? " selected" : ""}>${esc(x.title)}${x.boats.length ? " · " + esc(x.boats.join(", ")) : ""}</option>`).join("")}</optgroup>` : "";
   }).join("");
-  sel.addEventListener("change", () => { location.search = "?e=" + encodeURIComponent(sel.value); });
+  sel.addEventListener("change", () => { location.search = address(sel.value, VIEW); });   // the depth stays
 
   // ---------- who's who, and their colours (colour follows the boat; the Japanese side is ink; red is for hits)
   const PARTS = D.participants;
@@ -45,11 +54,20 @@
   // follows it, as below. Dated or monthly: there is no clock to play, so the time controls and the log go, the map
   // stands still with every mark shown, and the chronology leads, full width, where the log was.
   const TEMPO = E.tempo(D.events), CLOCKED = TEMPO === "clocked";
-  if (!CLOCKED) {
+  // The clock plays only on the records depth of a clocked frame. The account's map is the same drawing with the clock
+  // at the window's end: every track, mark and place shown, no play button, no lanes, no fading (zoom and pan stay).
+  const PLAYS = CLOCKED && IN("records");
+  if (!PLAYS) {
     document.querySelector(".time").hidden = true;
     document.querySelector(".side").hidden = true;
-    document.getElementById("action").classList.add("dated");
+    document.getElementById("action").classList.add(IN("account") ? "account" : "dated");
   }
+  document.getElementById("action").hidden = IN("working");
+  document.getElementById("account").hidden = !IN("account");
+  document.getElementById("doors").hidden = !IN("account");
+  document.getElementById("story").hidden = !IN("records");
+  // the clock the address asks for (`&at=1944-04-29T13:01Z`): the records depth of a clocked frame opens at that minute
+  const AT = PLAYS && params.get("at") ? E.T(params.get("at")) : null;
   const OWN = D.clock && D.gmt ? D.clock : (D.theater === "pacific" && D.gmt ? "I" : "");
   const OWN_NAME = { I: "Item (Tokyo time)", B: "Baker", K: "King", H: "How" };
   document.getElementById("clock-zone").textContent = D.gmt ? "GMT" : "local time (the records give no zone)";
@@ -63,11 +81,27 @@
   document.getElementById("title").textContent = D.title;
   const render = s => Links.render(s, { cites: D.cites || {} });
   if (top && top.paras.length) document.getElementById("lede").innerHTML = render(top.paras[0].text);
-  document.getElementById("story").innerHTML = secs.map((s, i) => {
+  // the story's Sources (and What is missing) sections belong to the working, under how this was read; the rest is the
+  // records' narrative; the Outcome and Clocks sections also go to the account
+  const sourcesSec = s => /^sources\b|what('s| is) missing/i.test(s.heading || "");
+  const sectionsHTML = list => list.map(s => {
     const paras = s === top ? s.paras.slice(1) : s.paras;
     if (!s.heading && !paras.length) return "";
     return `${s.heading ? `<h2>${esc(s.heading)}</h2>` : ""}${paras.map(p => `<p class="${p.aside ? "aside" : ""}">${render(p.text)}</p>`).join("")}`;
   }).join("");
+  document.getElementById("story").innerHTML = sectionsHTML(secs.filter(s => !sourcesSec(s)));
+  const SOURCES_HTML = sectionsHTML(secs.filter(sourcesSec));
+  document.getElementById("sources").innerHTML = SOURCES_HTML;
+  document.getElementById("sources-card").hidden = !(IN("working") && SOURCES_HTML);
+
+  // ---------- the convoy's path as the boats saw it (ours): the ship contacts, at the target's position, and the
+  // Japanese record's positions, straight between them. Closing in is computed from it, and the account draws it dotted.
+  // A sighting the report itself contradicts (its fix note says so) is left off, and listed.
+  const contradicts = f => /contradict/i.test(f.fix || "");
+  const contradicted = D.fixes.filter(f => f.kind === "ship" && contradicts(f));
+  const seen = [...D.fixes.filter(f => f.kind === "ship" && !contradicts(f)).map(f => ({ utc: f.utc, lon: f.lon, lat: f.lat })),
+                ...D.events.filter(e => e.origin === "japanese" && e.lat != null && e.utc).map(e => ({ utc: e.utc, lon: e.lon, lat: e.lat }))];
+  const PATH = Object.keys(D.convoys).length ? E.observedPath(seen) : [];
 
   // ---------- legend: only the marks this engagement has
   const has = f => D.events.some(f);
@@ -82,11 +116,12 @@
     has(e => e.kind === "contact_report") && `<span><svg width="24" height="10"><line x1="1" y1="5" x2="23" y2="5" class="msg" stroke="var(--ink-2)"/></svg>Contact report, sender to each boat it went to</span>`,
     D.fixes.some(f => !f.on_track && f.kind !== "ship") && `<span><svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="4.5" fill="none" stroke="var(--ink-2)" stroke-width="1.4" stroke-dasharray="2 2"/></svg>Contradicted in the report</span>`,
     D.positions.length && `<span><svg width="10" height="10" viewBox="-5 -5 10 10"><rect x="-3" y="-3" width="6" height="6" fill="var(--ink-3)"/></svg>A place in the records</span>`,
+    IN("account") && PATH.length > 1 && `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--ink-3)" stroke-width="1.4" stroke-dasharray="2 4"/></svg><i>The convoy's path as the boats saw it (ours)</i></span>`,
   ].filter(Boolean).join("");
 
   // ---------- map
   const svg = d3.select("#map");
-  const gLand = svg.append("g"), gGrat = svg.append("g"), gPlace = svg.append("g"), gTrk = svg.append("g"), gMsg = svg.append("g"),
+  const gLand = svg.append("g"), gGrat = svg.append("g"), gPlace = svg.append("g"), gPath = svg.append("g"), gTrk = svg.append("g"), gMsg = svg.append("g"),
         gNowName = svg.append("g"), gMk = svg.append("g"), gNow = svg.append("g"), gPulse = svg.append("g");
   let proj = null, W = 0, H = 0, quiet = false, t = t1, playing = false, raf = 0, lastT = null;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -97,7 +132,7 @@
   if (!D.box) document.querySelector(".map-box").hidden = true;
 
   function drawStatic() {
-    if (!D.box) return;
+    if (!D.box || document.getElementById("action").hidden) return;   // (the working has no map: nothing to fit)
     const el = svg.node(); W = el.clientWidth; H = el.clientHeight;
     const b = D.box, m = Math.min(44, W * 0.06);
     proj = d3.geoMercator().fitExtent([[m, 26], [W - m, H - 34]], { type: "MultiPoint", coordinates: [[b[0], b[1]], [b[2], b[3]], [b[0], b[3]], [b[2], b[1]]] });
@@ -110,6 +145,9 @@
     gPlace.selectAll("*").remove();
     D.places.filter(p => inView(P(p.lon, p.lat))).forEach(p => gPlace.append("text").attr("class", "place")
       .attr("x", P(p.lon, p.lat)[0]).attr("y", P(p.lon, p.lat)[1]).attr("text-anchor", "middle").style("font-size", p.small ? "10px" : null).text(p.name));
+    // the account: the convoy's observed path, dotted (ours; the caption says so)
+    gPath.selectAll("path").data(IN("account") && PATH.length > 1 ? [PATH] : []).join("path").attr("class", "trk observed")
+      .attr("d", d3.line().x(p => P(p.lon, p.lat)[0]).y(p => P(p.lon, p.lat)[1]));
     drawMarks();
   }
 
@@ -207,11 +245,11 @@
       TRACKED.forEach(p => {
         const pts = D.tracks[p.id], now = E.posAt(pts, t);
         const past = pts.filter(q => E.T(q.utc) <= t).map(q => [q.lon, q.lat]), ahead = pts.filter(q => E.T(q.utc) > t).map(q => [q.lon, q.lat]);
-        if (now) { past.push(now); ahead.unshift(now); nows.push({ p, now }); }
+        if (now) { past.push(now); ahead.unshift(now); if (PLAYS) nows.push({ p, now }); }   // the "now" dot is the clock's
         rows.push({ id: p.id, cls: "past", pts: past }, { id: p.id, cls: "ahead", pts: ahead });
       });
       gTrk.selectAll("path").data(rows).join("path").attr("class", d => "trk " + d.cls).attr("stroke", d => colour(d.id)).attr("d", d => d.pts.length > 1 ? line(d.pts) : null);
-      gMk.selectAll("g.mk").classed("future", d => CLOCKED && d.ms > t);   // no clock: everything is shown
+      gMk.selectAll("g.mk").classed("future", d => PLAYS && d.ms > t);   // no clock: everything is shown
       if (lastT !== null && t !== lastT) fires.filter(f => (f.ms > lastT && f.ms <= t && t - lastT < 3 * 3600e3) || f.ms === t).forEach(pulse);
       lastT = t;
       drawMessages();
@@ -237,7 +275,7 @@
   const lanes = d3.select("#lanes");
   let lx = null;
   function drawLanes() {
-    if (!CLOCKED) return;
+    if (!PLAYS) return;
     const laneH = 17, top = 4, left = 104;
     lanes.style("height", `${top + LANES.length * laneH + 24}px`);
     const w = lanes.node().clientWidth;
@@ -271,8 +309,8 @@
 
   // ---------- the chronology, when the frame has no clock to play: Engage's rows and columns, EV's drawing
   function drawChronology() {
-    document.getElementById("chron-card").hidden = CLOCKED;
-    if (CLOCKED) return;
+    document.getElementById("chron-card").hidden = CLOCKED || !IN("records");
+    if (CLOCKED || !IN("records")) return;
     EV.chronology(document.getElementById("chron"), { rows: E.chronologyRows(D.events, TEMPO), columns: E.chronologyColumns(D.events, PARTS), tempo: TEMPO, sideName: s => SIDE_NAME[s] || s, nameOf });
     document.getElementById("chron-title").textContent = TEMPO === "monthly" ? "The records, by the month" : "The records, by the day";
     document.getElementById("chron-note").textContent = (TEMPO === "monthly"
@@ -283,7 +321,7 @@
 
   // ---------- the two-sided log
   function drawLog() {
-    if (!CLOCKED) return;
+    if (!PLAYS) return;
     document.getElementById("log").innerHTML = D.events.map((e, i) => {
       const who = byId[e.actor];
       const shape = who && who.sil ? EV.sil(who.sil, evColour(e), { ftPx: 0.1, width: 40 }) : e.side === "jp" ? EV.sil("cargo", "var(--japan)", { width: 40 }) : "";
@@ -321,17 +359,11 @@
 
   // ---------- closing in: each boat's distance from where the convoy was seen
   const boats = TRACKED.filter(p => p.kind === "submarine");
-  // a sighting the report itself contradicts (its fix note says so) is left off the convoy's path, and listed
-  const contradicts = f => /contradict/i.test(f.fix || "");
-  const contradicted = D.fixes.filter(f => f.kind === "ship" && contradicts(f));
-  const seen = [...D.fixes.filter(f => f.kind === "ship" && !contradicts(f)).map(f => ({ utc: f.utc, lon: f.lon, lat: f.lat })),
-                ...D.events.filter(e => e.origin === "japanese" && e.lat != null && e.utc).map(e => ({ utc: e.utc, lon: e.lon, lat: e.lat }))];
-  const PATH = E.observedPath(seen);
   const series = boats.map(b => ({ b, pts: E.closing(D.tracks[b.id], PATH, 160) })).filter(s => s.pts.length > 1);
   let cx = null, cy = null;
   function drawClosing() {
     const card = document.getElementById("closing-card");
-    card.hidden = !(Object.keys(D.convoys).length && series.length);
+    card.hidden = !(IN("working") && Object.keys(D.convoys).length && series.length);
     if (card.hidden) return;
     const s = d3.select("#closing"), w = s.node().clientWidth, h = 220, m = { l: 48, r: 90, t: 12, b: 26 };
     s.selectAll("*").remove();
@@ -361,7 +393,7 @@
 
   // ---------- what the records leave open
   function drawClaims() {
-    document.getElementById("claims-card").hidden = !D.claims.length;
+    document.getElementById("claims-card").hidden = !(IN("working") && D.claims.length);
     document.getElementById("claims").innerHTML = d3.groups(D.claims, c => c.question).map(([q, cs]) => `<div class="claim"><h3>${esc(q)}</h3><ul>${cs.map(c =>
       `<li><span class="w">${esc(c.weight)}</span><span><span class="a"><b>${esc(c.answer)}</b></span>${c.note ? ` <span class="n">${esc(c.note)}</span>` : ""} <span class="src">${esc(c.source || "")}</span> ${EV.cite(c.cite)}</span></li>`).join("")}</ul></div>`).join("");
   }
@@ -386,6 +418,11 @@
     const armyHTML = army.length ? `<h3>The units</h3><ul class="units">${army.map(p => `<li><a href="army.html?unit=${encodeURIComponent(p.unit)}&amp;t=${t0}">${esc(p.name)}</a>${p.basis && p.basis !== "reported" ? ` <i>(${esc(p.basis)})</i>` : ""}${p.note ? ` <span class="muted">${esc(p.note)}</span>` : ""}</li>`).join("")}</ul>` : "";
     const usHTML = us.length ? `<h3>${us.length > 1 ? "US" : us[0].kind === "submarine" ? "The boat" : "US"}</h3><div class="plates">${usPlates.join("")}</div>` : "";
     document.getElementById("oob").innerHTML = `<div class="pack">${usHTML}${armyHTML}</div><div>${convoyHTML}${jpHTML}</div>`;
+    // the account's "Who" already shows our own side's plates, so there the card is the other side's alone (the
+    // convoy's ships and their fates, the target as the boat saw it), and goes when there is no other side drawn
+    const card = document.getElementById("oob-card");
+    card.classList.toggle("other", IN("account"));
+    card.hidden = IN("working") || (IN("account") && !(convoyHTML || jpHTML));
   }
 
   // ---------- time and playback
@@ -406,8 +443,9 @@
   }
   playBtn.addEventListener("click", () => playing ? stop() : play());
 
-  // ---------- the observer view (observer.js): each attack whose data sheet is transcribed; picking one moves the clock
-  const observer = Observer.mount({ D, colour, nameOf, setPageTime: ms => { stop(); setTime(ms); highlightRow(ms); } });
+  // ---------- the observer view (observer.js): each attack whose data sheet is transcribed; it lives in the working
+  // (the card measures itself when mounted, so it is mounted only where it is shown); picking one moves the clock
+  const observer = IN("working") ? Observer.mount({ D, colour, nameOf, setPageTime: ms => { stop(); setTime(ms); highlightRow(ms); } }) : { pick() {} };
   const sheetOf = e => e && e.kind === "attack" && D.sheets?.[e.actor]?.[e.title.replace(" (narrative)", "")] ? e : null;
   document.getElementById("log").addEventListener("click", ev => {
     const row = ev.target.closest(".row"), e = row && D.events[[...row.parentNode.children].indexOf(row)];
@@ -415,6 +453,88 @@
   });
   gMk.on("click.observer", ev => { const d = d3.select(ev.target.closest("g.mk")).datum(); const e = d && d.es && d.es.find(sheetOf); if (e) observer.pick(e.actor, e.title.replace(" (narrative)", "")); });
 
-  drawOOB(); drawClaims(); drawLog(); drawChronology(); drawStatic(); drawLanes(); drawClosing(); drawFrame();
+  // ---------- the depths: the switch under the breadcrumb, with each depth's count; the account's card and doors
+  // (guides/OPERATIONS-VIEWER.md, 4.1). Every number is counted from the frame's own JSON, never written in.
+  const refStem = e => String(e.cite?.ref || "").split("/")[0].replace(/\s+p\d.*$/, "");
+  // the record an entry was read from: the record its source names (the text before the first comma or bracket), or,
+  // for an entry built from a boat's own files (no source written: its patrol report) or a Japanese item, its citation's
+  // item; a boat's track, depths and narrative share one report and count once
+  const recordKey = e => E.head(e.source) || refStem(e) || String(e.actor || "");
+  const ITEM = { jacar: "JACAR ", combinedfleet: "combinedfleet.com, " };
+  const recordName = e => E.head(e.source) || (byId[e.actor] && /^rg\d/.test(refStem(e)) ? `${nameOf(e.actor)}'s report` : refStem(e).replace(/^(\w+):/, (m, k) => ITEM[k] || k + " ")) || nameOf(e.actor);
+  const RECS = new Map();   // key -> name
+  D.events.forEach(e => { if (!RECS.has(recordKey(e))) RECS.set(recordKey(e), recordName(e)); });
+  const LANGS = 1 + (D.events.some(e => e.original) ? 1 : 0);
+  const n = (k, one, many = one + "s") => `${k} ${k === 1 ? one : many}`;
+  const SHEETS = Object.entries(D.sheets || {}).flatMap(([actor, byRef]) => Object.keys(byRef).map(ref => ({ actor, ref })));
+  const QUESTIONS = new Set(D.claims.map(c => c.question)).size;
+  const CLOSING = !!(Object.keys(D.convoys).length && series.length);
+  const working = [SHEETS.length && n(SHEETS.length, "attack sheet"), CLOSING && "closing in", QUESTIONS && n(QUESTIONS, "open question"), SOURCES_HTML && "sources"].filter(Boolean);
+  const recordsLine = `${n(D.events.length, "entry", "entries")} · ${n(RECS.size, "record")} · ${n(LANGS, "language")}`;
+  document.getElementById("depths").innerHTML = [["account", "The account", "one screen, nothing moves"], ["records", "The records", recordsLine],
+    ["working", "The working", working.length ? working.join(" · ") : "nothing to show yet"]]
+    .map(([v, name, line]) => `<a href="${esc(address(id, v))}"${IN(v) ? ' aria-current="page"' : ""}>${name}<small>${esc(line)}</small></a>`).join("");
+  document.getElementById("working-none").hidden = !(IN("working") && !working.length);
+  document.getElementById("working-none").textContent = "The working has nothing to show for this engagement yet: no attack sheet is transcribed, there is no convoy to close on, the records leave no question listed, and the story has no sources section.";
+
+  if (IN("account")) {
+    // the outcome, in the records' terms: the story's Outcome section, its citations links as in the story
+    const outcome = secs.find(s => /^outcome$/i.test(s.heading || ""));
+    document.getElementById("outcome").innerHTML = outcome && outcome.paras.length ? outcome.paras.map(p => `<p>${render(p.text)}</p>`).join("")
+      : `<p class="none">The story has no outcome section yet: what the records say is in the records depth, and the questions they leave open in the working.</p>`;
+    // who: one row per participant, the followed subjects in their colours (the chronology's: the build's or the next
+    // free of the three checked ones), the other side dashed; the hull, kind and CO as the JSON gives them; the
+    // silhouette at the library's one scale, as the order of battle draws it
+    const colsOf = Object.fromEntries(E.chronologyColumns(D.events, PARTS).filter(c => c.subject && c.participant).map(c => [c.participant, c.colour]));
+    const used = new Set(PARTS.map(p => p.colour).filter(Boolean));
+    let slot = 1;
+    const barOf = p => {
+      if (p.colour) return `var(--c${p.colour})`;
+      if (colsOf[p.id]) return colsOf[p.id];
+      if (!(p.track || p.unit)) return null;   // not followed: the other side, dashed
+      while (used.has(slot)) slot++;           // a followed subject with no entries of its own (Neuburg's units): the next free slot
+      return slot <= 3 ? `var(--c${slot++})` : "var(--ink)";
+    };
+    const convoyWords = p => { const c = D.convoys[p.convoy]; return c ? [[c.from, ...(c.via || []), c.to].filter(Boolean).join(" → "), c.sailed && `sailed ${c.sailed}`, c.ships.length && `${n(c.ships.length, "ship")} named in its record`].filter(Boolean).join("; ") : ""; };
+    document.getElementById("who").innerHTML = PARTS.map(p => {
+      const bar = barOf(p);
+      const words = p.convoy ? [p.kind, convoyWords(p)] : [p.hull, p.kind === "army" ? "Army unit" : p.kind, p.co, p.basis && p.basis !== "reported" && `${p.basis}: not named by the engagement's own entries`];
+      const sil = p.sil ? EV.sil(p.sil, bar || "var(--ink-3)", { ftPx: 0.42 }) : "";
+      return `<div class="subj"><span class="bar${bar ? "" : " dash"}" style="${bar ? `--bar:${bar}` : ""}"></span><span class="n"><b>${esc(p.name)}</b> <i>${esc(words.filter(Boolean).join(" · "))}</i></span>${sil}</div>`;
+    }).join("");
+    // when: the window (GMT where the records give a zone) and its length; the Clocks section's first paragraph under it
+    const fmt = d3.utcFormat(t1 - t0 > 3 * 86400e3 || !CLOCKED ? "%-d %B %Y" : "%-d %B %H%M"), hours = Math.round((t1 - t0) / 3600e3);
+    const span = CLOCKED ? `${fmt(t0)} to ${fmt(t1)} ${D.gmt ? "GMT" : "local time (the records give no zone)"}, ${hours > 72 ? n(Math.round(hours / 24), "day") : n(hours, "hour")}`
+      : `${fmt(t0)} to ${fmt(t1)}, by the records' own dates, ${n(Math.round((t1 - t0) / 86400e3) + 1, "day")}`;
+    const clocks = secs.find(s => /^(the )?clocks?$/i.test(s.heading || ""));
+    document.getElementById("when").innerHTML = `${esc(span)}.${clocks && clocks.paras.length ? ` <span class="k">${render(clocks.paras[0].text)}</span>` : ""}`;
+    // the caption under the static map: what is drawn, and which of it is ours
+    const placed = D.positions.some(r => r.lat != null && (r.basis === "assumed" || r.basis === "approx" || r.basis === "hand-placed"));
+    document.getElementById("cap").textContent = ["The account is static: no clock, and nothing needs a hover; the records and the working have both.",
+      TRACKED.length && "A line between a subject's reported positions is straight, and where it went between them is not recorded.",
+      PATH.length > 1 && "The convoy's path, dotted, is computed from where the boats sighted it and where the Japanese record puts it: that is ours.",
+      placed && "A faint square is a place we placed, not one the record gives."].filter(Boolean).join(" ");
+    document.getElementById("cap").hidden = false;
+    // the doors: the records and the working, with their counts; the journeys, each subject's own page
+    const first = d3.utcFormat("%Y-%m-%d")(new Date(t0));
+    const journey = p => {
+      if (p.track) { const [alias, patrol] = [p.alias || p.track.split("/")[0], p.track.split("/")[1]]; return `<a href="patrols.html?ship=${encodeURIComponent(alias)}${patrol ? `&amp;patrol=${encodeURIComponent(patrol)}` : ""}">${esc(p.name)}${patrol ? ` patrol ${esc(patrol)}` : ", her track"}</a>`; }
+      if (p.convoy) return `<a href="convoys.html?c=${encodeURIComponent(p.convoy)}">${esc(p.name)}: its ships and voyage</a>`;
+      if (p.unit) return `<a href="army.html?unit=${encodeURIComponent(p.unit)}&amp;t=${first}">${esc(p.name)}: its stations</a>`;
+      return "";
+    };
+    const journeys = PARTS.map(journey).filter(Boolean);
+    const recordNames = [...RECS.values()], shown = recordNames.slice(0, 6);
+    document.getElementById("doors").innerHTML = `
+      <a class="door" href="${esc(address(id, "records"))}"><b>The records</b><span class="n"><span class="typed">${D.events.length}</span> ${D.events.length === 1 ? "entry" : "entries"} from ${n(RECS.size, "record")} in ${n(LANGS, "language")}${D.fixes.length ? `, and <span class="typed">${D.fixes.length}</span> ${D.fixes.length === 1 ? "fix" : "fixes"}` : ""}</span>
+        <span class="list">${esc(shown.join(" · "))}${recordNames.length > shown.length ? ` · and ${recordNames.length - shown.length} more` : ""} · ${PLAYS || CLOCKED ? "the map with the clock, one lane per subject, and the two-sided log" : "the map, and the chronology by the day"}</span></a>
+      <a class="door" href="${esc(address(id, "working"))}"><b>The working</b><span class="n">${working.length ? esc(working.join("; ")) : "nothing to show yet"}</span>
+        <span class="list">${esc([SHEETS.length && `at the periscope: ${SHEETS.map(s => `${nameOf(s.actor)} ${s.ref}`).join(", ")}`, CLOSING && "closing in", QUESTIONS && "what the records leave open", SOURCES_HTML && "how this was read"].filter(Boolean).join(" · ")) || "no attack sheet, no closing in, no open question, no sources section"}</span></a>
+      <div class="door"><b>Journeys</b><span class="n">each subject's own record, before and after</span>
+        <span class="list">${journeys.length ? journeys.join(" · ") : "no subject here has a page of its own yet"}</span></div>`;
+  }
+
+  drawOOB(); drawClaims(); drawLog(); drawChronology(); drawStatic(); drawLanes(); drawClosing();
+  if (AT != null && !Number.isNaN(AT)) { t = Math.max(t0, Math.min(t1, AT)); drawFrame(); highlightRow(t); } else drawFrame();
   new ResizeObserver(() => { if (D.box) drawStatic(); drawLanes(); drawClosing(); drawFrame(); }).observe(document.querySelector(".wrap"));
 })();
