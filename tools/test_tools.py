@@ -28,6 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bezugspunkt
 import build_engagement
 import build_seabees
+import check_sources
 import check_track
 import jgrid
 import lint
@@ -409,18 +410,19 @@ class EngagementPlaces(unittest.TestCase):
 
 
 class EngagementVocabulary(unittest.TestCase):
-    """Build.engagement on a folder made here: a `kind`, `side` or `basis` outside the vocabularies (KINDS, SIDES,
-    BASIS) is reported, as is a [[link]] in the story that resolves to nothing. Only those problems are asserted: the
-    fixture's citations aren't in SOURCES.yml and are reported too."""
+    """Build.engagement on a folder made here: a `kind` or `basis` outside the vocabularies (KINDS, BASIS) is reported,
+    an `of` that isn't a two-letter nationality, an entry with neither `words` nor `original`, and a [[link]] in the
+    story that resolves to nothing. Only those problems are asserted: the fixture's citations aren't in SOURCES.yml and
+    are reported too."""
 
     ENGAGEMENT = ("---\ntitle: A test\nshort: test\nclock: H\n"
                   "participants:\n"
-                  "  - {id: boat, name: A boat, side: us, kind: submarine, basis: reported}\n"
-                  "  - {id: ghost, name: A ghost, side: martian, kind: ship, basis: guessed}\n"
+                  "  - {id: boat, name: A boat, of: us, kind: submarine, basis: reported}\n"
+                  "  - {id: ghost, name: A ghost, of: martian, kind: ship, basis: guessed}\n"
                   "---\n\n"
                   "The story links [[page:index]], [[page:nowhere]] and [[frob:x]]; an example in `[[page:nowhere2]]`.\n")
-    EVENTS = ("- {at: 1944-05-03 0603, side: us, actor: boat, kind: attack, words: fired, source: s, ref: r}\n"
-              "- {at: 1944-05-03 0604, side: martian, actor: ghost, kind: teleport, basis: guessed, words: gone, source: s, ref: r}\n")
+    EVENTS = ("- {at: 1944-05-03 0603, actor: boat, kind: attack, words: fired, source: s, ref: r}\n"
+              "- {at: 1944-05-03 0604, of: martian, actor: ghost, kind: teleport, basis: guessed, words: gone, source: s, ref: r}\n")
 
     def build(self, engagement=ENGAGEMENT, events=EVENTS):
         with tempfile.TemporaryDirectory() as tmp:
@@ -432,19 +434,76 @@ class EngagementVocabulary(unittest.TestCase):
             out = b.engagement(d, {})
         return b.problems, out
 
-    def test_an_unknown_kind_side_or_basis_is_reported(self):
+    def test_an_unknown_kind_nationality_or_basis_is_reported(self):
         problems, out = self.build()
         said = "\n".join(problems)
-        self.assertIn("participant ghost: side 'martian' is not one of allied, axis, de, geo, jp, press, us", said)
+        self.assertIn("participant ghost: of 'martian' is not a two-letter code (us, jp, de, it, uk, fr, ...)", said)
         self.assertIn("participant ghost: basis 'guessed' is not one of assumed, derived, inferred, reported, secondary", said)
         self.assertIn("#2 (1944-05-03 0604): kind 'teleport' is not in the vocabulary (KINDS)", said)
-        self.assertIn("#2 (1944-05-03 0604): side 'martian' is not one of", said)
+        self.assertIn("#2 (1944-05-03 0604): of 'martian' is not a two-letter code", said)
         self.assertIn("#2 (1944-05-03 0604): basis 'guessed' is not one of", said)
-        # the entry in the vocabulary draws no such problem, and takes the engagement's clock (H, GMT+8)
+        # the entry in the vocabulary draws no such problem, takes its actor's nationality and the engagement's clock (H, GMT+8)
         self.assertNotIn("#1 (1944-05-03 0603): kind", said)
-        self.assertNotIn("#1 (1944-05-03 0603): side", said)
+        self.assertNotIn("#1 (1944-05-03 0603): of", said)
+        self.assertEqual(out["events"][0]["of"], "us")
         self.assertEqual(out["events"][0]["utc"], "1944-05-02T22:03Z")
         self.assertEqual(out["events"][0]["local"], "1944-05-03 0603")
+
+    def test_a_participant_needs_a_nationality_and_an_entry_takes_its_actors(self):
+        eng = ("---\ntitle: A test\nshort: test\nclock: H\nparticipants:\n"
+               "  - {id: boat, name: A boat, kind: submarine}\n---\n\nWords.\n")
+        problems, _ = self.build(engagement=eng, events="- {at: 1944-05-03 0603, actor: Someone, kind: log, words: w, source: s, ref: r}\n")
+        said = "\n".join(problems)
+        self.assertIn("participant boat: no `of` (a nationality as the record gives it: us, jp, de, it, uk, fr, ...)", said)
+        self.assertIn("#1 (1944-05-03 0603): no `of` (the actor's nationality), and actor 'Someone' is not a participant to take it from", said)
+
+    def test_the_other_side_is_derived_from_the_followed_subjects(self):
+        # Venafro's shape: a followed US battery (a unit), a German report by its actor's nationality; nothing stores a side
+        eng = ("---\ntitle: A test\nshort: test\nparticipants:\n"
+               "  - {id: btry, name: Battery E, of: us, kind: army, unit: 67ca-e}\n"
+               "  - {id: convoy, name: A convoy, of: jp, kind: convoy}\n---\n\nWords.\n")
+        events = ("- {at: 1944-02-14, of: de, actor: 5. Geb.Div., kind: report, words: w, source: s, ref: r}\n"
+                  "- {at: 1944-02-14, actor: btry, kind: station, words: w, source: s, ref: r}\n"
+                  "- {at: 1944-02-15, of: uk, actor: 153 Sqn, kind: patrol, words: w, source: s, ref: r}\n")
+        _, out = self.build(engagement=eng, events=events)
+        self.assertEqual(out["own"], ["us"])
+        self.assertIsNone(out["against"])
+        btry, convoy = out["participants"]
+        self.assertEqual((btry["followed"], btry["opposed"]), (True, False))
+        self.assertEqual((convoy["followed"], convoy["opposed"]), (False, True))   # a convoy is the other side's record, not followed
+        self.assertEqual([(e["of"], e["opposed"]) for e in out["events"]], [("de", True), ("us", False), ("uk", True)])
+        # `against` names whom the subjects faced when more than two nationalities meet: the RAF is then on the battery's side
+        _, out = self.build(engagement=eng.replace("participants:", "against: [de]\nparticipants:"), events=events)
+        self.assertEqual(out["against"], ["de"])
+        self.assertEqual([(e["of"], e["opposed"]) for e in out["events"]], [("de", True), ("us", False), ("uk", False)])
+        problems, _ = self.build(engagement=eng.replace("participants:", "against: axis\nparticipants:"), events=events)
+        self.assertIn("`against` is a list of nationalities, as the records name the other side ([de, it])", "\n".join(problems))
+
+    def test_a_record_in_its_own_language(self):
+        # the record's words in `original` with `lang` and our `translation` instead of `words`; one or the other, never neither
+        good = "- {at: 1944-02-14, of: de, actor: 5. Geb.Div., kind: report, original: Eigene Artl., lang: de, translation: Own artillery, source: s, ref: r}\n"
+        problems, out = self.build(events=good)
+        self.assertNotIn("#1 (1944-02-14): `original`", "\n".join(problems))
+        self.assertNotIn("#1 (1944-02-14): no `", "\n".join(problems))
+        self.assertEqual((out["events"][0]["original"], out["events"][0]["lang"], out["events"][0]["translation"]), ("Eigene Artl.", "de", "Own artillery"))
+        self.assertNotIn("words", out["events"][0])
+        bad = ("- {at: 1944-02-14, of: de, actor: x, kind: report, original: Eigene Artl., source: s, ref: r}\n"
+               "- {at: 1944-02-15, of: de, actor: x, kind: report, original: Eigene Artl., translation: t, lang: german, source: s, ref: r}\n"
+               "- {at: 1944-02-16, of: de, actor: x, kind: report, words: w, translation: t, source: s, ref: r}\n"
+               "- {at: 1944-02-17, of: de, actor: x, kind: report, source: s, ref: r}\n")
+        said = "\n".join(self.build(events=bad)[0])
+        self.assertIn("#1 (1944-02-14): `original` (the record's own words) needs our `translation` beside it", said)
+        self.assertIn("#1 (1944-02-14): no `lang`", said)
+        self.assertIn("#2 (1944-02-15): lang 'german' is not a two-letter code", said)
+        self.assertIn("#3 (1944-02-16): `translation` and `lang` go with `original`", said)
+        self.assertIn("#4 (1944-02-17): no `words` and no `original`", said)
+
+    def test_a_citation_carries_its_sources_kind_and_nationality(self):
+        # a morning report's page resolves to the National Archives' catalog, a record of the US; a Gallica issue to the French press
+        events = ("- {at: 1943-05-13, of: us, actor: Battery C, kind: fire, words: w, source: s, ref: rg64-427182819/p0519}\n"
+                  "- {at: 1943-05-13, of: fr, actor: L'Écho d'Alger, kind: report, words: w, source: s, ref: 'gallica:bpt6k75870445'}\n")
+        _, out = self.build(events=events)
+        self.assertEqual([(e["source_kind"], e["source_of"]) for e in out["events"]], [("record", "us"), ("press", "fr")])
 
     def test_a_link_in_the_story_must_resolve(self):
         problems, _ = self.build()
@@ -458,12 +517,38 @@ class EngagementVocabulary(unittest.TestCase):
         problems, _ = self.build(engagement="---\nshort: x\ncolour: red\nparticipants: []\n---\n\nWords.\n", events="")
         said = "\n".join(problems)
         self.assertIn("`title` is missing", said)
-        self.assertIn("unknown field 'colour' (known: clock, eyebrow, participants, places, short, theater, title, window)", said)
+        self.assertIn("unknown field 'colour' (known: against, clock, eyebrow, participants, places, short, theater, title, window)", said)
 
     def test_the_vocabularies_hold_the_words_the_guides_name(self):
-        self.assertEqual(build_engagement.SIDES, {"us", "jp", "allied", "axis", "de", "press", "geo"})
+        self.assertFalse(hasattr(build_engagement, "SIDES"))   # retired: a nationality as the record gives it, never a bloc
         self.assertEqual(build_engagement.BASIS, {"reported", "derived", "inferred", "assumed", "secondary"})
         self.assertTrue({"position", "sighting", "attack", "hit", "sank", "station"} <= build_engagement.KINDS)
+
+
+class SourceKinds(unittest.TestCase):
+    """check_sources.check_kinds: every SOURCES.yml entry says what kind of source it is, from the one vocabulary
+    (records.SOURCE_KINDS); `of`, when given, is a two-letter nationality. Against entries made here, and the real file
+    only for "every entry has a kind in the vocabulary"."""
+
+    def test_the_vocabulary(self):
+        self.assertEqual(records.SOURCE_KINDS, {"record", "intelligence", "press", "assessment", "recollection", "secondary", "reference", "derived"})
+
+    def test_a_source_without_a_kind_fails(self):
+        said = check_sources.check_kinds({"gallica": {"title": "Gallica", "of": "fr"}})
+        self.assertEqual(said, ["SOURCES.yml: gallica has no `kind` (one of assessment, derived, intelligence, press, recollection, record, reference, secondary)"])
+
+    def test_a_kind_outside_the_vocabulary_fails(self):
+        said = check_sources.check_kinds({"skl-ktb": {"title": "War Diary", "kind": "axis", "of": "de"}})
+        self.assertEqual(said, ["SOURCES.yml: skl-ktb has kind 'axis', not one of assessment, derived, intelligence, press, recollection, record, reference, secondary"])
+
+    def test_of_is_optional_but_a_two_letter_code(self):
+        self.assertEqual(check_sources.check_kinds({"etopo1": {"title": "ETOPO1", "kind": "reference"}}), [])
+        self.assertEqual(check_sources.check_kinds({"jacar": {"title": "JACAR", "kind": "record", "of": "jp"}}), [])
+        self.assertEqual(check_sources.check_kinds({"x": {"title": "x", "kind": "record", "of": "Japan"}}),
+                         ["SOURCES.yml: x has of 'Japan'; a nationality is a two-letter code (us, jp, de, it, uk, fr, ...)"])
+
+    def test_every_real_entry_has_a_kind_in_the_vocabulary(self):
+        self.assertEqual(check_sources.check_kinds(records.load_yaml(records.RECORDS / "SOURCES.yml")), [])
 
 
 class EngagementCheck(unittest.TestCase):

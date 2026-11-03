@@ -27,7 +27,8 @@
 //   Engage.attackAt(A, s)             the boat, the targets and the torpedoes s seconds after the first torpedo
 //   Engage.tempo(events)              "clocked", "dated" or "monthly": a frame's tempo, derived from its entries, never stored
 //   Engage.chronologyRows(events, tempo)        the chronology's spine: hours, days or months, each with its entries in order
-//   Engage.chronologyColumns(events, participants)   one column per record, the followed subjects first, each with its side and colour
+//   Engage.chronologyColumns(events, participants)   one column per record, the followed subjects first, each with its nationality and colour
+//   Engage.nation(code)                             a nationality code as the records give it -> its word ("de" -> "German"), never a bloc
 //   Engage.hitKind(kind)              whether an entry's kind is a hit (named in the hit red on the chronology)
 const Engage = (() => {
   const ZONE_LETTERS_E = "ABCDEFGHIKLM", ZONE_LETTERS_W = "NOPQRSTUVWXY";
@@ -301,8 +302,10 @@ const Engage = (() => {
   // the order events.yml gives them, with the record's date and time apart, and the claims; `ref` is the page's link.
   function story(D) {
     const timeline = D.events.filter(e => e.origin === "events").sort((a, b) => a.n - b.n).map(e => ({
-      date: e.local.slice(0, 10), time: e.local.slice(11, 15), placed: e.placed || "", side: e.side, actor: e.actor, kind: e.kind,
-      text: e.words, source: e.source || "", ref: e.cite.href, pos: e.pos || "", step: e.step || "" }));
+      date: e.local.slice(0, 10), time: e.local.slice(11, 15), placed: e.placed || "", of: e.of || "", opposed: !!e.opposed,
+      source_kind: e.source_kind || "", source_of: e.source_of || "", actor: e.actor, kind: e.kind,
+      text: e.words || "", original: e.original || "", lang: e.lang || "", translation: e.translation || "",
+      source: e.source || "", ref: e.cite.href, pos: e.pos || "", step: e.step || "" }));
     const claims = D.claims.map(c => ({ question: c.question, claim: c.answer, weight: c.weight, source: c.source || "", ref: c.cite.href, note: c.note || "" }));
     return { timeline, claims };
   }
@@ -374,10 +377,12 @@ const Engage = (() => {
   // or the name's head: "Battery A (1st Bn)" is Battery A, 67th CA (AA)); else the column of its source's record, the
   // text before the first comma or colon ("XIV Panzer Corps, tactical reports: 5. Geb.Div., ..." is XIV Panzer
   // Corps'; the dates and pages after it vary from entry to entry); else its actor's. The followed subjects (a
-  // participant with a track, a unit or a colour) come first, in the participants' order, each in its colour (the
-  // build's, else the next free of the three checked ones; a fourth subject is ink), then the other columns by side,
-  // the subjects' side first and then in order of appearance, in ink (the press in the lighter ink). A column's side
-  // is its entries' (the most common). A column is {key, name, side, colour, subject, participant, record, entries}.
+  // participant the build marks `followed`, or with a track, a unit or a colour) come first, in the participants'
+  // order, each in its colour (the build's, else the next free of the three checked ones; a fourth subject is ink),
+  // then the other columns by nationality, the subjects' first and then in order of appearance, in ink (the press, told
+  // by its source's kind, in the lighter ink, unless it is the other side's: its bulletins in print are still its claims). A column's nationality (`of`), whether it is the other side (`opposed`)
+  // and its source's kind are its entries' (the most common). A column is {key, name, of, opposed, source_kind, colour,
+  // subject, participant, record, entries}.
   const head = s => String(s || "").split(/,| \(/)[0].trim();
   const stem = s => String(s || "").split(/[,:;]/)[0].trim();
   function chronologyColumns(events, participants) {
@@ -386,11 +391,15 @@ const Engage = (() => {
     const cols = new Map();
     (events || []).forEach((e, i) => {
       const p = match(e), key = p ? "p:" + p.id : e.source ? "s:" + stem(e.source) : "a:" + (head(e.actor) || "?");
-      if (!cols.has(key)) cols.set(key, { key, name: p ? p.name : key.slice(2), participant: p || null, subject: !!(p && (p.track || p.unit || p.colour)), entries: [], sides: new Map(), first: i });
-      const c = cols.get(key); c.entries.push(e); c.sides.set(e.side || "", (c.sides.get(e.side || "") || 0) + 1);
+      if (!cols.has(key)) cols.set(key, { key, name: p ? p.name : key.slice(2), participant: p || null, subject: !!(p && (p.followed || p.track || p.unit || p.colour)), entries: [], first: i });
+      cols.get(key).entries.push(e);
     });
     const all = [...cols.values()];
-    all.forEach(c => { c.side = [...c.sides].sort((a, b) => b[1] - a[1])[0][0]; c.record = recordWords(c.entries.map(e => e.source), c.name); });
+    const most = (es, f) => { const n = new Map(); es.forEach(e => n.set(f(e), (n.get(f(e)) || 0) + 1)); return [...n].sort((a, b) => b[1] - a[1])[0][0]; };
+    all.forEach(c => {
+      c.of = most(c.entries, e => e.of || ""); c.opposed = most(c.entries, e => !!e.opposed); c.source_kind = most(c.entries, e => e.source_kind || "");
+      c.record = recordWords(c.entries.map(e => e.source), c.name);
+    });
     const subjects = parts.map(p => all.find(c => c.participant === p && c.subject)).filter(Boolean);
     const used = new Set(parts.map(p => p.colour).filter(Boolean));
     let slot = 1;
@@ -400,12 +409,17 @@ const Engage = (() => {
       c.colour = n ? `var(--c${n})` : "var(--ink)";
     });
     const others = all.filter(c => !subjects.includes(c)).sort((a, b) => a.first - b.first);
-    const sideOrder = [...new Set([...subjects, ...others].map(c => c.side))];
-    others.sort((a, b) => sideOrder.indexOf(a.side) - sideOrder.indexOf(b.side) || a.first - b.first);
-    others.forEach(c => { c.colour = c.side === "press" || c.side === "geo" ? "var(--ink-3)" : "var(--ink)"; });
-    return [...subjects, ...others].map(c => ({ key: c.key, name: c.name, side: c.side, colour: c.colour, subject: c.subject,
-                                                participant: c.participant ? c.participant.id : null, record: c.record, entries: c.entries }));
+    const order = [...new Set([...subjects, ...others].map(c => c.of))];
+    others.sort((a, b) => order.indexOf(a.of) - order.indexOf(b.of) || a.first - b.first);
+    others.forEach(c => { c.colour = !c.opposed && c.source_kind === "press" ? "var(--ink-3)" : "var(--ink)"; });   // the other side's claims, even in print, in ink
+    return [...subjects, ...others].map(c => ({ key: c.key, name: c.name, of: c.of, opposed: c.opposed, source_kind: c.source_kind, colour: c.colour,
+                                                subject: c.subject, participant: c.participant ? c.participant.id : null, record: c.record, entries: c.entries }));
   }
+  // A nationality as the records give it, in a word: the other side is named as the records name it (German, Italian,
+  // Japanese), never as a bloc (guides/OPERATIONS-VIEWER.md 2.4). An unknown code is shown as typed, in capitals.
+  const NATIONS = { us: "US", jp: "Japanese", de: "German", it: "Italian", uk: "British", fr: "French", au: "Australian", nz: "New Zealand",
+                    ca: "Canadian", nl: "Dutch", pl: "Polish", in: "Indian", za: "South African" };
+  const nation = code => NATIONS[code] || (code ? String(code).toUpperCase() : "");
   // The record in the sources' own words: of each source text's pieces (anything in brackets dropped, then split at
   // commas, colons and semicolons), the first that isn't the column's name or its head, a date, a page, a folio or a
   // volume ("morning report", "tactical reports", "operations record book"); the most common across the column, or ""
@@ -432,6 +446,6 @@ const Engage = (() => {
 
   return { zoneHours, toUTC, T, coord, offset, nm, posAt, observedPath, closing, fireControl, apparentSize, sky, localNoon, light, story, hhmm, day,
            gyroOf, coursesOf, offsetOf, firingTimes, torpedoKnots, attackSheet, attackAt, tdcAt,
-           tempo, chronologyRows, chronologyColumns, recordWords, hitKind, head };
+           tempo, chronologyRows, chronologyColumns, recordWords, hitKind, head, nation };
 })();
 if (typeof module !== "undefined") module.exports = Engage;

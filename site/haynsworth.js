@@ -245,16 +245,21 @@ function buildSteps(timeline) {
     c.append("p").html(rich(s.body));
     const ul = c.append("div").attr("class", "entries");
     rows.forEach(r => {
-      const bar = r.kind === "hit" ? "var(--hit)" : r.side === "jp" ? "var(--japan)" : "var(--c1)";
+      const bar = r.kind === "hit" ? "var(--hit)" : r.opposed ? "var(--japan)" : "var(--c1)";   // the other side (the build's `opposed`) in ink
       const li = ul.append("div").attr("class", "entry").attr("style", `--bar:${bar}`);
       li.append("div").attr("class", "t" + (r.placed ? " placed" : ""))
         .attr("title", r.placed || null)
         .html((r.time ? (r.placed ? "~" : "") + esc(r.time) : "—") + (r.date !== "1945-04-06" ? `<small>${esc(+r.date.slice(8))} Apr</small>` : ""));
       const d = li.append("div").attr("class", "body");
       d.append("div").attr("class", "who").html(`<b>${esc(r.actor)}</b>${r.placed ? `<span class="what">${esc(r.placed)}</span>` : ""}`);
-      // wholly the record's words: its typed face; otherwise our words, quoting it
-      const quoted = /^"[^"]+"\.?$/.test(r.text.trim());
-      d.append("div").attr("class", quoted ? "said" : "text").html(rich(quoted ? r.text.trim().replace(/^"|"\.?$/g, "") : r.text));
+      if (r.original) {   // the record in its own language (Japanese in its face), with our translation under it
+        d.append("div").attr("class", r.lang === "ja" ? "ja" : "said").attr("lang", r.lang || "").text(r.original);
+        d.append("div").attr("class", "tr").html(rich(r.translation));
+      } else {
+        // wholly the record's words: its typed face; otherwise our words, quoting it
+        const quoted = /^"[^"]+"\.?$/.test(r.text.trim());
+        d.append("div").attr("class", quoted ? "said" : "text").html(rich(quoted ? r.text.trim().replace(/^"|"\.?$/g, "") : r.text));
+      }
       d.append("div").html(r.ref ? `<a class="src alone" href="${esc(r.ref)}" target="_blank" rel="noopener">${cite(r.source)}</a>` : `<span class="src alone">${cite(r.source)}</span>`);
     });
   });
@@ -603,7 +608,7 @@ function buildMap(world, positions, P, hayTrack) {
     TIMELINE.filter(r => r.date === "1945-04-06" && r.pos && P.get(r.pos) && P.get(r.pos).ll && r.kind !== "position").forEach(r => {
       const t = mins(r.time); if (clock < t || clock > t + EVENT_MIN) return;
       const [x, y] = xy(P.get(r.pos).ll), fade = 1 - (clock - t) / EVENT_MIN, c = g.append("g").style("opacity", 0.25 + 0.75 * fade);
-      const cls = r.kind === "hit" ? "fill-hit" : r.side === "jp" ? "stroke-jp" : "stroke-us";
+      const cls = r.kind === "hit" ? "fill-hit" : r.opposed ? "stroke-jp" : "stroke-us";
       if (r.kind === "hit") c.append("circle").attr("cx", x).attr("cy", y).attr("r", 7).attr("class", cls);
       else if (r.kind === "cap") c.append("path").attr("d", `M${x - 5},${y - 5}L${x + 5},${y + 5}M${x - 5},${y + 5}L${x + 5},${y - 5}`).attr("class", "stroke-air").attr("stroke-width", 2.2);
       else c.append("circle").attr("cx", x).attr("cy", y).attr("r", 5 + 10 * (1 - fade)).attr("fill", "none").attr("class", cls).attr("stroke-width", 1.6);

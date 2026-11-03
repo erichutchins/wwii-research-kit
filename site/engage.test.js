@@ -120,16 +120,17 @@ near(E.light({ sun: { bearing: 180, altitude: 60 }, moon: dark.moon }, true).L, 
 const ok = (cond, what) => console.log(cond ? "ok  " : (failed++, "FAIL"), what);
 const ev = (local, extra = {}) => ({ local, key: local.replace(" ", "T").replace(/(\d\d)(\d\d)$/, "$1:$2"), utc: null, ...extra });
 // Venafro's shape: days, times as typed with no zone, the German reports placed by the account's order; three batteries followed
-const PARTS = [{ id: "battery-e", name: "Battery E, 67th CA (AA)", side: "us", unit: "67ca-e" }, { id: "battery-h", name: "Battery H, 67th CA (AA)", side: "us", unit: "67ca-h" },
-               { id: "battery-a", name: "Battery A, 67th CA (AA)", side: "us", unit: "67ca-a" }];
+// (`of` is each actor's nationality; `opposed` and `source_kind` are the build's, from the followed subjects and SOURCES.yml)
+const PARTS = [{ id: "battery-e", name: "Battery E, 67th CA (AA)", of: "us", unit: "67ca-e", followed: true }, { id: "battery-h", name: "Battery H, 67th CA (AA)", of: "us", unit: "67ca-h", followed: true },
+               { id: "battery-a", name: "Battery A, 67th CA (AA)", of: "us", unit: "67ca-a", followed: true }];
 const venafro = [
-  ev("1944-01-17 1610", { actor: "Battery E", kind: "station", side: "allied", n: 1, source: "Battery E, 67th CA (AA), morning report (record of events), 17 Jan 1944" }),
-  ev("1944-02-12 0900", { actor: "Battery H", kind: "station", side: "allied", n: 4, source: "Battery H, 67th CA (AA), morning report (record of events), 12 Feb 1944" }),
-  ev("1944-02-14", { actor: "5. Geb.Div.", kind: "report", side: "axis", n: 6, placed: "seq", source: "XIV Panzer Corps, tactical reports: 5. Geb.Div., Tagesmeldung vom 14.2.44" }),
-  ev("1944-02-14 1740", { actor: "Battery E", kind: "casualty", side: "allied", n: 5, source: "Battery E morning report, 14 Feb 1944" }),
-  ev("1944-02-14", { actor: "5. Geb.Div.", kind: "report", side: "axis", n: 7, placed: "seq", source: "XIV Panzer Corps, tactical reports: 5. Geb.Div., Nachmeldung zur Tagesmeldung vom 14.2.44" }),
-  ev("1944-02-14 0900", { actor: "Battery A (1st Bn)", kind: "shelled", side: "allied", n: 8, source: "Battery A morning report, 14 Feb 1944" }),
-  ev("1944-02-21", { actor: "Arko 414", kind: "report", side: "axis", n: 9, placed: "seq", source: "XIV Panzer Corps, tactical reports: Arko 414, Tagesmeldung vom 21.2.44" }),
+  ev("1944-01-17 1610", { actor: "Battery E", kind: "station", of: "us", source_kind: "record", n: 1, source: "Battery E, 67th CA (AA), morning report (record of events), 17 Jan 1944" }),
+  ev("1944-02-12 0900", { actor: "Battery H", kind: "station", of: "us", source_kind: "record", n: 4, source: "Battery H, 67th CA (AA), morning report (record of events), 12 Feb 1944" }),
+  ev("1944-02-14", { actor: "5. Geb.Div.", kind: "report", of: "de", opposed: true, source_kind: "record", n: 6, placed: "seq", source: "XIV Panzer Corps, tactical reports: 5. Geb.Div., Tagesmeldung vom 14.2.44" }),
+  ev("1944-02-14 1740", { actor: "Battery E", kind: "casualty", of: "us", source_kind: "record", n: 5, source: "Battery E morning report, 14 Feb 1944" }),
+  ev("1944-02-14", { actor: "5. Geb.Div.", kind: "report", of: "de", opposed: true, source_kind: "record", n: 7, placed: "seq", source: "XIV Panzer Corps, tactical reports: 5. Geb.Div., Nachmeldung zur Tagesmeldung vom 14.2.44" }),
+  ev("1944-02-14 0900", { actor: "Battery A (1st Bn)", kind: "shelled", of: "us", source_kind: "record", n: 8, source: "Battery A morning report, 14 Feb 1944" }),
+  ev("1944-02-21", { actor: "Arko 414", kind: "report", of: "de", opposed: true, source_kind: "record", n: 9, placed: "seq", source: "XIV Panzer Corps, tactical reports: Arko 414, Tagesmeldung vom 21.2.44" }),
 ];
 ok(E.tempo(venafro) === "dated", "tempo: days and times as typed, no zone -> dated");
 const clocked = [{ local: "1944-04-29 1603 K", key: "1944-04-29T06:03Z", utc: "1944-04-29T06:03Z" }, { local: "1944-04-29 1640 K", key: "1944-04-29T06:40Z", utc: "1944-04-29T06:40Z" }, { local: "1944-04-29 1710 K", key: "1944-04-29T07:10Z", utc: "1944-04-29T07:10Z" }];
@@ -153,11 +154,21 @@ ok(E.chronologyRows([ev("1944-02-14"), ev("1944-02-20"), ev("1944-03-01")], "mon
 const cols = E.chronologyColumns(venafro, PARTS);
 ok(cols.map(c => c.name).join("|") === "Battery E, 67th CA (AA)|Battery H, 67th CA (AA)|Battery A, 67th CA (AA)|XIV Panzer Corps", "columns: the subjects, then the other side's record");
 ok(cols.map(c => c.colour).join() === "var(--c1),var(--c2),var(--c3),var(--ink)", "columns: the three checked colours for the subjects, ink for the other side");
-ok(cols.map(c => c.side).join() === "allied,allied,allied,axis" && cols[3].entries.length === 3, "columns: each carries its side; the three German reports share one column");
+ok(cols.map(c => c.of).join() === "us,us,us,de" && cols[3].opposed && !cols[0].opposed && cols[3].entries.length === 3, "columns: each carries its nationality and whether it is the other side; the three German reports share one column");
+// Algiers' shape: the city's paper (a press source, by its kind) in the lighter ink; the Allied communiqué it prints is a column of its own by its actor
+const algiers = E.chronologyColumns([
+  ev("1943-05-13", { actor: "L'Écho d'Alger", kind: "report", of: "fr", source_kind: "press", source_of: "fr", n: 1, source: "L'Écho d'Alger, 13 May 1943" }),
+  ev("1943-05-13", { actor: "Luftflotte 2", kind: "raid", of: "de", opposed: true, source_kind: "record", source_of: "de", n: 2, source: "German Naval Staff war diary, 13 May 1943, vol. 45, p. 163" }),
+  ev("1943-05-14", { actor: "L'Écho d'Alger", kind: "report", of: "fr", source_kind: "press", source_of: "fr", n: 3, source: "L'Écho d'Alger, 14 May 1943" }),
+  ev("1943-06-05", { actor: "Comando Supremo", kind: "bulletin", of: "it", opposed: true, source_kind: "press", source_of: "it", n: 4, source: "La Stampa, 6 June 1943, p. 1" }),
+], [{ id: "battery-c", name: "Battery C, 62nd CA (AA)", of: "us", unit: "62ca-c", followed: true }]);
+ok(algiers.map(c => c.name + ":" + c.colour + ":" + c.source_kind).join("|") === "L'Écho d'Alger:var(--ink-3):press|German Naval Staff war diary:var(--ink):record|La Stampa:var(--ink):press",
+   "columns: the press in the lighter ink by its source's kind; the other side's record, and its bulletins in print, in ink");
+ok(E.nation("de") === "German" && E.nation("jp") === "Japanese" && E.nation("uk") === "British" && E.nation("") === "" && E.nation("xx") === "XX", "nation: a code as the records give it, in a word; never a bloc");
 ok(cols[2].entries.length === 1 && cols[2].participant === "battery-a", "columns: 'Battery A (1st Bn)' is Battery A's");
 ok(/^morning report/.test(cols[0].record) && cols[3].record === "tactical reports", "columns: the record in the sources' words");
-const boats = E.chronologyColumns([{ actor: "bang", side: "us", local: "1944-04-29 1603 K", source: "" }, { actor: "Nittatsu Maru", side: "jp", local: "1944-04-29", source: "" }],
-                                   [{ id: "bang", name: "BANG", side: "us", colour: 2, track: "ss-385-bang/1" }, { id: "tama-17", name: "Convoy TAMA-17", side: "jp", convoy: "tama-17" }]);
+const boats = E.chronologyColumns([{ actor: "bang", of: "us", local: "1944-04-29 1603 K", source: "" }, { actor: "Nittatsu Maru", of: "jp", opposed: true, local: "1944-04-29", source: "" }],
+                                   [{ id: "bang", name: "BANG", of: "us", colour: 2, track: "ss-385-bang/1", followed: true }, { id: "tama-17", name: "Convoy TAMA-17", of: "jp", convoy: "tama-17", followed: false }]);
 ok(boats.map(c => c.name + ":" + c.colour).join("|") === "BANG:var(--c2)|Nittatsu Maru:var(--ink)", "columns: a boat by its id in the build's colour; a ship with no source by its actor");
 ok(E.recordWords(["German Naval Staff war diary, 12 May 1943 (ONI translation), vol. 45, p. 152"], "German Naval Staff war diary") === "", "record words: a name, a date and a page say nothing more");
 ok(E.recordWords(["No. 153 Squadron RAF, operations record book, Form 540 (summary of events), AIR 27/1027/37, p. 3"], "No. 153 Squadron RAF") === "operations record book", "record words: the record book");

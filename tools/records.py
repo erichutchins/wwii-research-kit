@@ -26,6 +26,20 @@ RECORDS = Path(os.environ.get("WWII_RECORDS") or KIT / "records")
 REFERENCE = KIT / "reference"
 CACHE = Path(os.environ.get("WWII_CACHE") or KIT / "sources")
 
+# What a source in records/SOURCES.yml is (its `kind`, required on every entry; guides/OPERATIONS-VIEWER.md 2.4). Here,
+# once, because check_sources.py refuses an entry outside it and the builds tag every row with its source's kind
+# through its citation (build_engagement.py: `source_kind`).
+SOURCE_KINDS = {
+    "record",         # written at the time by the subject or its command: patrol reports, war diaries, morning reports
+    "intelligence",   # what one side knew of the other at the time: the FRUPAC overlays
+    "press",          # published at the time: a newspaper, a communiqué, a bulletin
+    "assessment",     # an official reckoning after the fact: JANAC, an order of battle compiled by the theater historian
+    "recollection",   # told later by someone who was there: a memoir, an interview, a crew's association
+    "secondary",      # a later history or site, repeating records we haven't seen
+    "reference",      # not a witness: charts, plates, grids, manuals, gazetteers, datasets
+    "derived",        # a method, not an outside source: a position worked out from a grid reference
+}
+
 
 def load_yaml(path):
     """Load a records YAML file, refusing a key given twice in one mapping: PyYAML would keep the last silently, but

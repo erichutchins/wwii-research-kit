@@ -30,19 +30,24 @@
   }).join("");
   sel.addEventListener("change", () => { location.search = address(sel.value, VIEW); });   // the depth stays
 
-  // ---------- who's who, and their colours (colour follows the boat; the Japanese side is ink; red is for hits)
+  // ---------- who's who, and their colours (colour follows the boat; the other side is ink; the press the lighter ink;
+  // red is for hits). Who is the other side is the build's `opposed`, from each actor's nationality against the followed
+  // subjects' (`own`, or the front matter's `against`); the press is told by its source's kind, never by a side.
   const PARTS = D.participants;
   const byId = Object.fromEntries(PARTS.map(p => [p.id, p]));
-  const SIDE_NAME = { us: "US", jp: "Japanese", allied: "Allied", axis: "Axis", de: "German", press: "Press", geo: "Place" };
-  const sideColour = s => (s === "jp" || s === "axis" || s === "de") ? "var(--japan)" : s === "press" || s === "geo" ? "var(--ink-3)" : "var(--ink-2)";
-  const colour = idOrSide => byId[idOrSide]?.colour ? `var(--c${byId[idOrSide].colour})` : byId[idOrSide] ? sideColour(byId[idOrSide].side) : sideColour(idOrSide);
-  const evColour = e => byId[e.actor] ? colour(e.actor) : sideColour(e.side);
+  const opposedOf = of => D.against ? D.against.includes(of) : !!of && !(D.own || []).includes(of);
+  const inkOf = x => x.source_kind === "press" ? "var(--ink-3)" : x.opposed ? "var(--japan)" : x.of ? "var(--ink-2)" : "var(--ink-3)";   // no `of`: a place
+  const colour = id => byId[id]?.colour ? `var(--c${byId[id].colour})` : byId[id] ? inkOf(byId[id]) : "var(--ink-2)";
+  const evColour = e => byId[e.actor] ? colour(e.actor) : inkOf(e);
   const nameOf = a => byId[a]?.name || a;
   const TRACKED = PARTS.filter(p => (D.tracks[p.id] || []).length);
-  // one lane per tracked ship or boat, then one per side for everyone else
-  const laneOf = e => byId[e.actor] && TRACKED.includes(byId[e.actor]) ? e.actor : "side:" + e.side;
+  // one lane per tracked ship or boat, then one per nationality for everyone else (the press its own), named as the
+  // records name it (E.nation: Japanese, German), never as a bloc
+  const laneOf = e => byId[e.actor] && TRACKED.includes(byId[e.actor]) ? e.actor : e.source_kind === "press" ? "press" : "of:" + (e.of || "");
   const LANES = [...TRACKED.map(p => ({ id: p.id, name: p.name, colour: colour(p.id) })),
-    ...[...new Set(D.events.map(e => laneOf(e)).filter(l => l.startsWith("side:")))].map(l => ({ id: l, name: SIDE_NAME[l.slice(5)] || l.slice(5), colour: sideColour(l.slice(5)) }))];
+    ...[...new Set(D.events.map(e => laneOf(e)).filter(l => l === "press" || l.startsWith("of:")))].map(l => (l === "press"
+      ? { id: l, name: "Press", colour: "var(--ink-3)" }
+      : { id: l, name: E.nation(l.slice(3)), colour: opposedOf(l.slice(3)) ? "var(--japan)" : "var(--ink-2)" }))];
 
   // ---------- time: GMT where the records give a zone; otherwise the records' own local clock
   const tOf = e => E.T(e.utc || e.key);
@@ -186,7 +191,7 @@
         }
       }
       if (d.k === "pos") {
-        g.append("rect").attr("x", -3).attr("y", -3).attr("width", 6).attr("height", 6).attr("fill", sideColour(d.r.side))
+        g.append("rect").attr("x", -3).attr("y", -3).attr("width", 6).attr("height", 6).attr("fill", inkOf(d.r))
           .attr("fill-opacity", d.r.basis === "assumed" || d.r.basis === "approx" || d.r.basis === "hand-placed" ? 0.35 : 1);
         if (D.positions.length <= 15) g.append("text").attr("class", "port").attr("x", 6).attr("y", -5).text(d.r.label);   // many: on hover
       }
@@ -311,7 +316,7 @@
   function drawChronology() {
     document.getElementById("chron-card").hidden = CLOCKED || !IN("records");
     if (CLOCKED || !IN("records")) return;
-    EV.chronology(document.getElementById("chron"), { rows: E.chronologyRows(D.events, TEMPO), columns: E.chronologyColumns(D.events, PARTS), tempo: TEMPO, sideName: s => SIDE_NAME[s] || s, nameOf });
+    EV.chronology(document.getElementById("chron"), { rows: E.chronologyRows(D.events, TEMPO), columns: E.chronologyColumns(D.events, PARTS), tempo: TEMPO, nameOf });
     document.getElementById("chron-title").textContent = TEMPO === "monthly" ? "The records, by the month" : "The records, by the day";
     document.getElementById("chron-note").textContent = (TEMPO === "monthly"
       ? "The entries carry months and days, not times, so there is no clock to play: the map shows every place and position at once, and each column is one record, its entries at the month they are dated. "
@@ -324,8 +329,9 @@
     if (!PLAYS) return;
     document.getElementById("log").innerHTML = D.events.map((e, i) => {
       const who = byId[e.actor];
-      const shape = who && who.sil ? EV.sil(who.sil, evColour(e), { ftPx: 0.1, width: 40 }) : e.side === "jp" ? EV.sil("cargo", "var(--japan)", { width: 40 }) : "";
-      const name = who ? who.name : e.actor || SIDE_NAME[e.side];
+      const shape = who && who.sil ? EV.sil(who.sil, evColour(e), { ftPx: 0.1, width: 40 }) : e.of === "jp" ? EV.sil("cargo", "var(--japan)", { width: 40 }) : "";
+      const name = who ? who.name : e.actor || E.nation(e.of);
+      const lang = e.lang || "ja";   // the record's own language: Japanese in its face, any other typed
       const what = e.title && e.title !== name ? `<span class="what">${esc(e.title)}</span>` : e.kind && e.kind !== "log" ? `<span class="what">${esc(e.kind.replace(/_/g, " "))}</span>` : "";
       const toWhom = e.to ? ` <span class="what">to ${e.to.map(r => esc(nameOf(r))).join(" and ")}</span>` : e.from ? ` <span class="what">from ${esc(nameOf(e.from))}</span>` : "";
       const placed = e.placed ? `<div class="assume">${esc(e.placed === "seq" ? "Time placed by the order of the account, not recorded" : e.placed)}</div>` : "";
@@ -333,7 +339,7 @@
         <div class="t${e.placed ? " placed" : ""}">${e.ms != null && e.local.length > 10 ? E.hhmm(e.ms) : ""}<small>${e.ms != null ? E.day(e.ms) : esc(e.local)}</small></div>
         <div class="body">
           <div class="who">${shape}<b>${esc(name)}</b>${what}${toWhom}<span class="own">${esc(e.local.slice(11))}</span></div>
-          ${e.original ? `<div class="ja" lang="ja">${esc(e.original)}</div><div class="tr">${esc(e.words)} (translated)</div>` : `<div class="said">${esc(e.words || e.title || "")}</div>`}
+          ${e.original ? `<div class="${lang === "ja" ? "ja" : "said"}" lang="${esc(lang)}">${esc(e.original)}</div><div class="tr">${esc(e.translation || e.words || "")} (translated)</div>` : `<div class="said">${esc(e.words || e.title || "")}</div>`}
           ${(e.outcome || []).map(o => `<div class="note"><b>Japanese side (${esc(o.relation.replace(/_/g, " "))}).</b> ${esc(o.note)}</div>`).join("")}
           ${e.note ? `<div class="assume">${esc(e.note)}</div>` : ""}${placed}
           ${e.source ? `<span class="src">${esc(e.source)}</span>` : ""} ${EV.cite(e.cite, "src alone")}
@@ -400,7 +406,8 @@
 
   // ---------- order of battle: the kit's silhouettes, true relative size where the library has the class
   function drawOOB() {
-    const us = PARTS.filter(p => p.side !== "jp" && !p.convoy && !p.unit), jp = PARTS.filter(p => p.side === "jp" && !p.convoy);
+    const us = PARTS.filter(p => !p.opposed && !p.convoy && !p.unit), jp = PARTS.filter(p => p.opposed && !p.convoy);
+    const ownName = (D.own || []).map(E.nation).join(" and ") || "US";
     const army = PARTS.filter(p => p.unit), t0 = d3.utcFormat("%Y-%m-%d")(new Date(E.T(D.window?.from || d3.min(D.events, e => e.key)) || 0));
     const plate = (name, kind, silId, fill, extra = "", cls = "", title = "") => `<div class="plate ${cls}" title="${esc(title)}">${EV.sil(silId, fill, { ftPx: 0.42 })}<div class="nm">${esc(name)}</div><div class="kd">${esc(kind)}</div>${extra}</div>`;
     const usPlates = us.map(p => plate(p.name + (p.hull ? ` (${p.hull})` : ""), [p.co, p.track ? `record: ${p.track}` : p.note].filter(Boolean).join(" · "), p.sil || EV.category(p.kind), colour(p.id), "", "", EV.silWords(p.sil)));
@@ -416,7 +423,7 @@
     }).join("");
     const jpHTML = jp.length ? `<h3>The target</h3><div class="plates">${jp.map(p => plate(p.name, p.note || p.kind, p.sil || EV.category(p.kind), "var(--ink-3)", "", "", "As the boat identified it")).join("")}</div>` : "";
     const armyHTML = army.length ? `<h3>The units</h3><ul class="units">${army.map(p => `<li><a href="army.html?unit=${encodeURIComponent(p.unit)}&amp;t=${t0}">${esc(p.name)}</a>${p.basis && p.basis !== "reported" ? ` <i>(${esc(p.basis)})</i>` : ""}${p.note ? ` <span class="muted">${esc(p.note)}</span>` : ""}</li>`).join("")}</ul>` : "";
-    const usHTML = us.length ? `<h3>${us.length > 1 ? "US" : us[0].kind === "submarine" ? "The boat" : "US"}</h3><div class="plates">${usPlates.join("")}</div>` : "";
+    const usHTML = us.length ? `<h3>${us.length > 1 ? ownName : us[0].kind === "submarine" ? "The boat" : ownName}</h3><div class="plates">${usPlates.join("")}</div>` : "";
     document.getElementById("oob").innerHTML = `<div class="pack">${usHTML}${armyHTML}</div><div>${convoyHTML}${jpHTML}</div>`;
     // the account's "Who" already shows our own side's plates, so there the card is the other side's alone (the
     // convoy's ships and their fates, the target as the boat saw it), and goes when there is no other side drawn

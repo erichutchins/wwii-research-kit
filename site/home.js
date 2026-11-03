@@ -32,7 +32,8 @@ async function replay() {
   const cv = D.convoys["tama-17"], outcome = D.sections.find(s => s.heading === "Outcome");
   const act = { start: D.window.from, end: D.window.to, box: D.box, tracks: D.tracks, fixes: D.fixes.map(f => ({ ...f, boat: f.who })),
     convoy: `Convoy ${cv.convoy}`, route: `${cv.from} → ${cv.to}, sailed ${cv.sailed}.`, outcome: outcome ? outcome.paras.map(p => p.text).join(" ") : "",
-    events: D.events.map(e => ({ ...e, side: e.side === "jp" ? "japan" : e.actor, title: e.title || e.kind, text: e.words, page: e.cite.ref, scan: e.cite.href })),
+    // `side` here is the replay's own key: the boat that wrote the entry, or "japan" for the other side's record (the build's `opposed`)
+    events: D.events.map(e => ({ ...e, side: e.opposed ? "japan" : e.actor, title: e.title || e.kind, text: e.words, page: e.cite.ref, scan: e.cite.href })),
     sinkings: [] };
   const battle = { places: D.places };
   const boats = D.participants.filter(p => p.kind === "submarine").map((b, i) => ({ ...b, color: `var(--c${i + 1})` }));

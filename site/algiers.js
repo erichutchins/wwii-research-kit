@@ -68,8 +68,10 @@ const STEPS = [
     on: ["harbour", "algiers"], layers: [] },
 ];
 
-// Who an entry belongs to, for its bar and its column
-const barOf = r => r.side === "axis" ? "var(--axis)" : r.side === "press" ? "var(--ink-3)" : /153 Sqn/.test(r.actor) ? "var(--c3)" : "var(--c1)";
+// Who an entry belongs to, for its bar and its column: the other side (the build's `opposed`, from the actor's nationality)
+// in ink; the paper's own words (a press source speaking for itself, its nationality the source's) in the lighter ink; a
+// communiqué it prints keeps its issuer's colour; the RAF slot 3, the battery slot 1
+const barOf = r => r.opposed ? "var(--axis)" : r.source_kind === "press" && r.of === r.source_of ? "var(--ink-3)" : /153 Sqn/.test(r.actor) ? "var(--c3)" : "var(--c1)";
 const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const dayOf = d => `${+d.slice(8)} ${MONTH[+d.slice(5, 7) - 1]}`;
 
@@ -116,9 +118,14 @@ function entry(host, r, { date = true } = {}) {
     .html((r.time ? esc(r.time) : "—") + (date ? `<small>${esc(dayOf(r.date))}</small>` : ""));
   const d = li.append("div").attr("class", "body");
   d.append("div").attr("class", "who").html(`<b>${esc(r.actor)}</b>${r.placed === "seq" ? `<span class="what seq">time not recorded</span>` : ""}`);
-  // wholly the record's words: its typed face; otherwise our words, quoting it
-  const quoted = /^"[^"]+"\.?$/.test(r.text.trim());
-  d.append("div").attr("class", quoted ? "said" : "text").text(quoted ? r.text.trim().replace(/^"|"\.?$/g, "") : r.text);
+  if (r.original) {   // the record in its own language, typed (Japanese in its face), with our translation under it
+    d.append("div").attr("class", r.lang === "ja" ? "ja" : "said").attr("lang", r.lang || "").text(r.original);
+    d.append("div").attr("class", "tr").text(r.translation);
+  } else {
+    // wholly the record's words: its typed face; otherwise our words, quoting it
+    const quoted = /^"[^"]+"\.?$/.test(r.text.trim());
+    d.append("div").attr("class", quoted ? "said" : "text").text(quoted ? r.text.trim().replace(/^"|"\.?$/g, "") : r.text);
+  }
   d.append("div").html(r.ref ? `<a class="src alone" href="${esc(r.ref)}" target="_blank" rel="noopener">${esc(r.source)}</a>` : `<span class="src alone">${esc(r.source)}</span>`);
 }
 
