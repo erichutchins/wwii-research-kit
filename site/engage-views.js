@@ -94,7 +94,22 @@ const EV = (() => {
     miss: `<svg width="14" height="14" viewBox="-7 -7 14 14"><circle r="5" fill="none" stroke="var(--japan)" stroke-width="1.6"/></svg>`,
     attack: c => `<svg width="12" height="12" viewBox="-6 -6 12 12"><path d="${shape.diamond}" fill="${c}"/></svg>`,
     sighted: c => `<svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="4.5" fill="none" stroke="${c}" stroke-width="1.8"/></svg>`,
+    // US radio intelligence's estimate: a ring hatched in the lighter ink (inferred: never solid), the position read off a FRUPAC map
+    intel: `<svg width="16" height="16" viewBox="-8 -8 16 16"><defs><pattern id="hatch-intel-legend" patternUnits="userSpaceOnUse" width="3" height="3" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="3" stroke="var(--ink-3)" stroke-width="1"/></pattern></defs><circle r="6" fill="url(#hatch-intel-legend)" stroke="var(--ink-3)" stroke-width="1.1"/></svg>`,
   };
+  // the same hatch for a map's marks: a <pattern> in its <defs>, drawn once (the pattern's lines are in the lighter ink)
+  function hatchDef(svg, id = "hatch-intel") {
+    const defs = svg.select("defs").size() ? svg.select("defs") : svg.insert("defs", ":first-child");
+    if (defs.select(`#${id}`).size()) return `url(#${id})`;
+    defs.append("pattern").attr("id", id).attr("patternUnits", "userSpaceOnUse").attr("width", 3.5).attr("height", 3.5).attr("patternTransform", "rotate(45)")
+      .append("line").attr("x1", 0).attr("y1", 0).attr("x2", 0).attr("y2", 3.5).attr("stroke", "var(--ink-3)").attr("stroke-width", 1);
+    return `url(#${id})`;
+  }
+  // an intelligence estimate's mark on a map: the hatched ring of the legend, at a mark's size
+  function intelMark(g, fill) {
+    g.append("circle").attr("r", 7.5).attr("fill", "var(--surface)");
+    g.append("circle").attr("r", 7).attr("fill", fill).attr("stroke", "var(--ink-3)").attr("stroke-width", 1.2);
+  }
 
   // ---------- the chronology (guides/OPERATIONS-VIEWER.md, 3): a spine of hours, days or months at the left, one column
   // per record, every entry at its row in entry.css's block, the time (or "no time recorded", in italics) leading the
@@ -107,8 +122,10 @@ const EV = (() => {
   // groups and names the record on each cell. Every entry links to its page (EV.cite). The chip under a column's name
   // is the record's own words and its source's kind and nationality (Engage.columnChip: "morning report · record · US",
   // "French press"); the other side is named as the records name it (Engage.nation), never as a bloc.
-  const groupOf = c => (c.source_kind === "press" ? "press:" : "") + (c.of || "");
-  const groupName = c => (c.source_kind === "press" ? [Engage.nation(c.of), "press"] : [Engage.nation(c.of)]).filter(Boolean).join(" ");
+  // the press and intelligence each a group of their own: their voice is their source's kind, not a side
+  const APART = new Set(["press", "intelligence"]);
+  const groupOf = c => (APART.has(c.source_kind) ? c.source_kind + ":" : "") + (c.of || "");
+  const groupName = c => (APART.has(c.source_kind) ? [Engage.nation(c.of), c.source_kind] : [Engage.nation(c.of)]).filter(Boolean).join(" ");
   function chronology(el, { rows, columns, tempo = "dated", nameOf = a => a } = {}) {
     const groups = [...new Set(columns.map(groupOf))];
     const ordered = groups.flatMap(g => columns.filter(c => groupOf(c) === g));   // the header's order is the cells'
@@ -182,7 +199,7 @@ const EV = (() => {
       parts.push(`<div class="srcs"><table style="--n:${n}"><colgroup><col class="row-head"></colgroup><thead><tr><th></th>${S.map(s => colHead(s.name, s.sub, Engage.sourceKindWord(s.kind, s.of), s.zone ? `zone ${s.zone}` : s.utc ? "no zone written" : "no time")).join("")}</tr></thead><tbody>`);
       parts.push(`<tr><th>as typed</th>${S.map(s => `<td>${s.typed ? `<span class="typed">${esc(s.typed)}</span>` : none("no time")}</td>`).join("")}</tr>`);
       parts.push(`<tr class="same"><th>in GMT <span class="ours">(ours)</span></th>${S.map(s => `<td>${s.utc ? `${Engage.hhmm(Engage.T(s.utc))} GMT, ${esc(dayOf(s.utc))}${s.zone ? "" : ` <span class="ours">zone assumed</span>`}` : none("no time")}</td>`).join("")}</tr>`);
-      parts.push(`<tr><th>position as typed</th>${S.map(s => `<td>${s.raw ? `<span class="typed">${esc(s.raw)}</span>${s.role === "record" ? ` <span class="ours">(read from the original)</span>` : ""}` : s.lat != null ? `<span class="ours">a position placed by its entry</span>` : none("none")}</td>`).join("")}</tr>`);
+      parts.push(`<tr><th>position as typed</th>${S.map(s => `<td>${s.raw ? `<span class="typed">${esc(s.raw)}</span>${s.role === "record" ? ` <span class="ours">(read from the original)</span>` : ""}` : s.lat != null ? `<span class="ours">${esc(s.position || "a position placed by its entry")}</span>` : none("none")}</td>`).join("")}</tr>`);
       parts.push(`<tr class="same"><th>placed <span class="ours">(ours)</span></th>${S.map(s => `<td>${s.lat != null ? `${deg(s.lat, "N", "S")} ${deg(s.lon, "E", "W")} · <i>${esc(s.basis || "placed")}</i>` : none("—")}</td>`).join("")}</tr>`);
       parts.push(`<tr><th>the words</th>${S.map(s => `<td>${words(s.words) || none("none")}</td>`).join("")}</tr>`);
       parts.push(`<tr><th>page</th>${S.map(s => `<td class="src">${pageOf(s.cite) || none("no page")}</td>`).join("")}</tr>`);
@@ -190,9 +207,10 @@ const EV = (() => {
       parts.push("</tbody></table></div>");
       const cross = m.apart.filter(x => x.minutes != null || x.nm != null).map(x => {
         const a = S[x.a], b = S[x.b];
-        return `<span>${esc(short(a.name))}'s ${/sheet/.test(a.name) ? "sheet" : "entry"} ↔ ${esc(short(b.name))}'s ${b.role === "record" ? "record" : "entry"}: `
+        const other = b.role === "record" ? `${esc(short(b.name))}'s record` : b.role === "intelligence" ? esc(b.name) : `${esc(short(b.name))}'s entry`;
+        return `<span>${esc(short(a.name))}'s ${/sheet/.test(a.name) ? "sheet" : "entry"} ↔ ${other}: `
           + [x.minutes != null && `<b>${x.minutes} min</b>`, x.nm != null && `<b>${x.nm.toFixed(1)} nm</b>`].filter(Boolean).join(", ")
-          + (b.zone ? "" : ` <span class="ours">(its zone assumed)</span>`) + "</span>";
+          + (b.assumed ? ` <span class="ours">(${esc(b.assumed)})</span>` : b.zone ? "" : ` <span class="ours">(its zone assumed)</span>`) + "</span>";
       });
       if (cross.length) parts.push(`<div class="cross">${cross.join("")}</div>`);
       else parts.push(`<p class="cap">The record gives no time and no position for this moment, so there is nothing to compute between the two.</p>`);
@@ -215,5 +233,5 @@ const EV = (() => {
       `<span class="w ${esc(a.mark)}">${esc(a.words || "unweighed")}</span><span class="a"><b>${esc(a.answer)}</b>${a.notes.length ? ` <span class="n">${a.notes.map(esc).join(" ")}</span>` : ""} <span class="src">${[...new Set(a.sources)].filter(Boolean).map(esc).join("; ")} ${a.cites.map(c => cite(c)).join(" ")}</span></span>`).join("")}</div></div>`).join("");
   }
 
-  return { esc, showTip, moveTip, hideTip, cite, sil, category, silWords, land, LAND_10M, LAND_50M, graticule, shape, outcomeMark, legendMark, chronology, sources, board };
+  return { esc, showTip, moveTip, hideTip, cite, sil, category, silWords, land, LAND_10M, LAND_50M, graticule, shape, outcomeMark, legendMark, hatchDef, intelMark, chronology, sources, board };
 })();

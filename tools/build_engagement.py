@@ -22,7 +22,16 @@ the engagements that met it and where the boats saw it, for site/convoys.html).
 
 It checks that every participant, convoy, silhouette and position named exists; that every time parses, with a zone
 letter or the engagement's `clock`; that every entry and claim is cited, in a form SOURCES.yml knows; that every
-[[link]] in the story resolves; and that every pairing in a patrol's claims.yml names an attack and a record that exist.
+[[link]] in the story resolves (a [[step:]] link names a step some entry carries); and that every pairing in a
+patrol's claims.yml names an attack and a record that exist.
+
+The story's steps (guides/OPERATIONS-VIEWER.md 3, "Story"): an entry's `step` names the step it belongs to, and a
+[[step:<id>|words]] link in the story sets the page's clock to the step's time (its earliest entry's) and the map to its
+framing. The front matter's `steps` gives a step its framing, `view` (the name of one of `views`, each a `name` and a
+`box` [[west, south], [east, north]], or a box written inline) and its `when` in words; a step with no view is framed on
+its entries' positions. The build writes `steps`, in time order, each with its time, words, view and count of entries.
+`relief` (a records/relief/<name>/ or a list of them, coarse first) and `roads` (records/roads/<name>-primary.geojson)
+name the map's base where the records' places are closer than a world coastline tells (Algiers).
 
 Sides are not stored (guides/OPERATIONS-VIEWER.md 2.4: a nationality as the record gives it, never a bloc). The records
 carry `of`, the nationality of a participant, of an entry's actor (left out when the actor is a participant, whose `of`
@@ -43,6 +52,13 @@ code) and `translation` instead of `words`; a patrol's japanese.yml entries arri
                Sources view (guides/OPERATIONS-VIEWER.md 7.1): {attack, boat, utc, relation, note, record: {id, event,
                ship, date, time, zone, local, utc, lat, lon, lat_raw, lon_raw, original, lang, translation, note, cite}}.
                The minutes and miles between the two are computed on the page (Engage.apart), as check_crossrefs.py does.
+               `intelligence` on a pair: the FRUPAC notes tied to its attack (frupac.yml's `attack`), each as written with
+               its own time, estimated position, relation and zoom view.
+US radio intelligence is read like the Japanese records: a tracked boat's frupac.yml inside the window becomes entries
+(`origin: frupac`, actor FRUPAC, `of: us`, `about` the ship the note names, the words as written, `source_kind:
+intelligence` through the map's citation), on the clock with zone I assumed and on the map at the position read off the
+map, both said to be ours (`basis: assumed`, `pos_basis: approx`, the note). A source about the convoy, not a participant:
+no track, no lane of its own on the map.
 """
 import csv
 import json
@@ -67,7 +83,10 @@ with open(RECORDS / "army" / "units.csv", encoding="utf-8", newline="") as f:
     ARMY_UNITS = {r["unit"] for r in csv.DictReader(f)}   # a participant's `unit:` (followed from one engagement to the next)
 MAX_BOATS = 3   # the page's three categorical colours are checked for three boats; check again before a fourth
 
-FM = {"title", "short", "eyebrow", "theater", "clock", "window", "participants", "places", "against"}
+FM = {"title", "short", "eyebrow", "theater", "clock", "window", "participants", "places", "against", "steps", "views",
+      "relief", "roads"}
+STEP = {"view", "when"}      # a step's framing and its words; its time and entries come from events.yml
+VIEW = {"name", "box"}       # a named framing of the map
 PART = {"id", "name", "of", "kind", "sil", "hull", "co", "track", "convoy", "unit", "basis", "note"}
 EVENT = {"at", "placed", "of", "actor", "kind", "to", "from", "title", "words", "original", "lang", "translation", "source",
          "ref", "pos", "step", "basis", "note"}
@@ -87,9 +106,29 @@ KINDS = {"position", "sighting", "contact_report", "received", "order", "attack"
          # the Army's and Haynsworth's timelines
          "station", "scout", "launch", "cap", "turnback", "fight", "radar", "loss", "casualty", "report", "burial",
          "departure", "arrival", "shelled", "assignment", "move", "engage", "claim", "witness", "context", "air",
-         "communique", "patrol", "warning", "raid", "fire", "kill", "probable", "silence", "scramble", "bulletin", "visit"}
+         "communique", "patrol", "warning", "raid", "fire", "kill", "probable", "silence", "scramble", "bulletin", "visit",
+         # US radio intelligence (a FRUPAC note of a ship attacked; the note's own word stays in `frupac.event`)
+         "attacked"}
 # a Japanese record's event -> the mark the pages draw: sunk (red cross), hit (red ring), miss (open ring)
 MARK = {"sank": "sunk", "torpedoed": "hit", "attacked_no_damage": "miss"}
+# a FRUPAC note (records/README.md, frupac.yml): its fields, and its `event` -> the kind the pages know (KINDS). A note
+# whose event isn't here fails the build: add the word here (and its kind to KINDS if none fits) rather than in a file.
+FRUPAC = {"id", "map", "map_date", "view", "text", "dtg", "date", "time", "lat_est", "lon_est", "ship", "event", "attack",
+          "relation", "note"}
+FRUPAC_KIND = {"torpedoed": "hit", "sank": "sank", "sinking": "damage", "attacked": "attacked", "torpedo_attack": "attacked",
+               "attack_reported": "attacked", "torpedo_track": "sighting", "sub_contact": "sighting", "sub_sighted": "sighting",
+               "df_sub": "position", "position": "position", "convoy": "position", "arrival": "arrival", "claim": "claim",
+               "contact_report": "report"}
+# the entry's title where the note names no ship: the event in words
+FRUPAC_TITLE = {"df_sub": "D/F fix on a submarine", "sub_contact": "Submarine contact", "sub_sighted": "Submarine sighted",
+                "torpedo_track": "Torpedo track", "torpedo_attack": "Torpedo attack", "attack_reported": "Attack reported",
+                "attacked": "Ship attacked", "torpedoed": "Ship torpedoed", "sinking": "In danger of sinking", "sank": "Ship sunk",
+                "convoy": "Convoy", "position": "Position", "arrival": "Arrival", "claim": "Claim", "contact_report": "Contact report"}
+FRUPAC_RELATION = {"match", "candidate", "context"}
+FRUPAC_ZOOM = "https://texashistory.unt.edu/ark:/67531/{map}/m1/1/zoom/"
+# what is ours in a FRUPAC entry, said on the entry (the README's assumption paragraph): the zone, and the position
+FRUPAC_ZONE = "Zone I (Tokyo time) assumed: the note writes no zone letter, and the matched notes bear it out."
+FRUPAC_POS = "The position is read off the map from where the mark sits (about ±0.1–0.3°), not the note's."
 AT = re.compile(r"(\d{4}-\d{2}(?:-\d{2})?)(?: (\d{4})(?: ([A-Z]{1,2}))?)?")
 
 
@@ -257,6 +296,85 @@ class Build:
                 pairs.append({**x, "unit": other or unit, "attack_ref": ref, "attack_utc": a["utc"], "ja": ja[x["record"]]})
         return rows, ja, pairs
 
+    def frupac(self, unit, rows, path=None):
+        """A boat's FRUPAC notes (frupac.yml, records/README.md "US radio intelligence"), each checked and read for the
+        pages: its time in GMT with zone I assumed (the notes write no zone; the README's assumption), its position as
+        estimated from the map (`lat_est`/`lon_est`, or none), the attack it is tied to (a row in `rows`, or another
+        boat's as `<boat>/<n>:<ref>`) and its map's citation. `path` names the file when it isn't the patrol's own (tests)."""
+        path = path or patrol_dir(unit) / "frupac.yml"
+        out = []
+        for i, f in enumerate(records.load_yaml(path) or [] if path.exists() else [], 1):
+            w = f"{rel(path)} {f.get('id') or f'#{i}'}"
+            for k in set(f) - FRUPAC:
+                self.bad(w, f"unknown field {k!r} (known: {', '.join(sorted(FRUPAC))})")
+            if f.get("event") not in FRUPAC_KIND:
+                self.bad(w, f"event {f.get('event')!r} has no kind in FRUPAC_KIND; add it there rather than in a file")
+            if f.get("relation") and f["relation"] not in FRUPAC_RELATION:
+                self.bad(w, f"relation {f['relation']!r} is not one of {', '.join(sorted(FRUPAC_RELATION))}")
+            if not f.get("text"):
+                self.bad(w, "no `text` (the note as written)")
+            dd = f["date"].isoformat() if isinstance(f.get("date"), date) else str(f.get("date", ""))
+            time = str(f.get("time") or "")
+            local, t, key = self.when(f"{dd} {time} I" if time else dd, "I", w)
+            lat, lon = num(f.get("lat_est")), num(f.get("lon_est"))
+            if (lat is None) != (lon is None):
+                self.bad(w, "`lat_est` and `lon_est` go together")
+            attack_unit, attack_utc = "", None
+            other, _, ref = str(f.get("attack") or "").rpartition(":")
+            if ref:
+                arows = rows if not other else load(other)
+                a = next((r for r in arows if r["ref"] == ref), None)
+                if a is None:
+                    self.bad(w, f"no attack {ref!r} in {other or unit}'s positions.csv")
+                else:
+                    attack_unit, attack_utc = other or unit, a["utc"]
+            m = str(f.get("map", ""))
+            zoom = FRUPAC_ZOOM.format(map=m) + (f"?{f['view']}" if f.get("view") else "")
+            cite = {**self.cite(m, w), "href": zoom, "label": "map"}   # the map, framed on the note: where it is legible
+            out.append({**f, "id": str(f.get("id", "")), "date": dd, "time": time, "map": m, "map_date": str(f.get("map_date", "")),
+                        "dtg": str(f.get("dtg") or ""), "ship": str(f.get("ship") or ""), "local": local, "utc": t, "key": key,
+                        "unit": unit, "lat": lat, "lon": lon, "attack_ref": ref, "attack_unit": attack_unit, "attack_utc": attack_utc,
+                        "zoom": zoom, "cite": cite})
+        return out
+
+    def frupac_events(self, notes, start, end):
+        """The FRUPAC notes inside the window as entries: US intelligence about the other side's ship (`about`), its words
+        as written, placed on the clock with zone I assumed and on the map at its estimated position, and said to be so
+        (`basis: assumed`, `pos_basis: approx`, the note). A note of one day's event with no time is drawn at the time of
+        the attack it is tied to, and says so; one tied to nothing stays off the clock. `frupac` carries the note's own
+        fields (its id, event, relation, attack, map and zoom view) for the pages."""
+        out = []
+        for f in notes:
+            t, untimed = f["utc"], ""
+            if not t and f["attack_utc"] and len(f["date"]) == 10:
+                t = f["attack_utc"]
+                untimed = f"The note gives no time; drawn at the time of the attack it is tied to ({f['attack_ref']})."
+            if not (t and start <= t <= end):
+                continue
+            ship = f["ship"]
+            ev = {"origin": "frupac", "of": "us", "actor": "FRUPAC", "about": ship, "kind": FRUPAC_KIND.get(f.get("event"), "report"),
+                  "title": ship.replace("; ", " and ") or FRUPAC_TITLE.get(f.get("event"), str(f.get("event", "")).replace("_", " ")),
+                  "words": f.get("text", ""), "local": f["local"], "utc": iso(t), "key": iso(t), "unit": f["unit"],
+                  "source": f"FRUPAC war map, {f['map_date']}", "cite": f["cite"], "basis": "assumed",
+                  "note": " ".join(x for x in (untimed, FRUPAC_ZONE if f["utc"] else "", FRUPAC_POS if f["lat"] is not None else "",
+                                               f.get("note", "")) if x),
+                  "frupac": {k: f.get(k, "") for k in ("id", "ship", "event", "attack", "relation", "map", "map_date", "view", "zoom", "dtg")}}
+            if f["lat"] is not None:
+                ev.update({"lat": round(f["lat"], 4), "lon": round(f["lon"], 4), "pos_basis": "approx", "pos_note": FRUPAC_POS})
+            out.append(ev)
+        return out
+
+    @staticmethod
+    def intel(f):
+        """A FRUPAC note beside the attack it is tied to, for a pair's `intelligence` (the Sources view): the note as
+        written, its own time (none when it gives none: the view says so, and computes nothing from a placed time), its
+        estimated position, how it relates to the attack (`relation`, `note`), and its map's zoom view."""
+        return {"id": f["id"], "event": f.get("event", ""), "ship": f["ship"], "relation": f.get("relation", ""), "note": f.get("note", ""),
+                "map": f["map"], "map_date": f["map_date"], "view": f.get("view", ""), "zoom": f["zoom"], "text": f.get("text", ""),
+                "dtg": f["dtg"], "date": f["date"], "time": f["time"], "local": f["local"], "utc": iso(f["utc"]),
+                "lat": round(f["lat"], 4) if f["lat"] is not None else None, "lon": round(f["lon"], 4) if f["lon"] is not None else None,
+                "cite": f["cite"]}
+
     def sheets(self, p, refs):
         """A boat's attack data sheets (attacks.csv and attack_sheets.yml) for the attacks in `refs`: the torpedoes'
         rows as typed, the sheet's words, and its page. The observer view computes from them; nothing is changed."""
@@ -336,7 +454,6 @@ class Build:
         of_actor = {p["id"]: p.get("of", "") for p in parts}
         for p in parts:
             p["opposed"] = opposed(p.get("of", ""))
-        self.chk.links(body, where)
         secs = sections(body)
         cites = {c: resolve_cite(c, self.chk.srcs) for c in re.findall(r"\[\[cite:([^\]|]+)", body)}
 
@@ -349,7 +466,8 @@ class Build:
                 self.bad(w, "positions.csv has no `of` column (the nationality of whose position it is; empty for a place)")
             self.nation(r.get("of") or None, "of", w)
             positions[r["id"]] = self.tagged({**r, "of": r.get("of", ""), "opposed": opposed(r.get("of", "")),
-                                             "lat": num(r.get("lat")), "lon": num(r.get("lon")), "cite": self.cite(r.get("ref"), w)})
+                                             "lat": num(r.get("lat")), "lon": num(r.get("lon")),
+                                             "lat2": num(r.get("lat2")), "lon2": num(r.get("lon2")), "cite": self.cite(r.get("ref"), w)})
         for r in positions.values():
             self.place(r, positions, f"{rel(pos_path)} {r['id']}")
 
@@ -383,6 +501,14 @@ class Build:
                 ev["lat"], ev["lon"] = positions[e["pos"]]["lat"], positions[e["pos"]]["lon"]
             events.append(ev)
 
+        # the story's steps: every [[step:]] link names a step some entry carries; the front matter frames them
+        carried = {e["step"] for e in events if e.get("step")}
+        self.chk.links(body, where, steps=carried)
+        views = self.views(fm.get("views"), where)
+        steps = self.steps(fm.get("steps"), views, events, positions, carried, where)
+        relief = self.relief(fm.get("relief"), where)
+        roads = self.roads(fm.get("roads"), where)
+
         # the window: as given, or the span of the timed entries
         win = fm.get("window") or {}
         if win:
@@ -399,11 +525,12 @@ class Build:
                 e["outside"] = bool(e["utc"]) and not start <= parse_iso(e["utc"]) <= end
 
         # each participant's own record, inside the window
-        tracks, fixes, seen_ja, japanese, pairs, sheets = {}, [], set(), [], [], {}
+        tracks, fixes, seen_ja, japanese, pairs, sheets, notes = {}, [], set(), [], [], {}, []
         for p in parts:
             if not p.get("track") or not start:
                 continue
             rows, ja, prs = self.patrol(p["track"])
+            notes += self.frupac(p["track"], rows)
             on = [r for r in rows if r["on_track"] == "yes"]
             inside = [r for r in rows if start <= r["utc"] <= end]
             on_inside = [r for r in inside if r["on_track"] == "yes"]
@@ -425,8 +552,14 @@ class Build:
         for x in pairs:
             outcome.setdefault((by_unit.get(x["unit"]), x["attack_ref"]), []).append(x)
         moments = [self.pair(x, by_unit) for x in pairs if x["unit"] in by_unit and start <= x["attack_utc"] <= end]
+        intel = self.frupac_events(notes, start, end)
+        inside = {(e["unit"], e["frupac"]["id"]) for e in intel}
+        for m in moments:   # the FRUPAC notes tied to the pair's attack, among those inside the window
+            m["intelligence"] = [self.intel(f) for f in notes if (f["unit"], f["id"]) in inside
+                                 and by_unit.get(f["attack_unit"]) == m["boat"] and f["attack_ref"] == m["attack"]]
         events += self.fix_events(fixes, outcome)
         events += self.japanese_events(japanese, pairs, start, end)
+        events += intel
         events = [self.tagged({**e, "opposed": opposed(e.get("of", ""))}) for e in events]
         events.sort(key=lambda e: e["key"])
 
@@ -454,8 +587,103 @@ class Build:
                 "window": {"from": iso(start), "to": iso(end)} if start else None, "gmt": bool(start),
                 "participants": parts, "own": own, "against": against,
                 "places": fm.get("places") or [], "sections": secs, "cites": cites, "box": box,
+                "steps": steps, "relief": relief, "roads": roads,
                 "tracks": tracks, "fixes": fixes, "events": events, "claims": claims, "pairs": moments,
                 "positions": list(positions.values()), "convoys": conv, "sheets": sheets}
+
+    # ------------------------------------------------------------------ the story's steps and the map's base
+    @staticmethod
+    def box_ok(b):
+        """[[west, south], [east, north]], west of east and south of north."""
+        try:
+            (w, s), (e, n) = b
+            return all(isinstance(v, (int, float)) for v in (w, s, e, n)) and w < e and s < n
+        except (TypeError, ValueError):
+            return False
+
+    def views(self, fm_views, where):
+        """`views`: name -> {name: words, box: [[w, s], [e, n]]}, the map's framings the steps name."""
+        out = {}
+        for vid, v in (fm_views or {}).items() if isinstance(fm_views, dict) else []:
+            w = f"{where} view {vid}"
+            if not isinstance(v, dict):
+                self.bad(w, "a view is {name: words, box: [[west, south], [east, north]]}")
+                continue
+            for k in set(v) - VIEW:
+                self.bad(w, f"unknown field {k!r} (known: {', '.join(sorted(VIEW))})")
+            if not self.box_ok(v.get("box")):
+                self.bad(w, "`box` is [[west, south], [east, north]], west of east and south of north")
+                continue
+            out[vid] = {"name": str(v.get("name") or vid), "box": v["box"]}
+        if fm_views is not None and not isinstance(fm_views, dict):
+            self.bad(where, "`views` is a mapping of a view's id to {name, box}")
+        return out
+
+    def steps(self, fm_steps, views, events, positions, carried, where):
+        """The steps the entries carry, in time order, each framed: by its front-matter `view` (a name in `views`, or a
+        box inline), or else on its own entries' positions, padded as the map's box is; `when` in words, if given."""
+        fm_steps = fm_steps or {}
+        if not isinstance(fm_steps, dict):
+            self.bad(where, "`steps` is a mapping of a step's id to {view, when}")
+            fm_steps = {}
+        for sid, st in fm_steps.items():
+            w = f"{where} step {sid}"
+            if sid not in carried:
+                self.bad(w, f"no entry in events.yml carries step {sid!r}")
+            if not isinstance(st, dict):
+                self.bad(w, "a step is {view: a view's id or [[west, south], [east, north]], when: words}")
+                continue
+            for k in set(st) - STEP:
+                self.bad(w, f"unknown field {k!r} (known: {', '.join(sorted(STEP))})")
+            v = st.get("view")
+            if v is not None and not (isinstance(v, str) and v in views) and not self.box_ok(v):
+                self.bad(w, f"view {v!r} is not one of the front matter's views ({', '.join(sorted(views)) or 'none'}) or a box")
+        out = []
+        for sid in carried:
+            es = [e for e in events if e.get("step") == sid]
+            # the step's time: its earliest entry on the clock (one with a GMT time), else its earliest by key
+            first = min([e for e in es if e["utc"]] or es, key=lambda e: e["utc"] or e["key"])
+            given = fm_steps.get(sid)
+            st = given if isinstance(given, dict) else {}
+            v = st.get("view")
+            if isinstance(v, str) and v in views:
+                view = {**views[v], "id": v, "basis": "given"}
+            elif self.box_ok(v):
+                view = {"name": "", "box": v, "basis": "given"}
+            else:
+                pts = [(positions[e["pos"]]["lon"], positions[e["pos"]]["lat"]) for e in es
+                       if e.get("pos") in positions and positions[e["pos"]].get("lat") is not None]
+                pts += [(positions[e["pos"]]["lon2"], positions[e["pos"]]["lat2"]) for e in es
+                        if e.get("pos") in positions and positions[e["pos"]].get("lat2") is not None]
+                view = None
+                if pts:
+                    lons, lats = [x for x, _ in pts], [y for _, y in pts]
+                    view = {"name": "", "basis": "entries",
+                            "box": [[round(min(lons) - 0.35, 3), round(min(lats) - 0.3, 3)], [round(max(lons) + 0.35, 3), round(max(lats) + 0.3, 3)]]}
+            out.append({"id": sid, "utc": first["utc"], "key": first["key"], "local": first["local"],
+                        "when": str(st.get("when") or ""), "view": view, "entries": len(es)})
+        return sorted(out, key=lambda x: (x["utc"] or x["key"], x["id"]))
+
+    def relief(self, names, where):
+        """`relief`: a records/relief/<name>/ (or a list, coarse first), each with its box from relief.json."""
+        out = []
+        for n in ([names] if isinstance(names, str) else names or []):
+            path = RECORDS / "relief" / str(n) / "relief.json"
+            if not path.exists():
+                self.bad(where, f"relief {n!r} has no records/relief/{n}/relief.json (tools/build_relief.py)")
+                continue
+            meta = json.load(open(path, encoding="utf-8"))
+            out.append({"name": str(n), "box": meta["box"], "source": meta.get("source", "")})
+        return out
+
+    def roads(self, name, where):
+        """`roads`: a traced road map, records/roads/<name>-primary.geojson."""
+        if not name:
+            return ""
+        if not (RECORDS / "roads" / f"{name}-primary.geojson").exists():
+            self.bad(where, f"roads {name!r} has no records/roads/{name}-primary.geojson")
+            return ""
+        return str(name)
 
     @staticmethod
     def pair(x, by_unit):

@@ -526,6 +526,24 @@ engagement (frupac.yml isn't built into the JSON; the other two live in notes), 
 where the mockup drew six: building `frupac.yml` into the engagement as `intelligence` entries is the next records task,
 and the view already takes them. Phase 5 is next.
 
+**Done** (3 November 2026): the FRUPAC notes. The build reads each tracked boat's `frupac.yml` inside the window into
+intelligence entries (zone I assumed, said on each; the position estimated from the mark on the map, drawn hatched) and
+beside each attack's pairing: 26 entries across nine Pacific engagements. Attack 1 on TAMA-17 now has the five columns
+the mockup drew. A note tied to an attack with no Japanese pairing is an entry and a mark but no moment, since moments
+are pairings.
+
+**Done** (4 November 2026): phase 5. A story's paragraph carries `[[step:id|words]]`, a step being the entries that
+name it, framed by the front matter's `views` and `steps`; on the records depth the story sits beside the map as the
+narrative and each step link sets the clock and the view. Haynsworth's six figures (the five-minute panels, the Judy to
+scale, the estimated path, the damage frames, the task group, the aircraft) are working panels registered in
+`site/panels.js`; Algiers' relief and roads are a map option (`relief:`, `roads:` in the front matter). The two story
+pages are one-line redirects, `OWN_PAGE` is gone, and six engagements' ledes lost the folder notes they carried. What
+didn't fit, and is left: the story pages' bespoke map layers (Haynsworth's picket ring and formation schematic, the
+assumed route and weather ring, the animated day with the other ships' tracks; Algiers' context hatch and the battery's
+reach ring, now prose) have no home on the generic map yet, and would be further panels; and the family repository's
+hook into the Haynsworth page (`HAYNSWORTH_EXTRA`) went with the page, so its own pages need the panel registry
+instead. Phase 6 is next.
+
 ## 10. Open questions
 
 - **Colour for more than three followed subjects.** The 62nd CA (AA) has fourteen units with stations around Oran and

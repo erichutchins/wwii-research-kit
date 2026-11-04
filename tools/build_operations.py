@@ -14,9 +14,10 @@ Links are written by name, not address, so they work on any page and can be chec
   [[op:husky|the invasion of Sicily]] an operation's chapter (by its file name)
   [[ship:bang]]                       a boat's or ship's track (the name in ships.json)
   [[unit:106aaa-d@1944-08-15|...]]    a unit on the Army map, on a day (army/units.csv)
-  [[page:algiers|...]]                one of the kit's pages (site/algiers.html)
+  [[page:zones|...]]                  one of the kit's pages (site/zones.html)
   [[convoy:te-04]]                    a convoy's record (records/convoys/<id>/convoy.md; site/convoys.html)
   [[engagement:te-04-1944-05-03]]     an engagement (records/engagements/<id>/; site/engagement.html)
+  [[step:s7|at 1250 she was hit]]     a step of an engagement's story: on its page, sets the clock and the map to it (events.yml `step`)
   [[who:<person>@1942-11-11|...]]     a person on a family's Army map: only in a family's own files (--family)
 The text after | is what the reader sees; without it, the thing's own name.
 
@@ -111,7 +112,9 @@ class Checker:
         self.cites = {}
         self.problems = []
 
-    def links(self, text, where):
+    def links(self, text, where, steps=None):
+        """Check every [[link]] in `text`. `steps` are the step ids an engagement's entries carry (events.yml `step`),
+        the only place a [[step:]] link may point: the story sets the clock and the map to that step."""
         text = re.sub(r"`[^`]*`", "", text)        # an example in `backticks` isn't a link
         for kind, name, _ in LINK.findall(text):
             name = name.strip()
@@ -125,11 +128,16 @@ class Checker:
                   "page": lambda: target in self.pages,
                   "convoy": lambda: target in self.convoys,
                   "engagement": lambda: target in self.engagements,
+                  "step": lambda: target in (steps or ()),
                   "who": lambda: bool(self.family) and target in self.people}.get(kind)
             if ok is None:
-                self.problems.append(f"{where}: [[{kind}:{name}]]: unknown kind (cite, op, ship, unit, page, convoy, engagement, who)")
+                self.problems.append(f"{where}: [[{kind}:{name}]]: unknown kind (cite, op, ship, unit, page, convoy, engagement, step, who)")
             elif kind == "who" and not self.family:
                 self.problems.append(f"{where}: [[who:{name}]]: a person's link belongs in the family's files, not the kit")
+            elif kind == "step" and steps is None:
+                self.problems.append(f"{where}: [[step:{name}]]: a step link belongs in an engagement's story (engagement.md)")
+            elif kind == "step" and not ok():
+                self.problems.append(f"{where}: [[step:{name}]]: no entry in events.yml carries step {target!r}")
             elif not ok():
                 self.problems.append(f"{where}: [[{kind}:{name}]]: no such {kind}")
 

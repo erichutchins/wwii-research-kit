@@ -305,7 +305,7 @@ const Engage = (() => {
     return { ...out, lead, torpedoCourse, gyro, track: Math.abs(ta), side: ta >= 0 ? "S" : "P", fwd: side(false), aft: side(true) };
   }
 
-  // A built engagement (engagement.json) as the story pages (haynsworth.html, algiers.html) read it: its own entries in
+  // A built engagement (engagement.json) as a story reads it (the front page's Haynsworth figure): its own entries in
   // the order events.yml gives them, with the record's date and time apart, and the claims; `ref` is the page's link.
   function story(D) {
     const timeline = D.events.filter(e => e.origin === "events").sort((a, b) => a.n - b.n).map(e => ({
@@ -419,7 +419,7 @@ const Engage = (() => {
     const others = all.filter(c => !subjects.includes(c)).sort((a, b) => a.first - b.first);
     const order = [...new Set([...subjects, ...others].map(c => c.of))];
     others.sort((a, b) => order.indexOf(a.of) - order.indexOf(b.of) || a.first - b.first);
-    others.forEach(c => { c.colour = !c.opposed && c.source_kind === "press" ? "var(--ink-3)" : "var(--ink)"; });   // the other side's claims, even in print, in ink
+    others.forEach(c => { c.colour = !c.opposed && (c.source_kind === "press" || c.source_kind === "intelligence") ? "var(--ink-3)" : "var(--ink)"; });   // the other side's claims, even in print, in ink; our own press and intelligence, not records, in the lighter ink
     return [...subjects, ...others].map(c => ({ key: c.key, name: c.name, of: c.of, opposed: c.opposed, source_kind: c.source_kind, source_of: c.source_of, colour: c.colour,
                                                 subject: c.subject, participant: c.participant ? c.participant.id : null, record: c.record, entries: c.entries }));
   }
@@ -478,11 +478,12 @@ const Engage = (() => {
   }
   // A clocked frame's moments: each pairing of an attack with a Japanese record (`pairs`, from the boat's claims.yml). Its
   // sources, in order: the boat's attack data sheet (its typed time, position and words; her narrative's attack entry where
-  // no sheet is transcribed), the record as written, then every entry of another kind of source (intelligence, an
-  // assessment, a later history, the press) within two hours that names the same ship or the same attack. A source is
-  // {role, name, sub, kind, of, zone, typed, utc, lat, lon, raw, basis, words: [{typed} | {original, lang, translation} |
-  // {ours}], cite}; `apart` holds the arithmetic between the first source and each other; `ours` is the pairing's relation
-  // and note, the one row in our voice besides the GMT and placed rows.
+  // no sheet is transcribed), the record as written, the FRUPAC notes tied to the attack (the pair's `intelligence`, from the
+  // boat's frupac.yml: US radio intelligence, zone I assumed, position read off the map), then every entry of another kind
+  // of source (an assessment, a later history, the press) within two hours that names the same ship or the same attack. A
+  // source is {role, name, sub, kind, of, zone, typed, utc, lat, lon, raw, basis, position, assumed, words: [{typed} |
+  // {original, lang, translation} | {ours}], cite}; `apart` holds the arithmetic between the first source and each other;
+  // `ours` is the pairing's relation and note, the one row in our voice besides the GMT and placed rows.
   const NEAR_MS = 2 * 3600e3;
   const zoneOf = local => { const m = /\s([A-Z]{1,2})$/.exec(String(local || "")); return m ? m[1] : ""; };
   const RELATION = { hit: "a hit: the attack caused this record", miss: "a miss: the same moment, no damage",
@@ -512,9 +513,21 @@ const Engage = (() => {
         typed: [r.date, r.time, r.zone].filter(Boolean).join(" "), utc: r.utc, lat: r.lat, lon: r.lon, raw: [r.lat_raw, r.lon_raw].filter(Boolean).join(" "),
         basis: r.lat != null ? "reported" : "", words: [r.original ? { original: r.original, lang: r.lang || "ja", translation: r.translation } : r.translation && { typed: r.translation }, r.note && { ours: r.note }].filter(Boolean),
         cite: r.cite || null };
+      // US radio intelligence: the FRUPAC notes the boat's frupac.yml ties to this attack (`intelligence` on the pair), each
+      // as written, on its own time (none when the note gives none), at the position read off the map, with the map's zoom
+      // view as its page; the relation and the note are ours
+      const intelligence = (x.intelligence || []).map(f => ({
+        role: "intelligence", name: `FRUPAC ${f.id}`,
+        sub: [f.map_date && `war map, ${f.map_date}`, String(f.event || "").replace(/_/g, " "), f.dtg && `DTG ${f.dtg}`].filter(Boolean).join(" · "),
+        kind: (f.cite && f.cite.kind) || "intelligence", of: (f.cite && f.cite.of) || "us", zone: "",
+        typed: f.time ? `${f.date} ${f.time}` : f.date || "", utc: f.utc, lat: f.lat, lon: f.lon, raw: "",
+        position: f.lat != null ? "a blue dot on the overlay, read against the printed grid" : "", basis: f.lat != null ? "estimated, about ±0.2°" : "",
+        assumed: f.utc ? "FRUPAC's zone assumed I" : "",
+        words: [f.text && { typed: f.text }, (f.relation || f.note) && { ours: [f.relation, f.note].filter(Boolean).join(": ") }].filter(Boolean),
+        cite: f.zoom ? { href: f.zoom, ref: f.zoom, label: "map" } : f.cite || null }));
       const ships = String(r.ship || "").split(/;\s*/).filter(Boolean), boatName = nameOf(x.boat), at = T(x.utc);
       const near = (D.events || []).filter(e => e.source_kind && e.source_kind !== "record" && !(e.record === r.id && e.origin === "japanese") && e.actor !== x.boat
-          && e.utc && Math.abs(T(e.utc) - at) <= NEAR_MS).filter(e => {
+          && e.origin !== "frupac" && e.utc && Math.abs(T(e.utc) - at) <= NEAR_MS).filter(e => {
         const text = [e.title, e.actor, e.ship, e.words, e.translation, e.note].map(v => String(v || "")).join(" ");
         return ships.some(n => text.includes(n)) || (text.includes(ref) && text.includes(boatName));
       }).map(e => ({
@@ -523,7 +536,7 @@ const Engage = (() => {
         basis: e.lat != null ? (e.basis || "placed") : "",
         words: [e.original ? { original: e.original, lang: e.lang || "ja", translation: e.translation || e.words } : e.words && { typed: e.words }, e.note && { ours: e.note }].filter(Boolean),
         cite: e.cite || null }));
-      const sources = [attack, record, ...near];
+      const sources = [attack, record, ...intelligence, ...near];
       return { key: `${x.boat}:${x.attack}:${r.id}`, boat: x.boat, attack: ref, record: r.id, utc: x.utc, sources,
                apart: sources.slice(1).map((s, i) => ({ a: 0, b: i + 1, ...apart(attack, s) })),
                ours: { relation: x.relation, words: RELATION[x.relation] || x.relation, note: x.note || "" } };

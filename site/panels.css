@@ -1,0 +1,52 @@
+/* The frame's own figures on the working depth of engagement.html (panels.js; each engagement's modules under
+   site/panels/): the rules the Haynsworth story page drew its plates, scale drawings, estimated path, damage profile and
+   order of battle with, scoped under the panel card so they meet nothing of engage.css's (whose .plates, .plate, .oob
+   and .sil are the order of battle's). Uses the page's one token vocabulary (engage.css sets it: --c1 the US side,
+   --c3 US aircraft, --japan the other side's ink, --hit red for the hit alone). */
+.panel-card { padding-bottom: 14px; }
+.panel-card .panel-body { padding: 0 14px; }
+.panel-card .num { font: 700 14.5px var(--typed); color: var(--ink-3); }
+.panel-card .schem-note { font-size: 14.5px; color: var(--ink-3); margin: 10px 0 0; max-width: 90ch; }
+.panel-card svg.wide { width: 100%; height: auto; display: block; }
+.panel-card .damage { padding: 14px; }
+.panel-card .mk-label.small { font-weight: 400; font-size: 12.5px; fill: var(--ink-2); }
+.panel-card .fill-us { fill: var(--c1); } .panel-card .fill-jp { fill: var(--japan); } .panel-card .fill-air { fill: var(--c3); } .panel-card .fill-hit { fill: var(--hit); }
+.panel-card .stroke-us { stroke: var(--c1); } .panel-card .stroke-jp { stroke: var(--japan); } .panel-card .stroke-air { stroke: var(--c3); } .panel-card .stroke-hit { stroke: var(--hit); }
+.panel-card .ring { fill: none; stroke: var(--c1); stroke-width: 1.2; stroke-dasharray: 3 4; opacity: 0.8; }
+/* the attack in schematic panels */
+.panel-card .hp-plates { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+.panel-card .hp-panel { padding: 12px 14px; display: grid; gap: 8px; align-content: start; }
+.panel-card .hp-panel svg { width: 100%; height: auto; display: block; }
+.panel-card .hp-panel .cap { font-size: 15.5px; color: var(--ink-2); }
+.panel-card .hp-panel .cap q { color: var(--ink); }
+/* the scale drawings and the estimated path */
+.panel-card .path-card { padding: 12px 14px; display: grid; gap: 10px; }
+.panel-card .path-ctl { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 15.5px; color: var(--ink-2); }
+.panel-card .path-ctl label { display: inline-flex; align-items: center; gap: 8px; }
+.panel-card .path-ctl output { font: 700 15.5px var(--typed); color: var(--ink); min-width: 52px; }
+.panel-card .path-ctl select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: 4px 8px; }
+.panel-card .path-ctl input[type=range] { accent-color: var(--ink-2); width: 130px; }
+.panel-card .path-read { display: flex; flex-wrap: wrap; gap: 4px 22px; font-size: 15.5px; color: var(--ink-2); }
+.panel-card .path-read b { font: 700 17px var(--typed); color: var(--ink); }
+.panel-card .grid-ft { stroke: var(--sea-grid); stroke-width: 1; }
+.panel-card .ruler line { stroke: var(--ink-3); } .panel-card .ruler text { fill: var(--ink-3); font: 12px var(--typed); }
+.panel-card .ht-line { stroke: var(--ink-3); stroke-dasharray: 3 4; stroke-width: 1; }
+.panel-card .ghost { fill: none; stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
+.panel-card .ghost-us { fill: none; stroke: var(--c1); stroke-width: 1.4; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
+.panel-card .jpath { fill: none; stroke: var(--japan); stroke-width: 1.8; stroke-dasharray: 6 3; }
+.panel-card .tick-dot { fill: var(--japan); }
+.panel-card .tick-lab { fill: var(--ink-2); font: 12px var(--typed); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.panel-card path.sil { fill: var(--ink); }
+.panel-card .frame-tick { stroke: var(--ink-3); stroke-width: 1; }
+.panel-card .frame-lab { fill: var(--ink-3); font: 12px var(--typed); }
+.panel-card .dmg { fill: url(#hp-hatch-fire); stroke: var(--hit); stroke-width: 1.5; }
+.panel-card .callout { fill: var(--ink-2); font-size: 14.5px; }
+.panel-card .callout.b { fill: var(--ink); font-weight: 650; }
+.panel-card .leader { stroke: var(--ink-3); stroke-width: 1; fill: none; }
+/* the order of battle and the aircraft, as plates */
+.panel-card .hp-oob { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px 20px; }
+.panel-card .hp-air { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px 20px; }
+.panel-card .hp-plate { display: grid; gap: 2px; }
+.panel-card .hp-plate svg { width: 100%; height: auto; }
+.panel-card .nm { font-weight: 650; font-size: 15.5px; }
+.panel-card .kd { font-size: 14.5px; color: var(--ink-3); line-height: 1.35; }

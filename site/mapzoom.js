@@ -1,4 +1,4 @@
-// Zoom and pan for the maps that don't build their own (the front page, zones.html, engagement.html, haynsworth.html):
+// Zoom and pan for the maps that don't build their own (the front page, zones.html, engagement.html):
 // the +, − and ⟲ buttons the map pages have (patrols.html), drag to pan, pinch or ⌘/Ctrl-scroll to zoom.
 //
 //   const view = mapZoom(svgNode, hostElement, t => redraw(t), { capture, max, at });

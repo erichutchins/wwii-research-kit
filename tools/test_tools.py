@@ -27,6 +27,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bezugspunkt
 import build_engagement
+import build_operations
 import build_seabees
 import check_sources
 import check_track
@@ -509,7 +510,7 @@ class EngagementVocabulary(unittest.TestCase):
         problems, _ = self.build()
         said = "\n".join(problems)
         self.assertIn("[[page:nowhere]]: no such page", said)
-        self.assertIn("[[frob:x]]: unknown kind (cite, op, ship, unit, page, convoy, engagement, who)", said)
+        self.assertIn("[[frob:x]]: unknown kind (cite, op, ship, unit, page, convoy, engagement, step, who)", said)
         self.assertNotIn("nowhere2", said)         # an example in backticks isn't a link
         self.assertNotIn("[[page:index]]", said)   # site/index.html is there
 
@@ -517,7 +518,42 @@ class EngagementVocabulary(unittest.TestCase):
         problems, _ = self.build(engagement="---\nshort: x\ncolour: red\nparticipants: []\n---\n\nWords.\n", events="")
         said = "\n".join(problems)
         self.assertIn("`title` is missing", said)
-        self.assertIn("unknown field 'colour' (known: against, clock, eyebrow, participants, places, short, theater, title, window)", said)
+        self.assertIn("unknown field 'colour' (known: against, clock, eyebrow, participants, places, relief, roads, short, steps, theater, title, views, window)", said)
+
+    def test_a_step_link_names_a_step_some_entry_carries(self):
+        # the story's [[step:]] links set the clock and the map to a step; a step is defined by the entries that carry it
+        eng = ("---\ntitle: A test\nshort: test\nclock: H\n"
+               "views:\n  close: {name: The station, box: [[120.0, 18.0], [121.0, 19.0]]}\n"
+               "steps:\n  s1: {view: close, when: 'the morning'}\n  s2: {view: [[119.0, 17.0], [122.0, 20.0]]}\n  s9: {view: close}\n"
+               "participants:\n  - {id: boat, name: A boat, of: us, kind: submarine}\n---\n\n"
+               "Words [[step:s1|at dawn]] and [[step:s2]] and [[step:s3|later]]; `[[step:s4]]` is an example.\n")
+        events = ("- {at: 1944-05-03 0900, actor: boat, kind: log, words: w, source: s, ref: r, step: s2}\n"
+                  "- {at: 1944-05-03 0603, actor: boat, kind: log, words: w, source: s, ref: r, step: s1}\n"
+                  "- {at: 1944-05-03, actor: boat, kind: log, words: w, source: s, ref: r, step: s1}\n")
+        problems, out = self.build(engagement=eng, events=events)
+        said = "\n".join(problems)
+        self.assertIn("[[step:s3]]: no entry in events.yml carries step 's3'", said)
+        self.assertIn("step s9: no entry in events.yml carries step 's9'", said)
+        self.assertNotIn("s4", said)                                   # an example in backticks isn't a link
+        self.assertNotIn("[[step:s1", said)
+        self.assertNotIn("[[step:s2", said)
+        # the steps the entries carry, in time order, each timed by its earliest clocked entry and framed as the front matter says
+        self.assertEqual([(x["id"], x["utc"], x["entries"], x["when"]) for x in out["steps"]],
+                         [("s1", "1944-05-02T22:03Z", 2, "the morning"), ("s2", "1944-05-03T01:00Z", 1, "")])
+        self.assertEqual(out["steps"][0]["view"], {"id": "close", "name": "The station", "box": [[120.0, 18.0], [121.0, 19.0]], "basis": "given"})
+        self.assertEqual(out["steps"][1]["view"]["box"], [[119.0, 17.0], [122.0, 20.0]])
+        # a step link outside an engagement's story (an operation's chapter) is refused
+        chk = build_operations.Checker()
+        chk.links("See [[step:s1]].", "ops.md")
+        self.assertIn("ops.md: [[step:s1]]: a step link belongs in an engagement's story (engagement.md)", chk.problems)
+
+    def test_a_relief_or_road_map_the_records_do_not_have_is_reported(self):
+        eng = ("---\ntitle: A test\nshort: test\nrelief: nowhere\nroads: none\nparticipants: []\n---\n\nWords.\n")
+        problems, out = self.build(engagement=eng, events="")
+        said = "\n".join(problems)
+        self.assertIn("relief 'nowhere' has no records/relief/nowhere/relief.json", said)
+        self.assertIn("roads 'none' has no records/roads/none-primary.geojson", said)
+        self.assertEqual((out["relief"], out["roads"]), ([], ""))
 
     def test_the_vocabularies_hold_the_words_the_guides_name(self):
         self.assertFalse(hasattr(build_engagement, "SIDES"))   # retired: a nationality as the record gives it, never a bloc
@@ -590,6 +626,101 @@ class EngagementPairs(unittest.TestCase):
         x.update({"attack": "ss-384-parche/1:Attack 2", "unit": "ss-384-parche/1", "attack_ref": "Attack 2", "relation": "possible"})
         out = build_engagement.Build.pair(x, {"ss-385-bang/1": "bang", "ss-384-parche/1": "parche"})
         self.assertEqual((out["attack"], out["boat"], out["relation"]), ("Attack 2", "parche", "possible"))
+
+
+class EngagementIntelligence(unittest.TestCase):
+    """Build.frupac and Build.frupac_events: a patrol's frupac.yml (US radio intelligence) read into an engagement like
+    her japanese.yml. A fixture file made here, with BANG's F01 (Attack 1's candidate: 2215/29 at about 19.4N 118.7E),
+    a note with no time tied to the attack, and a note of the next day outside the window; the attack rows are given.
+    Checked: the zone assumed (2215 I is 1315 GMT, 19 minutes after the sheet's 2256 K), the estimated position with its
+    basis, the words as written, the kind from the note's event, the note's own fields kept, and the window."""
+
+    NOTES = ("- id: F01\n  map: metapth1733008\n  map_date: 1944-04-29\n  view: resolution=1&lat=6300&lon=4150\n"
+             "  text: 292215 / Yoshima Maru / att. by torp / 2215/29\n  dtg: '292215'\n  date: 1944-04-29\n  time: '2215'\n"
+             "  lat_est: '19.4'\n  lon_est: '118.7'\n  ship: Yashima Maru\n  event: torpedoed\n  attack: Attack 1\n  relation: candidate\n"
+             "  note: Place and time fit Takegawa Maru\n"
+             "- id: F02\n  map: metapth1733008\n  map_date: 1944-04-29\n  text: YASHIMA IN DANGER OF SINKING\n  date: 1944-04-29\n"
+             "  ship: Yashima Maru\n  event: sinking\n  attack: Attack 1\n  relation: candidate\n"
+             "- id: F05\n  map: metapth1733009\n  map_date: 1944-04-30\n  text: 301730\n  dtg: '301730'\n  date: 1944-04-30\n  time: '1730'\n"
+             "  lat_est: '18.5'\n  lon_est: '119.3'\n  ship: Wales Maru\n  event: sub_contact\n  relation: candidate\n")
+    ROWS = [{"ref": "Attack 1", "utc": datetime(1944, 4, 29, 12, 56), "lat": 19 + 26 / 60, "lon": 118 + 45 / 60}]
+    WINDOW = (datetime(1944, 4, 29, 6, 0), datetime(1944, 4, 30, 8, 0))
+
+    def notes(self, text=NOTES):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "frupac.yml"
+            path.write_text(text, encoding="utf-8")
+            b = build_engagement.Build()
+            out = b.frupac("ss-385-bang/1", self.ROWS, path)
+        return b, out
+
+    def test_a_note_is_read_with_its_zone_assumed_and_its_position_estimated(self):
+        b, notes = self.notes()
+        self.assertEqual(b.problems, [])
+        f = notes[0]
+        self.assertEqual((f["id"], f["unit"], f["date"], f["time"], f["local"]), ("F01", "ss-385-bang/1", "1944-04-29", "2215", "1944-04-29 2215 I"))
+        self.assertEqual(f["utc"], datetime(1944, 4, 29, 13, 15))   # 2215 with zone I assumed: 1315 GMT, 19 minutes after the sheet
+        self.assertEqual((f["lat"], f["lon"]), (19.4, 118.7))
+        self.assertEqual((f["attack_ref"], f["attack_unit"], f["attack_utc"]), ("Attack 1", "ss-385-bang/1", datetime(1944, 4, 29, 12, 56)))
+        self.assertEqual(f["cite"]["kind"], "intelligence")   # the map's citation, through SOURCES.yml
+        self.assertEqual(f["cite"]["of"], "us")
+        self.assertEqual(f["cite"]["href"], "https://texashistory.unt.edu/ark:/67531/metapth1733008/m1/1/zoom/?resolution=1&lat=6300&lon=4150")
+        self.assertEqual(f["cite"]["label"], "map")
+        self.assertEqual(notes[1]["utc"], None)   # no time written
+        self.assertEqual(notes[1]["local"], "1944-04-29")
+        self.assertIsNone(notes[2]["attack_utc"])
+
+    def test_the_entries_inside_the_window(self):
+        b, notes = self.notes()
+        evs = b.frupac_events(notes, *self.WINDOW)
+        self.assertEqual([e["frupac"]["id"] for e in evs], ["F01", "F02"])   # F05, 1730 I on the 30th (0830 GMT), is after the window
+        e = evs[0]
+        self.assertEqual((e["origin"], e["actor"], e["of"], e["about"], e["kind"], e["title"]), ("frupac", "FRUPAC", "us", "Yashima Maru", "hit", "Yashima Maru"))
+        self.assertEqual(e["words"], "292215 / Yoshima Maru / att. by torp / 2215/29")   # as written, the line breaks kept
+        self.assertEqual((e["local"], e["utc"], e["key"]), ("1944-04-29 2215 I", "1944-04-29T13:15Z", "1944-04-29T13:15Z"))
+        self.assertEqual(e["source"], "FRUPAC war map, 1944-04-29")
+        self.assertEqual((e["lat"], e["lon"], e["pos_basis"]), (19.4, 118.7, "approx"))
+        self.assertEqual(e["basis"], "assumed")
+        self.assertIn("Zone I (Tokyo time) assumed", e["note"])   # the zone assumption, said on the entry
+        self.assertIn("read off the map", e["note"])
+        self.assertIn("Place and time fit Takegawa Maru", e["note"])   # our note from the file, after it
+        self.assertEqual(e["frupac"], {"id": "F01", "ship": "Yashima Maru", "event": "torpedoed", "attack": "Attack 1", "relation": "candidate",
+                                       "map": "metapth1733008", "map_date": "1944-04-29", "view": "resolution=1&lat=6300&lon=4150",
+                                       "zoom": "https://texashistory.unt.edu/ark:/67531/metapth1733008/m1/1/zoom/?resolution=1&lat=6300&lon=4150", "dtg": "292215"})
+        # the untimed note is drawn at the attack's time and says so; it has no mark of its own, so no position
+        u = evs[1]
+        self.assertEqual((u["utc"], u["kind"]), ("1944-04-29T12:56Z", "damage"))
+        self.assertIn("drawn at the time of the attack it is tied to (Attack 1)", u["note"])
+        self.assertNotIn("lat", u)
+        self.assertNotIn("Zone I", u["note"])   # nothing assumed about a zone the note doesn't have a time for
+        # the same notes a little later: nothing inside a window that ends before them
+        self.assertEqual(b.frupac_events(notes, datetime(1944, 4, 29, 6, 0), datetime(1944, 4, 29, 12, 0)), [])
+
+    def test_a_note_beside_its_attack_for_the_sources_view(self):
+        _, notes = self.notes()
+        i = build_engagement.Build.intel(notes[0])
+        self.assertEqual((i["id"], i["relation"], i["utc"], i["lat"], i["lon"], i["time"], i["dtg"]), ("F01", "candidate", "1944-04-29T13:15Z", 19.4, 118.7, "2215", "292215"))
+        self.assertEqual(i["text"], "292215 / Yoshima Maru / att. by torp / 2215/29")
+        self.assertEqual(i["zoom"], i["cite"]["href"])
+        self.assertIsNone(build_engagement.Build.intel(notes[1])["utc"])   # its own time, none: the view computes nothing from a placed one
+        self.assertNotIn("minutes", i)   # the arithmetic is the page's (Engage.apart)
+
+    def test_what_fails(self):
+        bad = ("- id: F01\n  map: metapth1733008\n  map_date: 1944-04-29\n  text: x\n  date: 1944-04-29\n  time: '2215'\n  lat_est: '19.4'\n"
+               "  event: teleport\n  attack: Attack 9\n  relation: maybe\n  colour: red\n")
+        b, _ = self.notes(bad)
+        said = "\n".join(b.problems)
+        self.assertIn("F01: unknown field 'colour'", said)
+        self.assertIn("F01: event 'teleport' has no kind in FRUPAC_KIND", said)
+        self.assertIn("F01: relation 'maybe' is not one of candidate, context, match", said)
+        self.assertIn("F01: no attack 'Attack 9' in ss-385-bang/1's positions.csv", said)
+        self.assertIn("F01: `lat_est` and `lon_est` go together", said)
+
+    def test_every_frupac_event_in_the_records_has_a_kind(self):
+        for path in sorted(records.RECORDS.rglob("frupac.yml")):
+            for f in records.load_yaml(path) or []:
+                self.assertIn(f.get("event"), build_engagement.FRUPAC_KIND, f"{path}: {f.get('id')}")
+        self.assertTrue(set(build_engagement.FRUPAC_KIND.values()) <= build_engagement.KINDS)
 
 
 class EngagementCheck(unittest.TestCase):
