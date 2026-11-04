@@ -16,6 +16,7 @@ Usage: uv run tools/test_tools.py   (unittest; -v for each test's name)
 """
 import contextlib
 import io
+import os
 import subprocess
 import sys
 import tempfile
@@ -121,7 +122,10 @@ class LintCase(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
         self.root = Path(self._tmp.name).resolve()
-        subprocess.run(["git", "init", "-q"], cwd=self.root, check=True)
+        # under a hook GIT_DIR names the kit's own repository, and `git init` would re-initialise that one (as bare,
+        # with its worktree still set, which breaks every git command in it) instead of making a new one here
+        env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        subprocess.run(["git", "init", "-q"], cwd=self.root, check=True, env=env)
 
     def tearDown(self):
         self._tmp.cleanup()
