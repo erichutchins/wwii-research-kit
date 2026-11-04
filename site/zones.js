@@ -92,8 +92,21 @@ d3.json(RECORDS + "ships.json").then(ships => {
   buildControls();
   buildCounts();
   buildMoments();
+  fromQuery();
   new ResizeObserver(() => render()).observe(document.querySelector(".map-wrap"));
 });
+
+// zones.html?zone=K (the glossary's card on a zone-lettered time): that letter pressed in #zone-seg, on the group of
+// ships that logged positions in it (the one shown if it did). A letter no report used, or no parameter, changes nothing.
+function fromQuery() {
+  const z = (new URLSearchParams(location.search).get("zone") || "").trim().toUpperCase();
+  if (!z || !(z in OFFSET)) return;
+  const has = k => ALL[k].points.some(p => p.zone === z);
+  const key = has(state.ship) ? state.ship : SHIPS.map(s => s.key).find(has);
+  if (!key) { console.info(`zone ${z}: no position here was logged in it`); return; }
+  state.ship = key; state.zone = z;
+  zoneButtons(); render();
+}
 
 function buildControls() {
   const seg = d3.select("#ship-seg");

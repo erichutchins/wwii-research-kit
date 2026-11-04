@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Theatre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="engage.css">
+<link rel="stylesheet" href="chapter.css">
+<link rel="stylesheet" href="theatre.css">
+<!-- One page for each of the four theatres (theatre.html?t=pacific|atlantic|mediterranean|europe; guides/OPERATIONS-VIEWER.md
+     5.1): the theatre's name, span and what it was for (records/operations/<theater>/index.md, cited), a static map of
+     its records, then the spine (its operations in date order with their engagements under them, chapter.js), the
+     subjects here (the units' runs through the stages; the boats' patrols, the ships, the battalions and the convoys by
+     date), what is also in the records and still to find (inventory.yml), and the explainers its records need.
+     theatre.js fills the page. -->
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <nav class="nav" aria-label="The kit" data-nav></nav>
+    <script src="nav.js"></script>
+    <nav class="crumb" id="crumb" aria-label="Where this is in the kit"></nav>
+    <div class="eyebrow">Theatre</div>
+    <h1 id="title">Theatre</h1>
+    <p class="span" id="span"></p>
+    <p class="lede" id="holds"></p>
+    <p class="note" id="note" hidden></p>
+  </header>
+
+  <section class="card map-card">
+    <div class="map-box" id="map-box"><svg id="map" role="img" aria-label="The theatre's records on a map"></svg></div>
+    <p class="cap" id="cap"></p>
+  </section>
+
+  <section class="card pad text" id="head" hidden></section>
+
+  <section class="card pad" id="spine">
+    <h2>The spine <span>its operations in date order, with the engagements read from both sides under them · <a href="engagement.html">every engagement</a></span></h2>
+    <div id="spine-body"></div>
+  </section>
+
+  <section class="card pad" id="subjects">
+    <h2>The subjects here <span>each on its own page, at three depths · <a href="subjects.html">every subject</a></span></h2>
+    <div id="subjects-body"></div>
+  </section>
+
+  <section class="card pad also" id="also" hidden>
+    <h2>Also in the records, and still to find</h2>
+    <div id="also-body"></div>
+  </section>
+
+  <section class="card pad" id="reading">
+    <h2>Reading the records here</h2>
+    <ul class="reading" id="reading-body"></ul>
+  </section>
+</div>
+<div id="tip" hidden></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+<script src="scalebar.js"></script>
+<script src="links.js"></script>
+<script src="engage.js"></script>
+<script src="engage-views.js"></script>
+<script src="chapter.js"></script>
+<script src="theatre.js"></script>
+<script src="glossary.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>

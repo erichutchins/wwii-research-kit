@@ -331,6 +331,8 @@ def deep_ids(L):
     out = {}
     try:
         out[r"engagement\.html\?e="] = ({x["id"] for x in load("engagements/index.json")}, "engagement")
+        # the four theatre pages (theatre.html?t=<id>): the ids site/chapter.js's THEATRES names, and nothing else
+        out[r"theatre\.html\?t="] = ({"pacific", "atlantic", "mediterranean", "europe"}, "theatre")
         # the subject pages (subject.html?s=<id or alias>, from the registry); the four old addresses still arrive, by
         # redirect, and are checked the same way while the redirect pages stand
         subjects = load("subjects.json")
@@ -357,9 +359,10 @@ def deep_links(L, ids, files):
                     yield p, line_of(t, m.group(0)), f"links to the {what} {v!r}, which doesn't exist", v
 
 
-@rule("REF002", "a deep link to an engagement, subject, convoy, ship, unit or project that doesn't exist")
+@rule("REF002", "a deep link to a theatre, engagement, subject, convoy, ship, unit or project that doesn't exist")
 def ref_deep(L):
-    """`engagement.html?e=…`, `subject.html?s=…` (a boat, ship, unit, battalion, convoy or command, by id or alias) and,
+    """`theatre.html?t=…` (one of the four theatres), `engagement.html?e=…`, `subject.html?s=…` (a boat, ship, unit,
+    battalion, convoy or command, by id or alias) and,
     while their redirect pages stand, `convoys.html?c=…`, `patrols.html?ship=…`, `army.html?unit=…`, `seabees.html?unit=…`
     and `#proj-…` in a page, a script or a record must name one that exists: the pages fall back to a default without a
     word, so a broken link shows the wrong thing rather than an error. Ids come from the generated indexes

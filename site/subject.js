@@ -197,7 +197,8 @@
     return "";
   };
   const crumbEl = document.getElementById("crumb");
-  const trail = `<div class="trail"><a href="subjects.html">Subjects</a> / <span aria-current="page">${esc(S.name)}</span> <i>${esc(S.plain)}</i>${crumbPeriod() ? ` / <span>${esc(crumbPeriod())}</span>` : ""}</div>`;
+  // (the guide's wording, 5.3: Subjects / BANG / Patrol 1; the theatre's link is in the account's "the war around" rows)
+  const trail = Chapter.trail([{ href: "subjects.html", text: "Subjects" }, crumbPeriod() ? { href: address("account"), text: S.name } : S.name, crumbPeriod()]);
   const engs = S.engagements || [];
   const tNow = params.get("t") ? T(params.get("t")) : null;
   const before = tNow == null ? null : engs.filter(e => T(e.to || e.from) < tNow).pop(), after = tNow == null ? null : engs.find(e => T(e.from) > tNow);
@@ -357,7 +358,8 @@
       const f = first(s);
       const fs = f ? `<span class="first">${S.kind === "convoy" || f.lang === "ja" ? `<span class="ja" lang="ja">` : ""}“${esc(String(f.words).length > 140 ? String(f.words).slice(0, 138) + "…" : f.words)}”${S.kind === "convoy" ? "</span>" : ""} <small>(${esc(fmtDay(new Date(f.t)))}${f.source && S.kind === "unit" && !f.own ? `, ${esc(sourceWords(f.source))}` : ""})</small></span>` : "";
       const counts = S.kind === "boat" || S.kind === "ship" ? `${n(s.rows.filter(r => !r.offtrack).length, "fix", "fixes")}${s.period ? ` · ${n(s.period.attacks || 0, "attack")}` : ""}${s.period?.co ? ` · ${esc(s.period.co)}` : ""}${s.period?.status ? ` · <i>${esc(s.period.status)}</i>` : ""}` : `${n(s.rows.length, "station")}`;
-      const ctx = w.campaigns.length ? `<div class="ctx">The war around it: ${w.campaigns.map(o => `${esc(o.name)} (${esc(o.when)})`).join(", ")}. <i>Context, not participation.</i></div>` : "";
+      // each operation links to its place on its theatre's page (theatre.html?t=…#op-…): the subject's way up to the theatre
+      const ctx = w.campaigns.length ? `<div class="ctx">The war around it: ${w.campaigns.map(o => `<a href="${esc(Chapter.theatreHref(o.theater, `op-${o.id}`))}">${esc(o.name)}</a> (${esc(o.when)})`).join(", ")}. <i>Context, not participation.</i></div>` : "";
       const beside = [...w.mine.map(e => `<a href="engagement.html?e=${esc(e.id)}">${esc(e.short || e.title)}</a>${e.as && e.basis && e.basis !== "reported" ? ` <i>(${esc(e.basis)})</i>` : ""}`),
         ...w.kinEngs.map(e => `<a href="engagement.html?e=${esc(e.id)}">${esc(e.short || e.title)}</a> (${linkTo(e.who)}: the same ${S.kind === "unit" ? "battalion's" : "pack's"}, not ${S.kind === "boat" ? "hers" : "its own"})`),
         ...w.near.map(e => `<a href="engagement.html?e=${esc(e.id)}">${esc(e.short || e.title)}</a> (nearby, in its window; this ${S.kind === "boat" ? "boat" : "unit"} isn't named in it)`)];

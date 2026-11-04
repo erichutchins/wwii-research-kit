@@ -1142,5 +1142,137 @@
     }
    ]
   }
+ ],
+ "patterns": [
+  {
+   "id": "zone-time",
+   "name": "a time with its zone letter",
+   "pattern": "(?<![0-9A-Za-z.:-])([01][0-9][0-5][0-9]|2[0-4][0-5][0-9]) ?(IK|KL|LM|TU|UV|VW|WX|XY|[A-IK-Y]|Z)(?![0-9A-Za-z-])(?! [a-z])",
+   "example": "2201 I",
+   "says": "The time as the record typed it, then the letter of the time zone its clock kept (zone time, ZT). Z is Greenwich Civil Time (GCT). Two records can only be compared once both are on one clock.",
+   "see": "zones.html?zone=$2",
+   "sources": [
+    {
+     "cite": "opnav-29-p1000/X",
+     "href": "https://www.ibiblio.org/hyperwar/USN/ref/OPNAV_29-P1000/OPNAV_29-P1000X.html",
+     "short": "OPNAV 29-P1000",
+     "title": "OPNAV 29-P1000, Glossary of U.S. Naval Abbreviations (fifth edition, April 1949; the abbreviations in use 1940-1946)"
+    },
+    {
+     "cite": "opnav-29-p1000/G",
+     "href": "https://www.ibiblio.org/hyperwar/USN/ref/OPNAV_29-P1000/OPNAV_29-P1000G.html",
+     "short": "OPNAV 29-P1000",
+     "title": "OPNAV 29-P1000, Glossary of U.S. Naval Abbreviations (fifth edition, April 1949; the abbreviations in use 1940-1946)"
+    }
+   ]
+  },
+  {
+   "id": "army-grid",
+   "name": "a grid reference",
+   "pattern": "(?<![A-Za-z0-9-])(?!C[A-Z])(?!TF|TG|JV|OP|TM|FM|SS|DD|DE|AP|AK|AO|CV|PC|RG|KG|JG|ZG|SG|LG)(?:([a-z]?[A-HJ-Z])(?:-?[0-9]{4}|[- ]?[0-9]{6}|[- ]?[0-9]{8}|[- ][0-9]{2})|([A-HJ-Z]{2})(?:[- ]?[0-9]{4}|[- ]?[0-9]{6}|[- ]?[0-9]{8}|[- ][0-9]{2}))(?![0-9A-Za-z-])(?!\\.[0-9])(?! [a-z])",
+   "example": "V-044572",
+   "says": "A position read on a map's military grid, the lines that divide it into squares: a square's letter and an even number of digits. Which grid it is on has to be worked out from the date and the towns the entry names.",
+   "see": "grids.html?ref=$0",
+   "sources": [
+    {
+     "cite": "tm-20-205/n181",
+     "href": "https://archive.org/details/TM20-205/page/n181/mode/1up",
+     "short": "TM 20-205",
+     "title": "TM 20-205, Dictionary of United States Army Terms (18 January 1944)"
+    }
+   ]
+  },
+  {
+   "id": "german-point",
+   "name": "a German Army reference point",
+   "pattern": "(?<![A-Za-z0-9-])([IVXL]{2,6}) ?([0-9]{1,3})(?![0-9A-Za-z.-])",
+   "example": "XXIII 97",
+   "says": "A point on the German Army's reference-point map (Bezugspunktkarte 1:100000): the sheet's block, a Roman numeral, and the point's number in it, as XIV Panzer Corps' reports give a position.",
+   "see": "german.html?ref=$0",
+   "sources": [
+    {
+     "cite": "t312-0090/f0003",
+     "href": "https://catalog.archives.gov/medialz/dc-metro/rg-242/12007587/T312-0090/T312-0090-0003.jpg",
+     "short": "nara-t312",
+     "title": "Records of German Field Commands, Armies (NARA microfilm publication T-312)"
+    },
+    {
+     "cite": "t314-0544/f0361",
+     "href": "https://catalog.archives.gov/medialz/dc-metro/rg-242/12004195/T314/T314-0544/T314-0544-00361.tif",
+     "short": "nara-t314",
+     "title": "Records of German Field Commands, Corps (NARA microfilm publication T-314)"
+    }
+   ]
+  },
+  {
+   "id": "naval-square",
+   "name": "a Kriegsmarine naval square",
+   "pattern": "(?<![A-Za-z0-9-])(?!CV|CA|CL|CB|CC|CP)(C[A-Z]) ?([0-9]{2,4})(?![0-9A-Za-z.-])(?! [A-Z][a-z])",
+   "example": "CJ 9472",
+   "says": "A square of the German Navy's Marinequadratkarte: two letters name a large square, and every digit after them splits the square before it three by three, numbered like a telephone keypad.",
+   "see": "german.html?ref=$0",
+   "sources": [
+    {
+     "cite": "schmidt-mqs/p23",
+     "href": "https://doi.org/10.5281/zenodo.22848807",
+     "short": "schmidt-marinequadrate",
+     "title": "Die Marinequadratsysteme der deutschen Seestreitkräfte. Ein Werkstattbericht aus den Archiven (Stand 19.09.2026)"
+    },
+    {
+     "cite": "skl:55/p397",
+     "href": "https://archive.org/details/wardiarygermann551944germ",
+     "short": "skl-ktb-1944",
+     "title": "War Diary, German Naval Staff Operations Division (Kriegstagebuch der Seekriegsleitung, Teil A), 1944"
+    }
+   ]
+  },
+  {
+   "id": "kana-code",
+   "name": "a kana position code",
+   "pattern": "(?<![ァ-ヶ])([ァ-ヶ]{2})([一二三四五六七八九〇]{1,2})([ぁ-ゖァ-ヶ]{1,2})(?![ぁ-ゖァ-ヶ一-龥])",
+   "example": "メキ三ツ",
+   "says": "The Japanese Navy's code for a position: two kana name a square about 20 miles across, the rest the point in it. The kit's key is worked out from Japanese reports that give both the code and the position.",
+   "see": "jgrid.html?code=$0",
+   "sources": [
+    {
+     "cite": "https://github.com/erichutchins/wwii-research-kit/blob/main/guides/JAPANESE-GRID.md",
+     "href": "https://github.com/erichutchins/wwii-research-kit/blob/main/guides/JAPANESE-GRID.md",
+     "short": "github.com",
+     "title": ""
+    }
+   ]
+  },
+  {
+   "id": "track-angle",
+   "name": "a track angle, as the attack sheet types it",
+   "pattern": "(?<![A-Za-z0-9.-])([0-9]{1,3}(?:\\.[0-9])?)([SP])(?![A-Za-z0-9-])",
+   "example": "123S",
+   "says": "The angle at which the torpedo's track crosses the target's: measured from the target's bow, 0° to 180°, to starboard (S) or port (P). A 90° track hits square on the beam.",
+   "see": "torpedo.html?track=$0",
+   "sources": [
+    {
+     "cite": "usf-25a/4107",
+     "href": "https://www.ibiblio.org/hyperwar/USN/ref/SS-Doct/SS-Doct-4.html#4107",
+     "short": "USF 25(A)",
+     "title": "Current Doctrine, Submarines, USF 25(A) (February 1944)"
+    }
+   ]
+  },
+  {
+   "id": "gyro-angle",
+   "name": "a gyro angle",
+   "pattern": "(?<![A-Za-z])([Gg]yros?(?: angles?)? ?\\(?)([0-9]{3}(?:\\.[0-9])?)(?![0-9A-Za-z])",
+   "example": "Gyro 013",
+   "says": "The turn set into a torpedo before firing, so that it swings onto its course after leaving the tube: measured from the submarine's bow, 0° to 360° clockwise (a straight shot from a stern tube is 180°).",
+   "see": "torpedo.html?gyro=$2",
+   "sources": [
+    {
+     "cite": "usf-25a/4107",
+     "href": "https://www.ibiblio.org/hyperwar/USN/ref/SS-Doct/SS-Doct-4.html#4107",
+     "short": "USF 25(A)",
+     "title": "Current Doctrine, Submarines, USF 25(A) (February 1944)"
+    }
+   ]
+  }
  ]
 }

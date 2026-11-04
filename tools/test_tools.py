@@ -27,6 +27,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bezugspunkt
 import build_engagement
+import build_glossary
 import build_operations
 import build_seabees
 import build_subjects
@@ -586,6 +587,87 @@ class SourceKinds(unittest.TestCase):
 
     def test_every_real_entry_has_a_kind_in_the_vocabulary(self):
         self.assertEqual(check_sources.check_kinds(records.load_yaml(records.RECORDS / "SOURCES.yml")), [])
+
+
+class GlossaryPatterns(unittest.TestCase):
+    """build_glossary.check_pattern: a `patterns` entry (the records' notations) compiles, its example matches all of it,
+    none of its `not` forms match anywhere, its `see` page exists and its $n are groups the pattern has. Then the
+    committed patterns against values as the records write them, and against what each must leave alone."""
+
+    GOOD = {"id": "t", "name": "a test", "pattern": "([0-9]{4}) ([A-Z])", "example": "2201 I", "not": ["VT 0893"],
+            "says": "x", "source": "opnav-29-p1000/X", "see": "zones.html?zone=$2"}
+
+    def test_a_good_entry_passes(self):
+        self.assertEqual(build_glossary.check_pattern(self.GOOD, "p"), [])
+
+    def test_an_example_that_does_not_match_the_whole_pattern_fails(self):
+        said = build_glossary.check_pattern({**self.GOOD, "example": "2201 I sighted"}, "p")
+        self.assertEqual(said, ["p: example '2201 I sighted' does not match the whole pattern"])
+
+    def test_a_not_form_that_matches_fails(self):
+        said = build_glossary.check_pattern({**self.GOOD, "not": ["at 2201 I sighted"]}, "p")
+        self.assertEqual(said, ["p: 'at 2201 I sighted' matches, and must not"])
+
+    def test_an_unknown_see_page_or_group_fails(self):
+        self.assertEqual(build_glossary.check_pattern({**self.GOOD, "see": "clocks.html?zone=$2"}, "p"),
+                         ["p: see 'clocks.html?zone=$2' is not a page in site/"])
+        self.assertEqual(build_glossary.check_pattern({**self.GOOD, "see": "zones.html?zone=$3"}, "p"),
+                         ["p: see refers to $3, but the pattern has 2 groups"])
+
+    def test_a_pattern_that_does_not_compile_or_differs_between_engines_fails(self):
+        self.assertTrue(build_glossary.check_pattern({**self.GOOD, "pattern": "([0-9]{4"}, "p")[0].startswith("p: pattern does not compile: "))
+        self.assertEqual(build_glossary.check_pattern({**self.GOOD, "pattern": "(?P<t>[0-9]{4}) ([A-Z])"}, "p"),
+                         ["p: pattern uses \\p, \\b, \\w, a flag or a named group, which JavaScript and Python read differently"])
+
+    def committed(self):
+        g = records.load_yaml(build_glossary.YML)
+        return {p["id"]: __import__("re").compile(p["pattern"]) for p in g["patterns"]}
+
+    def test_the_committed_patterns_against_the_records_forms(self):
+        P = self.committed()
+        # as the records write them: TAMA-17's events (2201 I, 1604 H), BANG's positions (1600 VW), Algiers (1500A, 2100 A)
+        for v in ["2201 I", "0603 H", "2256 K", "0330 Z", "1250 I", "1600 VW", "1500A", "2100 A", "2400A"]:
+            self.assertTrue(P["zone-time"].fullmatch(v), v)
+        # the Army's stations: Btry D 106th AAA (F-2684), the 894th (VZ-6457, J 043628), S. Italy (RA 25, rN 25), Normandy (vV044572)
+        for v in ["V-044572", "VT 0893", "F-2684", "J 043628", "RA 25", "rN 25", "vV044572", "wF6317", "Q9999", "N123456", "Y 99", "O-34"]:
+            self.assertTrue(P["army-grid"].fullmatch(v), v)
+        for v in ["XXIII 97", "XXIII 117", "XXIII 9"]:
+            self.assertTrue(P["german-point"].fullmatch(v), v)
+        for v in ["CJ 9472", "CO 3381", "CQ 11", "CJ9472"]:
+            self.assertTrue(P["naval-square"].fullmatch(v), v)
+        for v in ["メキ三ツ", "メツ四セ", "スフ二イ", "ホク三テへ"]:
+            self.assertTrue(P["kana-code"].fullmatch(v), v)
+        for v in ["123S", "91S", "149P", "9S", "99.9P"]:
+            self.assertTrue(P["track-angle"].fullmatch(v), v)
+        for v in ["Gyro 013", "gyro 009", "gyros 351", "gyro (356"]:
+            self.assertTrue(P["gyro-angle"].fullmatch(v), v)
+
+    def test_what_the_committed_patterns_leave_alone(self):
+        P = self.committed()
+        # a zone pattern is not a grid reference, and a grid pattern is not a time with its zone
+        self.assertIsNone(P["zone-time"].search("VT 0893"))
+        self.assertIsNone(P["army-grid"].search("2201 I"))
+        for v in ["1944-04-29", "p03", "SS-385", "At 1604 I sighted the convoy", "0603 Hrs", "rg367-74802746/p16"]:
+            self.assertIsNone(P["zone-time"].search(v), v)
+        for v in ["TF 58", "TG 58.3", "JV 44", "Mk 14", "p03", "SS-385", "CJ 9472", "1944-04-29", "XXIII 97", "123S", "Me 262",
+                  "KG 54", "leads L39, L40 and L45", "A 1600 hrs", "A 90 mm gun"]:   # a Luftwaffe wing, the family's leads, prose
+            self.assertIsNone(P["army-grid"].search(v), v)
+        for v in ["V-044572", "VT 0893", "II Corps", "World War II 1945"]:
+            self.assertIsNone(P["german-point"].search(v), v)
+        for v in ["VT 0893", "CV 16", "CA 1944", "V-044572", "CO 14 Tk Bn"]:   # a commanding officer, not a square
+            self.assertIsNone(P["naval-square"].search(v), v)
+        for v in ["タマ一七", "タカ九〇九", "ニテ四次ニ亘リ", "二十一日"]:   # a convoy's name, prose
+            self.assertIsNone(P["kana-code"].search(v), v)
+        for v in ["27-28S", "SS-385", "153-02E", "0893 VT", "2201 I"]:
+            self.assertIsNone(P["track-angle"].search(v), v)
+        for v in ["gyro + 180", "gyro angles by hand", "Gyro 13"]:
+            self.assertIsNone(P["gyro-angle"].search(v), v)
+
+    def test_the_committed_file_builds_with_no_problem(self):
+        data, problems, _ = quietly(build_glossary.build)
+        self.assertEqual(problems, [])
+        self.assertEqual([p["id"] for p in data["patterns"]],
+                         ["zone-time", "army-grid", "german-point", "naval-square", "kana-code", "track-angle", "gyro-angle"])
 
 
 class EngagementPairs(unittest.TestCase):
