@@ -1,6 +1,6 @@
 /* The chronology view (engage-views.js, EV.chronology; guides/OPERATIONS-VIEWER.md, 3): a spine of days (hours when the
    frame is clocked, months when it spans years) at the left, one column per record, every entry at its row in entry.css's
-   block. Loaded by every page that draws it (engagement.html, algiers.html), each of which sets the one token
+   block. Loaded by every page that draws it (engagement.html), each of which sets the one token
    vocabulary (viz.css's header) to its own values, so the colours here are the page's. A station starts a bar in the
    subject's colour that runs down its column. A casualty, a shelling, a loss is named in the hit red: red is reserved for
    hits (ENGAGEMENTS.md, "Encodings"), and these are hits on the unit, so they may take it; nothing else here does.

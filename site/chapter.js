@@ -29,14 +29,12 @@ const Chapter = (() => {
     { id: "france", name: "France", where: "France, Belgium and Luxembourg", countries: ["France", "Belgium", "Luxembourg", "Netherlands"] },
     { id: "germany", name: "Germany", where: "Germany, Austria and Czechoslovakia", countries: ["Germany", "Austria", "Czechia"] },
   ];
-  // an engagement with a page of its own opens there, not on engagement.html
-  const OWN_PAGE = { "algiers-1943": "algiers.html" };
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const day = d => Date.parse(String(d).slice(0, 10) + "T00:00Z");
   const mon = d3.utcFormat("%b %Y"), fmt = d3.utcFormat("%-d %b %Y"), iso = d3.utcFormat("%Y-%m-%d");
   const span = (a, b) => mon(a) === mon(b) ? mon(a) : `${mon(a)} – ${mon(b)}`;
   const days = (a, b) => a === b ? fmt(a) : `${fmt(a)} – ${fmt(b)}`;
-  const href = e => OWN_PAGE[e.id] || `engagement.html?e=${encodeURIComponent(e.id)}`;
+  const href = e => `engagement.html?e=${encodeURIComponent(e.id)}`;
 
   let loaded;
   const load = () => loaded ??= build();

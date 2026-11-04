@@ -4,9 +4,14 @@
 // guides/ENGAGEMENTS.md. The account (the default) is one static screen: the outcome in the records' terms, the
 // subjects, the span, the map with every mark shown, and three doors. The records is the chart-room sheet: the map
 // with its clock and lanes and the two-sided log when the frame is clocked, the chronology when it is dated, the order
-// of battle and the story; `&at=<ISO minute>` sets its clock. The working is where our voice leads, labelled: the
-// periscope, closing in, the Sources view (one moment at a time, source by source), the claims board and how this was
-// read. Each is a part of this one page, shown by the address.
+// of battle and the story; `&at=<ISO minute>` sets its clock. When the story is told in steps (the build's `steps`:
+// entries carrying `step`, framed by the front matter), the story sits beside the map as the narrative, and each
+// [[step:]] link in it (links.js) sets the clock to the step's time and the map to its framing; `&step=<id>` opens
+// there, and the clock's playback marks the step it is in. The working is where our voice leads, labelled: the
+// periscope, closing in, the frame's own figures (panels.js: the registry of each engagement's panels, each a module
+// under site/panels/), the Sources view (one moment at a time, source by source), the claims board and how this was
+// read. Each is a part of this one page, shown by the address. A frame whose records sit closer than a world coastline
+// tells (Algiers) names a relief and a road map in its front matter, drawn under the marks.
 (async () => {
   const E = Engage, esc = EV.esc;
   const index = await fetch(RECORDS + "engagements/index.json").then(r => r.json());
@@ -19,6 +24,18 @@
   const [D, world] = await Promise.all([fetch(`${RECORDS}engagements/${id}/engagement.json`).then(r => r.json()),
     d3.json(EV.LAND_10M), SILHOUETTES]);
   const LAND = EV.land(world);
+  // the map's base where the front matter asks for one: today's relief and coastline (records/relief/<name>/, the
+  // tiles' box from the build) and the traced roads of 1942 (records/roads/)
+  const ROADS = D.roads ? await d3.json(`${RECORDS}roads/${D.roads}-primary.geojson`).catch(() => null) : null;
+  // the story's steps (the build's `steps`): each with the time of its earliest clocked entry and its framing; a
+  // [[step:]] link's address opens the records depth at that step
+  const STEPS = (D.steps || []).map(st => ({ ...st, ms: E.T(st.utc || st.key) }));
+  const stepHref = st => `${address(id, "records")}${st.utc ? `&at=${encodeURIComponent(st.utc)}` : ""}&step=${encodeURIComponent(st.id)}`;
+  const STEP_LINKS = Object.fromEntries(STEPS.map(st => [st.id, { href: stepHref(st) }]));
+  const stepOf = sid => STEPS.find(st => st.id === sid);
+  // the frame's own figures (panels.js), on the working
+  const FIGURES = (typeof PANELS === "object" && PANELS[D.id]) || [];   // counted on every depth, mounted on the working
+  const PANEL_LIST = IN("working") ? FIGURES : [];
   const crumb = document.getElementById("crumb");
   Chapter.crumb(id, crumb).then(() => { crumb.hidden = !crumb.innerHTML; }, () => { crumb.hidden = true; });
 
@@ -66,15 +83,18 @@
   // The clock plays only on the records depth of a clocked frame. The account's map is the same drawing with the clock
   // at the window's end: every track, mark and place shown, no play button, no lanes, no fading (zoom and pan stay).
   const PLAYS = CLOCKED && IN("records");
+  // the story told in steps sits beside the map on the records depth, with the log behind a tab when the clock plays
+  const STEPPED = IN("records") && STEPS.length > 0;
   if (!PLAYS) {
     document.querySelector(".time").hidden = true;
-    document.querySelector(".side").hidden = true;
+    document.querySelector(".side").hidden = !STEPPED;
     document.getElementById("action").classList.add(IN("account") ? "account" : "dated");
   }
+  if (STEPPED) document.getElementById("action").classList.add("stepped");
   document.getElementById("action").hidden = IN("working");
   document.getElementById("account").hidden = !IN("account");
   document.getElementById("doors").hidden = !IN("account");
-  document.getElementById("story").hidden = !IN("records");
+  document.getElementById("story").hidden = !IN("records") || STEPPED;   // beside the map instead, as the narrative
   // the clock the address asks for (`&at=1944-04-29T13:01Z`): the records depth of a clocked frame opens at that minute
   const AT = PLAYS && params.get("at") ? E.T(params.get("at")) : null;
   const OWN = D.clock && D.gmt ? D.clock : (D.theater === "pacific" && D.gmt ? "I" : "");
@@ -88,7 +108,7 @@
   document.title = D.short || D.title;
   document.getElementById("eyebrow").textContent = D.eyebrow || "";
   document.getElementById("title").textContent = D.title;
-  const render = s => Links.render(s, { cites: D.cites || {} });
+  const render = s => Links.render(s, { cites: D.cites || {}, steps: STEP_LINKS });
   if (top && top.paras.length) document.getElementById("lede").innerHTML = render(top.paras[0].text);
   // the story's Sources (and What is missing) sections belong to the working, under how this was read; the rest is the
   // records' narrative; the Outcome and Clocks sections also go to the account
@@ -99,6 +119,7 @@
     return `${s.heading ? `<h2>${esc(s.heading)}</h2>` : ""}${paras.map(p => `<p class="${p.aside ? "aside" : ""}">${render(p.text)}</p>`).join("")}`;
   }).join("");
   document.getElementById("story").innerHTML = sectionsHTML(secs.filter(s => !sourcesSec(s)));
+  if (STEPPED) document.getElementById("narrative-text").innerHTML = sectionsHTML(secs.filter(s => s.heading && !sourcesSec(s)));
   const SOURCES_HTML = sectionsHTML(secs.filter(sourcesSec));
   document.getElementById("sources").innerHTML = SOURCES_HTML;
   document.getElementById("sources-card").hidden = !(IN("working") && SOURCES_HTML);
@@ -126,18 +147,42 @@
     has(e => e.origin === "frupac" && e.lat != null) && `<span>${EV.legendMark.intel}Estimated by FRUPAC (US radio intelligence; the position read from the map)</span>`,
     D.fixes.some(f => !f.on_track && f.kind !== "ship") && `<span><svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="4.5" fill="none" stroke="var(--ink-2)" stroke-width="1.4" stroke-dasharray="2 2"/></svg>Contradicted in the report</span>`,
     D.positions.length && `<span><svg width="10" height="10" viewBox="-5 -5 10 10"><rect x="-3" y="-3" width="6" height="6" fill="var(--ink-3)"/></svg>A place in the records</span>`,
+    D.positions.some(r => r.lat2 != null) && `<span><svg width="16" height="12" viewBox="0 0 16 12"><rect x="1" y="1" width="14" height="10" fill="none" stroke="var(--ink-2)" stroke-width="1.2"/></svg>A grid square the record names (our decoding)</span>`,
+    (D.relief || []).length && `<span><svg width="18" height="12" viewBox="0 0 18 12"><rect x="1" y="1" width="16" height="10" fill="var(--land)" stroke="var(--coast)"/></svg>Relief and coast: today's elevation (SRTM, USGS)</span>`,
+    ROADS && `<span><svg width="22" height="10"><line x1="1" y1="5" x2="21" y2="5" class="road"/></svg>Primary roads of 1942 (OSS Map 967, traced, ± about 4 km)</span>`,
     IN("account") && PATH.length > 1 && `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--ink-3)" stroke-width="1.4" stroke-dasharray="2 4"/></svg><i>The convoy's path as the boats saw it (ours)</i></span>`,
   ].filter(Boolean).join("");
 
   // ---------- map
   const svg = d3.select("#map");
   const HATCH = EV.hatchDef(svg);   // the intelligence estimates' hatch (inferred, never solid)
-  const gLand = svg.append("g"), gGrat = svg.append("g"), gPlace = svg.append("g"), gPath = svg.append("g"), gTrk = svg.append("g"), gMsg = svg.append("g"),
+  const gLand = svg.append("g"), gGrat = svg.append("g"), gRelief = svg.append("g"), gPlace = svg.append("g"), gPath = svg.append("g"), gTrk = svg.append("g"), gMsg = svg.append("g"),
         gNowName = svg.append("g"), gMk = svg.append("g"), gNow = svg.append("g"), gPulse = svg.append("g");
-  let proj = null, W = 0, H = 0, quiet = false, t = t1, playing = false, raf = 0, lastT = null;
+  let proj = null, BASE = null, W = 0, H = 0, quiet = false, t = t1, playing = false, raf = 0, lastT = null;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const ZOOM_MAX = STEPS.length ? 48 : 12;   // a step's framing can be a few miles across (Haynsworth's station)
   const view = mapZoom(svg.node(), document.querySelector(".map-box"), () => { if (proj && !quiet) { drawStatic(); drawFrame(); } },
-                       { capture: true, max: 12, at: "bottom-right" });
+                       { capture: true, max: ZOOM_MAX, at: "bottom-right" });
+  // the relief: inside each tile set's box, the sea, then the land through the elevation mask (a finer coastline than
+  // the world atlas's), then the hillshade; placed by the projection, so placed again at every zoom. Today's ground:
+  // harbour works since 1943 show as land. The roads over it, faint, for context.
+  const RELIEF = (D.relief || []).map((r, i) => {
+    const url = `${RECORDS}relief/${r.name}/`;
+    const img = svg.select("defs").append("mask").attr("id", `relief-land-${i}`).attr("maskUnits", "userSpaceOnUse")
+      .append("image").attr("href", url + "land.png").attr("preserveAspectRatio", "none");
+    const g = gRelief.append("g").attr("class", "relief");
+    g.append("rect").attr("class", "relief-sea");
+    g.append("rect").attr("class", "relief-land").attr("mask", `url(#relief-land-${i})`);
+    g.append("image").attr("href", url + "shade.png").attr("preserveAspectRatio", "none").attr("class", "relief-shade");
+    return { box: r.box, els: [img, ...g.selectAll("rect, image").nodes().map(n => d3.select(n))] };
+  });
+  function drawBase() {
+    RELIEF.forEach(r => {
+      const [[w, s], [e, n]] = r.box, a = P(w, n), b = P(e, s);
+      r.els.forEach(el => el.attr("x", a[0]).attr("y", a[1]).attr("width", b[0] - a[0]).attr("height", b[1] - a[1]));
+    });
+    gRelief.selectAll("path.road").data(ROADS ? [ROADS] : []).join("path").attr("class", "road").attr("d", d3.geoPath(proj));
+  }
   const ruler = scaleBar(document.querySelector(".map-box"), { units: ["nm"] });
   const P = (lon, lat) => proj([lon, lat]);
   if (!D.box) document.querySelector(".map-box").hidden = true;
@@ -145,13 +190,16 @@
   function drawStatic() {
     if (!D.box || document.getElementById("action").hidden) return;   // (the working has no map: nothing to fit)
     const el = svg.node(); W = el.clientWidth; H = el.clientHeight;
+    if (W < 120 || H < 120) return;   // not laid out yet (a resize in progress): a fit to nothing would draw inside out
     const b = D.box, m = Math.min(44, W * 0.06);
     proj = d3.geoMercator().fitExtent([[m, 26], [W - m, H - 34]], { type: "MultiPoint", coordinates: [[b[0], b[1]], [b[2], b[3]], [b[0], b[3]], [b[2], b[1]]] });
     view.bound(W, H);
-    mapZoom.scaled(proj, { scale: proj.scale(), translate: proj.translate() }, view.transform());
+    BASE = { scale: proj.scale(), translate: proj.translate() };   // the fit before the reader's zoom, for zoomToBox
+    mapZoom.scaled(proj, BASE, view.transform());
     ruler.update(p => proj.invert(p));
     gLand.selectAll("path").data([LAND]).join("path").attr("class", "land").attr("d", d3.geoPath(proj));
     EV.graticule(gGrat, proj, W, H);
+    drawBase();
     const inView = ([x, y]) => x > 30 && x < W - 30 && y > 24 && y < H - 24;
     gPlace.selectAll("*").remove();
     D.places.filter(p => inView(P(p.lon, p.lat))).forEach(p => gPlace.append("text").attr("class", "place")
@@ -200,10 +248,18 @@
         }
       }
       if (d.k === "intel") EV.intelMark(g, HATCH);
-      if (d.k === "pos") {
+      if (d.k === "pos" && d.r.lat2 != null && d.r.lon2 != null) {
+        // a square the record names (a kana grid code decoded): its far corner is the row's lat2/lon2; hatched, since
+        // the decoding is ours; dashed when the reading is only probable
+        const [x2, y2] = P(d.r.lon2, d.r.lat2).map((v, i) => v - P(d.lon, d.lat)[i]);
+        g.append("rect").attr("x", Math.min(0, x2)).attr("y", Math.min(0, y2)).attr("width", Math.abs(x2)).attr("height", Math.abs(y2))
+          .attr("fill", HATCH).attr("stroke", inkOf(d.r)).attr("stroke-width", 1).attr("stroke-dasharray", d.r.basis === "probable" ? "4 3" : null);
+        g.append("text").attr("class", "port").attr("x", Math.min(0, x2) + 4).attr("y", Math.min(0, y2) - 5).text(String(d.r.label).split(":")[0]);
+      } else if (d.k === "pos") {
         g.append("rect").attr("x", -3).attr("y", -3).attr("width", 6).attr("height", 6).attr("fill", inkOf(d.r))
           .attr("fill-opacity", d.r.basis === "assumed" || d.r.basis === "approx" || d.r.basis === "hand-placed" ? 0.35 : 1);
-        if (D.positions.length <= 15) g.append("text").attr("class", "port").attr("x", 6).attr("y", -5).text(d.r.label);   // many: on hover
+        // few: labelled (many: on hover); a landmark (a 1942 sheet's name) only close in, where the names have room
+        if (D.positions.length <= 15 && !(d.r.kind === "landmark" && view.transform().k < 4)) g.append("text").attr("class", "port").attr("x", 6).attr("y", -5).text(d.r.label);
       }
       g.append("circle").attr("r", 11).attr("fill", "transparent");
     });
@@ -292,6 +348,84 @@
     drawCursor();
     updateLog();
     updateClosing();
+    if (STEPPED && PLAYS) { const st = stepAt(t); if (st) markStep(st.id, playing); }
+  }
+
+  // ---------- the story's steps beside the map: a click on a [[step:]] link moves the clock to the step's time and the
+  // map to its framing; the current step is marked, and the clock's playback marks the step it is in (the last one
+  // begun). The log sits behind a tab when the clock plays; a dated frame shows the narrative alone.
+  const stepAt = ms => { let k = null; STEPS.forEach(st => { if (st.ms != null && !Number.isNaN(st.ms) && st.ms <= ms) k = st; }); return k; };
+  let CUR_STEP = null;
+  function markStep(sid, scroll) {
+    if (sid === CUR_STEP) return;
+    CUR_STEP = sid;
+    document.querySelectorAll("#narrative a.step").forEach(a => {
+      const on = a.dataset.step === sid;
+      a.classList.toggle("current", on);
+      if (on) a.setAttribute("aria-current", "step"); else a.removeAttribute("aria-current");
+    });
+    document.querySelectorAll("#narrative-text p").forEach(para => para.classList.toggle("current", !!para.querySelector(`a.step[data-step="${CSS.escape(sid)}"]`)));
+    const st = stepOf(sid);
+    const view = st && st.view && st.view.name;
+    document.getElementById("step-now").innerHTML = st ? `${esc(st.when || E.day(st.ms))}${view ? ` <span class="view">${esc(view)}</span>` : ""}` : "";
+    if (scroll) {
+      const a = document.querySelector(`#narrative a.step[data-step="${CSS.escape(sid)}"]`), box = document.getElementById("narrative");
+      if (a) box.scrollTo({ top: Math.max(0, (a.closest("p") || a).offsetTop - box.clientHeight / 4), behavior: reduced ? "auto" : "smooth" });
+    }
+  }
+  function goStep(sid, animate = true) {
+    const st = stepOf(sid);
+    if (!st) return;
+    stop();
+    if (PLAYS && st.ms != null && !Number.isNaN(st.ms)) setTime(st.ms);
+    if (st.view && st.view.box) zoomToBox(st.view.box, animate);
+    markStep(sid, true);
+  }
+  // frame the map on a box, [[west, south], [east, north]]: the zoom that fits it (never out past the map's own fit),
+  // centred on it; the zoom's bounds keep it on the map
+  function zoomToBox([[w, s], [e, n]], animate = true) {
+    if (!proj || !BASE) return;
+    const p0 = d3.geoMercator().scale(BASE.scale).translate(BASE.translate);
+    const [x1, y1] = p0([w, n]), [x2, y2] = p0([e, s]);
+    const k = Math.max(1, Math.min(ZOOM_MAX, Math.min(W / (x2 - x1), H / (y2 - y1)) * 0.92));
+    const tr = d3.zoomIdentity.translate(W / 2 - k * (x1 + x2) / 2, H / 2 - k * (y1 + y2) / 2).scale(k);
+    if (!animate || reduced) view.set(tr);
+    else d3.select(svg.node()).transition().duration(700).ease(d3.easeCubicInOut).call(view.zoom.transform, tr);
+  }
+  if (STEPPED) {
+    document.getElementById("narrative").hidden = false;
+    document.getElementById("narrative").addEventListener("click", ev => {
+      const a = ev.target.closest("a.step");
+      if (a) { ev.preventDefault(); goStep(a.dataset.step); }
+    });
+    const tabs = document.getElementById("side-tabs");
+    tabs.hidden = !PLAYS;
+    document.getElementById("side-title").hidden = PLAYS;
+    document.getElementById("log").hidden = true;
+    if (PLAYS) tabs.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+      tabs.querySelectorAll("button").forEach(x => x.setAttribute("aria-selected", x === b));
+      document.getElementById("narrative").hidden = b.dataset.pane !== "narrative";
+      document.getElementById("log").hidden = b.dataset.pane !== "log";
+      document.getElementById("side-sub").textContent = b.dataset.pane === "log" ? "Follows the clock; click an entry to go there" : "Each step sets the clock and the map; click one to go there";
+    }));
+    document.getElementById("side-title").textContent = "The story";
+    document.getElementById("side-sub").textContent = PLAYS ? "Each step sets the clock and the map; click one to go there" : "Each step frames the map; click one to go there";
+  }
+
+  // ---------- the frame's own figures (panels.js): each engagement's panels, mounted on the working, a card each
+  function drawPanels() {
+    const host = document.getElementById("panels");
+    host.hidden = !PANEL_LIST.length;
+    if (host.hidden) return;
+    host.innerHTML = "";
+    PANEL_LIST.forEach(pn => {
+      const card = document.createElement("section");
+      card.className = "card panel-card";
+      card.id = `panel-${pn.id}`;
+      card.innerHTML = `<h2>${esc(pn.heading)}</h2>${pn.intro ? `<p class="below intro">${esc(pn.intro)}</p>` : ""}<div class="panel-body"></div>`;
+      host.appendChild(card);
+      pn.mount(card.querySelector(".panel-body"), D);
+    });
   }
 
   // ---------- lanes
@@ -515,13 +649,13 @@
   const SHEETS = Object.entries(D.sheets || {}).flatMap(([actor, byRef]) => Object.keys(byRef).map(ref => ({ actor, ref })));
   const QUESTIONS = QUESTIONS_BY.length;
   const CLOSING = !!(Object.keys(D.convoys).length && series.length);
-  const working = [SHEETS.length && n(SHEETS.length, "attack sheet"), CLOSING && "closing in", MOMENTS.length && n(MOMENTS.length, "moment"), QUESTIONS && n(QUESTIONS, "open question"), SOURCES_HTML && "sources"].filter(Boolean);
+  const working = [SHEETS.length && n(SHEETS.length, "attack sheet"), CLOSING && "closing in", FIGURES.length && n(FIGURES.length, "figure"), MOMENTS.length && n(MOMENTS.length, "moment"), QUESTIONS && n(QUESTIONS, "open question"), SOURCES_HTML && "sources"].filter(Boolean);
   const recordsLine = `${n(D.events.length, "entry", "entries")} · ${kindsLine} · ${n(LANGS, "language")}`;
   document.getElementById("depths").innerHTML = [["account", "The account", "one screen, nothing moves"], ["records", "The records", recordsLine],
     ["working", "The working", working.length ? working.join(" · ") : "nothing to show yet"]]
     .map(([v, name, line]) => `<a href="${esc(address(id, v))}"${IN(v) ? ' aria-current="page"' : ""}>${name}<small>${esc(line)}</small></a>`).join("");
   document.getElementById("working-none").hidden = !(IN("working") && !working.length);
-  document.getElementById("working-none").textContent = "The working has nothing to show for this engagement yet: no attack sheet is transcribed, there is no convoy to close on, no attack is paired with a record of the other side, the records leave no question listed, and the story has no sources section.";
+  document.getElementById("working-none").textContent = "The working has nothing to show for this engagement yet: no attack sheet is transcribed, there is no convoy to close on, it has no figures of its own, no attack is paired with a record of the other side, the records leave no question listed, and the story has no sources section.";
 
   if (IN("account")) {
     // the outcome, in the records' terms: the story's Outcome section, its citations links as in the story
@@ -573,14 +707,21 @@
     const recordNames = [...new Set(RECS.values())], shown = recordNames.slice(0, 6);   // two FRUPAC maps are one name
     document.getElementById("doors").innerHTML = `
       <a class="door" href="${esc(address(id, "records"))}"><b>The records</b><span class="n"><span class="typed">${D.events.length}</span> ${D.events.length === 1 ? "entry" : "entries"} from ${esc(kindsLine)} in ${n(LANGS, "language")}${D.fixes.length ? `, and <span class="typed">${D.fixes.length}</span> ${D.fixes.length === 1 ? "fix" : "fixes"}` : ""}</span>
-        <span class="list">${esc(shown.join(" · "))}${recordNames.length > shown.length ? ` · and ${recordNames.length - shown.length} more` : ""} · ${PLAYS || CLOCKED ? "the map with the clock, one lane per subject, and the two-sided log" : "the map, and the chronology by the day"}</span></a>
+        <span class="list">${esc(shown.join(" · "))}${recordNames.length > shown.length ? ` · and ${recordNames.length - shown.length} more` : ""} · ${PLAYS || CLOCKED ? "the map with the clock, one lane per subject, and the two-sided log" : "the map, and the chronology by the day"}${STEPS.length ? `, with the story in ${n(STEPS.length, "step")} beside the map` : ""}</span></a>
       <a class="door" href="${esc(address(id, "working"))}"><b>The working</b><span class="n">${working.length ? esc(working.join("; ")) : "nothing to show yet"}</span>
-        <span class="list">${esc([SHEETS.length && `at the periscope: ${SHEETS.map(s => `${nameOf(s.actor)} ${s.ref}`).join(", ")}`, CLOSING && "closing in", MOMENTS.length && `source by source: ${n(MOMENTS.length, "moment")}`, QUESTIONS && "what the records leave open", SOURCES_HTML && "how this was read"].filter(Boolean).join(" · ")) || "no attack sheet, no closing in, no pair, no open question, no sources section"}</span></a>
+        <span class="list">${esc([SHEETS.length && `at the periscope: ${SHEETS.map(s => `${nameOf(s.actor)} ${s.ref}`).join(", ")}`, CLOSING && "closing in", FIGURES.length && `figures: ${FIGURES.map(f => f.heading).join("; ")}`, MOMENTS.length && `source by source: ${n(MOMENTS.length, "moment")}`, QUESTIONS && "what the records leave open", SOURCES_HTML && "how this was read"].filter(Boolean).join(" · ")) || "no attack sheet, no closing in, no figure, no pair, no open question, no sources section"}</span></a>
       <div class="door"><b>Journeys</b><span class="n">each subject's own record, before and after</span>
         <span class="list">${journeys.length ? journeys.join(" · ") : "no subject here has a page of its own yet"}</span></div>`;
   }
 
-  drawOOB(); drawMoments(); drawClaims(); drawLog(); drawChronology(); drawStatic(); drawLanes(); drawClosing();
+  drawOOB(); drawMoments(); drawClaims(); drawPanels(); drawLog(); drawChronology(); drawStatic(); drawLanes(); drawClosing();
   if (AT != null && !Number.isNaN(AT)) { t = Math.max(t0, Math.min(t1, AT)); drawFrame(); highlightRow(t); } else drawFrame();
+  // `&step=<id>`: open at that step (its time and its framing); otherwise the narrative marks the step the clock is in
+  // `&step=<id>`: open at that step (its time and its framing); a stepped story with no step or minute asked for opens
+  // at its first step, as the story page did; otherwise the narrative marks the step the clock is in
+  const STEP0 = STEPPED && params.get("step") && stepOf(params.get("step"));
+  if (STEP0) goStep(STEP0.id, false);
+  else if (STEPPED && AT == null && STEPS.length) goStep(STEPS[0].id, false);
+  else if (STEPPED && PLAYS) { const st = stepAt(t); if (st) markStep(st.id, false); }
   new ResizeObserver(() => { if (D.box) drawStatic(); drawLanes(); drawClosing(); drawFrame(); }).observe(document.querySelector(".wrap"));
 })();

@@ -27,6 +27,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bezugspunkt
 import build_engagement
+import build_operations
 import build_seabees
 import check_sources
 import check_track
@@ -509,7 +510,7 @@ class EngagementVocabulary(unittest.TestCase):
         problems, _ = self.build()
         said = "\n".join(problems)
         self.assertIn("[[page:nowhere]]: no such page", said)
-        self.assertIn("[[frob:x]]: unknown kind (cite, op, ship, unit, page, convoy, engagement, who)", said)
+        self.assertIn("[[frob:x]]: unknown kind (cite, op, ship, unit, page, convoy, engagement, step, who)", said)
         self.assertNotIn("nowhere2", said)         # an example in backticks isn't a link
         self.assertNotIn("[[page:index]]", said)   # site/index.html is there
 
@@ -517,7 +518,42 @@ class EngagementVocabulary(unittest.TestCase):
         problems, _ = self.build(engagement="---\nshort: x\ncolour: red\nparticipants: []\n---\n\nWords.\n", events="")
         said = "\n".join(problems)
         self.assertIn("`title` is missing", said)
-        self.assertIn("unknown field 'colour' (known: against, clock, eyebrow, participants, places, short, theater, title, window)", said)
+        self.assertIn("unknown field 'colour' (known: against, clock, eyebrow, participants, places, relief, roads, short, steps, theater, title, views, window)", said)
+
+    def test_a_step_link_names_a_step_some_entry_carries(self):
+        # the story's [[step:]] links set the clock and the map to a step; a step is defined by the entries that carry it
+        eng = ("---\ntitle: A test\nshort: test\nclock: H\n"
+               "views:\n  close: {name: The station, box: [[120.0, 18.0], [121.0, 19.0]]}\n"
+               "steps:\n  s1: {view: close, when: 'the morning'}\n  s2: {view: [[119.0, 17.0], [122.0, 20.0]]}\n  s9: {view: close}\n"
+               "participants:\n  - {id: boat, name: A boat, of: us, kind: submarine}\n---\n\n"
+               "Words [[step:s1|at dawn]] and [[step:s2]] and [[step:s3|later]]; `[[step:s4]]` is an example.\n")
+        events = ("- {at: 1944-05-03 0900, actor: boat, kind: log, words: w, source: s, ref: r, step: s2}\n"
+                  "- {at: 1944-05-03 0603, actor: boat, kind: log, words: w, source: s, ref: r, step: s1}\n"
+                  "- {at: 1944-05-03, actor: boat, kind: log, words: w, source: s, ref: r, step: s1}\n")
+        problems, out = self.build(engagement=eng, events=events)
+        said = "\n".join(problems)
+        self.assertIn("[[step:s3]]: no entry in events.yml carries step 's3'", said)
+        self.assertIn("step s9: no entry in events.yml carries step 's9'", said)
+        self.assertNotIn("s4", said)                                   # an example in backticks isn't a link
+        self.assertNotIn("[[step:s1", said)
+        self.assertNotIn("[[step:s2", said)
+        # the steps the entries carry, in time order, each timed by its earliest clocked entry and framed as the front matter says
+        self.assertEqual([(x["id"], x["utc"], x["entries"], x["when"]) for x in out["steps"]],
+                         [("s1", "1944-05-02T22:03Z", 2, "the morning"), ("s2", "1944-05-03T01:00Z", 1, "")])
+        self.assertEqual(out["steps"][0]["view"], {"id": "close", "name": "The station", "box": [[120.0, 18.0], [121.0, 19.0]], "basis": "given"})
+        self.assertEqual(out["steps"][1]["view"]["box"], [[119.0, 17.0], [122.0, 20.0]])
+        # a step link outside an engagement's story (an operation's chapter) is refused
+        chk = build_operations.Checker()
+        chk.links("See [[step:s1]].", "ops.md")
+        self.assertIn("ops.md: [[step:s1]]: a step link belongs in an engagement's story (engagement.md)", chk.problems)
+
+    def test_a_relief_or_road_map_the_records_do_not_have_is_reported(self):
+        eng = ("---\ntitle: A test\nshort: test\nrelief: nowhere\nroads: none\nparticipants: []\n---\n\nWords.\n")
+        problems, out = self.build(engagement=eng, events="")
+        said = "\n".join(problems)
+        self.assertIn("relief 'nowhere' has no records/relief/nowhere/relief.json", said)
+        self.assertIn("roads 'none' has no records/roads/none-primary.geojson", said)
+        self.assertEqual((out["relief"], out["roads"]), ([], ""))
 
     def test_the_vocabularies_hold_the_words_the_guides_name(self):
         self.assertFalse(hasattr(build_engagement, "SIDES"))   # retired: a nationality as the record gives it, never a bloc

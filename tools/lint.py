@@ -415,12 +415,20 @@ def orf_assets(L):
         yield p, 1, f"{p.name} is loaded by no page", p.name
 
 
+REDIRECT = re.compile(r"""<meta\s+http-equiv=["']refresh["']""", re.I)
+
+
 @rule("ORF002", "a page in site/ that no other page links to")
 def orf_pages(L):
-    """A page nothing links to can only be found by its address. index.html is exempt."""
+    """A page nothing links to can only be found by its address. index.html is exempt, and so is a redirect (a page
+    that is only a `<meta http-equiv="refresh">` to another, kept at an old address so links from outside still
+    arrive): being found by its address is its whole job."""
     site = KIT / "site"
     for p in sorted(site.glob("*.html")):
         if p.name == "index.html":
+            continue
+        t = L.text(p)
+        if REDIRECT.search(t) and "<script" not in t:
             continue
         others = "\n".join(L.text(q) for q in [*site.glob("*.html"), *site.glob("*.js")] if q != p)
         if not re.search(rf"""["'/]{re.escape(p.name)}["'?#]""", others):

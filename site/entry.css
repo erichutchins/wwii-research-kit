@@ -1,5 +1,5 @@
 /* A record's entry, the same on every page that lists them: the front page's replay (index.html), engagement.html,
-   haynsworth.html, and the side lists of patrols.html, army.html and seabees.html.
+   the side lists of patrols.html, army.html and seabees.html.
 
      <div class="entry" style="--bar: var(--series-track)">     .assumed: the position is assumed (a dashed bar)
        <div class="t">1300<small>29 Apr</small></div>           our time or date (GMT where we converted it)

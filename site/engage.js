@@ -305,7 +305,7 @@ const Engage = (() => {
     return { ...out, lead, torpedoCourse, gyro, track: Math.abs(ta), side: ta >= 0 ? "S" : "P", fwd: side(false), aft: side(true) };
   }
 
-  // A built engagement (engagement.json) as the story pages (haynsworth.html, algiers.html) read it: its own entries in
+  // A built engagement (engagement.json) as a story reads it (the front page's Haynsworth figure): its own entries in
   // the order events.yml gives them, with the record's date and time apart, and the claims; `ref` is the page's link.
   function story(D) {
     const timeline = D.events.filter(e => e.origin === "events").sort((a, b) => a.n - b.n).map(e => ({

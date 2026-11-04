@@ -69,6 +69,14 @@ button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible
 .trk { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .trk.ahead { stroke-opacity: 0.25; stroke-dasharray: 3 4; }
 .trk.observed { stroke: var(--ink-3); stroke-width: 1.4; stroke-dasharray: 2 4; }   /* the convoy's path as the boats saw it: ours, dotted */
+/* the map's base where a frame names one (engagement.md `relief`, `roads`): today's relief inside its tiles' box, the
+   sea in the page's colour, the land through the elevation mask, the hillshade over it; the traced roads of 1942 faint */
+.relief-sea { fill: var(--page); }
+.relief-land { fill: var(--land); }
+.relief-shade { opacity: .9; pointer-events: none; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .relief-shade { opacity: .75; } }
+:root[data-theme="dark"] .relief-shade { opacity: .75; }
+.road { fill: none; stroke: var(--ink-3); stroke-opacity: .5; stroke-width: 1.1; stroke-linejoin: round; pointer-events: none; }
 .mk { cursor: pointer; transition: opacity 120ms; }
 .mk.future { opacity: 0.2; }
 .mk.attack.future { opacity: 0; pointer-events: none; }

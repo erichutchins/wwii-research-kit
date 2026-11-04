@@ -12,7 +12,7 @@
   const BAR =
     '<a class="home" href="index.html">WWII research kit</a>' +
     '<span class="grp"><a class="lbl" href="index.html#pacific">Pacific</a><a href="convoys.html">Convoys</a>' +
-      '<a href="lanes.html">Sea lanes</a><a href="haynsworth.html">Haynsworth</a><a href="seabees.html">Seabees</a>' +
+      '<a href="lanes.html">Sea lanes</a><a href="seabees.html">Seabees</a>' +
       '<a href="dives.html" id="to-dives">Dives</a></span>' +
     '<span class="grp"><a class="lbl" href="index.html#europe">Algiers to Germany</a>' +
       '<a href="index.html#stage-algiers">Algiers</a><a href="index.html#stage-sicily">Sicily</a>' +

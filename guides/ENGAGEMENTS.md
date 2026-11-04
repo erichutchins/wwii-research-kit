@@ -7,8 +7,8 @@ the other. Every engagement is one folder, `records/engagements/<id>/`, and one 
 
 The convoys the boats met have their own records (`records/convoys/<id>/convoy.md`) and pages: `site/convoys.html`
 (the ledger, and each convoy's voyage and ships) and `site/lanes.html` (the lanes, month by month, and a voyage as a
-timetable). Haynsworth and Algiers are also told as stories (`haynsworth.html`, `algiers.html`), read from the same
-engagement.
+timetable). Haynsworth and Algiers are also told as stories: their `engagement.md` carries the account in steps
+(`[[step:]]` links that set the clock and the map), and their figures are panels of the working (`site/panels/`).
 
 This guide holds the reasons and the method. The schema, every file and every field, is `records/README.md` ("An
 engagement", "A convoy", "A patrol's Japanese record"), and the validator is `tools/build_engagement.py`: it checks

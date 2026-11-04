@@ -22,7 +22,16 @@ the engagements that met it and where the boats saw it, for site/convoys.html).
 
 It checks that every participant, convoy, silhouette and position named exists; that every time parses, with a zone
 letter or the engagement's `clock`; that every entry and claim is cited, in a form SOURCES.yml knows; that every
-[[link]] in the story resolves; and that every pairing in a patrol's claims.yml names an attack and a record that exist.
+[[link]] in the story resolves (a [[step:]] link names a step some entry carries); and that every pairing in a
+patrol's claims.yml names an attack and a record that exist.
+
+The story's steps (guides/OPERATIONS-VIEWER.md 3, "Story"): an entry's `step` names the step it belongs to, and a
+[[step:<id>|words]] link in the story sets the page's clock to the step's time (its earliest entry's) and the map to its
+framing. The front matter's `steps` gives a step its framing, `view` (the name of one of `views`, each a `name` and a
+`box` [[west, south], [east, north]], or a box written inline) and its `when` in words; a step with no view is framed on
+its entries' positions. The build writes `steps`, in time order, each with its time, words, view and count of entries.
+`relief` (a records/relief/<name>/ or a list of them, coarse first) and `roads` (records/roads/<name>-primary.geojson)
+name the map's base where the records' places are closer than a world coastline tells (Algiers).
 
 Sides are not stored (guides/OPERATIONS-VIEWER.md 2.4: a nationality as the record gives it, never a bloc). The records
 carry `of`, the nationality of a participant, of an entry's actor (left out when the actor is a participant, whose `of`
@@ -74,7 +83,10 @@ with open(RECORDS / "army" / "units.csv", encoding="utf-8", newline="") as f:
     ARMY_UNITS = {r["unit"] for r in csv.DictReader(f)}   # a participant's `unit:` (followed from one engagement to the next)
 MAX_BOATS = 3   # the page's three categorical colours are checked for three boats; check again before a fourth
 
-FM = {"title", "short", "eyebrow", "theater", "clock", "window", "participants", "places", "against"}
+FM = {"title", "short", "eyebrow", "theater", "clock", "window", "participants", "places", "against", "steps", "views",
+      "relief", "roads"}
+STEP = {"view", "when"}      # a step's framing and its words; its time and entries come from events.yml
+VIEW = {"name", "box"}       # a named framing of the map
 PART = {"id", "name", "of", "kind", "sil", "hull", "co", "track", "convoy", "unit", "basis", "note"}
 EVENT = {"at", "placed", "of", "actor", "kind", "to", "from", "title", "words", "original", "lang", "translation", "source",
          "ref", "pos", "step", "basis", "note"}
@@ -442,7 +454,6 @@ class Build:
         of_actor = {p["id"]: p.get("of", "") for p in parts}
         for p in parts:
             p["opposed"] = opposed(p.get("of", ""))
-        self.chk.links(body, where)
         secs = sections(body)
         cites = {c: resolve_cite(c, self.chk.srcs) for c in re.findall(r"\[\[cite:([^\]|]+)", body)}
 
@@ -455,7 +466,8 @@ class Build:
                 self.bad(w, "positions.csv has no `of` column (the nationality of whose position it is; empty for a place)")
             self.nation(r.get("of") or None, "of", w)
             positions[r["id"]] = self.tagged({**r, "of": r.get("of", ""), "opposed": opposed(r.get("of", "")),
-                                             "lat": num(r.get("lat")), "lon": num(r.get("lon")), "cite": self.cite(r.get("ref"), w)})
+                                             "lat": num(r.get("lat")), "lon": num(r.get("lon")),
+                                             "lat2": num(r.get("lat2")), "lon2": num(r.get("lon2")), "cite": self.cite(r.get("ref"), w)})
         for r in positions.values():
             self.place(r, positions, f"{rel(pos_path)} {r['id']}")
 
@@ -488,6 +500,14 @@ class Build:
             if e.get("pos") in positions and positions[e["pos"]].get("lat") is not None:
                 ev["lat"], ev["lon"] = positions[e["pos"]]["lat"], positions[e["pos"]]["lon"]
             events.append(ev)
+
+        # the story's steps: every [[step:]] link names a step some entry carries; the front matter frames them
+        carried = {e["step"] for e in events if e.get("step")}
+        self.chk.links(body, where, steps=carried)
+        views = self.views(fm.get("views"), where)
+        steps = self.steps(fm.get("steps"), views, events, positions, carried, where)
+        relief = self.relief(fm.get("relief"), where)
+        roads = self.roads(fm.get("roads"), where)
 
         # the window: as given, or the span of the timed entries
         win = fm.get("window") or {}
@@ -567,8 +587,103 @@ class Build:
                 "window": {"from": iso(start), "to": iso(end)} if start else None, "gmt": bool(start),
                 "participants": parts, "own": own, "against": against,
                 "places": fm.get("places") or [], "sections": secs, "cites": cites, "box": box,
+                "steps": steps, "relief": relief, "roads": roads,
                 "tracks": tracks, "fixes": fixes, "events": events, "claims": claims, "pairs": moments,
                 "positions": list(positions.values()), "convoys": conv, "sheets": sheets}
+
+    # ------------------------------------------------------------------ the story's steps and the map's base
+    @staticmethod
+    def box_ok(b):
+        """[[west, south], [east, north]], west of east and south of north."""
+        try:
+            (w, s), (e, n) = b
+            return all(isinstance(v, (int, float)) for v in (w, s, e, n)) and w < e and s < n
+        except (TypeError, ValueError):
+            return False
+
+    def views(self, fm_views, where):
+        """`views`: name -> {name: words, box: [[w, s], [e, n]]}, the map's framings the steps name."""
+        out = {}
+        for vid, v in (fm_views or {}).items() if isinstance(fm_views, dict) else []:
+            w = f"{where} view {vid}"
+            if not isinstance(v, dict):
+                self.bad(w, "a view is {name: words, box: [[west, south], [east, north]]}")
+                continue
+            for k in set(v) - VIEW:
+                self.bad(w, f"unknown field {k!r} (known: {', '.join(sorted(VIEW))})")
+            if not self.box_ok(v.get("box")):
+                self.bad(w, "`box` is [[west, south], [east, north]], west of east and south of north")
+                continue
+            out[vid] = {"name": str(v.get("name") or vid), "box": v["box"]}
+        if fm_views is not None and not isinstance(fm_views, dict):
+            self.bad(where, "`views` is a mapping of a view's id to {name, box}")
+        return out
+
+    def steps(self, fm_steps, views, events, positions, carried, where):
+        """The steps the entries carry, in time order, each framed: by its front-matter `view` (a name in `views`, or a
+        box inline), or else on its own entries' positions, padded as the map's box is; `when` in words, if given."""
+        fm_steps = fm_steps or {}
+        if not isinstance(fm_steps, dict):
+            self.bad(where, "`steps` is a mapping of a step's id to {view, when}")
+            fm_steps = {}
+        for sid, st in fm_steps.items():
+            w = f"{where} step {sid}"
+            if sid not in carried:
+                self.bad(w, f"no entry in events.yml carries step {sid!r}")
+            if not isinstance(st, dict):
+                self.bad(w, "a step is {view: a view's id or [[west, south], [east, north]], when: words}")
+                continue
+            for k in set(st) - STEP:
+                self.bad(w, f"unknown field {k!r} (known: {', '.join(sorted(STEP))})")
+            v = st.get("view")
+            if v is not None and not (isinstance(v, str) and v in views) and not self.box_ok(v):
+                self.bad(w, f"view {v!r} is not one of the front matter's views ({', '.join(sorted(views)) or 'none'}) or a box")
+        out = []
+        for sid in carried:
+            es = [e for e in events if e.get("step") == sid]
+            # the step's time: its earliest entry on the clock (one with a GMT time), else its earliest by key
+            first = min([e for e in es if e["utc"]] or es, key=lambda e: e["utc"] or e["key"])
+            given = fm_steps.get(sid)
+            st = given if isinstance(given, dict) else {}
+            v = st.get("view")
+            if isinstance(v, str) and v in views:
+                view = {**views[v], "id": v, "basis": "given"}
+            elif self.box_ok(v):
+                view = {"name": "", "box": v, "basis": "given"}
+            else:
+                pts = [(positions[e["pos"]]["lon"], positions[e["pos"]]["lat"]) for e in es
+                       if e.get("pos") in positions and positions[e["pos"]].get("lat") is not None]
+                pts += [(positions[e["pos"]]["lon2"], positions[e["pos"]]["lat2"]) for e in es
+                        if e.get("pos") in positions and positions[e["pos"]].get("lat2") is not None]
+                view = None
+                if pts:
+                    lons, lats = [x for x, _ in pts], [y for _, y in pts]
+                    view = {"name": "", "basis": "entries",
+                            "box": [[round(min(lons) - 0.35, 3), round(min(lats) - 0.3, 3)], [round(max(lons) + 0.35, 3), round(max(lats) + 0.3, 3)]]}
+            out.append({"id": sid, "utc": first["utc"], "key": first["key"], "local": first["local"],
+                        "when": str(st.get("when") or ""), "view": view, "entries": len(es)})
+        return sorted(out, key=lambda x: (x["utc"] or x["key"], x["id"]))
+
+    def relief(self, names, where):
+        """`relief`: a records/relief/<name>/ (or a list, coarse first), each with its box from relief.json."""
+        out = []
+        for n in ([names] if isinstance(names, str) else names or []):
+            path = RECORDS / "relief" / str(n) / "relief.json"
+            if not path.exists():
+                self.bad(where, f"relief {n!r} has no records/relief/{n}/relief.json (tools/build_relief.py)")
+                continue
+            meta = json.load(open(path, encoding="utf-8"))
+            out.append({"name": str(n), "box": meta["box"], "source": meta.get("source", "")})
+        return out
+
+    def roads(self, name, where):
+        """`roads`: a traced road map, records/roads/<name>-primary.geojson."""
+        if not name:
+            return ""
+        if not (RECORDS / "roads" / f"{name}-primary.geojson").exists():
+            self.bad(where, f"roads {name!r} has no records/roads/{name}-primary.geojson")
+            return ""
+        return str(name)
 
     @staticmethod
     def pair(x, by_unit):

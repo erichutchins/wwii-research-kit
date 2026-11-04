@@ -3,9 +3,12 @@
 // on a family's, which sit in different folders; tools/build_operations.py checks every one. This turns them into
 // links, and handles the little Markdown the text uses: *italics*, **bold**, `code`, and [words](address).
 //
-//   Links.render(text, { cites, family })
+//   Links.render(text, { cites, family, steps })
 //     cites    the resolved citations: operations.json's "cites" ({ "howe-nwa/35/p676": {href, short, page} })
 //     family   on a family's page: { root: the family site's address, pages: [its own pages' names] }
+//     steps    on an engagement's page, its story's steps (engagement.json "steps"): { id: {href} }. A [[step:s7|words]]
+//              link becomes <a class="step" data-step="s7" href=...>, the address that opens the records depth at that
+//              step; engagement.js catches the click on its own page and moves the clock and the map instead
 //
 // Paths are worked out from this script's own address, so it works wherever the kit is.
 const Links = (() => {
@@ -30,6 +33,11 @@ const Links = (() => {
       }
       case "who":
         if (fam) return a(new URL(`army.html?who=${encodeURIComponent(target)}${t}`, fam.root).href, label || esc(target));
+        break;
+      case "step": {
+        const st = ctx.steps && ctx.steps[target];
+        if (st) return `<a class="step" data-step="${esc(target)}" href="${esc(st.href)}">${label || esc(target)}</a>`;
+      }
     }
     return `<span class="link-unknown" title="[[${esc(kind)}:${esc(name)}]] isn't a link this page knows">${label || esc(name)}</span>`;
   }
