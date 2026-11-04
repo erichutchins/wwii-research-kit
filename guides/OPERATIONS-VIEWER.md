@@ -557,6 +557,30 @@ rows (the ORGANIZATION line on its reports is the source to read); a unit's "bes
 whose box holds a station in its window) until a relation names the battalion; a subject's theatre is read from its
 positions; and a battalion's stages are calendar years, since no countries divide the Pacific. Phase 7 is next.
 
+**Done** (4 November 2026): phase 7, the last. `theatre.html?t=pacific|atlantic|mediterranean|europe` is one page for the
+four theatres, built from `chapter.js` generalized to every theatre: the theatre's file in `records/operations`, a static
+map of its records (the operations' hand-drawn areas hatched as ours, each engagement a mark at its box's middle, the
+subjects' tracks faint), the spine of operations and engagements in date order, the subjects here, what is also in the
+records and still to find, and the explainers its records need. The front page is an index: four cards with one static
+figure each, then the shelf and the wanted list; the replay, the three interactive figures, the stages and the "also in"
+lists are gone. The nav bar is §5.3 and nothing else. Every page carries the breadcrumb (`Chapter.trail`), the
+engagement page's walking its own theatre and following a boat as it followed a unit; the subject page's reads
+*Subjects / BANG / Patrol 1* as §5.3 wrote it, and the subject's way up to its theatre is the account's "the war around
+it" rows, each operation linking to its place on the theatre page. The notations are glossary `patterns` (seven: a
+zone-lettered time, an Army grid reference, a German reference point, a naval square, a kana code, a track angle, a
+gyro angle), checked by `build_glossary.py` and tested, each marked once per distinct value with a card that links the
+explainer opened at the value (`zones.html?zone=K`, `grids.html?ref=`, `jgrid.html?code=`, `german.html?ref=`,
+`torpedo.html?track=`; the gyro maps to nothing on the torpedo page, whose target is drawn dead ahead). What the data
+taught: the Pacific and the Atlantic had no theatre file, so each got one whose span is the one the records cover, not
+the war's, with no prose until a source is read for it, and the Pacific's spine is its engagements alone, no operation
+of its war being entered yet; the five stages are shared between the Mediterranean and Europe and numbered across the
+two pages; the records type a zone time both `1500 A` and `1500A`, and a pronoun after a time ("At 1604 I sighted") is
+real, so a lowercase word after the letter leaves it unmarked; the grid pattern had to learn what is not a grid
+reference (`KG 54`, `TF 58`, `JV 44`, `Mk 14`, a lead's `L39`, `A 1600 hrs`), a convoy's kana name (`タマ一七`) is not a
+position code, and the records never write the angle on the bow as a notation, only in words. Left for later: the
+engagement page prints no date beside its times, so the zone card gives the offset, not the GMT, until the page carries
+`data-date` (the hook is in `glossary.js`); and no operation of the Pacific or the Atlantic war is entered.
+
 ## 10. Open questions
 
 - **Colour for more than three followed subjects.** The 62nd CA (AA) has fourteen units with stations around Oran and
