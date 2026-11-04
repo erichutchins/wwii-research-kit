@@ -55,7 +55,8 @@
   document.getElementById("eyebrow").textContent = [S.plain, NATION[S.of] || S.of, years].filter(Boolean).join(" · ");
   document.getElementById("title").innerHTML = esc(S.name) + (S.name_ja ? ` <span lang="ja" data-tr="Convoy ${esc(S.short)}, as the Japanese records write it">${esc(S.name_ja)}</span>` : "");
   const sources = S.kind === "boat" ? "ship.yml" : S.kind === "ship" ? "ship.yml" : S.kind === "unit" ? "army/units.yml" : S.kind === "battalion" ? "seabees/units.yml" : S.kind === "convoy" ? "convoy.md" : "command.yml";
-  document.getElementById("plain").innerHTML = `<b>What it was.</b> ${esc(S.plain[0].toUpperCase() + S.plain.slice(1))}.${S.note ? ` ${esc(S.note)}` : ""} <span class="src">(${esc(sources)}${S.note ? S.kind === "convoy" ? "; its record" : "; units.csv" : ""})</span> <span class="k">The plain words are ours; the designation is the records'.</span>`;
+  // the plain line is the eyebrow (and the breadcrumb): here the record's own note on the unit, or the plain line alone
+  document.getElementById("plain").innerHTML = `<b>What it was.</b> ${S.note ? esc(S.note) : esc(S.plain[0].toUpperCase() + S.plain.slice(1)) + "."} <span class="src">(${S.note ? (S.kind === "convoy" ? "its record" : "units.csv") : esc(sources)})</span> <span class="k">The plain words are ours; the designation is the records'.</span>`;
 
   // ---------- the subject's own built records, by kind
   const WORLD = d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json").then(w => topojson.feature(w, w.objects.land)).catch(() => null);
