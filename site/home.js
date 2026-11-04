@@ -1,13 +1,12 @@
-// The front page's figures and lists, drawn from the records (RECORDS, config.js):
-//   the Luzon Strait replay        engagements/tama-17-1944-04-29/engagement.json (built by tools/build_engagement.py)
-//   Haynsworth's four times        engagements/haynsworth-1945-04-06/engagement.json ("When was she hit?")
-//   the 20th Seabees' parts        seabees/seabees.json
-//   Solar and UGS 72               ships/de-221-solar/track.geojson
-//   Neuburg's five minutes         engagements/neuburg-1945-04-26/engagement.json
-//   Algiers to Germany's stages    chapter.js (army/army.json, operations/operations.json, engagements/index.json)
-//   what else, and what's wanted   ships.json, army/army.json, engagements/index.json, inventory.yml
+// The front page (index.html): the four theatres' cards, each with its span and what its records hold (chapter.js:
+// operations/operations.json, engagements/index.json, subjects.json) and one featured figure, static, drawn from the
+// records (RECORDS, config.js); and what's wanted, from inventory.yml.
+//   Pacific         the Luzon Strait at the end of the night of 29–30 April 1944: the three boats' tracks and the convoy's
+//                   losses, engagements/tama-17-1944-04-29/engagement.json (built by tools/build_engagement.py)
+//   Atlantic        Solar's crossings and UGS 72, ships/de-221-solar/track.geojson
+//   Mediterranean   the theatre's operations' areas and its engagements on one map
+//   Europe          Neuburg's five minutes, engagements/neuburg-1945-04-26/engagement.json
 
-const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 // A row's citation as a link: a National Archives page (rg38-140065945/p03), a JACAR item, or a URL as it stands
 function pageUrl(cite, scan) {
@@ -21,328 +20,111 @@ function pageUrl(cite, scan) {
   return scan || null;
 }
 const open = u => { if (u) window.open(u, "_blank", "noopener"); };
-const fmtDate = d3.utcFormat("%-d %b %Y");
+// (topojsonFeatures is chapter.js's)
+const topojsonFeature = topo => ({ type: "MultiPolygon", coordinates: topojsonFeatures(topo, "land").flatMap(f => f.geometry.coordinates) });
+const LAND_10M = "https://cdn.jsdelivr.net/npm/world-atlas@2/land-10m.json", LAND_50M = "https://cdn.jsdelivr.net/npm/world-atlas@2/land-50m.json";
+const svgIn = (sel, W, H, label) => d3.select(sel).append("svg").attr("viewBox", [0, 0, W, H]).attr("role", "img").attr("aria-label", label);
 
-// ── The one-clock replay ────────────────────────────────────────────────────────────────────────
-async function replay() {
-  // the engagement as tools/build_engagement.py builds it, in the shape this replay reads
-  const [D, land10] = await Promise.all([d3.json(RECORDS + "engagements/tama-17-1944-04-29/engagement.json"),
-    d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/land-10m.json")]);
-  const cv = D.convoys["tama-17"], outcome = D.sections.find(s => s.heading === "Outcome");
-  const act = { start: D.window.from, end: D.window.to, box: D.box, tracks: D.tracks, fixes: D.fixes.map(f => ({ ...f, boat: f.who })),
-    convoy: `Convoy ${cv.convoy}`, route: `${cv.from} → ${cv.to}, sailed ${cv.sailed}.`, outcome: outcome ? outcome.paras.map(p => p.text).join(" ") : "",
-    // `side` here is the replay's own key: the boat that wrote the entry, or "japan" for the other side's record (the build's
-    // `opposed`). The replay lists the records alone (the citation's kind): FRUPAC's notes and the like belong to the
-    // engagement page, so its two columns stay the boats' and the convoy's
-    events: D.events.filter(e => e.source_kind === "record").map(e => ({ ...e, side: e.opposed ? "japan" : e.actor, title: e.title || e.kind, text: e.translation || e.words, page: e.cite.ref, scan: e.cite.href })),
-    sinkings: [] };
-  const battle = { places: D.places };
+// ── The theatres' spans and what their records hold ─────────────────────────────────────────────
+async function cards() {
+  const C = await Chapter.load();
+  const T0 = s => Date.parse(`${String(s).slice(0, 10)}T12:00Z`), mon = d3.utcFormat("%B %Y");
+  const n = (k, one, many = one + "s") => `${k} ${k === 1 ? one : many}`;
+  for (const t of C.theatres) {
+    const first = t.op ? t.op.from : d3.min(t.subjects, s => s.first), last = t.op && t.op.to ? t.op.to : t.op ? null : d3.max(t.subjects, s => s.last);
+    document.getElementById(`span-${t.id}`).textContent = first ? (last ? `${mon(T0(first))} – ${mon(T0(last))}` : `from ${mon(T0(first))}`) : "";
+    document.getElementById(`holds-${t.id}`).textContent = `${n(t.engagements.length, "engagement")} read from both sides, ${n(t.subjects.length, "subject")}, ${n(t.campaigns.length, "operation")} entered.`;
+  }
+}
+
+// ── Pacific: the Luzon Strait at the end of the night ───────────────────────────────────────────
+async function pacific() {
+  const [D, land] = await Promise.all([d3.json(RECORDS + "engagements/tama-17-1944-04-29/engagement.json"), d3.json(LAND_10M)]);
   const boats = D.participants.filter(p => p.kind === "submarine").map((b, i) => ({ ...b, color: `var(--c${i + 1})` }));
-  const color = Object.fromEntries(boats.map(b => [b.id, b.color]));
-  const T = s => Date.parse(s);
-  const t0 = T(act.start), t1 = T(act.end);
-  const tracks = Object.fromEntries(boats.map(b => [b.id, (act.tracks[b.id] || []).filter(p => p.on_track)
-    .map(p => ({ ...p, t: T(p.utc) })).sort((a, b) => a.t - b.t)]));
-  const events = [...act.events, ...act.sinkings].map(e => ({ ...e, t: T(e.utc) })).sort((a, b) => a.t - b.t);
-  // one Japanese entry can be listed twice (once per ship it names); keep one
-  const seen = new Set();
-  const evs = events.filter(e => { const k = e.side + e.utc + e.title + e.type; if (seen.has(k)) return false; seen.add(k); return true; });
-  const us = evs.filter(e => e.side !== "japan"), jp = evs.filter(e => e.side === "japan");
-
-  document.getElementById("luzon-side").innerHTML = `<p>${esc(act.convoy)}: ${esc(act.route)}</p>
-    <p>${esc(act.outcome)}</p><p>Times are GMT. Each boat kept its own zone; the convoy's record is in Tokyo time.</p>`;
-
-  // the map
-  const W = 640, H = 560;
-  const [x0, y0, x1, y1] = act.box;
-  const proj = d3.geoMercator().fitExtent([[0, 0], [W, H]], { type: "MultiPoint", coordinates: [[x0, y0], [x1, y1]] });
-  const path = d3.geoPath(proj);
-  const svg = d3.select("#replay-map").append("svg").attr("viewBox", [0, 0, W, H])
-    .attr("role", "img").attr("aria-label", "Map of the Luzon Strait with the three submarines' tracks and the convoy's losses");
-  // the reader's zoom and pan (mapzoom.js) move the whole map; marks and labels are pinned to their point at their own size
-  const world = svg.append("g");
-  let K = 1;
-  const pin = xy => `translate(${xy}) scale(${1 / K})`;
-  world.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([1, 1])()));
-  world.append("path").attr("class", "land").attr("d", path(topojsonFeature(land10)));
-  for (const p of battle.places || []) {
-    const xy = proj([p.lon, p.lat]);
-    if (xy && xy[0] > 30 && xy[0] < W - 30 && xy[1] > 14 && xy[1] < H - 8)
-      world.append("text").datum(xy).attr("class", "place pin").attr("transform", pin(xy)).attr("text-anchor", "middle").text(p.name);
+  const W = 560, H = 440, [x0, y0, x1, y1] = D.box;
+  const proj = d3.geoMercator().fitExtent([[0, 0], [W, H]], { type: "MultiPoint", coordinates: [[x0, y0], [x1, y1]] }).clipExtent([[0, 0], [W, H]]);
+  const path = d3.geoPath(proj), P = p => proj([p.lon, p.lat]);
+  const svg = svgIn("#fig-pacific", W, H, "Map of the Luzon Strait with the three submarines' tracks and the convoy's losses");
+  svg.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([1, 1])()));
+  svg.append("path").attr("class", "land").attr("d", path(topojsonFeature(land)));
+  for (const p of D.places) {
+    const xy = P(p);
+    if (xy[0] > 30 && xy[0] < W - 30 && xy[1] > 14 && xy[1] < H - 8) svg.append("text").attr("class", "place").attr("x", xy[0]).attr("y", xy[1]).attr("text-anchor", "middle").text(p.name);
   }
-  const gFuture = world.append("g"), gTrail = world.append("g"), gMarks = world.append("g"), gBoats = world.append("g");
-  const replayRuler = scaleBar(document.getElementById("replay-map"), { units: ["nm"] });
-  const toBox = (el, [x, y]) => [x * W / el.clientWidth, y * H / el.clientHeight];   // screen px to viewBox units
-  const replayZoom = t => replayRuler.update(p => proj.invert(t.invert(toBox(svg.node(), p))));
-  mapZoom(svg.node(), document.getElementById("replay-map"), t => {
-    world.attr("transform", t); K = t.k; replayZoom(t);
-    world.selectAll(".pin").attr("transform", pin);
-    set(+scrub.value);
-  }, { max: 8 }).bound(W, H);
-  requestAnimationFrame(() => replayZoom(d3.zoomIdentity));
-  for (const b of boats) gFuture.append("path").attr("class", "trail-future").attr("stroke", b.color)
-    .attr("d", d3.line(p => proj([p.lon, p.lat])[0], p => proj([p.lon, p.lat])[1])(tracks[b.id]));
-  const trails = Object.fromEntries(boats.map(b => [b.id, gTrail.append("path").attr("class", "trail").attr("stroke", b.color)]));
-  const boatG = Object.fromEntries(boats.map(b => {
-    const g = gBoats.append("g");
-    g.append("circle").attr("r", 5).attr("fill", b.color).attr("stroke", "var(--page)").attr("stroke-width", 1.5);
-    g.append("text").attr("class", "boat-label").attr("x", 9).attr("y", 4).attr("fill", b.color).text(b.name);
-    return [b.id, g];
-  }));
-  // what the convoy recorded, and the boats' attacks, appear as their minute passes
-  const hits = jp.filter(e => e.lat != null).map(e => ({ e, xy: proj([e.lon, e.lat]) }));
-  const attacks = boats.flatMap(b => tracks[b.id].filter(p => p.kind === "attack").map(p => ({ b, p, xy: proj([p.lon, p.lat]) })));
-  const contacts = act.fixes.filter(f => f.kind === "ship").map(f => ({ f, t: T(f.utc), xy: proj([f.lon, f.lat]) }));
-
-  const at = (tr, t) => {
-    if (!tr.length) return null;
-    if (t <= tr[0].t) return { xy: proj([tr[0].lon, tr[0].lat]), before: true };
-    for (let i = 1; i < tr.length; i++) if (t <= tr[i].t) {
-      const a = tr[i - 1], b = tr[i], k = (t - a.t) / (b.t - a.t || 1);
-      const A = proj([a.lon, a.lat]), B = proj([b.lon, b.lat]);
-      return { xy: [A[0] + (B[0] - A[0]) * k, A[1] + (B[1] - A[1]) * k], i };
-    }
-    const z = tr[tr.length - 1]; return { xy: proj([z.lon, z.lat]), after: true };
-  };
-
-  // the scrubber
-  const scrub = document.getElementById("scrub");
-  scrub.min = t0; scrub.max = t1; scrub.step = 60000;
-  const ss = d3.select("#scrub-svg");
-  function drawScrub() {
-    const w = ss.node().getBoundingClientRect().width || 400;
-    ss.selectAll("*").remove();
-    const x = d3.scaleUtc([t0, t1], [0, w]);
-    ss.append("line").attr("class", "axis-line").attr("x1", 0).attr("x2", w).attr("y1", 23).attr("y2", 23);
-    for (const e of us) ss.append("line").attr("class", "tick-us").attr("stroke", color[e.side] || "var(--ink-3)")
-      .attr("x1", x(e.t)).attr("x2", x(e.t)).attr("y1", 12).attr("y2", 22);
-    for (const e of jp) ss.append("line").attr("class", "tick-jp").attr("x1", x(e.t)).attr("x2", x(e.t)).attr("y1", 24).attr("y2", 34);
-    for (const h of d3.utcHour.every(6).range(t0, t1 + 1)) {
-      ss.append("text").attr("class", "axis-text").attr("x", x(h)).attr("y", 46).attr("text-anchor", "middle").text(d3.utcFormat("%H%M")(h));
-    }
-    ss.append("line").attr("class", "cursor").attr("y1", 6).attr("y2", 40);
-    ss.node().__x = x;
+  for (const b of boats) {
+    const tr = (D.tracks[b.id] || []).filter(p => p.on_track).sort((p, q) => Date.parse(p.utc) - Date.parse(q.utc));
+    svg.append("path").attr("class", "trail").attr("stroke", b.color).attr("d", d3.line(p => P(p)[0], p => P(p)[1])(tr));
+    for (const p of tr.filter(p => p.kind === "attack")) svg.append("path").attr("d", d3.symbol(d3.symbolDiamond, 46)()).attr("fill", b.color).attr("transform", `translate(${P(p)})`)
+      .append("title").text(`${b.name} ${p.ref}`);
+    const end = tr[tr.length - 1];
+    if (end) svg.append("text").attr("class", "boat-label").attr("x", P(end)[0] + 8).attr("y", P(end)[1] + 4).attr("fill", b.color).text(b.name);
   }
-  drawScrub();
-  new ResizeObserver(() => { drawScrub(); set(+scrub.value); }).observe(ss.node());
-
-  // One entry: our GMT time; a bar in the boat's colour (the map's track colour) down its left edge; the name, and at
-  // the right the record's own clock; then the record's words, and the page they're on.
-  const pageOf = cite => { const m = /p0*(\d+)\s*$/.exec(cite || ""); return m ? `p. ${m[1]}` : "page"; };
-  const titleAdds = e => e.title && e.title !== "Log" && !(e.text || "").toLowerCase().includes(e.title.toLowerCase().split(/\W+/)[0]);
-  const entry = (e, old) => {
-    const boat = boats.find(b => b.id === e.side);
-    const u = pageUrl(e.page, e.scan);
-    const own = /^\S+ (\d{4}) ([A-Z]{1,2})/.exec(e.local || "");   // "1944-04-29 2300 K" -> 2300 K
-    const cite = u ? ` <a class="src" href="${esc(u)}" target="_blank" rel="noopener" title="${esc(e.page || "")}">${pageOf(e.page)}</a>` : "";
-    const words = e.original
-      ? `<span class="ja" lang="ja" data-tr="${esc(e.text)}">${esc(e.original)}</span><span class="tr">${esc(e.text)} (translated)${cite}</span>`
-      : `<span class="said">${esc(boat && titleAdds(e) ? e.text : (e.text && e.text !== e.title ? e.text : e.title))}${cite}</span>`;
-    return `<li class="entry" style="--bar:${boat ? boat.color : "var(--ink)"}" title="${esc(e.local || "")}">
-      <span class="t">${d3.utcFormat("%H%M")(e.t)}</span>
-      <span class="body"><span class="who"><b>${esc(boat ? boat.name : e.title)}</b>${boat && titleAdds(e) ? `<span class="what">${esc(e.title)}</span>` : ""}${own ? `<span class="own">${own[1]} ${esc(own[2])}</span>` : ""}</span>${words}</span></li>`;
-  };
-  const logUS = document.getElementById("log-us"), logJP = document.getElementById("log-jp"), now = document.getElementById("now");
-  function set(t) {
-    scrub.value = t;
-    const x = ss.node().__x; ss.select(".cursor").attr("x1", x(t)).attr("x2", x(t));
-    now.innerHTML = `${d3.utcFormat("%H%M GMT")(new Date(t))}<small>${d3.utcFormat("%-d April 1944")(new Date(t))}</small>`;
-    for (const b of boats) {
-      const tr = tracks[b.id], p = at(tr, t);
-      const done = tr.filter(q => q.t <= t).map(q => proj([q.lon, q.lat]));
-      if (p && !p.before && !p.after) done.push(p.xy);
-      trails[b.id].attr("d", done.length > 1 ? d3.line()(done) : null);
-      boatG[b.id].attr("transform", p ? pin(p.xy) : null).attr("opacity", !p || p.before || p.after ? .35 : 1);
-    }
-    gMarks.selectAll("*").remove();
-    for (const c of contacts.filter(c => c.t <= t && t - c.t < 3 * 3600e3))
-      gMarks.append("path").attr("class", "convoy").attr("d", d3.symbol(d3.symbolCross, 30)()).attr("transform", `${pin(c.xy)} rotate(45)`)
-        .append("title").text(`${c.f.ref}: the convoy as ${c.f.boat.toUpperCase()} reported it, ${c.f.raw}`);
-    for (const a of attacks.filter(a => T(a.p.utc) <= t))
-      gMarks.append("path").attr("d", d3.symbol(d3.symbolTriangle, 46)()).attr("fill", a.b.color)
-        .attr("transform", pin(a.xy)).append("title").text(`${a.b.name} ${a.p.ref}`);
-    for (const h of hits.filter(h => h.e.t <= t)) {
-      gMarks.append("circle").attr("class", "hit").attr("r", 5).attr("transform", pin(h.xy))
-        .style("cursor", "pointer").on("click", () => open(pageUrl(h.e.page, h.e.scan)))
-        .append("title").text(`${h.e.title}: ${h.e.text}`);
-      if (t - h.e.t < 40 * 60e3) gMarks.append("circle").attr("class", "hit-ring").attr("r", 12).attr("transform", pin(h.xy));
-    }
-    const lastUS = us.filter(e => e.t <= t).slice(-3).reverse(), lastJP = jp.filter(e => e.t <= t).slice(-2).reverse();
-    logUS.innerHTML = lastUS.length ? lastUS.map((e, i) => entry(e, i > 0)).join("") : `<li class="none">Nothing yet.</li>`;
-    logJP.innerHTML = lastJP.length ? lastJP.map((e, i) => entry(e, i > 0)).join("") : `<li class="none">Nothing yet: the convoy is still sailing from Takao.</li>`;
+  // the convoy's record: a ship sunk (red cross) or hit (red ring), at the position the Japanese record gives
+  for (const e of D.events.filter(e => e.origin === "japanese" && e.lat != null && (e.mark === "sunk" || e.mark === "hit"))) {
+    const g = svg.append("g").attr("transform", `translate(${P(e)})`).style("cursor", "pointer").on("click", () => open(e.cite && e.cite.href));
+    if (e.mark === "sunk") g.append("path").attr("class", "sunk").attr("d", "M-5,-5L5,5M5,-5L-5,5");
+    else g.append("circle").attr("class", "hit-ring").attr("r", 5.5);
+    g.append("title").text(`${e.title}: ${e.translation || e.words}`);
   }
-  scrub.addEventListener("input", () => { stop(); set(+scrub.value); });
-
-  // Play: the whole night in about forty seconds, pausing on each paired moment
-  const btn = document.getElementById("play");
-  let timer = null, last = 0;
-  const step = (t1 - t0) / 40000;
-  function tick(ts) {
-    if (!timer) return;
-    const dt = last ? ts - last : 16; last = ts;
-    const t = Math.min(t1, +scrub.value + dt * step);
-    set(t);
-    if (t >= t1) return stop();
-    timer = requestAnimationFrame(tick);
-  }
-  function stop() { if (timer) cancelAnimationFrame(timer); timer = null; last = 0; btn.textContent = "Play"; }
-  btn.addEventListener("click", () => {
-    if (timer) return stop();
-    if (+scrub.value >= t1) set(t0);
-    btn.textContent = "Pause"; timer = requestAnimationFrame(tick);
-  });
-  // open on the first pairing: BANG's first attack and the convoy's record of the same minutes
-  const first = jp.find(e => e.type === "torpedoed");
-  set(first ? first.t + 60e3 : t0);
+  d3.select("#fig-pacific").append("p").attr("class", "readout").html(`The three boats' tracks from their patrol reports, each in its own colour; a diamond, an attack. A red cross, a ship the convoy's record gives as sunk; a red ring, hit. Each boat's report kept its own zone and the convoy's record Tokyo time; the engagement page puts them on one clock.`);
 }
 
-// ── Haynsworth: one hit, four times ───────────────────────────────────────────────────────────
-async function haynsworth() {
-  const claims = Engage.story(await d3.json(RECORDS + "engagements/haynsworth-1945-04-06/engagement.json")).claims.filter(c => c.question === "When was she hit?");
-  const host = d3.select("#fig-haynsworth");
-  const W = 860, H = 210, m = { l: 20, r: 20 };
-  const mins = s => { const m = /(\d{2})(\d{2})/.exec(s); return m ? +m[1] * 60 + +m[2] : null; };
-  const x = d3.scaleLinear([12 * 60 + 40, 13 * 60 + 30], [m.l, W - m.r]);
-  const svg = host.append("svg").attr("viewBox", [0, 0, W, H]).attr("role", "img")
-    .attr("aria-label", "When was she hit: the times four records give, from 1250 to 1321");
-  svg.append("line").attr("class", "leader").attr("x1", x.range()[0]).attr("x2", x.range()[1]).attr("y1", 60).attr("y2", 60);
-  for (let t = 12 * 60 + 40; t <= 13 * 60 + 30; t += 10) {
-    svg.append("line").attr("class", "leader").attr("x1", x(t)).attr("x2", x(t)).attr("y1", 56).attr("y2", 64);
-    svg.append("text").attr("class", "lab-3").attr("x", x(t)).attr("y", 48).attr("text-anchor", "middle")
-      .text(`${Math.floor(t / 60)}${String(t % 60).padStart(2, "0")}`);
-  }
-  // labels alternate below the line so neighbours don't collide
-  claims.forEach((c, i) => {
-    const t = mins(c.claim); if (t == null) return;
-    const bound = /about|under control/i.test(c.claim), late = /received/i.test(c.claim);
-    const y = 60, ly = 96 + (i % 2) * 58;
-    const g = svg.append("g").style("cursor", "pointer").attr("tabindex", 0).attr("role", "link")
-      .attr("aria-label", `${c.claim}, ${c.source}`)
-      .on("click", () => open(pageUrl(c.ref))).on("keydown", e => { if (e.key === "Enter") open(pageUrl(c.ref)); });
-    g.append("line").attr("class", "leader").attr("x1", x(t)).attr("x2", x(t)).attr("y1", y).attr("y2", ly - 14);
-    g.append("circle").attr("class", bound ? "mark-dash" : late ? "mark-open" : "mark").attr("cx", x(t)).attr("cy", y).attr("r", 7);
-    if (i === 0) g.append("circle").attr("cx", x(t)).attr("cy", y).attr("r", 13).attr("fill", "none").attr("stroke", "var(--hit)").attr("stroke-width", 1.5);
-    const anchor = x(t) > W - 260 ? "end" : "start";
-    g.append("text").attr("class", "lab-t").attr("x", x(t) + (anchor === "end" ? 6 : -6)).attr("y", ly).attr("text-anchor", anchor).text(c.claim.replace(/ \(.*\)$/, "").replace(/ Item$/, ""));
-    g.append("text").attr("class", "lab-2").attr("x", x(t) + (anchor === "end" ? 6 : -6)).attr("y", ly + 19).attr("text-anchor", anchor).text(c.source.replace(/\s*\(.*\)$/, ""));
-  });
-  const note = claims.find(c => /received/i.test(c.claim));
-  host.append("p").attr("class", "readout").html(`Filled: the time a record gives for the hit. Dashed: a bound (the fire was
-    under control by then). Open: when the news arrived${note ? ` (${esc(note.source.replace(/,.*$/, ""))}: ${esc(note.note.replace(/^"[^"]*"\.\s*/, "").replace(/^./, c => c.toLowerCase()))})` : ""}.`);
-}
-
-// ── The 20th Seabees: parts splitting and rejoining ─────────────────────────────────────────────
-async function seabees() {
-  const S = await d3.json(RECORDS + "seabees/seabees.json");
-  const rows = new Map(S.rows.map(r => [r.id, r]));
-  const parts = S.parts.filter(p => p.unit === "20ncb").map(p => {
-    const rr = p.ids.map(i => rows.get(i));
-    return { name: p.part, rows: rr, a: Date.parse(rr[0].date), b: Date.parse(rr[rr.length - 1].date),
-      places: [...new Set(rr.map(r => r.place))], first: rr[0].place, last: rr[rr.length - 1].place };
-  }).sort((p, q) => p.a - q.a);
-  // lanes: the battalion together on lane 0; each part takes the first lane free when it starts
-  const free = [];
-  for (const p of parts) {
-    if (p.name === "battalion") { p.lane = 0; continue; }
-    let l = 1; while ((free[l] ?? -Infinity) > p.a) l++;
-    p.lane = l; free[l] = p.b + 1;
-  }
-  // where each part came from and went back to: the part on another lane holding the same place that day
-  const near = (p, t, place) => parts.find(q => q !== p && q.lane !== p.lane && q.a <= t && t <= q.b && q.places.includes(place))
-    || parts.find(q => q !== p && q.name === "battalion" && Math.abs(q.a - t) < 864e5 * 2 || q !== p && q.name === "battalion" && Math.abs(q.b - t) < 864e5 * 2);
-  const lanes = d3.max(parts, p => p.lane);
-  const W = 860, laneH = 36, top = 46, H = top + (lanes + 1) * laneH + 34;
-  const x = d3.scaleUtc([Date.UTC(1942, 7, 1), Date.UTC(1945, 8, 15)], [120, W - 10]);
-  const y = l => top + l * laneH;
-  const host = d3.select("#fig-seabees");
-  const svg = host.append("svg").attr("viewBox", [0, 0, W, H]).attr("role", "img").attr("aria-label", "The 20th Naval Construction Battalion's parts, 1942 to 1945");
-  for (const yr of [1943, 1944, 1945]) {
-    const xx = x(Date.UTC(yr, 0, 1));
-    svg.append("line").attr("stroke", "var(--rule)").attr("x1", xx).attr("x2", xx).attr("y1", top - 42).attr("y2", H - 24);
-    svg.append("text").attr("class", "lab-3").attr("x", xx + 4).attr("y", top - 30).text(yr);
-  }
-  svg.append("text").attr("class", "lab-2").attr("x", 0).attr("y", y(0) + 5).text("The battalion");
-  const read = document.getElementById("seabees-read");
-  const show = p => {
-    read.innerHTML = p ? `<b>${esc(p.name[0].toUpperCase() + p.name.slice(1))}</b>, ${fmtDate(p.a)} to ${fmtDate(p.b)}: <span class="typed">${p.places.map(esc).join(" → ")}</span>`
-      : "Point at a part to see where it went.";
-  };
-  show(null);
-  for (const p of parts) {
-    const cls = p.lane === 0 ? "lane-line" : "lane-part";
-    const from = p.lane ? near(p, p.a, p.first) : null, to = p.lane ? near(p, p.b, p.last) : null;
-    const pts = [];
-    if (from) pts.push([x(p.a) - 8, y(from.lane)]);
-    pts.push([x(p.a), y(p.lane)], [x(p.b), y(p.lane)]);
-    if (to) pts.push([x(p.b) + 8, y(to.lane)]);
-    const d = d3.line().curve(d3.curveMonotoneX)(pts);
-    const g = svg.append("g");
-    g.append("path").attr("class", "lane-hit").attr("d", d)
-      .on("pointerenter", () => { g.select(".lane-part").classed("on", true); show(p); })
-      .on("pointerleave", () => { g.select(".lane-part").classed("on", false); show(null); });
-    g.append("path").attr("class", cls).attr("d", d);
-    if (p.lane) {
-      const end = x(p.a) > W - 170;
-      svg.append("text").attr("class", "lab-3").attr("x", end ? x(p.a) - 10 : x(p.a) + 14).attr("y", y(p.lane) + (end ? 4 : -7))
-        .attr("text-anchor", end ? "end" : "start").text(p.name);
-    }
-  }
-  // the battalion's own stations, labelled where it was whole
-  for (const [label, t] of [["Nouméa", Date.UTC(1943, 0, 20)], ["Banika", Date.UTC(1944, 6, 1)], ["Okinawa", Date.UTC(1945, 5, 10)]])
-    svg.append("text").attr("class", "lab-2").attr("x", x(t)).attr("y", y(0) - 9).attr("text-anchor", "middle").text(label);
-}
-
-// ── Solar and UGS 72 ────────────────────────────────────────────────────────────────────────────
-async function solar() {
-  const [geo, world] = await Promise.all([d3.json(RECORDS + "ships/de-221-solar/track.geojson"),
-    d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/land-50m.json")]);
-  const land = topojsonFeature(world);
+// ── Atlantic: Solar and UGS 72 ──────────────────────────────────────────────────────────────────
+async function atlantic() {
+  const [geo, world] = await Promise.all([d3.json(RECORDS + "ships/de-221-solar/track.geojson"), d3.json(LAND_50M)]);
   const pts = geo.features.filter(f => f.geometry.type === "Point" && f.properties.on_track && f.properties.utc)
     .map(f => ({ ...f.properties, t: Date.parse(f.properties.utc), ll: f.geometry.coordinates })).sort((a, b) => a.t - b.t);
   const hits = geo.features.filter(f => f.properties.kind === "ship" && /hit/.test(f.properties.ref));
   const leg = pts.filter(p => p.t >= Date.UTC(1945, 1, 2) && p.t <= Date.UTC(1945, 1, 18, 12));
-  const W = 860, H = 330;
-  const proj = d3.geoMercator().rotate([35, 0]).fitExtent([[10, 10], [W - 10, H - 10]], { type: "MultiPoint", coordinates: pts.map(p => p.ll) });
+  const W = 560, H = 300;
+  const proj = d3.geoMercator().rotate([35, 0]).fitExtent([[10, 10], [W - 10, H - 10]], { type: "MultiPoint", coordinates: pts.map(p => p.ll) }).clipExtent([[0, 0], [W, H]]);
   const path = d3.geoPath(proj);
-  const host = d3.select("#fig-solar");
-  const box = host.append("div").attr("class", "zoom-box");
-  const svg = box.append("svg").attr("viewBox", [0, 0, W, H]).attr("role", "img").attr("aria-label", "USS Solar's war diary positions, September 1944 to October 1945, with convoy UGS 72 in colour");
-  svg.append("defs").append("clipPath").attr("id", "solar-clip").append("rect").attr("width", W).attr("height", H);
-  // the reader's zoom and pan (mapzoom.js) move the map inside the clip; the hit and its labels keep their size
-  const g = svg.append("g").attr("clip-path", "url(#solar-clip)").append("g");
-  const pinned = (xy, k = 1) => `translate(${xy}) scale(${1 / k})`;
-  const solarRuler = scaleBar(box.node(), { units: ["nm"], at: "bottom-right" });
-  const solarZoom = t => solarRuler.update(([x, y]) => proj.invert(t.invert([x * W / svg.node().clientWidth, y * H / svg.node().clientHeight])));
-  mapZoom(svg.node(), box.node(), t => { g.attr("transform", t); g.selectAll(".pin").attr("transform", d => pinned(d, t.k)); solarZoom(t); }, { max: 12, at: "top-left", row: true }).bound(W, H);
-  requestAnimationFrame(() => solarZoom(d3.zoomIdentity));
-  g.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([10, 10])()));
-  g.append("path").attr("class", "land").attr("d", path(land));
-  g.append("path").attr("class", "track-faint").attr("d", path({ type: "LineString", coordinates: pts.map(p => p.ll) }));
-  g.append("path").attr("class", "track-hot").attr("d", path({ type: "LineString", coordinates: leg.map(p => p.ll) }));
+  const svg = svgIn("#fig-atlantic", W, H, "USS Solar's war diary positions, September 1944 to October 1945, with convoy UGS 72 in colour");
+  svg.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([10, 10])()));
+  svg.append("path").attr("class", "land").attr("d", path(topojsonFeature(world)));
+  svg.append("path").attr("class", "track-faint").attr("d", path({ type: "LineString", coordinates: pts.map(p => p.ll) }));
+  svg.append("path").attr("class", "track-hot").attr("d", path({ type: "LineString", coordinates: leg.map(p => p.ll) }));
   for (const f of hits) {
     const [hx, hy] = proj(f.geometry.coordinates), p = f.properties;
-    const at = g.append("g").datum([hx, hy]).attr("class", "pin").attr("transform", pinned([hx, hy]));
+    const at = svg.append("g").attr("transform", `translate(${hx},${hy})`);
     at.append("path").attr("class", "leader").attr("d", "M0,0L-40,-60L-60,-60");
-    at.append("circle").attr("class", "hit").attr("r", 6).style("cursor", "pointer")
-      .on("click", () => open(pageUrl(p.page))).append("title").text(p.note);
+    at.append("circle").attr("class", "hit").attr("r", 6).style("cursor", "pointer").on("click", () => open(pageUrl(p.page))).append("title").text(p.note);
     at.append("text").attr("class", "lab").attr("x", -64).attr("y", -56).attr("text-anchor", "end").text("17 February 1945");
     at.append("text").attr("class", "lab-2").attr("x", -64).attr("y", -38).attr("text-anchor", "end").text("two ships in the convoy hit");
-    document.getElementById("solar-side").innerHTML = `<p class="typed">“${esc(p.note)}”</p>
-      <p>War diary, <a href="${esc(pageUrl(p.page))}" target="_blank" rel="noopener">${esc(p.page)}</a>. The diary
-      says “torpedo or mine”; the other side's record of that morning is still to find.</p>`;
   }
   const a = proj(leg[0].ll);
-  g.append("g").datum(a).attr("class", "pin").attr("transform", pinned(a))
-    .append("text").attr("class", "lab-2").attr("x", 8).attr("y", 18).text("UGS 72 sails, 2 February");
-  host.append("p").attr("class", "readout").text("Grey: every position in her war diaries, September 1944 to October 1945. Blue: convoy UGS 72, 2 to 17 February 1945.");
-}
-// (topojsonFeatures is chapter.js's)
-function topojsonFeature(topo) {
-  return { type: "MultiPolygon", coordinates: topojsonFeatures(topo, "land").flatMap(f => f.geometry.coordinates) };
+  svg.append("text").attr("class", "lab-2").attr("x", a[0] + 8).attr("y", a[1] + 18).text("UGS 72 sails, 2 February");
+  d3.select("#fig-atlantic").append("p").attr("class", "readout").text("Grey: every position in her war diaries, September 1944 to October 1945. Blue: convoy UGS 72, 2 to 17 February 1945.");
 }
 
-// ── Neuburg: three records on one five-minute clock ─────────────────────────────────────────────
-async function neuburg() {
+// ── Mediterranean: the operations' areas and the engagements on one map ─────────────────────────
+async function mediterranean() {
+  const [C, world] = await Promise.all([Chapter.load(), d3.json(LAND_50M)]);
+  const T = C.theatres.find(t => t.id === "mediterranean"), a = T.op.area;
+  const W = 560, H = 300;
+  const proj = d3.geoMercator().fitExtent([[0, 0], [W, H]], { type: "MultiPoint", coordinates: [[a[0], a[1]], [a[2], a[3]]] }).clipExtent([[0, 0], [W, H]]);
+  const path = d3.geoPath(proj);
+  const svg = svgIn("#fig-mediterranean", W, H, "The Mediterranean: the operations' areas, hatched, and the engagements read from both sides");
+  svg.append("defs").append("pattern").attr("id", "hatch-home").attr("patternUnits", "userSpaceOnUse").attr("width", 3.5).attr("height", 3.5).attr("patternTransform", "rotate(45)")
+    .append("line").attr("x1", 0).attr("y1", 0).attr("x2", 0).attr("y2", 3.5).attr("stroke", "var(--ink-3)").attr("stroke-width", 1);
+  svg.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([5, 5])()));
+  svg.append("path").attr("class", "land").attr("d", path(topojsonFeature(world)));
+  const rect = ([w, s, e, n]) => ({ type: "Polygon", coordinates: [[[w, s], [w, n], [e, n], [e, s], [w, s]]] });   // clockwise: an exterior ring
+  for (const c of T.campaigns.filter(c => c.op.area)) svg.append("path").attr("class", "area").attr("fill", "url(#hatch-home)").attr("d", path(rect(c.op.area)))
+    .append("title").text(`${c.op.name} (area drawn by hand)`);
+  const labelled = [];   // a label only where no earlier one sits within 14 px (Venafro and Filignano share a valley)
+  for (const e of T.engagements) {
+    const [x, y] = proj([(e.box[0] + e.box[2]) / 2, (e.box[1] + e.box[3]) / 2]);
+    const g = svg.append("a").attr("href", e.href).attr("transform", `translate(${x.toFixed(1)},${y.toFixed(1)})`);
+    g.append("title").text(e.title);
+    g.append("circle").attr("class", "mark").attr("r", 4.5);
+    if (!labelled.some(([lx, ly]) => Math.hypot(lx - x, ly - y) < 14)) { labelled.push([x, y]); g.append("text").attr("class", "lab").attr("x", 8).attr("y", 4).text(e.short || e.title); }
+  }
+  d3.select("#fig-mediterranean").append("p").attr("class", "readout").text(`Hatched: the ${T.campaigns.length} operations' areas, drawn by hand (ours). A mark: an engagement read from both sides, at the middle of its box.`);
+}
+
+// ── Europe: Neuburg, three records on one five-minute clock ─────────────────────────────────────
+async function europe() {
   const rows = Engage.story(await d3.json(RECORDS + "engagements/neuburg-1945-04-26/engagement.json")).timeline.filter(r => r.date === "1945-04-26" && r.time);
   const lanes = [
     { key: "fired", label: "106th AAA AW Bn fired on them", match: r => r.actor === "106th AAA AW Bn" && r.kind === "engage" },
@@ -351,18 +133,13 @@ async function neuburg() {
     { key: "saw", label: "189th FA Bn watched", match: r => r.actor === "189th FA Bn" && r.kind === "witness" },
   ];
   const mins = t => +t.slice(0, 2) * 60 + +t.slice(2);
-  const W = 860, top = 44, laneH = 58, H = top + lanes.length * laneH + 10;
-  const x = d3.scaleLinear([11 * 60 + 42, 12 * 60 + 2], [250, W - 30]);
-  const host = d3.select("#fig-neuburg");
-  const svg = host.append("svg").attr("viewBox", [0, 0, W, H]).attr("role", "img").attr("aria-label", "Neuburg, 26 April 1945: four records' times, 1145 to 1200");
+  const W = 560, top = 44, laneH = 52, H = top + lanes.length * laneH + 10;
+  const x = d3.scaleLinear([11 * 60 + 42, 12 * 60 + 2], [200, W - 20]);
+  const svg = svgIn("#fig-europe", W, H, "Neuburg, 26 April 1945: four records' times, 1145 to 1200");
   for (let t = 11 * 60 + 45; t <= 12 * 60; t += 5) {
     svg.append("line").attr("stroke", "var(--rule)").attr("x1", x(t)).attr("x2", x(t)).attr("y1", top - 12).attr("y2", H - 6);
     svg.append("text").attr("class", "lab-3").attr("x", x(t)).attr("y", top - 20).attr("text-anchor", "middle").text(`${Math.floor(t / 60)}${String(t % 60).padStart(2, "0")}`);
   }
-  const read = host.append("p").attr("class", "readout").attr("aria-live", "polite");
-  const say = r => read.html(r ? `<b>${esc(r.time)}</b>, ${esc(r.actor)}: <span class="typed">${esc(r.text)}</span> <a href="${esc(pageUrl(r.ref))}" target="_blank" rel="noopener">${esc(r.source)}</a>`
-    : "Point at a mark to read the record.");
-  say(null);
   lanes.forEach((l, i) => {
     const yy = top + i * laneH + laneH / 2;
     svg.append("text").attr("class", "lab").attr("x", 0).attr("y", yy + 5).text(l.label);
@@ -370,87 +147,29 @@ async function neuburg() {
     for (const r of rows.filter(l.match)) {
       const t = mins(r.time);
       if (t < x.domain()[0] || t > x.domain()[1]) continue;
-      const g = svg.append("g").style("cursor", "pointer").attr("tabindex", 0).attr("role", "link").attr("aria-label", `${r.time} ${r.actor}`)
-        .on("pointerenter", () => say(r)).on("focus", () => say(r)).on("click", () => open(pageUrl(r.ref)));
+      const g = svg.append("g").style("cursor", "pointer").on("click", () => open(pageUrl(r.ref)));
+      g.append("title").text(`${r.time}, ${r.actor}: ${r.text} (${r.source})`);
       const span = /From (\d{4})B to (\d{4})B/.exec(r.text);
-      if (span) g.append("rect").attr("class", "span-bar").attr("x", x(mins(span[1]))).attr("y", yy - 7).attr("height", 14).attr("rx", 3)
-        .attr("width", x(mins(span[2])) - x(mins(span[1])));
-      else g.append("circle").attr("class", l.key === "claimed" ? "mark-open" : r.placed ? "mark-dash" : l.key === "lost" ? "hit" : "mark")
-        .attr("cx", x(t)).attr("cy", yy).attr("r", 7);
+      if (span) g.append("rect").attr("class", "span-bar").attr("x", x(mins(span[1]))).attr("y", yy - 7).attr("height", 14).attr("rx", 3).attr("width", x(mins(span[2])) - x(mins(span[1])));
+      else g.append("circle").attr("class", l.key === "claimed" ? "mark-open" : r.placed ? "mark-dash" : l.key === "lost" ? "hit" : "mark").attr("cx", x(t)).attr("cy", yy).attr("r", 7);
       const name = /"([^"]+)"/.exec(r.text.replace(/""/g, '"'));
       const tag = l.key === "lost" ? (/No\. 25/.test(r.text) ? "No. 25" : name?.[1]) : l.key === "saw" ? "“At 1200” (a round number)" : l.key === "fired" ? "six Me 262s, “without result”" : "";
       if (tag) g.append("text").attr("class", "lab-2").attr("x", x(t)).attr("y", yy - 13).attr("text-anchor", "middle").text(tag);
     }
   });
+  d3.select("#fig-europe").append("p").attr("class", "readout").text("The Army's B time and German summer time were both UTC+2: no conversion. Filled: from the record; dashed: placed by us; open: a secondary account not yet checked against a German record. Each mark opens its page.");
 }
 
-// ── Algiers to Germany: the stages in the order the units went (worked out in chapter.js) ─────────
-async function stages() {
-  const [C, ops] = await Promise.all([Chapter.load(), d3.json(RECORDS + "operations/operations.json")]);
-  const mon = d3.utcFormat("%b %Y"), span = (a, b) => mon(a) === mon(b) ? mon(a) : `${mon(a)} – ${mon(b)}`;
-  document.getElementById("stages").innerHTML = C.stages.map(s =>
-    `<li><a href="#stage-${s.id}"><span class="n">${s.n}</span> ${s.name}</a>${s.runs.length ? `<span class="when">${span(s.t0, s.t1)}</span>` : ""}</li>`).join("");
-  for (const s of C.stages) document.getElementById(`stage-${s.id}`).innerHTML = Chapter.stageHTML(s, ops);
-  return { home: C.home };
-}
-
-// ── What else is in each chapter, and what's still to find ──────────────────────────────────────
-async function lists() {
-  const [ships, army, battles, invText] = await Promise.all([d3.json(RECORDS + "ships.json"), d3.json(RECORDS + "army/army.json"),
-    d3.json(RECORDS + "engagements/index.json").then(xs => xs.filter(x => x.theater === "pacific")), d3.text(RECORDS + "inventory.yml")]);
-  const inv = jsyaml.load(invText);
-  const word = { mapped: "on the map", transcribed: "transcribed, not yet drawn", available: "<b>found, not transcribed</b>",
-    found: "<b>found, not transcribed</b>", "not-searched": "<b>not looked for yet</b>", missing: "looked for, not found" };
-  const month = d => d3.utcFormat("%b %Y")(new Date(d));
-  const row = (when, what, state, todo) => `<tr class="${todo ? "todo" : ""}"><td class="when">${when}</td><td class="what">${what}</td><td class="state">${state}</td></tr>`;
-  const table = (id, title, rows) => { document.getElementById(id).innerHTML = `<h4>${title}</h4><table><tbody>${rows.join("")}</tbody></table>`; };
-
-  // Pacific: the engagements, then each vessel and battalion (a boat's patrols on one row), by date
-  const periodStart = dates => { const [a, b = a] = dates.split("–").map(x => x.trim()); const yr = /\d{4}/.exec(b)?.[0];
-    return Date.parse(/\d{4}/.test(a) ? `${a} UTC` : /[A-Za-z]/.test(a) ? `${a} ${yr} UTC` : `${a} ${b.replace(/^\d+\s*/, "")} UTC`); };
-  const pac = [];
-  for (const b of battles) pac.push([Date.parse(b.from), row(month(Date.parse(b.from)), `<a href="engagement.html?e=${b.id}&amp;view=records">${esc(b.title)}</a>`, "both sides, one clock")]);
-  for (const s of ships.filter(s => s.alias !== "solar")) {
-    const d = d3.min(s.periods, p => periodStart(p.dates));
-    const sub = s.kind === "submarine";
-    const what = sub && s.periods.length > 1
-      ? `${s.name} (${s.hull}), war patrols ${s.periods.map(p => `<a href="subject.html?s=${s.alias}&amp;period=${p.n}&amp;view=records">${p.n}</a>`).join(", ")}`
-      : `<a href="subject.html?s=${s.alias}">${sub ? `${s.name} (${s.hull}), ${esc(s.periods[0].name.toLowerCase())}` : `USS ${s.name} (${s.hull}), ${esc(s.periods[0].name)}`}</a>`;
-    pac.push([d, row(month(d), what, "on the map")]);
-  }
-  const ordinal = n => n + (/1[123]$/.test(n) ? "th" : { 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th");
-  for (const [k, u] of Object.entries(inv.seabees || {})) if (u.record?.from)
-    pac.push([Date.parse(u.record.from), row(month(Date.parse(u.record.from)), `<a href="subject.html?s=${k}">${ordinal(parseInt(k))} Naval Construction Battalion</a>`, word[u.record.status] || u.record.status)]);
-  pac.sort((a, b) => a[0] - b[0]);
-  const pacTodo = [];
-  for (const [hull, b] of Object.entries(inv.boats || {})) {
-    if (!b.folder) pacTodo.push(row("", `${b.name} (${hull}): ${esc(b.note || "")}`, Object.keys(b.patrols || {}).length ? word[Object.values(b.patrols)[0].status] : word["not-searched"], true));
-  }
-  const cs = inv.commands?.comsubpac?.records || {};
-  const n = s => Object.values(cs).filter(r => r.status === s).length;
-  pacTodo.push(row("1944–45", "Submarine Force, Pacific: its monthly war diaries", `${n("transcribed")} transcribed, <b>${n("available")} found, not transcribed</b>`, true));
-  table("also-pacific", "Also in the Pacific, by date", [...pac.map(r => r[1]), ...pacTodo]);
-
-  // Atlantic: Solar's records
-  const sol = Object.entries(inv.ships?.["DE-221"]?.records || {}).map(([k, r]) =>
-    row(/^\d{4}-\d{2}$/.test(k) ? month(k + "-01") : "", `USS Solar (DE-221): ${esc(r.note || k)}`, word[r.status] || r.status, r.status !== "mapped"));
-  table("also-atlantic", "Also in the Atlantic", sol);
-
-  // Europe: the units the stages above leave out (never overseas), and what's still to find
-  const eur = (await STAGED).home.map(u => row(month(u.stations[0].date), `<a href="subject.html?s=${u.unit}">${esc(u.name)}</a>, to ${month(u.stations[u.stations.length - 1].date)}`,
-    "in the United States and Britain only", false));
-  const after = part => { const m = /^after-(\d{4})-(\d{2})$/.exec(part); return m ? `its records after ${d3.utcFormat("%B %Y")(new Date(Date.UTC(+m[1], +m[2] - 1)))} (not online)` : part; };
-  for (const [k, u] of Object.entries(inv.units || {})) for (const [part, r] of Object.entries(u)) if (part !== "record")
-    eur.push(row("", `${esc(army.units.find(x => x.unit === k)?.name || k)}: ${after(part)}`, word[r.status] || r.status, true));
-  table("also-europe", "Also in the records, and still to find", eur);
-
-  // Wanted: everything the inventory knows of and nobody has done
-  const wanted = [];
-  for (const [hull, b] of Object.entries(inv.boats || {})) if (!b.folder) wanted.push(`${b.name} (${hull}) war patrol reports: ${esc(b.note || "")}`);
-  if (n("available")) wanted.push(`The Submarine Force, Pacific war diary: ${n("available")} months found and waiting to be transcribed`);
-  for (const [k, r] of Object.entries(inv.ships?.["DE-221"]?.records || {})) if (r.status === "found") wanted.push(`USS Solar: ${esc(r.note)}`);
-  wanted.push("The Japanese and German records of the attacks still read from one side only (the Strait of Gibraltar, 17 February 1945; JV 44 on 26 April 1945)");
-  document.getElementById("wanted").innerHTML = wanted.map(w => `<li>${w}</li>`).join("");
+// ── Wanted: everything the inventory knows of and nobody has done ───────────────────────────────
+async function wanted() {
+  const inv = jsyaml.load(await d3.text(RECORDS + "inventory.yml"));
+  const list = [];
+  for (const [hull, b] of Object.entries(inv.boats || {})) if (!b.folder) list.push(`${b.name} (${hull}) war patrol reports: ${esc(b.note || "")}`);
+  const cs = Object.values(inv.commands?.comsubpac?.records || {}).filter(r => r.status === "available").length;
+  if (cs) list.push(`The Submarine Force, Pacific war diary: ${cs} months found and waiting to be transcribed`);
+  for (const r of Object.values(inv.ships?.["DE-221"]?.records || {})) if (r.status === "found") list.push(`USS Solar: ${esc(r.note)}`);
+  list.push("The Japanese and German records of the attacks still read from one side only (the Strait of Gibraltar, 17 February 1945; JV 44 on 26 April 1945)");
+  document.getElementById("wanted").innerHTML = list.map(w => `<li>${w}</li>`).join("");
 }
 
 // A figure whose records don't load says so in its place instead of leaving a blank
@@ -461,13 +180,9 @@ const failed = (sel, what) => err => {
   p.textContent = `The records for this ${what} didn't load. Reload the page to try again.`;
   document.querySelector(sel).replaceChildren(p);
 };
-replay().catch(failed("#replay", "replay"));
-haynsworth().catch(failed("#fig-haynsworth", "figure"));
-seabees().catch(failed("#fig-seabees", "figure"));
-solar().catch(failed("#fig-solar", "map"));
-neuburg().catch(failed("#fig-neuburg", "figure"));
-const STAGED = stages();
-STAGED.catch(failed("#stages", "list"));
-// the nav's stage links (index.html#stage-italy) land on an empty div until the stages are drawn: scroll again then
-STAGED.then(() => { if (/^#stage-/.test(location.hash)) document.querySelector(location.hash)?.scrollIntoView(); });
-lists().catch(failed("#wanted", "list"));
+cards().catch(failed("#theatres .intro", "page"));
+pacific().catch(failed("#fig-pacific", "map"));
+atlantic().catch(failed("#fig-atlantic", "map"));
+mediterranean().catch(failed("#fig-mediterranean", "map"));
+europe().catch(failed("#fig-europe", "figure"));
+wanted().catch(failed("#wanted", "list"));

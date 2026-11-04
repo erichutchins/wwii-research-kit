@@ -36,8 +36,11 @@
   // the frame's own figures (panels.js), on the working
   const FIGURES = (typeof PANELS === "object" && PANELS[D.id]) || [];   // counted on every depth, mounted on the working
   const PANEL_LIST = IN("working") ? FIGURES : [];
+  // the breadcrumb: the theatre, the operation and the engagement before and after (chapter.js); the page opened with
+  // no engagement named is the picker, and says so
   const crumb = document.getElementById("crumb");
-  Chapter.crumb(id, crumb).then(() => { crumb.hidden = !crumb.innerHTML; }, () => { crumb.hidden = true; });
+  if (!want) { crumb.innerHTML = Chapter.trail(["Engagements"]); crumb.hidden = false; }
+  else Chapter.crumb(id, crumb).then(() => { crumb.hidden = !crumb.innerHTML; }, () => { crumb.hidden = true; });
 
   // ---------- the picker: every engagement, by theatre, in date order
   const THEATRES = { pacific: "Pacific", mediterranean: "Mediterranean", europe: "Europe" };

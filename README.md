@@ -5,8 +5,8 @@ from its own records — and for doing it with an AI agent such as Claude Code. 
 submarine war patrol reports, a destroyer's war diary, Army morning reports and battalion
 histories, and the Imperial Japanese Navy's records of the same days.
 
-**Site:** <https://erichutchins.github.io/wwii-research-kit/>, the pages in `site/`: ship tracks, a submarine's dive profile,
-convoy battles on one clock with the Japanese side, and explainers for the reports' time zones,
+**Site:** <https://erichutchins.github.io/wwii-research-kit/>, the pages in `site/`: a page for each of the four theatres, every
+subject's journey, convoy battles on one clock with the Japanese side, a submarine's dive profile, and explainers for the reports' time zones,
 the Japanese Navy's kana position grid and the Army's map grids. Every mark links to the scanned
 page it came from.
 

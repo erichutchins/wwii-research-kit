@@ -4,9 +4,9 @@
 # ///
 """Open every page of the site in a headless browser and fail on anything that breaks it.
 
-Every page in site/, and every view a page opens from the address (each engagement at its depths, each subject at its
-account and at its records for every period, the five walked-through subjects at their working too, BANG's dives by
-patrol), in light and dark mode, at desktop and phone width.
+Every page in site/, and every view a page opens from the address (the four theatres, each engagement at its depths,
+each subject at its account and at its records for every period, the five walked-through subjects at their working too,
+BANG's dives by patrol), in light and dark mode, at desktop and phone width.
 A view fails on:
   - an error in the console, or an uncaught exception;
   - a request to this site that fails or answers 4xx/5xx (a missing data file, a renamed script);
@@ -52,10 +52,17 @@ def kit_views(root=KIT):
     """Every page in site/ and every view the address opens, as paths from the server's root."""
     rec, site = root / "records", root / "site"
     out = [f"site/{p.name}" for p in sorted(site.glob("*.html"))]
+    out += theatre_views("site/theatre.html")
     out += engagement_views(rec / "engagements", "site/engagement.html")
     out += subject_views(rec / "subjects.json", "site/subject.html")
     out += [f"site/dives.html?patrol={p['patrol']}" for p in load(rec / "boats/ss-385-bang/dives.json")["patrols"]]
     return out
+
+
+def theatre_views(page):
+    """The four theatre pages (theatre.html?t=<id>; the ids are site/chapter.js's THEATRES), and a deep link to a stage,
+    which must land once the page is drawn."""
+    return [f"{page}?t={t}" for t in ("pacific", "atlantic", "mediterranean", "europe")] + [f"{page}?t=mediterranean#stage-italy"]
 
 
 def engagement_views(folder, page):

@@ -1,5 +1,5 @@
-/* The front page (index.html) and the guide for relatives (relatives.html): the best finding in each theater,
-   then the reference shelf, then how to do it yourself.
+/* The front page (index.html) and the guide for relatives (relatives.html): the four theatres with one featured figure
+   each, then the reference shelf, then how to do it yourself.
    Two voices: ET Book for the kit's own words, TT2020 for the records' (they were typed; fonts/fonts.css); Japanese in
    Shippori Mincho, the original before our translation. Special Elite once, for the masthead. Colours are the kit's
    checked palette, under the token names every page shares (viz.css): boats take slots 1-3 in the engagement's
@@ -30,7 +30,6 @@ a:hover { text-decoration-color: currentColor; }
 ::selection { background: color-mix(in srgb, var(--c1) 24%, transparent); }
 .page { max-width: 1180px; margin: 0 auto; padding: 0 32px; }
 .typed { font-family: var(--typed); font-size: .88em; }
-.num { font-variant-numeric: tabular-nums lining-nums; }
 
 /* The kit's navigation bar, the same on every page; then the masthead */
 .nav { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 15px; margin: 20px 0 0; padding-bottom: 8px;
@@ -43,7 +42,7 @@ a:hover { text-decoration-color: currentColor; }
 .nav .grp + .grp, .nav .grp + a { padding-left: 15px; border-left: 1px solid var(--rule); }
 .nav .lbl { font-style: italic; color: var(--ink-3); }
 .nav .sub { gap: 4px 11px; }
-/* two lines at every width: the two theaters, then the pages for every theater, reading the records and the guide for relatives */
+/* two lines at every width: the theatres, then the subjects, reading the records and the guide for relatives */
 .nav::after { content: ""; flex-basis: 100%; order: 1; }
 .nav .grp.ref, .nav .grp.ref ~ .grp, .nav .grp.ref ~ a { order: 2; }
 .nav .grp.ref { padding-left: 0; border-left: 0; }
@@ -55,116 +54,44 @@ h1 { font: 400 clamp(40px, 5.8vw, 66px)/1.05 "Special Elite", var(--typed); marg
 .chapters a { text-decoration: none; border-bottom: 1px solid var(--rule); }
 .chapters a:hover { border-color: var(--ink); }
 
-/* Chapters and features */
+/* Chapters */
 .chapter { padding-top: 88px; }
 .chapter > h2 { font-weight: 400; font-style: italic; font-size: clamp(39px, 4.4vw, 53px); line-height: 1.1; margin: 0; padding-bottom: 10px; border-bottom: 1px solid var(--ink); }
-.feature { display: grid; grid-template-columns: minmax(0, 1fr) 270px; column-gap: 48px; padding-top: 40px; }
-.feature > * { grid-column: 1; }
-.feature h3 { font-weight: 400; font-size: 34.5px; line-height: 1.15; margin: 0 0 10px; }
-.feature .dek { margin: 0 0 22px; max-width: 64ch; }
-.feature .side { grid-column: 2; grid-row: 1 / span 2; font-size: 17px; line-height: 1.45; color: var(--ink-2); align-self: start; padding-top: 6px; }
-.feature .side p { margin: 0 0 10px; }
-.feature figure { grid-column: 1 / -1; margin: 0; }
-.feature .more { grid-column: 1 / -1; margin: 14px 0 0; font-size: 19.5px; }
+.intro { max-width: 66ch; margin: 24px 0 0; }
 
-/* The one-clock replay */
-.replay { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 0 28px; }
-/* align-self: the grid row is as tall as the log beside it; stretched, the box ran on below the map */
-.replay .map { position: relative; align-self: start; border: 1px solid var(--rule); background: var(--page); }
-.replay .map svg { display: block; width: 100%; height: auto; }
-.land { fill: var(--land); stroke: var(--coast); stroke-width: .7; }
-.grat { fill: none; stroke: var(--rule); stroke-width: .8; }
-.place { fill: var(--ink-3); font: italic 16px var(--serif); }
-.trail { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.trail-future { fill: none; stroke-width: 1; stroke-dasharray: 1 4; stroke-linecap: round; opacity: .55; }
-.boat-label { font: 700 17px var(--typed); paint-order: stroke; stroke: var(--page); stroke-width: 4px; }
-.convoy { fill: none; stroke: var(--ink); stroke-width: 1.4; }
-.hit { fill: var(--hit); }
-.hit-ring { fill: none; stroke: var(--hit); stroke-width: 1.5; }
-.log { display: grid; grid-template-rows: minmax(300px, auto) auto; gap: 18px; align-content: start; min-height: 0; }
-.log h4 { font: italic 400 19.5px var(--serif); color: var(--ink-2); margin: 0 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--rule); }
-.log ol { list-style: none; margin: 0; padding: 0; }
-.log .entry { --entry-t: 52px; }
-.log .none { color: var(--ink-3); font-style: italic; font-size: 17px; padding: 8px 0; }
-.clockbar { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; margin-top: 14px; }
-.clockbar button { font: 18.5px var(--serif); color: var(--ink); background: none; border: 1px solid var(--ink-3); border-radius: 999px; padding: 4px 16px; cursor: pointer; min-width: 84px; }
-.clockbar button:hover { border-color: var(--ink); }
-.clockbar .now { font: 700 17px var(--typed); white-space: nowrap; text-align: right; min-width: 120px; }
-.clockbar .now small { display: block; font: 400 15px var(--serif); color: var(--ink-3); }
-.scrub { position: relative; }
-.scrub svg { display: block; width: 100%; height: 46px; overflow: visible; }
-.scrub input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
-.scrub input:focus-visible + svg .cursor { stroke-width: 3; }
-.tick-us { stroke-width: 1.5; }
-.tick-jp { stroke: var(--ink); stroke-width: 1.5; }
-.axis-line { stroke: var(--ink-3); }
-.axis-text { fill: var(--ink-3); font: 17px var(--serif); }
-.cursor { stroke: var(--ink); stroke-width: 2; }
+/* The four theatres: a card each, with its featured figure */
+.theatres { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 44px 48px; margin-top: 36px; }
+.theatre h3 { font-weight: 400; font-size: 34.5px; line-height: 1.15; margin: 0; }
+.theatre h3 a { text-decoration: none; border-bottom: 1px solid var(--rule); }
+.theatre h3 a:hover { border-color: var(--ink); }
+.theatre .span { margin: 4px 0 0; font-size: 19.5px; color: var(--ink-2); min-height: 1.5em; }
+.theatre .holds { margin: 0 0 14px; font-size: 17.5px; color: var(--ink-3); min-height: 1.5em; }
+.theatre figure { margin: 0; border: 1px solid var(--rule); padding: 8px; }
+.theatre .more { margin: 12px 0 0; font-size: 18.5px; color: var(--ink-2); }
 
-/* Small figures (Haynsworth, Seabees, Solar, Neuburg) */
+/* The figures, drawn by home.js */
 .fig svg { display: block; width: 100%; height: auto; overflow: visible; }
 .fig text { font-family: var(--serif); }
+.land { fill: var(--land); stroke: var(--coast); stroke-width: .7; }
+.grat { fill: none; stroke: var(--rule); stroke-width: .8; }
+.place { fill: var(--ink-3); font: italic 14px var(--serif); }
+.trail { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.boat-label { font: 700 15px var(--typed); paint-order: stroke; stroke: var(--page); stroke-width: 4px; }
+.hit { fill: var(--hit); }
+.hit-ring { fill: none; stroke: var(--hit); stroke-width: 2.2; }
+.sunk { fill: none; stroke: var(--hit); stroke-width: 2.4; }
+.area { stroke: var(--ink-3); stroke-width: .8; }
 .lab { fill: var(--ink); font-size: 15px; }
 .lab-2 { fill: var(--ink-2); font-size: 13.5px; }
 .lab-3 { fill: var(--ink-3); font-size: 13px; }
-.lab-t { fill: var(--ink); font: 700 16px var(--typed); }
 .mark { fill: var(--ink); }
 .mark-open { fill: var(--page); stroke: var(--ink); stroke-width: 1.4; }
 .mark-dash { fill: var(--page); stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 2 2; }
 .leader { stroke: var(--ink-3); stroke-width: .8; fill: none; }
-.lane-line { stroke: var(--ink); stroke-width: 2.4; fill: none; stroke-linecap: round; }
-.lane-part { stroke: var(--c1); stroke-width: 2.4; fill: none; stroke-linecap: round; }
-.lane-hit { stroke: transparent; stroke-width: 14; fill: none; cursor: pointer; }
-.lane-hit:hover + .lane-part, .lane-part.on { stroke-width: 4; }
 .span-bar { fill: var(--c2); }
 .track-faint { fill: none; stroke: var(--ink-3); stroke-width: .8; opacity: .6; }
 .track-hot { fill: none; stroke: var(--c1); stroke-width: 2; stroke-linejoin: round; }
-/* a zoomable map (mapzoom.js): lines keep their width at any zoom */
-.zoomable .grat, .zoomable .land, .zoomable .trail, .zoomable .trail-future, .zoomable .track-faint, .zoomable .track-hot { vector-effect: non-scaling-stroke; }
-.fig .zoom-box { position: relative; }
-.readout { min-height: 3em; font-size: 17px; color: var(--ink-2); margin: 8px 0 0; }
-.readout .typed { color: var(--ink); }
-
-/* What else is in each chapter, and what isn't yet */
-.also { margin-top: 44px; }
-.also h4 { font-weight: 400; font-style: italic; font-size: 24px; margin: 0 0 8px; }
-.also table { width: 100%; border-collapse: collapse; font-size: 18.5px; }
-.also td { padding: 7px 18px 7px 0; border-top: 1px solid var(--rule); vertical-align: baseline; }
-.also td.when { width: 120px; color: var(--ink-2); white-space: nowrap; }
-.also td.state { width: 210px; color: var(--ink-3); font-size: 17px; }
-.also td.state b { font-weight: 400; color: var(--ink); }
-.also tr.todo td { color: var(--ink-3); }
-.also tr.todo td.what { color: var(--ink-2); }
-
-
-/* Algiers to Germany: the stages in order, then each stage */
-.stages { list-style: none; display: flex; flex-wrap: wrap; gap: 10px 0; padding: 0; margin: 34px 0 0; font-size: 19.5px; }
-.stages li { display: flex; flex-direction: column; padding-right: 30px; margin-right: 18px; position: relative; }
-.stages li:not(:last-child)::after { content: "→"; position: absolute; right: 0; top: 0; color: var(--ink-3); }
-.stages a { text-decoration: none; border-bottom: 1px solid var(--rule); align-self: flex-start; }
-.stages a:hover { border-color: var(--ink); }
-.stages .when { font-size: 16.5px; color: var(--ink-3); }
-.stages .n, .stage h3 .n { color: var(--ink-3); }
-.stage { padding-top: 46px; max-width: 980px; }
-.stage h3 { font-weight: 400; font-size: 34.5px; line-height: 1.15; margin: 0 0 6px; }
-.stage h3 .when { font-size: 22px; font-style: italic; color: var(--ink-2); }
-.stage p { margin: 4px 0 0; font-size: 19.5px; color: var(--ink-2); }
-/* a stage's spine: its campaigns in date order, each with its engagements (and an engagement outside any campaign) */
-.stage .spine { list-style: none; padding: 0; margin: 14px 0 0; font-size: 19.5px; }
-.stage .spine li { margin: 6px 0; }
-.stage .spine .dates { display: inline-block; min-width: 13.5em; color: var(--ink-3); font-size: 17px; }
-.stage .spine .camp > .name { color: var(--ink); }
-.stage .spine ul { list-style: none; padding: 0 0 0 1.4em; margin: 4px 0 8px; border-left: 1px solid var(--rule); }
-.stage .spine ul .dates { min-width: 12.1em; }
-.stage .spine .who { display: block; margin-left: 13.5em; font-size: 17px; color: var(--ink-3); }
-.stage .spine ul .who { margin-left: 12.1em; }
-.stage .none { color: var(--ink-3); }
-.stage .reading { font-size: 17.5px; margin-top: 10px; }
-@media (max-width: 640px) {
-  .stage .spine .dates { display: block; min-width: 0; }
-  .stage .spine .who, .stage .spine ul .who { margin-left: 0; }
-}
-.stage .also { margin-top: 16px; }
+.readout { font-size: 16px; line-height: 1.45; color: var(--ink-2); margin: 8px 0 0; }
 
 /* Reference shelf and do-it-yourself */
 .shelf { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px 40px; margin-top: 30px; }
@@ -181,7 +108,6 @@ h1 { font: 400 clamp(40px, 5.8vw, 66px)/1.05 "Special Elite", var(--typed); marg
 .steps { counter-reset: step; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 56px; margin-top: 30px; }
 .steps > div { counter-increment: step; }
 .steps h3::before { content: counter(step) ". "; color: var(--ink-3); }
-.intro { max-width: 66ch; margin: 24px 0 0; }
 .help { margin-top: 40px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 30px 56px; }
 .help h3 { font-weight: 400; font-size: 25.5px; margin: 0 0 6px; }
 .help p, .help li { font-size: 19.5px; color: var(--ink-2); }
@@ -191,21 +117,7 @@ code { font: 17px var(--typed); color: var(--ink); }
 .end { height: 80px; }
 
 @media (max-width: 900px) {
-  .feature { grid-template-columns: 1fr; }
-  .feature .side { grid-column: 1; grid-row: auto; padding: 0 0 14px 14px; border-left: 2px solid var(--rule); }
-  .replay { grid-template-columns: 1fr; gap: 18px; }
-  .shelf, .steps, .help, .shelf .set { grid-template-columns: 1fr; }
-  .also td.state { width: auto; }
-  .stage .also td.when { width: 5.5em; white-space: normal; }
-  .stages { flex-direction: column; }
-  .stages li { flex-direction: row; gap: 12px; align-items: baseline; margin: 0; padding: 0; }
-  .stages li:not(:last-child)::after { display: none; }
-}
-@media (max-width: 760px) {
-  /* the figures keep a readable size and scroll sideways */
-  .fig { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .fig svg, .fig .zoom-box { min-width: 700px; }
-  .fig .readout { min-width: 0; }
+  .theatres, .shelf, .steps, .help, .shelf .set { grid-template-columns: 1fr; }
 }
 @media (max-width: 600px) {
   /* nav: each group starts its own line; the dividing rules only make sense on one line */
@@ -216,11 +128,8 @@ code { font: 17px var(--typed); color: var(--ink); }
 }
 @media (max-width: 560px) {
   .page { padding: 0 18px; }
-  .also td.state { font-size: 16px; width: 30%; }
   body { font-size: 20.5px; }
-  .clockbar { grid-template-columns: auto 1fr; }
-  .clockbar .scrub { grid-column: 1 / -1; grid-row: 2; }
-  .also td.when { width: 84px; }
+  .theatre h3 { font-size: 29px; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 
