@@ -573,4 +573,15 @@ Promise.all([
     (b.dataset.for === "nprobe" ? nProbe : aProbe)(true);
   }));
   nProbe(false); aProbe(false);
+  fromQuery();
 });
+
+// german.html?ref=CJ 9472 or ?ref=XXIII 97 (the glossary's card on a naval square or a reference point): the right probe
+// filled and run, zoomed to the point. Two letters and digits is a naval square; anything else goes to the Army's.
+function fromQuery() {
+  const ref = (new URLSearchParams(location.search).get("ref") || "").trim();
+  if (!ref) return;
+  const naval = /^[A-Za-z]{2} ?[0-9]{1,4}$/.test(ref);
+  document.getElementById(naval ? "nprobe" : "aprobe").value = ref;
+  (naval ? nProbe : aProbe)(true);
+}

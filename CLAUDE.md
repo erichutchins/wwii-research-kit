@@ -34,8 +34,10 @@ For film of a place and date, follow the skill `find-film` (rules in `records/fi
   than the code needs fails. `tools/records.py` finds the records and the cache.
 - `reference/jgrid/`: the Japanese kana grid keys and anchors (hand-edited; `guides/JAPANESE-GRID.md`).
 - `reference/lanes/lanes.yml`: the convoy lanes' ports and (assumed) waypoints, which a convoy's `route:` runs through.
-- `reference/glossary.yml`: the terms the pages explain on hover, each citing its source (`tools/build_glossary.py` writes
-  `glossary.json`, which `site/glossary.js` reads).
+- `reference/glossary.yml`: the terms the pages explain on hover, each citing its source, and the records' notations as
+  `patterns` (a regular expression, read alike by JavaScript and Python, and the explainer page opened at the value:
+  `zones.html?zone=K`, `grids.html?ref=`, `jgrid.html?code=`, `german.html?ref=`, `torpedo.html?track=`), checked and
+  written to `glossary.json` by `tools/build_glossary.py`, which `site/glossary.js` reads.
 - `site/`: static pages, no build step. D3 7.9.0, topojson-client, js-yaml and suncalc come from a CDN, each at the one
   pinned address listed at the top of `config.js` (a page's `<script src>` must match it exactly); `config.js` also holds
   the paths.
@@ -133,7 +135,11 @@ Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page
 - Type has three voices, each with one job: ET Book for the kit's own words, TT2020 style E for the records' typed
   words (`.typed`, `.mono`, `code`; `--typed`), Shippori Mincho for Japanese (`[lang="ja"]`; the original before our
   translation; the element carries `lang` and `data-tr`, the translation, so `glossary.js` opens the English in its card on
-  hover, focus or tap). Fonts are in `site/fonts/fonts.css`. Special Elite only for the front page's masthead. No capitals for
+  hover, focus or tap). `glossary.js` also marks the records' notations (`glossary.yml` `patterns`: a zone-lettered time, a
+  grid reference, a kana code, an attack sheet's angles), each distinct value once per passage, with a card that names the
+  notation, shows the value in the typed voice and links the explainer opened at it; a page that prints a zone-lettered time
+  may carry its date in `data-date` (or a `time[datetime]` around it) so the card can give the GMT through `Engage.toUTC`.
+  Fonts are in `site/fonts/fonts.css`. Special Elite only for the front page's masthead. No capitals for
   labels: italics instead.
 - Every page has the same navigation bar, at the top of its header: an empty `<nav class="nav" aria-label="The kit"
   data-nav></nav>` followed by `<script src="nav.js"></script>`, which `site/nav.js` fills as the page is parsed (so

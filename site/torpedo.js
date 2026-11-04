@@ -119,7 +119,27 @@
       + (notes.length ? " Note: " + notes.join("; ") + "." : "") + " Advance, transfer and parallax are left out.";
   }
   draw();
+  fromQuery();
   let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(draw, 150); });
+
+  // torpedo.html?track=123S or ?aob=90P (the glossary's card on an attack sheet's angle): the triangle set to it. The
+  // angle on the bow and its side are the page's own controls. The track angle is not one (it follows from the angle on
+  // the bow, the speeds and the lead), so its side is pressed and the angle on the bow is stepped, through solve() as
+  // the page draws it, until the triangle's track angle reads the one typed at the page's speeds. A gyro angle has no
+  // control to map to (the target is dead ahead, so the gyro is the lead) and is left alone. Nothing else changes anything.
+  function fromQuery() {
+    const q = new URLSearchParams(location.search);
+    const ang = s => /^([0-9]{1,3}(?:\.[0-9])?)([SP])$/i.exec((s || "").trim());
+    const setSide = sv => $("side-seg").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === sv));
+    const a = ang(q.get("aob")), t = ang(q.get("track"));
+    if (a && +a[1] <= 180) { setSide(a[2].toUpperCase()); $("aob").value = Math.round(+a[1]); draw(); return; }
+    if (!t || +t[1] <= 0 || +t[1] >= 180) return;
+    const sv = t[2].toUpperCase(), want = +t[1], speed = +$("speed").value, range = +$("range").value, knots = +power();
+    const trackAt = aob => solve(speed, aob, sv, range, knots).fc.track;   // rises with the angle on the bow (k < 1)
+    let lo = 0, hi = 180;
+    for (let i = 0; i < 24; i++) { const mid = (lo + hi) / 2; if (trackAt(mid) < want) lo = mid; else hi = mid; }
+    setSide(sv); $("aob").value = Math.round((lo + hi) / 2); draw();
+  }
 
   // ---------- BANG, Attack 1: the sheet's rows through Engage.attackSheet
   const PAGE = "https://catalog.archives.gov/id/74802746?objectPage=";

@@ -4,6 +4,10 @@
 // colour. Pointing at it, focusing it or tapping it opens a small card with the explanation, its source (linked) and,
 // for a ship, a link to its track. Skipped: links, buttons, form controls, headings, the nav, the footer, SVG, Japanese,
 // the map tooltips (#tip), and anything inside [data-no-gloss].
+// The records' notations (glossary.json's `patterns`: a time with its zone letter, a grid reference, a kana position code,
+// an attack sheet's angles) are marked the same way, each distinct value once per passage; their card names the notation,
+// shows the value in the typed voice (a zone-lettered time with its GMT when engage.js is on the page), the explanation,
+// its source, and a link to the explainer page opened at that value.
 // The same card gives the English of any original quoted in its own language: an element with `lang` and `data-tr`
 // (the page's script sets the translation there as it draws the entry) opens it on hover, focus or tap, whatever the
 // page, even where the translation is also printed under the original.
@@ -29,6 +33,8 @@
       color: var(--ink); background: var(--surface);
       border: 1px solid var(--rule); border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.12); }
     .gloss-card b { display: block; font-weight: 600; margin-bottom: 2px; }
+    .gloss-card .gloss-val { display: block; margin: 1px 0 4px; font-family: var(--typed, "TT2020 Style E", "Courier New", monospace); font-size: 14.5px; }
+    .gloss-card .gloss-val .gloss-gmt { font-family: et-book, Palatino, Georgia, serif; font-size: 13.5px; color: var(--ink-2); }
     .gloss-card a { color: inherit; display: inline-block; margin-top: 4px; }
     .gloss-card .gloss-src { display: block; margin-top: 5px; font-size: 13px; color: var(--ink-2); }
     .gloss-card .gloss-src a { margin-top: 0; }`;
@@ -79,7 +85,44 @@
       const plain = forms.flatMap(({ f }) => exact(f) ? [f] : [f, cap(f)]).map(reEsc);
       re = new RegExp(`(?<![\\w-])(${plain.join("|")})(?![\\w-])(?![\\s-]*\\d)`, "g");
     }
-    return { re, find: m => byExact.get(m) || byLower.get(m.toLowerCase()) };
+    return { re, find: m => byExact.get(m) || byLower.get(m.toLowerCase()), patterns: patterns(g) };
+  }
+
+  // The notations: each pattern as glossary.yml wrote it (a form both engines read alike), compiled here; one that
+  // doesn't compile in this browser is reported and skipped, and a glossary.json without `patterns` has none.
+  const PAGE_NAME = { zones: "zones", grids: "grids", jgrid: "Japanese grid", german: "German grids", torpedo: "torpedo" };
+  function patterns(g) {
+    const out = [];
+    for (const p of g.patterns || []) {
+      try { out.push({ ...p, re: new RegExp(p.pattern, "g") }); }
+      catch (err) { console.warn(`glossary pattern ${p.id} skipped: ${err.message}`); }
+    }
+    return out;
+  }
+  // "zones.html?zone=$2" with the match's groups filled in, and the link's words
+  function seeOf(p, m) {
+    if (!p.see) return null;
+    const href = p.see.replace(/\$(\d)/g, (_, n) => encodeURIComponent(m[+n] ?? ""));
+    const page = PAGE_NAME[p.see.split(".")[0]] || p.see.split(".")[0];
+    return { href: new URL(href, HERE).href, text: `See it on the ${page} page` };
+  }
+  // A zone-lettered time's GMT, when engage.js's zone arithmetic is on the page (never redone here): with a date from
+  // the element (data-date, or a time[datetime] around it) the instant, otherwise the zone's offset alone
+  function gmtOf(span, m) {
+    // engage.js declares Engage with const, so it is a global binding, not a property of window
+    const E = typeof Engage !== "undefined" ? Engage : null;   // eslint-disable-line no-undef
+    if (!E || !E.zoneHours) return "";
+    let h;
+    try { h = E.zoneHours(m[2]); } catch { return ""; }
+    const sign = h < 0 ? "−" : "+", a = Math.abs(h), hh = Number.isInteger(a) ? a : `${Math.floor(a)}½`;
+    const off = h === 0 ? "GMT" : `GMT${sign}${hh}`;
+    const date = span.closest("[data-date]")?.getAttribute("data-date") || span.closest("time[datetime]")?.getAttribute("datetime") || "";
+    const d = /^\d{4}-\d{2}-\d{2}/.exec(date);
+    if (!d || !E.toUTC) return off;
+    const t = new Date(E.toUTC(d[0], m[1], m[2]));
+    if (Number.isNaN(+t)) return off;
+    const pad = n => String(n).padStart(2, "0");
+    return `${pad(t.getUTCHours())}${pad(t.getUTCMinutes())} GMT, ${t.getUTCDate()} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][t.getUTCMonth()]} ${t.getUTCFullYear()} (${off})`;
   }
 
   // Mark the first use of each entry on the page. A long page can mark a part as its own passage, where each term is
@@ -100,20 +143,40 @@
       const key = node.parentElement.closest(PASSAGE) || document.body;
       const seen = marked.get(key) || marked.set(key, new Map()).get(key);
       G.re.lastIndex = 0;
-      const text = node.data, parts = [], here = new Set();   // here: marked in this text, not yet on the page
-      let at = 0, m;
+      const text = node.data, found = [], here = new Set();   // here: marked in this text, not yet on the page
+      let m;
+      // the terms first (a term's phrase can hold digits a notation would claim), then each notation where no term is
       while ((m = G.re.exec(text))) {
         const e = G.find(m[1]);
-        if (!e || e.skip || here.has(e) || seen.get(e)?.isConnected) continue;
-        here.add(e);
-        parts.push(text.slice(at, m.index));
+        if (!e || e.skip) continue;
+        found.push({ at: m.index, end: m.index + m[1].length, text: m[1], e, key: e });
+      }
+      for (const p of G.patterns) {
+        p.re.lastIndex = 0;
+        while ((m = p.re.exec(text))) {
+          if (!m[0]) { p.re.lastIndex++; continue; }
+          const at = m.index, end = at + m[0].length;
+          if (found.some(f => f.at < end && at < f.end)) continue;
+          const key = `${p.id}\0${m[0]}`;   // a distinct value once per passage
+          const see = seeOf(p, m);
+          found.push({ at, end, text: m[0], key, e: { pattern: p, m: [...m], title: p.name, says: p.says,
+            see: see && see.href, seeText: see && see.text, sources: p.sources || [] } });
+        }
+      }
+      found.sort((a, b) => a.at - b.at);
+      const parts = [];
+      let at = 0;
+      for (const f of found) {
+        if (f.at < at || here.has(f.key) || seen.get(f.key)?.isConnected) continue;
+        here.add(f.key);
+        parts.push(text.slice(at, f.at));
         const span = document.createElement("span");
-        span.className = "gloss"; span.tabIndex = 0; span.textContent = m[1];
-        span.setAttribute("role", "button"); span.setAttribute("aria-label", `${m[1]}: what this means`);
-        span.__gloss = e;
-        seen.set(e, span);
+        span.className = "gloss"; span.tabIndex = 0; span.textContent = f.text;
+        span.setAttribute("role", "button"); span.setAttribute("aria-label", `${f.text}: what this means`);
+        span.__gloss = f.e;
+        seen.set(f.key, span);
         parts.push(span);
-        at = m.index + m[1].length;
+        at = f.end;
       }
       if (parts.length) { parts.push(text.slice(at)); node.replaceWith(...parts); }
     }
@@ -152,7 +215,14 @@
       card.append(s);
     } else {
     const b = document.createElement("b"); b.textContent = e.title;
-    card.append(b, document.createTextNode(e.says || ""));
+    card.append(b);
+    if (e.pattern) {   // a notation: the value as typed, and a zone-lettered time's GMT
+      const v = document.createElement("span"); v.className = "gloss-val"; v.textContent = span.textContent;
+      const gmt = e.pattern.id === "zone-time" ? gmtOf(span, e.m) : "";
+      if (gmt) { const g = document.createElement("span"); g.className = "gloss-gmt"; g.textContent = ` = ${gmt}`; v.append(g); }
+      card.append(v);
+    }
+    card.append(document.createTextNode(e.says || ""));
     if (e.see) { const a = document.createElement("a"); a.href = e.see; a.textContent = `${e.seeText} →`; card.append(document.createElement("br"), a); }
     if (e.sources?.length) {
       const src = document.createElement("span"); src.className = "gloss-src"; src.append("Source: ");

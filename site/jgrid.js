@@ -96,7 +96,20 @@ Promise.all([
   document.getElementById("probe").addEventListener("input", () => probe());
   document.getElementById("probe-key").addEventListener("change", () => probe());
   probe();
+  fromQuery();
 });
+
+// jgrid.html?code=メキ三ツ (the glossary's card on a kana code): the code in the probe, decoded and drawn
+function fromQuery() {
+  const code = (new URLSearchParams(location.search).get("code") || "").trim();
+  if (!code) return;
+  document.getElementById("probe").value = code;
+  const { code: kana, key: fromSuffix } = splitCode(code);
+  // no suffix to choose the key: the first key that places both the column and the row
+  const kd = fromSuffix ? null : KEYS.find(k => { const d = decode(kana, k.key); return d.c && d.r; });
+  if (kd) document.getElementById("probe-key").value = kd.key;
+  probe();
+}
 
 function buildControls() {
   const opts = [{ key: "all", name: "All keys" }, ...KEYS];
