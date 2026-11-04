@@ -136,22 +136,6 @@ h1 { font: 400 clamp(40px, 5.8vw, 66px)/1.05 "Special Elite", var(--typed); marg
 .also tr.todo td { color: var(--ink-3); }
 .also tr.todo td.what { color: var(--ink-2); }
 
-/* Every ship's track: one small map per vessel, each opening its page on patrols.html */
-.fleet-head { font-weight: 400; font-style: italic; font-size: 24px; margin: 40px 0 0; }
-.fleet { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 30px 32px; margin-top: 14px; }
-.ship-card .thumb { display: block; border: 1px solid var(--rule); }
-.ship-card .thumb:hover { border-color: var(--ink-3); }
-.ship-card svg { display: block; width: 100%; height: auto; }
-.ship-card .trk { fill: none; stroke: var(--ink-2); stroke-width: 1.2; stroke-linejoin: round; stroke-linecap: round; }
-.ship-card:hover .trk, .ship-card:focus-within .trk { stroke: var(--c1); }
-.ship-card .atk { fill: var(--c2); cursor: pointer; }
-.ship-card .atk.assumed { fill: var(--page); stroke: var(--c2); stroke-width: 1.2; stroke-dasharray: 1.5 1.5; }
-.ship-card h3 { font-weight: 400; font-size: 24px; margin: 10px 0 0; }
-.ship-card h3 a { text-decoration: none; }
-.ship-card h3 a:hover { text-decoration: underline; }
-.ship-card h3 .hull { color: var(--ink-3); font-size: 19.5px; }
-.ship-card p { margin: 2px 0 0; font-size: 17px; line-height: 1.45; color: var(--ink-2); }
-.ship-card .pn a { display: inline-block; min-width: 1.4em; }
 
 /* Algiers to Germany: the stages in order, then each stage */
 .stages { list-style: none; display: flex; flex-wrap: wrap; gap: 10px 0; padding: 0; margin: 34px 0 0; font-size: 19.5px; }

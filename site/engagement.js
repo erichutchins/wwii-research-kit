@@ -580,7 +580,7 @@
     const convoyHTML = Object.values(D.convoys).map(c => {
       const route = [c.from, ...(c.via || []), c.to].filter(Boolean).join(" → ");
       const ships = [...c.ships].sort((a, b) => (a.role.startsWith("escort") ? 0 : 1) - (b.role.startsWith("escort") ? 0 : 1));
-      return `<h3><a href="convoys.html?c=${esc(c.id)}">Convoy ${esc(c.convoy)}</a> ${c.name_ja ? `<span lang="ja" data-tr="Convoy ${esc(c.convoy)}, as the Japanese records write it">${esc(c.name_ja)}</span>` : ""}</h3>
+      return `<h3><a href="subject.html?s=${esc(c.id)}">Convoy ${esc(c.convoy)}</a> ${c.name_ja ? `<span lang="ja" data-tr="Convoy ${esc(c.convoy)}, as the Japanese records write it">${esc(c.name_ja)}</span>` : ""}</h3>
         <div class="muted" style="margin:-4px 0 10px">${esc(route)}${c.sailed ? ` · sailed ${esc(c.sailed)}` : ""}${c.cargo ? ` · ${esc(c.cargo)}` : ""}</div>
         <div class="plates">${ships.map(s => plate(s.ship, s.role, s.sil || EV.category(s.role), /sunk/.test(s.fate || "") ? "var(--ink)" : "var(--ink-3)",
           s.fate ? `<div class="fate">${esc(s.fate)}</div>` : "", s.basis === "secondary" ? "secondary" : "",
@@ -588,7 +588,7 @@
         <p class="muted">Silhouettes are drawn to one scale, from the class's own recognition plate where the library has it (hover for which); otherwise the kind of ship only. Italic names come from a secondary source.</p>`;
     }).join("");
     const jpHTML = jp.length ? `<h3>The target</h3><div class="plates">${jp.map(p => plate(p.name, p.note || p.kind, p.sil || EV.category(p.kind), "var(--ink-3)", "", "", "As the boat identified it")).join("")}</div>` : "";
-    const armyHTML = army.length ? `<h3>The units</h3><ul class="units">${army.map(p => `<li><a href="army.html?unit=${encodeURIComponent(p.unit)}&amp;t=${t0}">${esc(p.name)}</a>${p.basis && p.basis !== "reported" ? ` <i>(${esc(p.basis)})</i>` : ""}${p.note ? ` <span class="muted">${esc(p.note)}</span>` : ""}</li>`).join("")}</ul>` : "";
+    const armyHTML = army.length ? `<h3>The units</h3><ul class="units">${army.map(p => `<li><a href="subject.html?s=${encodeURIComponent(p.unit)}&amp;t=${t0}&amp;view=records">${esc(p.name)}</a>${p.basis && p.basis !== "reported" ? ` <i>(${esc(p.basis)})</i>` : ""}${p.note ? ` <span class="muted">${esc(p.note)}</span>` : ""}</li>`).join("")}</ul>` : "";
     const usHTML = us.length ? `<h3>${us.length > 1 ? ownName : us[0].kind === "submarine" ? "The boat" : ownName}</h3><div class="plates">${usPlates.join("")}</div>` : "";
     document.getElementById("oob").innerHTML = `<div class="pack">${usHTML}${armyHTML}</div><div>${convoyHTML}${jpHTML}</div>`;
     // the account's "Who" already shows our own side's plates, so there the card is the other side's alone (the
@@ -698,9 +698,10 @@
     // the doors: the records and the working, with their counts; the journeys, each subject's own page
     const first = d3.utcFormat("%Y-%m-%d")(new Date(t0));
     const journey = p => {
-      if (p.track) { const [alias, patrol] = [p.alias || p.track.split("/")[0], p.track.split("/")[1]]; return `<a href="patrols.html?ship=${encodeURIComponent(alias)}${patrol ? `&amp;patrol=${encodeURIComponent(patrol)}` : ""}">${esc(p.name)}${patrol ? ` patrol ${esc(patrol)}` : ", her track"}</a>`; }
-      if (p.convoy) return `<a href="convoys.html?c=${encodeURIComponent(p.convoy)}">${esc(p.name)}: its ships and voyage</a>`;
-      if (p.unit) return `<a href="army.html?unit=${encodeURIComponent(p.unit)}&amp;t=${first}">${esc(p.name)}: its stations</a>`;
+      // each subject's own page (subject.html?s=…, guides/OPERATIONS-VIEWER.md 5.2): a boat at the patrol, a unit on the day
+      if (p.track) { const [key, patrol] = p.track.split("/"); return `<a href="subject.html?s=${encodeURIComponent(key)}${patrol ? `&amp;period=${encodeURIComponent(patrol)}` : ""}">${esc(p.name)}${patrol ? ` patrol ${esc(patrol)}` : ", her track"}</a>`; }
+      if (p.convoy) return `<a href="subject.html?s=${encodeURIComponent(p.convoy)}">${esc(p.name)}: its ships and voyage</a>`;
+      if (p.unit) return `<a href="subject.html?s=${encodeURIComponent(p.unit)}&amp;t=${first}">${esc(p.name)}: its stations</a>`;
       return "";
     };
     const journeys = PARTS.map(journey).filter(Boolean);

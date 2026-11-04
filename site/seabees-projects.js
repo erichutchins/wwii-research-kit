@@ -10,7 +10,7 @@
 //     open(link, row),           // a citation (the page's scan viewer; row = {station, t})
 //     extra(project) -> Node,    // optional: a family page's own line (where the relative's part was)
 //   })
-// Shared by the kit's site/seabees.html and a family's page.
+// Shared by the kit's subject page (site/panels/seabees.js) and a family's page; it stays at site/ so the family's path holds.
 
 const PROJECT_EVIDENCE = {
   record: ["Record", "Read on the scan of a wartime record"],

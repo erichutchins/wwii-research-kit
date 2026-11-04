@@ -1,0 +1,386 @@
+/* The subject pages (subject.html, subjects.html; guides/OPERATIONS-VIEWER.md 5.2, 7.2): one journey page for a boat, a
+   ship, an Army unit, a Seabee battalion, a convoy or a command, at three depths. The skin is engage.css's (the one token
+   vocabulary; the three checked colours --c1..--c3, red for hits alone); this adds what the subject pages have of their
+   own: the account (the plain line, the organizations, the strip map, the coverage bar, the stage rows, the doors: the
+   mockup guides/mockups/67ca-med-account.html), the working (the placement table, the speed check, the leads), and the
+   records depth's panels (site/panels/*.js), each scoped under its own class (.p-patrols, .p-army, .p-seabees,
+   .p-convoy), with the rules the four side-list apps carried in their own pages.
+   One subject, so one colour: the subject's own marks take --c1; the categorical marks the panels keep (a torpedo or
+   gun attack, an aircraft contact, an action from a battalion's history) take --c2 and --c3, the other two checked
+   colours, in place of the apps' orange and aqua (CLAUDE.md: no new hue without checking again). */
+:root { --series-track: var(--c1); --series-attack: var(--c2); --series-air: var(--c3); --track-other: var(--coast);
+        --seafloor: #d9d4c7; --seafloor-edge: #a9a291; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --seafloor: #3d3a33; --seafloor-edge: #6b665a; } }
+:root[data-theme="dark"] { --seafloor: #3d3a33; --seafloor-edge: #6b665a; }
+
+/* ── the account ───────────────────────────────────────────────────────────── */
+.plain { font-size: 17px; color: var(--ink-2); max-width: 78ch; margin: 0; }
+.plain .src { white-space: normal; }
+.plain .k { font-style: italic; color: var(--ink-3); font-size: 14.5px; }
+.lede.computed { font-size: 19px; line-height: 1.45; }
+.card.pad { padding: 14px 16px; }
+.card h3 { font-size: 17px; font-weight: 700; margin: 0 0 6px; }
+.org { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; font-size: 15px; margin: 6px 0 0; }
+.org .d { color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.org .d small { display: block; font-size: 12.5px; }
+.org i { color: var(--ink-2); }
+.org .src { white-space: normal; }
+.org .n { color: var(--ink-3); font-size: 14px; }
+h2.sec { font-size: 21px; font-weight: 400; font-style: normal; color: var(--ink); margin: 14px 0 0; padding: 0; }
+/* the strip map: one small panel per stage (a unit), per patrol (a boat), per record (a ship), the voyage (a convoy) */
+.strip { display: grid; grid-template-columns: repeat(var(--n, 5), minmax(0, 1fr)); gap: 10px; }
+.strip.few { grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); max-width: calc(var(--n, 1) * 320px + (var(--n, 1) - 1) * 10px); }
+.spanel { border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--surface); text-decoration: none; color: inherit; display: block; }
+a.spanel:hover { background: var(--wash); }
+.spanel h3 { margin: 0; padding: 8px 10px 0; font-size: 15px; font-weight: 700; }
+.spanel h3 span { color: var(--ink-3); font-weight: 400; font-size: 13.5px; display: block; }
+.spanel svg { display: block; width: 100%; height: auto; }
+.spanel .grat { stroke: var(--sea-grid); fill: none; }
+.spanel .land { fill: var(--land); stroke: var(--coast); stroke-width: 0.5; }
+.spanel .fix { stroke: var(--page); stroke-width: 1.2; }
+.spanel .lbl2 { font: 12px var(--serif); fill: var(--ink-3); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.strip-key { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13.5px; color: var(--ink-2); padding: 8px 0; }
+.strip-key span { display: inline-flex; gap: 6px; align-items: center; }
+/* the coverage bar by month: solid where the subject's own record places it, hatched where a headquarters' is assumed */
+.cov { display: flex; align-items: center; gap: 2px; margin-top: 4px; }
+.cov i { height: 9px; flex: 1; border-radius: 1px; min-width: 2px; }
+.cov i.own { background: var(--c1); }
+.cov i.assumed { background: repeating-linear-gradient(135deg, var(--c1) 0 2px, transparent 2px 4px); border: 1px solid var(--c1); }
+.cov i.other { background: repeating-linear-gradient(135deg, var(--ink-3) 0 2px, transparent 2px 4px); border: 1px solid var(--ink-3); }
+.cov i.gap { background: none; border: 1px dashed var(--rule); }
+.cov .lbl { font-size: 13px; color: var(--ink-3); margin-left: 8px; flex: none; }
+.cov-key { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13.5px; color: var(--ink-2); padding: 4px 0 10px; }
+.cov-key span { display: inline-flex; gap: 6px; align-items: center; }
+.cov-key i { display: inline-block; width: 18px; height: 9px; }
+/* the stage rows: when, the stage, the places, the first station as typed, the war around it */
+.stage { display: grid; grid-template-columns: 11ch minmax(0, 1fr); gap: 6px 16px; padding: 12px 0; border-top: 1px solid var(--rule); font-size: 15.5px; }
+.stage .when { color: var(--ink-3); font-style: italic; }
+.stage .first { font-family: var(--typed); font-size: 14px; display: block; margin: 2px 0; overflow-wrap: anywhere; }
+.stage .first small { font-family: var(--serif); color: var(--ink-3); }
+.stage .ctx { color: var(--ink-2); font-size: 14.5px; }
+.stage .ctx i { color: var(--ink-3); }
+.stage .ctx a { color: inherit; }
+.stage .ja { font-family: var(--ja); font-weight: 500; }
+.doors .door .list a { color: inherit; }
+.account-none { font-style: italic; color: var(--ink-3); }
+
+/* ── the working ───────────────────────────────────────────────────────────── */
+.wk { padding-bottom: 14px; }
+.wk .below { color: var(--ink-2); font-size: 15px; margin: 6px 14px 0; max-width: 95ch; }
+.wk table { border-collapse: collapse; margin: 6px 14px 0; font-size: 15px; max-width: calc(100% - 28px); }
+.wk th { text-align: left; font-weight: 400; font-style: italic; color: var(--ink-3); padding: 4px 14px 4px 0; border-bottom: 1px solid var(--rule); }
+.wk td { padding: 4px 14px 4px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.wk td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.wk td .typed { font-family: var(--typed); font-size: .92em; }
+.wk .lead { margin: 8px 14px 0; padding: 8px 12px; border-left: 3px solid var(--ink-3); background: var(--wash); font-size: 15px; display: grid; gap: 4px; }
+.wk .lead b { font-weight: 700; }
+.wk .lead .k { font-style: italic; color: var(--ink-3); }
+.wk .fast { color: var(--hit); }
+.wk .wrapx { overflow-x: auto; }
+
+/* ── the records depth: the panels ─────────────────────────────────────────── */
+.records { display: grid; gap: 14px; }
+.records .filters { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.records .check { display: inline-flex; gap: 6px; align-items: center; color: var(--ink-2); margin-left: 12px; font-size: 15.5px; }
+.records .stats { display: flex; gap: 14px; flex-wrap: wrap; min-height: 62px; }
+.records .tile { padding: 6px 26px 6px 0; min-width: 140px; border-right: 1px solid var(--rule); margin-right: 8px; }
+.records .tile:last-child { border-right: 0; }
+.records .tile .label { color: var(--ink-3); font-size: 15.5px; font-style: italic; }
+.records .tile .value { font-size: 26.5px; font-weight: 400; font-variant-numeric: lining-nums tabular-nums; }
+.records .tile .sub { color: var(--ink-2); font-size: 14.5px; }
+.records .main { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 14px; height: max(680px, 82vh); }
+.records .map-card { display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
+.records .map-wrap { position: relative; min-height: 300px; }
+.records .map-wrap > svg.map { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; display: block; }
+.records .map-wrap > svg.map:active { cursor: grabbing; }
+.records .zoom-btns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; z-index: 3; }
+.records .zoom-btns button { font: 21.5px/1 var(--serif); width: 30px; height: 30px; padding: 0; border-radius: 2px; cursor: pointer;
+                             background: var(--surface); color: var(--ink-2); border: 1px solid var(--rule); }
+.records .zoom-btns button:hover { background: var(--wash); color: var(--ink); }
+.records .hint { position: absolute; left: 12px; bottom: 8px; color: var(--ink-3); font-size: 14.5px; pointer-events: none; }
+.records .legend { border-bottom: 0; padding-bottom: 6px; }
+.records .legend span { color: var(--ink-2); font-weight: 400; }
+.records .side { display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
+.records .side-head { padding: 12px 14px 8px; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.records .side-head h2 { font-size: 19px; font-weight: 400; font-style: italic; margin: 0; padding: 0; }
+.records .side-head .seg button { padding: 3px 8px; font-size: 14.5px; }
+.records .list { overflow-y: auto; position: relative; overscroll-behavior: contain; }
+.records .row { display: grid; grid-template-columns: 16px 1fr; gap: 8px; width: 100%; text-align: left; font: inherit; background: none; border: 0;
+                border-bottom: 1px solid var(--rule); padding: 8px 14px; color: var(--ink); cursor: pointer; }
+.records .row:hover, .records .row:focus-visible { background: var(--wash); }
+.records .row.current { background: var(--wash); box-shadow: inset 3px 0 0 var(--series-track); }
+.records .row.future { color: var(--ink-3); }
+.records .row .note { color: var(--ink-2); font-size: 15.5px; }
+.records .pcard { display: block; width: 100%; text-align: left; font: inherit; color: var(--ink); cursor: pointer; background: none; border: 0;
+                  border-bottom: 1px solid var(--rule); padding: 12px 14px; }
+.records .pcard:hover, .records .pcard.hot { background: var(--wash); }
+.records .pcard .t { font-weight: 600; }
+.records .pcard .d { color: var(--ink-2); font-size: 15.5px; }
+.records .pcard .n { color: var(--ink-3); font-size: 14.5px; margin-top: 2px; }
+.records .unit-note { padding: 10px 14px; border-bottom: 1px solid var(--rule); color: var(--ink-2); font-size: 15.5px; }
+.records .timeline { border-top: 1px solid var(--rule); padding: 6px 14px 10px; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; }
+.records .timeline[hidden] { display: none; }
+.records .play { font: inherit; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); cursor: pointer; grid-row: span 2; }
+.records .strip-svg { width: 100%; height: 40px; display: block; cursor: pointer; }
+.records .strip-svg .axis text { fill: var(--ink-3); font-size: 13px; }
+.records .strip-svg .axis line, .records .strip-svg .axis path { stroke: var(--coast); }
+.records .strip-svg .seg-label { fill: var(--surface); font-size: 12px; font-weight: 600; pointer-events: none; }
+.records .scrub { width: 100%; margin: 0; accent-color: var(--series-track); }
+.records .now { grid-column: 2; display: flex; justify-content: space-between; color: var(--ink-2); font-size: 14.5px; gap: 12px; }
+.records .now b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.records .follow { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; }
+.records .more-links { font-size: 15px; color: var(--ink-2); }
+.records .more-links a { color: inherit; }
+/* the maps' common classes */
+.records .land { fill: var(--land); stroke: var(--coast); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
+.records .graticule { fill: none; stroke: var(--sea-grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.records .place { fill: var(--ink-3); font-size: 13px; letter-spacing: 0.06em; text-transform: none; pointer-events: none; }
+.records .mk .ring { fill: none; stroke: var(--surface); stroke-width: 2; }
+.records .mk.future, .records .act.future { opacity: 0.3; }
+.records .mk.hover .shape { stroke: var(--ink); stroke-width: 2; }
+.records .who circle.halo { fill: var(--series-track); opacity: 0.25; }
+.records .who circle.core { fill: var(--ink); stroke: var(--surface); stroke-width: 2; }
+.records .who text { font-size: 14.5px; font-weight: 600; fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+
+/* a boat's patrols or a ship's diary (panels/patrols.js) */
+.p-patrols .port-label { fill: var(--ink-2); font-size: 13px; pointer-events: none; }
+.p-patrols .port-dot { fill: var(--surface); stroke: var(--ink-2); stroke-width: 1.5; }
+.p-patrols .track { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.p-patrols .track.other { stroke: var(--track-other); }
+.p-patrols .track.hot { stroke: var(--series-track); stroke-width: 3; }
+.p-patrols .track.ahead { stroke: var(--series-track); stroke-opacity: 0.28; }
+.p-patrols .track.past { stroke: var(--series-track); }
+.p-patrols .track-hit { fill: none; stroke: transparent; stroke-width: 18; vector-effect: non-scaling-stroke; cursor: pointer; }
+.p-patrols .mk { transition: opacity 120ms; }
+.p-patrols .mk.fix .shape { fill: var(--ink-2); }
+.p-patrols .mk.air .shape { fill: var(--series-air); }
+.p-patrols .mk.attack .shape { fill: var(--series-attack); }
+.p-patrols .mk.event .shape { fill: var(--ink); }
+.p-patrols .mk.ship .shape { fill: none; stroke: var(--ink-2); stroke-width: 1.6; }
+.p-patrols .mk.off .shape { fill: none; stroke: var(--ink-3); stroke-width: 1.4; stroke-dasharray: 2 2; }
+.p-patrols .sub-marker .core { fill: var(--ink); stroke: var(--surface); stroke-width: 1.5; stroke-linejoin: round; }
+.p-patrols .sub-marker circle.halo { fill: var(--series-track); opacity: 0.25; }
+.p-patrols .gauge { position: absolute; left: 10px; top: 10px; display: flex; gap: 10px; align-items: center; background: var(--surface);
+                    border: 1px solid var(--rule); border-radius: 3px; padding: 8px 12px 8px 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.10); max-width: 300px; pointer-events: none; }
+.p-patrols .compass .dial { fill: none; stroke: var(--coast); stroke-width: 1.5; }
+.p-patrols .compass .tick { stroke: var(--ink-3); stroke-width: 1; }
+.p-patrols .compass .tick.major { stroke: var(--ink-2); stroke-width: 1.5; }
+.p-patrols .compass .card { fill: var(--ink-3); font-size: 9.5px; font-weight: 600; background: none; border: 0; }
+.p-patrols .compass .needle { fill: var(--series-track); transition: transform 150ms linear; }
+.p-patrols .compass .hub { fill: var(--ink); }
+.p-patrols .g-label { color: var(--ink-3); font-size: 13px; }
+.p-patrols .g-value { font-size: 21.5px; font-weight: 600; line-height: 1.15; margin-bottom: 2px; font-variant-numeric: tabular-nums; }
+.p-patrols .g-leg { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+
+/* an Army unit's stations, actions and crossings (panels/army.js) */
+.p-army .border { fill: none; stroke: var(--coast); stroke-width: 0.6; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
+.p-army .road { fill: none; stroke: var(--ink-3); stroke-opacity: 0.45; stroke-width: 0.9; stroke-linejoin: round; vector-effect: non-scaling-stroke; pointer-events: none; }
+.p-army .landing .minor, .p-army .landing.minor { fill: var(--ink-3); fill-opacity: 0.7; stroke: none; }
+.p-army .landing .extensive, .p-army .landing.extensive { fill: none; stroke: var(--ink-3); stroke-width: 1.1; stroke-opacity: 0.8; }
+.p-army .city-label { fill: var(--ink-2); font-size: 13px; pointer-events: none; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+.p-army .city { pointer-events: none; }
+.p-army .city-dot { fill: var(--surface); stroke: var(--ink-3); stroke-width: 1.2; }
+.p-army .track { fill: none; stroke: var(--series-track); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.p-army .track.ahead { stroke-opacity: 0.22; }
+.p-army .track.assumed { stroke-dasharray: 5 4; }
+.p-army .track.assumed.rail { stroke-dasharray: 10 3 2 3; }
+.p-army .mk .ring { stroke-width: 2.5; }
+.p-army .mk .shape { fill: var(--series-track); }
+.p-army .mk.bn .shape { fill: var(--surface); stroke: var(--series-track); stroke-width: 2.5; }
+.p-army .act .shape { fill: var(--series-attack); stroke: var(--ink); stroke-width: 1.5; }
+.p-army .act .ring { fill: none; stroke: var(--surface); stroke-width: 3; }
+.p-army .act.casualty .shape { fill: var(--surface); stroke-width: 2.5; }
+.p-army .act.hover .shape { stroke-width: 3; }
+.p-army .strip-svg { height: 64px; }
+.p-army .row .typed { font-family: var(--typed); font-size: 16px; }
+.p-army .row.action .typed { font-family: inherit; }
+.p-army .row .ship { margin: 6px 0 4px; padding: 6px 9px; border-left: 3px solid var(--ink-3); background: var(--wash); border-radius: 0 3px 3px 0; font-size: 15px; color: var(--ink-2); display: grid; gap: 4px; }
+.p-army .row .ship.confirmed { border-left-color: var(--ink); }
+.p-army .row .ship.candidate, .p-army .row .ship.unknown, .p-army .row .ship.none { border-left-style: dashed; }
+.p-army .row .ship .ship-head { color: var(--ink); font-weight: 600; }
+.p-army .row .ship .ship-voyage { color: var(--ink-3); }
+.p-army .row .ship a { color: var(--ink-2); justify-self: start; }
+.p-army .travel { border-bottom: 1px solid var(--rule); padding: 8px 14px 10px; font-size: 15px; color: var(--ink-2); }
+.p-army .travel > summary { cursor: pointer; color: var(--ink); font-weight: 600; font-size: 16px; padding: 2px 0; }
+.p-army .travel .leg { margin: 8px 0 0; padding: 7px 9px; border-left: 3px solid var(--ink-3); background: var(--wash); border-radius: 0 3px 3px 0; display: grid; gap: 4px; cursor: pointer; }
+.p-army .travel .leg:focus-visible { outline: 2px solid var(--series-track); }
+.p-army .travel .leg.sea { border-left-color: var(--series-track); }
+.p-army .travel .leg-head { color: var(--ink); }
+.p-army .travel .leg-head b { font-weight: 600; }
+.p-army .travel .ship-line { display: flex; align-items: center; gap: 8px; color: var(--ink); }
+.p-army .travel .ship-line svg { flex: none; }
+.p-army .travel .ship-line .st { color: var(--ink-3); }
+.p-army .travel .sil { fill: var(--ink); }
+.p-army .travel .depth { display: block; width: 100%; height: 104px; overflow: visible; }
+.p-army .travel .depth .water { fill: var(--series-track); fill-opacity: 0.08; }
+.p-army .travel .depth .floor { fill: var(--seafloor); stroke: var(--seafloor-edge); stroke-width: 1; }
+.p-army .travel .depth .surface { stroke: var(--coast); stroke-width: 1; }
+.p-army .travel .depth text { fill: var(--ink-3); font-size: 12.5px; }
+.p-army .travel .depth .deep-label { fill: var(--ink-2); }
+.p-army .travel .depth .deep { fill: var(--ink); }
+.p-army .travel .depth .cross { stroke: var(--ink-2); stroke-width: 1; }
+.p-army .travel .cap { color: var(--ink-3); font-size: 14px; }
+.p-army .travel .others { margin-top: 8px; color: var(--ink-3); font-size: 14px; }
+
+/* a Seabee battalion and its parts (panels/seabees.js, with seabees-projects.js) */
+.p-seabees .regions { position: absolute; left: 10px; top: 10px; display: flex; flex-wrap: wrap; gap: 4px; max-width: 70%; }
+.p-seabees .regions button { font: 15.5px var(--serif); padding: 4px 9px; border-radius: 2px; cursor: pointer; background: var(--surface); color: var(--ink-2); border: 1px solid var(--rule); }
+.p-seabees .regions button:hover { background: var(--wash); }
+.p-seabees .sea-label { fill: var(--ink-3); font-size: 13px; letter-spacing: 0.03em; pointer-events: none; }
+.p-seabees .place-label { fill: var(--ink-2); font-size: 13px; pointer-events: none; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+.p-seabees .leg { fill: none; stroke: var(--series-track); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.p-seabees .leg.assumed { stroke-dasharray: 5 4; }
+.p-seabees .leg.ahead { stroke-opacity: 0.25; }
+.p-seabees .mk circle, .p-seabees .who circle { vector-effect: non-scaling-stroke; }
+.p-seabees .mk .shape { fill: var(--series-track); }
+.p-seabees .mk.assumed .shape { fill: var(--surface); stroke: var(--series-track); stroke-width: 2.5; }
+.p-seabees .who circle.core { fill: var(--series-track); }
+.p-seabees .strip-svg { height: 64px; }
+.p-seabees .wx { grid-column: 2; color: var(--ink-2); font-size: 14.5px; line-height: 1.45; min-height: 17px; }
+.p-seabees .wx b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.p-seabees .wx .src { color: var(--ink-3); }
+.p-seabees .wx a { color: var(--ink-3); }
+.p-seabees .row .ship { margin: 6px 0 4px; padding: 6px 9px; border-left: 3px solid var(--ink); background: var(--wash); border-radius: 0 3px 3px 0; font-size: 15px; color: var(--ink-2); display: grid; gap: 3px; }
+.p-seabees .row .ship.planned, .p-seabees .row .ship.ordered, .p-seabees .row .ship.named, .p-seabees .row .ship.partial { border-left-style: dashed; border-left-color: var(--ink-2); }
+.p-seabees .row .ship.not-recorded { border-left: 3px dashed var(--ink-3); }
+.p-seabees .row .ship .ship-head { color: var(--ink); font-weight: 600; }
+.p-seabees .row .ship .ship-status { color: var(--ink-3); font-size: 14.5px; }
+.p-seabees .row .ship .ship-voyage { color: var(--ink-3); }
+.p-seabees .row .links { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 2px; font-size: 14.5px; }
+.p-seabees .row .links a { color: var(--ink-2); }
+/* the projects (seabees-projects.js), as viz.css styled them, under the panel */
+.p-seabees .projects { margin-top: 4px; }
+.p-seabees .proj-head { max-width: 860px; }
+.p-seabees .proj-head h2 { font-size: 26px; font-weight: 400; font-style: normal; color: var(--ink); margin: 0 0 6px; padding: 0; }
+.p-seabees .proj-head p { color: var(--ink-2); margin: 0 0 8px; }
+.p-seabees .proj-key { font-size: 14.5px; display: flex; flex-wrap: wrap; gap: 4px 0; align-items: center; }
+.p-seabees .proj-key-t { color: var(--ink-3); font-style: italic; margin-right: 10px; }
+.p-seabees .proj-tabs { display: flex; flex-wrap: wrap; margin: 6px 0 14px; }
+.p-seabees .proj-tabs button { border-bottom: 1px solid var(--rule); }
+.p-seabees .proj-grid { max-width: 860px; }
+.p-seabees .proj-grid > article[hidden] { display: none; }
+.p-seabees .proj-film-play { margin: 8px 0; }
+.p-seabees .proj-film-play video, .p-seabees .proj-film-play iframe { display: block; width: 100%; aspect-ratio: 3 / 2; border: 0; background: #000; }
+.p-seabees .proj-film-play figcaption { font-size: 13.5px; color: var(--ink-2); margin-top: 3px; }
+.p-seabees .proj-film-off { font-size: 14px; color: var(--ink-2); font-style: italic; margin: 4px 0; }
+.p-seabees .proj { padding: 14px 16px 12px; scroll-margin-top: 12px; }
+.p-seabees .proj h3 { font-size: 21px; font-weight: 400; margin: 0 0 4px; line-height: 1.25; }
+.p-seabees .proj-n { display: inline-block; min-width: 22px; height: 22px; line-height: 21px; text-align: center; font-size: 14px; border-radius: 50%; border: 1px solid var(--ink-2); color: var(--ink-2); margin-right: 4px; vertical-align: 2px; }
+.p-seabees .proj h4 { font-size: 16.5px; font-style: italic; font-weight: 400; margin: 12px 0 4px; }
+.p-seabees .proj-ctx { color: var(--ink-3); font-size: 14.5px; }
+.p-seabees .proj-when { color: var(--ink-2); font-size: 14.5px; font-variant-numeric: tabular-nums; }
+.p-seabees .proj-locs { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.p-seabees .proj-locate { font: 15px var(--serif); padding: 3px 9px; border-radius: 2px; cursor: pointer; text-align: left; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); }
+.p-seabees .proj-locate:hover { background: var(--wash); }
+.p-seabees .proj-locate-sm { padding: 1px 6px; font-size: 14.5px; }
+.p-seabees .proj-pin { color: var(--series-track); }
+.p-seabees .proj-prec { color: var(--ink-3); font-style: italic; }
+.p-seabees .proj-built { margin: 6px 0 2px; padding-left: 20px; }
+.p-seabees .proj-built li { margin: 1px 0; }
+.p-seabees .proj-para { margin: 4px 0 8px; font-size: 16px; line-height: 1.45; }
+.p-seabees .proj-cite { color: var(--ink-3); font-size: 14px; margin-left: 2px; }
+.p-seabees .proj-cite::before { content: "["; }
+.p-seabees .proj-cite::after { content: "]"; }
+.p-seabees .proj-when .proj-cite { margin-left: 0; }
+.p-seabees .ev { display: inline-block; font-size: 13px; font-style: italic; line-height: 1.3; padding: 0 5px; border-radius: 2px; color: var(--ink); border: 1px solid var(--ink-2); vertical-align: 1px; }
+.p-seabees .ev-secondary { border-style: dashed; }
+.p-seabees .ev-inference { border-color: var(--ink-3); background: repeating-linear-gradient(135deg, var(--wash) 0 3px, transparent 3px 6px); }
+.p-seabees .ev-not-known { border-style: dotted; border-color: var(--ink-3); color: var(--ink-2); }
+.p-seabees .proj-also-list { margin: 6px 0 0; padding-left: 0; list-style: none; }
+.p-seabees .proj-also-list li { margin: 6px 0; font-size: 15.5px; color: var(--ink-2); }
+.p-seabees .proj-also-list b { color: var(--ink); font-weight: 600; }
+.p-seabees .proj-also-when { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.p-seabees .proj-film { margin: 6px 0 10px; padding: 6px 9px; border-left: 3px solid var(--ink-2); font-size: 15px; }
+.p-seabees .proj-film.context { border-left-style: dashed; border-left-color: var(--ink-3); }
+.p-seabees .proj-film-head { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.p-seabees .proj-film-head b { color: var(--ink); font-weight: 600; }
+.p-seabees .proj-film-rel { font-style: italic; }
+.p-seabees .proj-film-shows { margin: 3px 0; line-height: 1.4; }
+.p-seabees .proj-film-links { font-size: 14.5px; }
+.p-seabees .proj-film-links a { color: var(--ink-2); }
+.p-seabees .proj-film-note { font-size: 14.5px; color: var(--ink-2); margin-top: 3px; }
+.p-seabees .proj-film-note summary { cursor: pointer; color: var(--ink-3); font-style: italic; }
+.p-seabees .proj-film-note p { margin: 3px 0 0; line-height: 1.4; }
+.p-seabees .pmk-lead { stroke: var(--ink-2); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.p-seabees .pmk-box { fill: var(--surface); stroke: var(--ink); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.p-seabees .pmk-n { fill: var(--ink); font-weight: 600; pointer-events: none; }
+.p-seabees .pmk a { cursor: pointer; }
+.p-seabees .pmk a:hover .pmk-box, .p-seabees .pmk a:focus .pmk-box { fill: var(--wash); stroke-width: 2.5; }
+.p-seabees .pmk.future { opacity: 0.35; }
+
+/* a convoy's voyage and roster (panels/convoy.js), as convoys.html drew them */
+.p-convoy .voyage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 14px; }
+.p-convoy .vmap { width: 100%; height: 520px; display: block; overflow: hidden; }
+.p-convoy .roster { width: 100%; display: block; overflow: visible; }
+.p-convoy .route { fill: none; stroke: var(--ink-2); stroke-width: 2; }
+.p-convoy .route.assumed { stroke-dasharray: 1.5 4; stroke-linecap: round; }
+.p-convoy .route.straight { stroke-dasharray: 6 4; }
+.p-convoy .bar { stroke-width: 1.4; }
+.p-convoy .lbl { fill: var(--ink-2); font-size: 13.5px; }
+.p-convoy .lbl.b { fill: var(--ink); font-weight: 600; }
+.p-convoy .key { color: var(--ink-3); font-size: 14.5px; padding: 6px 14px 10px; margin: 0; }
+.p-convoy .story { padding: 0 14px 14px; }
+
+/* the subjects index (subjects.html): a table per kind; the convoys' ledger with its symbols */
+.index h2 { font-size: 24px; font-weight: 400; font-style: normal; color: var(--ink); margin: 24px 0 6px; padding: 0; }
+.index h3 { font-size: 17px; font-weight: 400; font-style: italic; color: var(--ink-2); margin: 14px 0 4px; }
+.ledger { width: 100%; border-collapse: collapse; font-size: 15.5px; }
+.ledger th { text-align: left; font-weight: 400; font-style: italic; color: var(--ink-3); padding: 6px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+.ledger td { padding: 7px 10px; border-bottom: 1px solid var(--rule); vertical-align: baseline; }
+.ledger tbody tr:hover { background: var(--wash); }
+.ledger .nm { font-weight: 600; white-space: nowrap; }
+.ledger .nm a { text-decoration: none; }
+.ledger .nm a:hover { text-decoration: underline; }
+.ledger .num { text-align: right; font-variant-numeric: tabular-nums; }
+.ledger .dot { font-size: 17px; text-align: center; }
+.ledger .plain { font-size: 15px; }
+.ledger .st { color: var(--ink-3); font-size: 14.5px; white-space: nowrap; }
+.ledger .pn a { display: inline-block; min-width: 1.4em; }
+.ledger-wrap { overflow-x: auto; padding: 0 4px 6px; }
+.index .key { color: var(--ink-3); font-size: 14.5px; padding: 6px 14px 10px; margin: 0; }
+
+/* the shared tooltip and scan viewer, as the four apps had them (viz.css) */
+dialog.scan { border: 1px solid var(--rule); border-radius: 2px; padding: 0; width: min(1000px, 94vw); max-height: 92vh; background: var(--surface); color: var(--ink); }
+dialog.scan::backdrop { background: rgba(0,0,0,0.55); }
+.dlg-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--rule); position: sticky; top: 0; background: var(--surface); }
+.dlg-head a { color: var(--ink-2); font-size: 15.5px; }
+.dlg-head button { font: inherit; border: 1px solid var(--rule); background: none; color: var(--ink); border-radius: 3px; padding: 4px 10px; cursor: pointer; }
+.dlg-head .fixnote { color: var(--ink-3); font-size: 14.5px; font-style: italic; }
+.dlg-body { overflow: auto; max-height: calc(92vh - 52px); }
+.dlg-body img { display: block; width: 100%; cursor: zoom-in; }
+.dlg-body img.full { width: auto; max-width: none; cursor: zoom-out; }
+.scan-missing { padding: 24px; color: var(--ink-2); }
+.scan-missing .fixnote { margin-top: 8px; color: var(--ink-3); font-size: 14.5px; font-style: italic; }
+
+@media (pointer: coarse) { .records .zoom-btns button { width: 40px; height: 40px; } .records .seg button { padding: 9px 14px; } }
+@media (max-width: 900px) {
+  .strip, .strip.few { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: none; }
+  .records .main { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .records .map-wrap { height: 60vh; }
+  .records .side { max-height: 60vh; }
+  .p-convoy .voyage { grid-template-columns: minmax(0, 1fr); }
+  .p-convoy .vmap { height: 420px; }
+}
+@media (max-width: 600px) {
+  .strip, .strip.few { grid-template-columns: minmax(0, 1fr); }
+  .stage { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .org { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .org .d { white-space: normal; }
+  .records .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; min-height: 0; }
+  .records .tile { min-width: 0; margin: 0; padding: 6px 0 0; border-right: 0; border-top: 1px solid var(--rule); }
+  .records .tile .value { font-size: 22px; }
+  .records .check { margin-left: 0; }
+  .records .side-head { flex-wrap: wrap; }
+  .records .hint { display: none; }
+  .records .map-wrap { height: 62vh; }
+  .p-patrols .gauge { left: 8px; top: 8px; gap: 6px; padding: 4px 8px 4px 4px; max-width: calc(100% - 70px); }
+  .p-patrols .compass { width: 46px; height: 46px; }
+  .p-patrols .g-label { font-size: 12px; }
+  .p-patrols .g-value { font-size: 16.5px; margin-bottom: 0; }
+  .p-patrols .g-leg { display: none; }
+  .p-seabees .legend { gap: 2px 12px; font-size: 13.5px; padding: 8px 10px 4px; }
+  .p-seabees .proj { padding: 12px 12px 10px; }
+  dialog.scan { width: 100vw; max-width: 100vw; max-height: 100dvh; }
+  .dlg-body { max-height: calc(100dvh - 52px); }
+  .wk table { display: block; overflow-x: auto; }
+}

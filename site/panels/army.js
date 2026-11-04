@@ -1,7 +1,46 @@
-// Army units' stations, 1940–1945: where each battery, company, detachment and division was,
-// from its own records. Renders records/army/army.json, which tools/build_army.py builds from
-// the hand-transcribed CSVs in records/army/ (each station as typed, placed at its town, offset
-// or grid reference, with its page).
+// An Army unit's stations, actions and crossings on the records depth of subject.html (guides/OPERATIONS-VIEWER.md 5.2,
+// 7.2): the map with the date strip and playback, the list of stations as typed with their pages, the crossings with the
+// ship, her silhouette and the seafloor under the drawn line, as army.html drew them until phase 6 folded the four
+// side-list apps into the subject page as panels. Renders records/army/army.json, which tools/build_army.py builds from
+// the hand-transcribed CSVs in records/army/ (each station as typed, placed at its town, offset or grid reference, with
+// its page). The scan viewer (#scan) and the tooltip (#tip) are the page's, shared by every panel; one panel mounts at a
+// time, so its controls keep their ids.
+//
+//   ArmyPanel.mount(host, S, { t, onState })
+//     host      the element the panel fills (the page gives it class "records p-army")
+//     S         the subject from records/subjects.json (an Army unit)
+//     t         an ISO day to open on (the address's &t=)
+//     onState   called with { t } as the reader moves, so the page can keep the address current
+window.ArmyPanel = { mount(host, S, opts = {}) {
+  host.innerHTML = `
+  <div class="filters">
+    <label class="check" id="acts-check"><input type="checkbox" id="acts-toggle" checked> Show engagements <span id="acts-count" style="color:var(--ink-3)"></span></label>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="main">
+    <div class="card map-card">
+      <div class="legend" id="legend"></div>
+      <div class="map-wrap">
+        <svg class="map" role="img" aria-label="Map of the unit's stations"></svg>
+        <div class="zoom-btns">
+          <button id="zin" aria-label="Zoom in">+</button>
+          <button id="zout" aria-label="Zoom out">−</button>
+          <button id="zreset" aria-label="Reset view">⟲</button>
+        </div>
+        <div class="hint" id="hint">Scroll or pinch to zoom · drag to pan · modern borders</div>
+      </div>
+      <div class="timeline">
+        <button class="play" id="play" aria-label="Play">▶</button>
+        <svg class="strip-svg" id="strip" aria-label="Timeline of the unit's stations, click to jump"></svg>
+        <input type="range" class="scrub" id="scrub" min="0" max="1000" value="1000" aria-label="Date">
+        <div class="now"><span id="now-date"></span><span id="now-where"></span></div>
+      </div>
+    </div>
+    <div class="card side">
+      <div class="side-head"><h2 id="side-title">Stations</h2></div>
+      <div class="list" id="list"></div>
+    </div>
+  </div>`;
 
 let RULER = null;   // scalebar.js
 const DAY = 864e5;
@@ -77,7 +116,7 @@ const TIER_PX_PER_DEG = { 0: 0, 1: 0, 2: 35, 3: 80 };   // zoom needed before a 
 const state = { unit: null, t: null, playing: false, k: 1, acts: true };
 let DATA, LAND, BORDERS, ROADS, LANDINGS, proj, path, zoom, hitPoints = [];
 
-const svg = d3.select("#map");
+const svg = d3.select(host.querySelector("svg.map"));
 const tip = document.getElementById("tip");
 const fmtDay = d3.utcFormat("%-d %b %Y");
 const fmtMonth = d3.utcFormat("%b %Y");
@@ -98,11 +137,10 @@ Promise.all([
   BORDERS = topojson.mesh(world, world.objects.countries, (a, b) => a !== b);
   DATA = prepare(data, seafloor);
   buildControls();
-  new ResizeObserver(() => render()).observe(document.querySelector(".map-wrap"));
-  // deep link: army.html?unit=106aaa-d&t=1944-08-15
-  const q = new URLSearchParams(location.search);
-  select(DATA.units.some(u => u.unit === q.get("unit")) ? q.get("unit") : DATA.units.find(u => u.overseas).unit, { keepUrl: true });
-  if (q.get("t")) setTime(parseDay(q.get("t")));
+  new ResizeObserver(() => render()).observe(host.querySelector(".map-wrap"));
+  // the address: subject.html?s=106aaa-d&t=1944-08-15&view=records opens on that day
+  select(S.id);
+  if (opts.t) setTime(parseDay(opts.t.slice(0, 10)));
 });
 
 // A leg is a sea crossing when routes.csv says `by: sea`, when a ship (ships.csv) is on a station row from
@@ -182,14 +220,6 @@ const span = () => [chosen().t0 - 2 * DAY, chosen().t1 + 2 * DAY];
 
 // ── Controls ────────────────────────────────────────────────────────────────
 function buildControls() {
-  const pick = document.getElementById("unit-pick");
-  [["Overseas", true], ["In the United States only", false]].forEach(([label, overseas]) => {
-    const grp = el("optgroup"); grp.label = label;
-    DATA.units.filter(u => u.overseas === overseas).forEach(u =>
-      grp.append(Object.assign(el("option", null, `${u.name} (${new Date(u.t0).getUTCFullYear()}–${new Date(u.t1).getUTCFullYear()})`), { value: u.unit })));
-    if (grp.children.length) pick.append(grp);
-  });
-  pick.addEventListener("change", () => select(pick.value));
   const box = document.getElementById("acts-toggle");
   box.addEventListener("change", () => { state.acts = box.checked; select(state.unit); });
   document.getElementById("play").addEventListener("click", togglePlay);
@@ -205,15 +235,13 @@ function buildControls() {
   document.getElementById("scan-img").addEventListener("click", e => e.target.classList.toggle("full"));
 }
 
-function select(unit, { keepUrl = false } = {}) {
+function select(unit) {
   stop();
   state.unit = unit;
-  document.getElementById("unit-pick").value = unit;
   const n = chosen().acts.length;
   document.getElementById("acts-check").hidden = n === 0;
   document.getElementById("acts-count").textContent = `(${n})`;
   state.t = span()[1];   // open at the end, every track drawn
-  if (!keepUrl) history.replaceState(null, "", `?unit=${unit}`);
   renderStats();
   renderLegend();
   renderSide();
@@ -223,7 +251,7 @@ function select(unit, { keepUrl = false } = {}) {
 // ── Map ─────────────────────────────────────────────────────────────────────
 function render() {
   if (!DATA) return;
-  const box = document.querySelector(".map-wrap").getBoundingClientRect();
+  const box = host.querySelector(".map-wrap").getBoundingClientRect();
   const W = Math.max(300, box.width), H = Math.max(300, box.height);
   svg.attr("viewBox", `0 0 ${W} ${H}`);
   svg.selectAll("*").remove();
@@ -416,6 +444,7 @@ function setTime(t, { fromList = false } = {}) {
   document.getElementById("now-where").textContent = rowAt(u, state.t)?.station ?? "";
   d3.select("#strip .playhead").attr("x1", stripX(state.t)).attr("x2", stripX(state.t));
   highlightRows(!fromList);
+  if (!state.playing) opts.onState?.({ t: state.t >= u.t1 ? null : new Date(state.t).toISOString().slice(0, 10) });
 }
 
 function togglePlay() { state.playing ? stop() : play(); }
@@ -879,3 +908,5 @@ function el(tag, cls, text) {
   if (text !== undefined) e.textContent = text;
   return e;
 }
+
+} };

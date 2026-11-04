@@ -331,6 +331,10 @@ def deep_ids(L):
     out = {}
     try:
         out[r"engagement\.html\?e="] = ({x["id"] for x in load("engagements/index.json")}, "engagement")
+        # the subject pages (subject.html?s=<id or alias>, from the registry); the four old addresses still arrive, by
+        # redirect, and are checked the same way while the redirect pages stand
+        subjects = load("subjects.json")
+        out[r"subject\.html\?s="] = ({s["id"] for s in subjects} | {s["alias"] for s in subjects}, "subject")
         out[r"convoys\.html\?c="] = ({c["id"] for c in load("convoys/convoys.json")["convoys"]}, "convoy")
         ships = load("ships.json")
         out[r"patrols\.html\?ship="] = ({s["key"] for s in ships} | {s["alias"] for s in ships}, "ship")
@@ -353,23 +357,24 @@ def deep_links(L, ids, files):
                     yield p, line_of(t, m.group(0)), f"links to the {what} {v!r}, which doesn't exist", v
 
 
-@rule("REF002", "a deep link to an engagement, convoy, ship, unit or project that doesn't exist")
+@rule("REF002", "a deep link to an engagement, subject, convoy, ship, unit or project that doesn't exist")
 def ref_deep(L):
-    """`engagement.html?e=…`, `convoys.html?c=…`, `patrols.html?ship=…`, `army.html?unit=…`, `seabees.html?unit=…` and
-    `#proj-…` in a page, a script or a
-    record must name one that exists: the pages fall back to a default without a word, so a broken link shows the wrong
-    thing rather than an error. Ids come from the generated indexes (engagements/index.json, convoys.json, ships.json,
-    army.json, seabees.json): rebuild them first."""
+    """`engagement.html?e=…`, `subject.html?s=…` (a boat, ship, unit, battalion, convoy or command, by id or alias) and,
+    while their redirect pages stand, `convoys.html?c=…`, `patrols.html?ship=…`, `army.html?unit=…`, `seabees.html?unit=…`
+    and `#proj-…` in a page, a script or a record must name one that exists: the pages fall back to a default without a
+    word, so a broken link shows the wrong thing rather than an error. Ids come from the generated indexes
+    (engagements/index.json, subjects.json, convoys.json, ships.json, army.json, seabees.json): rebuild them first."""
     files = [p for p in L.files(".html", ".js", ".md", ".yml") if ".playwright-mcp" not in p.parts]
     yield from deep_links(L, deep_ids(L) | L.extra_ids, files)
 
 
-@rule("REF003", "a position whose source the patrols page has no class for")
+@rule("REF003", "a position whose source the patrols panel has no class for")
 def ref_position_kind(L):
-    """patrols.js draws each position by its `source` (CLASS: bt, noon, diary, attack...). A source it doesn't know
-    breaks the whole page (`SHAPE[undefined].type`): ESSEX's and CABOT's `action` rows did, unseen, until the smoke
-    test. Add the kind to CLASS and BASE_LABEL in site/patrols.js, or use one it knows."""
-    js = KIT / "site/patrols.js"
+    """The patrols panel (site/panels/patrols.js, the subject page's records depth for a boat or a ship) draws each
+    position by its `source` (CLASS: bt, noon, diary, attack...). A source it doesn't know breaks the whole panel
+    (`SHAPE[undefined].type`): ESSEX's and CABOT's `action` rows did, unseen, until the smoke test. Add the kind to CLASS
+    and BASE_LABEL in site/panels/patrols.js, or use one it knows."""
+    js = KIT / "site/panels/patrols.js"
     m = re.search(r"const CLASS = \{(.*?)\};", js.read_text(encoding="utf-8"), re.S) if js.exists() else None
     if not m:
         return
@@ -405,8 +410,8 @@ def orf_assets(L):
     for p in pages(L):
         for m in LINK.finditer(L.text(p)):
             loaded.add((p.parent / m.group(1)).resolve())
-    js = "\n".join(L.text(p) for p in site.glob("*.js"))
-    for p in sorted([*site.glob("*.js"), *site.glob("*.css"), *site.glob("fonts/*.css")]):
+    js = "\n".join(L.text(p) for p in [*site.glob("*.js"), *site.glob("panels/*.js")])
+    for p in sorted([*site.glob("*.js"), *site.glob("panels/*.js"), *site.glob("*.css"), *site.glob("fonts/*.css")]):
         if p.name.endswith(".test.js") or p.resolve() in loaded:
             continue
         if re.search(rf"""["'/]{re.escape(p.name)}["'?]""", js) or re.search(rf"@import[^;]*{re.escape(p.name)}",
@@ -416,19 +421,31 @@ def orf_assets(L):
 
 
 REDIRECT = re.compile(r"""<meta\s+http-equiv=["']refresh["']""", re.I)
+# a redirect that must map its parameters (patrols.html?ship=X&patrol=N -> subject.html?s=X&period=N): one script, which
+# only rewrites location
+REDIRECT_SCRIPT = re.compile(r"<script>(?:(?!</script>).)*location\.replace\((?:(?!</script>).)*</script>", re.S)
+
+
+def is_redirect(text):
+    """A page kept at an old address whose whole job is to send the reader on: a meta refresh with no script, or a page
+    whose only script rewrites location (and loads nothing else)."""
+    if REDIRECT.search(text) and "<script" not in text:
+        return True
+    return text.count("<script") == 1 and bool(REDIRECT_SCRIPT.search(text)) and "<link" not in text and "<svg" not in text
 
 
 @rule("ORF002", "a page in site/ that no other page links to")
 def orf_pages(L):
     """A page nothing links to can only be found by its address. index.html is exempt, and so is a redirect (a page
-    that is only a `<meta http-equiv="refresh">` to another, kept at an old address so links from outside still
-    arrive): being found by its address is its whole job."""
+    that is only a `<meta http-equiv="refresh">` to another, or whose only script rewrites location to carry the old
+    address's parameters across, kept at an old address so links from outside still arrive): being found by its address
+    is its whole job."""
     site = KIT / "site"
     for p in sorted(site.glob("*.html")):
         if p.name == "index.html":
             continue
         t = L.text(p)
-        if REDIRECT.search(t) and "<script" not in t:
+        if is_redirect(t):
             continue
         others = "\n".join(L.text(q) for q in [*site.glob("*.html"), *site.glob("*.js")] if q != p)
         if not re.search(rf"""["'/]{re.escape(p.name)}["'?#]""", others):

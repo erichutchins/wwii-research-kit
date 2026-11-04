@@ -117,7 +117,8 @@ prek run --all-files [--hook-stage pre-push]  # the hooks by hand
 After editing any CSV: `check_track.py all --geojson`, `build_dives.py`, `check_sources.py`; after `records/army/`,
 `build_army.py` (and `army_seafloor.py` if a crossing changed); after `records/seabees/`, `build_seabees.py`; after
 `records/operations/`, `build_operations.py`; after an engagement, a convoy, a patrol's japanese.yml or claims.yml, or
-any track, `build_engagement.py`; after `reference/glossary.yml` or `records/SOURCES.yml`, `build_glossary.py`.
+any track, `build_engagement.py`; after `reference/glossary.yml` or `records/SOURCES.yml`, `build_glossary.py`; after any of
+those, a `plain` line, `army/units.yml`, `seabees/units.yml`, `army/leads.yml`, `relations.csv` or `parts.csv`, `build_subjects.py`.
 
 ## Pages
 
@@ -142,13 +143,13 @@ Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page
   and dark; `site/engage.css`, `site/home.css` and the two story pages set the same names to their own checked values,
   so a shared script writes `var(--ink)` and gets the page's, never a fallback chain. The three categorical
   colours were checked for colour-blind separation: don't add hues without checking again. The engagement pages
-  (`engagement.html`, `convoys.html`, `lanes.html`) share `site/engage.css`, whose boat colours were checked with the
+  (`engagement.html`, `subject.html`, `lanes.html`) share `site/engage.css`, whose boat colours were checked with the
   hit red, every pair, both modes; their encodings (solid, outlined, hatched, dotted; red only for hits) are in
   `guides/ENGAGEMENTS.md`, and their computation is `site/engage.js`, never redone in a page. The engagement page's
   observer view (`site/observer.js`) draws each attack from its sheet with `engage.js`'s `attackSheet` and `attackAt`;
   beside its periscope, in tabs, the Torpedo Data Computer's faces (`site/tdc.js`, drawing only, the values `tdcAt`'s).
-- Verify changes in a browser: light and dark mode, every ship on `patrols.html`, every engagement on
-  `engagement.html`, no console errors.
+- Verify changes in a browser: light and dark mode, every subject on `subject.html` (a boat, a ship, a unit, a
+  battalion, a convoy, at its three depths), every engagement on `engagement.html`, no console errors.
 
 ## Don't
 

@@ -1,4 +1,4 @@
-// The glossary: explains the records' abbreviations and terms, and links the ships, without crowding the page.
+// The glossary: explains the records' abbreviations and terms, and links the ships (to subject.html), without crowding the page.
 // Reads reference/glossary.json (built by tools/build_glossary.py from the hand-edited glossary.yml, whose header says
 // how) and records/ships.json. Only the first use of a term on the page is marked, including what the page's script draws later (lists, panels, steps): a dotted underline, no
 // colour. Pointing at it, focusing it or tapping it opens a small card with the explanation, its source (linked) and,
@@ -55,15 +55,15 @@
       if (t.unless?.length) entries.push({ skip: true, forms: t.unless });
     }
     const bare = new Set(g.ships?.bare || []);
-    const here = new URLSearchParams(location.search).get("ship");
+    const here = new URLSearchParams(location.search).get("s");   // the subject page's own ship isn't linked to itself
     for (const s of ships) {
       const forms = [`USS ${s.name}`, `${s.name} (${s.hull})`];
       if (s.kind === "submarine" || bare.has(s.name)) forms.push(s.name);
       const self = here && [s.alias, s.key, s.name.toLowerCase()].includes(here.toLowerCase());
       entries.push({ title: `USS ${s.name} (${s.hull})`,
         says: `${s.class ? s.class + "-class " : ""}${s.kind}.`,
-        see: self ? null : new URL(`site/patrols.html?ship=${encodeURIComponent(s.alias)}`, KIT).href,
-        seeText: s.kind === "submarine" ? "Her war patrols on the map" : "Her war diary on the map", forms });
+        see: self ? null : new URL(`site/subject.html?s=${encodeURIComponent(s.alias)}`, KIT).href,
+        seeText: s.kind === "submarine" ? "Her patrols, on her own page" : "Her war diary, on her own page", forms });
     }
     // longest forms first, so "USS Haynsworth" wins over "Haynsworth" and "AAA" over "AA"
     const forms = entries.flatMap(e => e.forms.map(f => ({ f, e }))).sort((a, b) => b.f.length - a.f.length);

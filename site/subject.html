@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Subjects</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="entry.css">
+<link rel="stylesheet" href="chapter.css">
+<link rel="stylesheet" href="engage.css">
+<link rel="stylesheet" href="subject.css">
+<!-- One page for every subject the records follow (subject.html?s=<id>&view=account|records|working; records/subjects.json,
+     built by tools/build_subjects.py), at three depths (guides/OPERATIONS-VIEWER.md 4, 5.2, 7.2), chosen by the address and
+     the switch under the breadcrumb. The account (the default): the plain line, the designation, what it was, the lede
+     from the record, its organizations, the strip map, the coverage bar, the stage rows and three doors. The records: the
+     subject's own map with the date strip and its entries, as a panel by its kind (site/panels/*.js), with one scan
+     viewer and one tooltip for every panel. The working: the placement table, the speed check, the relations, the leads,
+     the coverage by month. subject.js fills the page. -->
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <nav class="nav" aria-label="The kit" data-nav></nav>
+    <script src="nav.js"></script>
+    <nav class="crumb" id="crumb" aria-label="Where this is among the subjects" hidden></nav>
+    <nav class="depths" id="depths" aria-label="How deep to read"></nav>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 id="title">Subjects</h1>
+    <p class="plain" id="plain"></p>
+    <p class="lede" id="lede"></p>
+  </header>
+
+  <div class="account" id="account" hidden></div>
+  <p class="cap" id="cap" hidden style="color:var(--ink-3);font-size:14.5px;margin:0"></p>
+  <div class="doors" id="doors" hidden></div>
+
+  <div class="records" id="records" hidden></div>
+
+  <div class="working" id="working" hidden></div>
+</div>
+<div id="tip" role="tooltip" hidden></div>
+
+<dialog id="scan" class="scan">
+  <div class="dlg-head">
+    <div><b id="scan-title"></b> <a id="scan-link" target="_blank" rel="noopener">Open in National Archives catalog ↗</a>
+      <div class="fixnote" id="scan-credit" hidden>Courtesy of 45th Infantry Division Museum and the Metropolitan Library System of Oklahoma County</div></div>
+    <button id="scan-close">Close</button>
+  </div>
+  <div class="dlg-body"><img id="scan-img" alt=""><div class="scan-missing" id="scan-missing" hidden></div></div>
+</dialog>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="silhouettes.js"></script>
+<script src="scalebar.js"></script>
+<script src="links.js"></script>
+<script src="engage.js"></script>
+<script src="engage-views.js"></script>
+<script src="chapter.js"></script>
+<script src="seabees-projects.js"></script>
+<script src="panels/patrols.js"></script>
+<script src="panels/army.js"></script>
+<script src="panels/seabees.js"></script>
+<script src="panels/convoy.js"></script>
+<script src="subject.js"></script>
+<script src="glossary.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>

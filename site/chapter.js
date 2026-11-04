@@ -100,7 +100,7 @@ const Chapter = (() => {
     });
     // each unit's own entries (army/actions.csv: a raid fired on, a shelling, a man lost), the steps between engagements
     const actions = Object.fromEntries(army.units.map(u => [u.unit, (u.actions || []).filter(a => a.date).map(a => ({ ...a, t: day(a.date) }))]));
-    return { stages, engagements, home, actions };
+    return { stages, engagements, home, actions, stageOf };   // stageOf: a [lon, lat] -> its stage, for the subject pages' strips
   }
 
   // an engagement's units, as a short line: "Battery F, Battery G (inferred)"
@@ -115,10 +115,10 @@ const Chapter = (() => {
     const spine = s.items.map(it => it.campaign
       ? `<li class="camp"><span class="dates">${opDates(it.campaign)}</span> <span class="name">${opName(it.campaign.op)}</span>${it.campaign.engagements.length ? `<ul>${it.campaign.engagements.map(eng).join("")}</ul>` : ""}</li>`
       : eng(it.engagement)).join("");
-    const units = s.runs.map(r => `<tr><td class="when">${span(r.from, r.to)}</td><td class="what"><a href="army.html?unit=${r.u.unit}&amp;t=${iso(r.from)}">${esc(r.u.name)}</a></td><td class="state">${r.n} station${r.n === 1 ? "" : "s"} here</td></tr>`).join("");
+    const units = s.runs.map(r => `<tr><td class="when">${span(r.from, r.to)}</td><td class="what"><a href="subject.html?s=${r.u.unit}&amp;t=${iso(r.from)}&amp;view=records">${esc(r.u.name)}</a></td><td class="state">${r.n} station${r.n === 1 ? "" : "s"} here</td></tr>`).join("");
     return `
       <h3><span class="n">${s.n}</span> ${s.name}${s.runs.length ? ` <span class="when">${span(s.t0, s.t1)}</span>` : ""}</h3>
-      <p class="where">${esc(s.where[0].toUpperCase() + s.where.slice(1))}.${s.runs.length ? ` <a href="army.html?unit=${s.runs[0].u.unit}&amp;t=${iso(s.t0)}">The Army map on ${fmt(s.t0)}</a>, the first station here.` : ""}</p>
+      <p class="where">${esc(s.where[0].toUpperCase() + s.where.slice(1))}.${s.runs.length ? ` <a href="subject.html?s=${s.runs[0].u.unit}&amp;t=${iso(s.t0)}&amp;view=records">The Army map on ${fmt(s.t0)}</a>, the first station here.` : ""}</p>
       ${spine ? `<ol class="spine">${spine}</ol>` : `<p class="none">No campaign or engagement in the records here yet.</p>`}
       ${s.reading ? `<p class="reading"><i>Reading the records here:</i> ${s.reading.map(([h, t, w]) => `<a href="${h}">${esc(t)}</a>, ${esc(w)}`).join("; ")}</p>` : ""}
       ${units ? `<div class="also"><table><tbody>${units}</tbody></table></div>` : ""}`;
@@ -133,16 +133,16 @@ const Chapter = (() => {
     const step = (x, rel) => x ? `<a rel="${rel}" href="${x.href}">${rel === "prev" ? "← " : ""}${esc(x.short || x.title)}${rel === "next" ? " →" : ""}</a>`
       : `<span class="none">${rel === "prev" ? "← the first" : "the last →"}</span>`;
     // a unit's step before or after this engagement: its nearest other engagement, or else its nearest entry in the
-    // records (army/actions.csv), which opens the Army map on that day
+    // records (army/actions.csv), which opens the unit's own page on that day
     const ofUnit = (u, dir) => {
       const engs = C.engagements.filter(x => x !== e && x.units.some(v => v.unit === u.unit))
         .map(x => ({ t: dir < 0 ? x.t1 : x.t0, html: `<a href="${x.href}">${esc(x.short || x.title)}</a>` }));
-      const acts = (C.actions[u.unit] || []).map(a => ({ t: a.t, html: `<a href="army.html?unit=${encodeURIComponent(u.unit)}&amp;t=${a.date}" title="${esc(a.text)}">${fmt(a.t)}</a>: <span class="said">${esc(a.text.length > 64 ? a.text.slice(0, 62).replace(/\s+\S*$/, "") + " …" : a.text)}</span>` }));
+      const acts = (C.actions[u.unit] || []).map(a => ({ t: a.t, html: `<a href="subject.html?s=${encodeURIComponent(u.unit)}&amp;t=${a.date}&amp;view=records" title="${esc(a.text)}">${fmt(a.t)}</a>: <span class="said">${esc(a.text.length > 64 ? a.text.slice(0, 62).replace(/\s+\S*$/, "") + " …" : a.text)}</span>` }));
       const xs = [...engs, ...acts].filter(x => dir < 0 ? x.t < e.t0 : x.t > e.t1).sort((a, b) => dir * (a.t - b.t));
       return xs.length ? `${dir < 0 ? "← " : ""}${xs[0].html}${dir > 0 ? " →" : ""}` : `<span class="none">${dir < 0 ? "nothing before in the records" : "nothing after in the records"}</span>`;
     };
     const units = e.units.map(u => `<tr><td class="u">${esc(u.name)}${u.basis !== "reported" ? ` <i title="not named by this engagement's own entries">(${esc(u.basis)})</i>` : ""}</td>
-      <td>${ofUnit(u, -1)}</td><td>${ofUnit(u, 1)}</td><td><a href="army.html?unit=${encodeURIComponent(u.unit)}&amp;t=${iso(e.t0)}">its stations on the Army map</a></td></tr>`).join("");
+      <td>${ofUnit(u, -1)}</td><td>${ofUnit(u, 1)}</td><td><a href="subject.html?s=${encodeURIComponent(u.unit)}&amp;t=${iso(e.t0)}&amp;view=records">its stations on its own page</a></td></tr>`).join("");
     el.innerHTML = `
       <div class="trail"><a href="index.html#europe">Algiers to Germany</a> / <a href="index.html#stage-${s.id}">${s.n} ${s.name}</a>${e.campaign ? ` / ${esc(e.campaign.op.short || e.campaign.op.name)} <span class="dates">${opDates(e.campaign)}</span>` : ""} / <span aria-current="page">${esc(e.short || e.title)}</span></div>
       <div class="seq">${step(prev, "prev")}<span class="what">in date order, every engagement in the chapter</span>${step(next, "next")}</div>

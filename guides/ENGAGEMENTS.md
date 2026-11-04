@@ -5,7 +5,7 @@ strike, an antiaircraft battery against a night raid. Each side kept its own rec
 clock. The kit keeps each record as it is and lets them meet through ids, times and places, never by copying one into
 the other. Every engagement is one folder, `records/engagements/<id>/`, and one page, `site/engagement.html?e=<id>`.
 
-The convoys the boats met have their own records (`records/convoys/<id>/convoy.md`) and pages: `site/convoys.html`
+The convoys the boats met have their own records (`records/convoys/<id>/convoy.md`) and pages: `site/subject.html?s=<id>` (the ledger of every convoy is `site/subjects.html`)
 (the ledger, and each convoy's voyage and ships) and `site/lanes.html` (the lanes, month by month, and a voyage as a
 timetable). Haynsworth and Algiers are also told as stories: their `engagement.md` carries the account in steps
 (`[[step:]]` links that set the clock and the map), and their figures are panels of the working (`site/panels/`).
@@ -21,7 +21,7 @@ pages read. The fields aren't repeated here: when one is in question, read the R
 | Scale | Question | Where |
 |---|---|---|
 | Minutes and miles | What happened in the attack? | `engagement.html`: the map with a time slider, one lane per side, the two-sided log |
-| Days and hundreds of miles | What was the convoy doing, and how did the boats close in? | `engagement.html` "Closing in"; `convoys.html`: the voyage map and the ships against the days |
+| Days and hundreds of miles | What was the convoy doing, and how did the boats close in? | `engagement.html` "Closing in"; the convoy's subject page: the voyage map and the ships against the days |
 | Months and an ocean | Where was the war at sea fought, and how did it move? | `lanes.html`: the network, month by month, a voyage's timetable |
 
 ## The rules this rests on

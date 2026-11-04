@@ -15,7 +15,7 @@ convoy.md. Fields: records/README.md ("An engagement", "A convoy"); the model: g
 
 Writes records/engagements/<id>/engagement.json for site/engagement.html?e=<id>, records/engagements/index.json
 (every engagement, for the pickers and the front page) and records/convoys/convoys.json (every convoy with its ships,
-the engagements that met it and where the boats saw it, for site/convoys.html).
+the engagements that met it and where the boats saw it, for the convoys' subject pages and subjects.html's ledger).
 
   uv run tools/build_engagement.py           check everything, then write
   uv run tools/build_engagement.py check     check only; exits 1 on a problem or if a JSON file is out of date (CI)
@@ -93,7 +93,7 @@ EVENT = {"at", "placed", "of", "actor", "kind", "to", "from", "title", "words", 
 CLAIM = {"question", "answer", "weight", "source", "ref", "note"}
 SHIP = {"ship", "role", "number", "from", "to", "cargo", "cargo_t", "cargo_for", "fate", "source", "page", "basis",
         "note", "sil", "sil_basis"}
-CONVOY_FM = {"convoy", "name_ja", "from", "to", "via", "sailed", "arrived", "size", "cargo", "attacked_by", "sources",
+CONVOY_FM = {"convoy", "name_ja", "plain", "from", "to", "via", "sailed", "arrived", "size", "cargo", "attacked_by", "sources",
              "route", "voyage", "ships"}
 STOP = {"at", "place", "event", "words", "source", "basis", "approx"}
 LANES = records.load_yaml(records.REFERENCE / "lanes" / "lanes.yml")["nodes"]
@@ -789,7 +789,7 @@ class Build:
 
 
 def convoy_summary(c, engs):
-    """A convoy for site/convoys.html: its record, the engagements that met it, and where the boats saw it."""
+    """A convoy for its subject page and the ledger: its record, the engagements that met it, and where the boats saw it."""
     met = [e for e in engs if c["id"] in e["convoys"]]
     sightings, hits, attacks = [], [], []
     for e in met:

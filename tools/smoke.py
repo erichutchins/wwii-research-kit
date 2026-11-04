@@ -4,9 +4,9 @@
 # ///
 """Open every page of the site in a headless browser and fail on anything that breaks it.
 
-Every page in site/, and every view a page opens from the address (each engagement at its depths, each convoy, ship
-and patrol, Army unit, Seabee battalion and project, BANG's dives by patrol), in light and dark mode, at desktop and
-phone width.
+Every page in site/, and every view a page opens from the address (each engagement at its depths, each subject at its
+account and at its records for every period, the five walked-through subjects at their working too, BANG's dives by
+patrol), in light and dark mode, at desktop and phone width.
 A view fails on:
   - an error in the console, or an uncaught exception;
   - a request to this site that fails or answers 4xx/5xx (a missing data file, a renamed script);
@@ -53,11 +53,8 @@ def kit_views(root=KIT):
     rec, site = root / "records", root / "site"
     out = [f"site/{p.name}" for p in sorted(site.glob("*.html"))]
     out += engagement_views(rec / "engagements", "site/engagement.html")
-    out += [f"site/convoys.html?c={c['id']}" for c in load(rec / "convoys/convoys.json")["convoys"]]
-    out += [f"site/patrols.html?ship={s['key']}&patrol={n}" for s in load(rec / "ships.json") for n in (p["n"] for p in s["periods"])]
+    out += subject_views(rec / "subjects.json", "site/subject.html")
     out += [f"site/dives.html?patrol={p['patrol']}" for p in load(rec / "boats/ss-385-bang/dives.json")["patrols"]]
-    out += army_views(rec / "army/army.json", "site/army.html")
-    out += seabee_views(rec / "seabees/seabees.json", "site/seabees.html")
     return out
 
 
@@ -75,13 +72,36 @@ def engagement_views(folder, page):
     return out
 
 
-def army_views(path, page):
-    return [f"{page}?unit={u['unit']}" for u in load(path)["units"] if u["stations"]]
+# the subjects whose pages the guide walks through (guides/OPERATIONS-VIEWER.md 7.2 and the phase-6 check): their
+# working depth is opened too
+WORKED = ("67ca-med", "ss-385-bang", "20ncb", "tama-17", "dd-700-haynsworth")
 
 
-def seabee_views(path, page):
-    d = load(path)
-    return [f"{page}?unit={u}" for u in d["units"]] + [f"{page}#proj-{p['id']}" for p in d.get("projects", [])]
+def subject_views(path, page):
+    """Each subject at its account (subject.html?s=<id>), and at its records for each period (a boat's every patrol
+    and all of them together; a unit, battalion, ship or convoy once), from subjects.json; the walked-through subjects
+    at their working too. A subject with no record of its own yet (a unit entered for its relations) has an account only."""
+    out = []
+    for s in load(path):
+        out.append(f"{page}?s={s['id']}")
+        if s["kind"] == "boat":
+            out += [f"{page}?s={s['id']}&period={p['n']}&view=records" for p in s["periods"]]
+            if len(s["periods"]) > 1:
+                out.append(f"{page}?s={s['id']}&view=records")
+        elif s["kind"] in ("ship", "battalion", "convoy") or (s["kind"] == "unit" and s["records"].get("stations")):
+            out.append(f"{page}?s={s['id']}&view=records")
+        if s["id"] in WORKED:
+            out.append(f"{page}?s={s['id']}&view=working")
+    return out
+
+
+def army_views(path, page="site/subject.html"):
+    """A family's pages still ask for these by name: each Army unit with stations, on its subject page."""
+    return [f"{page}?s={u['unit']}&view=records" for u in load(path)["units"] if u["stations"]]
+
+
+def seabee_views(path, page="site/subject.html"):
+    return [f"{page}?s={u}&view=records" for u in load(path)["units"]]
 
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
