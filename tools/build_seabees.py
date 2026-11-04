@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = ["pyyaml"]
 # ///
-"""Check the Seabee transcriptions and build records/seabees/seabees.json for site/seabees.html.
+"""Check the Seabee transcriptions and build records/seabees/seabees.json for the subject pages (site/subject.html, the Seabees panel).
 
 Inputs (hand-edited, the source of truth; columns in records/seabees/README.md): units.csv,
 parts.csv, stations.csv, places.csv, voyages.csv (the ships between two stations) and

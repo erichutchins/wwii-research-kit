@@ -1,7 +1,46 @@
-// Seabee battalions in the Pacific: where a naval construction battalion, and each part of it, was.
-// Renders records/seabees/seabees.json, which tools/build_seabees.py builds from the hand-transcribed
-// CSVs in records/seabees/ (stations, parts, places, voyages and the ships' logged positions, and the
-// day's weather from tools/fetch_station_weather.py).
+// A Seabee battalion and each part of it on the records depth of subject.html (guides/OPERATIONS-VIEWER.md 5.2): the
+// map with the date strip and playback, every part's line and where it was that day, the ships along their logged
+// positions, the day's weather, the stations as typed with their pages, and the battalion's main construction projects
+// (seabees-projects.js, shared with a family's pages), as seabees.html drew them until phase 6 folded the four side-list
+// apps into the subject page as panels. Renders records/seabees/seabees.json, which tools/build_seabees.py builds from the
+// hand-transcribed CSVs in records/seabees/. The scan viewer (#scan) and the tooltip (#tip) are the page's, shared by
+// every panel; one panel mounts at a time, so its controls keep their ids.
+//
+//   SeabeesPanel.mount(host, S, { t, onState })
+//     host      the element the panel fills (the page gives it class "records p-seabees")
+//     S         the subject from records/subjects.json (a battalion)
+//     t         an ISO day to open on (the address's &t=)
+//     onState   called with { t } as the reader moves, so the page can keep the address current
+window.SeabeesPanel = { mount(host, S, opts = {}) {
+  host.innerHTML = `
+  <div class="stats" id="stats"></div>
+  <div class="main">
+    <div class="card map-card">
+      <div class="legend" id="legend"></div>
+      <div class="map-wrap">
+        <svg class="map" role="img" aria-label="Map of the battalion's stations"></svg>
+        <div class="regions" id="regions"></div>
+        <div class="zoom-btns">
+          <button id="zin" aria-label="Zoom in">+</button>
+          <button id="zout" aria-label="Zoom out">−</button>
+          <button id="zreset" aria-label="Show the whole track">⟲</button>
+        </div>
+        <div class="hint">Scroll or pinch to zoom · drag to pan · lines join the stations; where a ship logged its positions, they follow its track</div>
+      </div>
+      <div class="timeline">
+        <button class="play" id="play" aria-label="Play">▶</button>
+        <svg class="strip-svg" id="strip" aria-label="Timeline: the battalion and its parts; click to jump"></svg>
+        <input type="range" class="scrub" id="scrub" min="0" max="1000" value="1000" aria-label="Date">
+        <div class="now"><span id="now-date"></span><span id="now-where"></span></div>
+        <div class="wx" id="now-weather"></div>
+      </div>
+    </div>
+    <div class="card side">
+      <div class="side-head"><h2 id="side-title">Stations</h2></div>
+      <div class="list" id="list"></div>
+    </div>
+  </div>
+  <section class="projects" aria-label="The battalion's main construction projects" hidden></section>`;
 
 let RULER = null;   // scalebar.js
 let PM = null;      // the projects' marks on the map (seabees-projects.js)
@@ -31,7 +70,7 @@ const REGIONS = [
 const state = { unit: null, t: null, playing: false, k: 1 };
 let DATA, U, LAND50, LAND10, proj, path, zoom, g;
 
-const svg = d3.select("#map");
+const svg = d3.select(host.querySelector("svg.map"));
 const tip = document.getElementById("tip");
 const fmtDay = d3.utcFormat("%-d %b %Y");
 const parseDay = s => Date.parse(`${s}T12:00Z`);
@@ -50,12 +89,11 @@ Promise.all([
     (DATA.rows[v.to_id].arrivals ??= []).push(v);
   });
   buildControls();
-  new ResizeObserver(() => render()).observe(document.querySelector(".map-wrap"));
+  new ResizeObserver(() => render()).observe(host.querySelector(".map-wrap"));
   new ResizeObserver(() => { if (U) { drawStrip(); setTime(state.t); } }).observe(document.getElementById("strip"));
-  // deep link: seabees.html?unit=20ncb&t=1943-07-01
-  const q = new URLSearchParams(location.search);
-  select(DATA.units[q.get("unit")] ? q.get("unit") : Object.keys(DATA.units)[0], { keepUrl: true });
-  if (q.get("t")) setTime(parseDay(q.get("t")));
+  // the address: subject.html?s=20ncb&t=1943-07-01&view=records opens on that day
+  select(S.id);
+  if (opts.t) setTime(parseDay(opts.t.slice(0, 10)));
 });
 
 // What a station assumes, said in words (tooltips and the list)
@@ -132,12 +170,6 @@ function prepareUnit(unit) {
 
 // ── Controls ───────────────────────────────────────────────────────────────
 function buildControls() {
-  const pick = document.getElementById("unit-pick");
-  Object.entries(DATA.units).forEach(([id, u]) => {
-    const years = d3.extent(DATA.rows.filter(r => r.unit === id), r => r.date.slice(0, 4));
-    pick.append(Object.assign(el("option", null, `${u.name} (${years[0]}${years[1] !== years[0] ? `–${years[1]}` : ""})`), { value: id }));
-  });
-  pick.addEventListener("change", () => select(pick.value));
   document.getElementById("play").addEventListener("click", togglePlay);
   document.getElementById("scrub").addEventListener("input", e => {
     stop(); setTime(U.t0 + (U.t1 - U.t0) * (+e.target.value / 1000));
@@ -149,13 +181,11 @@ function buildControls() {
   document.getElementById("scan-img").addEventListener("click", e => e.target.classList.toggle("full"));
 }
 
-function select(unit, { keepUrl = false } = {}) {
+function select(unit) {
   stop();
   state.unit = unit;
   U = prepareUnit(unit);
   state.t = U.t1;
-  document.getElementById("unit-pick").value = unit;
-  if (!keepUrl) history.replaceState(null, "", `?unit=${unit}`);
   const regions = d3.select("#regions").html("");
   [["Whole war", null], ...REGIONS.filter(([, b]) => U.placed.some(r => inBox(r.lonlat, b)))]
     .forEach(([name, box]) => regions.append("button").text(name).on("click", () => fitBox(box)));
@@ -165,12 +195,12 @@ function select(unit, { keepUrl = false } = {}) {
   drawStrip();
   render();
   // the battalion's main construction projects (seabees-projects.js); a project's button flies the map to it
-  seabeeProjects(document.getElementById("projects"), DATA, unit, {
+  seabeeProjects(host.querySelector(".projects"), DATA, unit, {
     locate: (lonlat, p) => {
       stop();
       setTime(parseDay(p.from));
       // an instant scroll (a smooth one interrupts the map's transition); frame the place once the new date's weather line has resized the map (render() resets the zoom)
-      document.querySelector(".map-card").scrollIntoView({ block: "nearest" });
+      host.querySelector(".map-card").scrollIntoView({ block: "nearest" });
       const [lon, lat] = lonlat;
       setTimeout(() => fitBox([[lon - 0.5, lat - 0.35], [lon + 0.5, lat + 0.35]]), 80);
     },
@@ -182,7 +212,7 @@ const inBox = ([lon, lat], [[w, s], [e, n]]) => lon >= w && lon <= e && lat >= s
 // ── Map ────────────────────────────────────────────────────────────────────
 function render() {
   if (!U) return;
-  const wrap = document.querySelector(".map-wrap").getBoundingClientRect();
+  const wrap = host.querySelector(".map-wrap").getBoundingClientRect();
   const W = wrap.width, H = wrap.height;
   if (!W || !H) return;
   svg.attr("viewBox", `0 0 ${W} ${H}`).selectAll("*").remove();
@@ -266,7 +296,7 @@ function placeLabels() {
 }
 
 function fitBox(box) {
-  const wrap = document.querySelector(".map-wrap").getBoundingClientRect();
+  const wrap = host.querySelector(".map-wrap").getBoundingClientRect();
   if (!box) return svg.transition().duration(700).call(zoom.transform, d3.zoomIdentity);
   const [[x0, y1], [x1, y0]] = [proj(box[0]), proj(box[1])];
   const k = Math.min(600, 0.9 * Math.min(wrap.width / (x1 - x0), wrap.height / (y1 - y0)));
@@ -276,7 +306,7 @@ function fitBox(box) {
 
 function flyTo(r) {
   if (!r.lonlat) return;
-  const wrap = document.querySelector(".map-wrap").getBoundingClientRect();
+  const wrap = host.querySelector(".map-wrap").getBoundingClientRect();
   const k = Math.max(state.k, 4), [x, y] = proj(r.lonlat);
   svg.transition().duration(700).call(zoom.transform,
     d3.zoomIdentity.translate(wrap.width / 2, wrap.height / 2).scale(k).translate(-x, -y));
@@ -319,6 +349,7 @@ function setTime(t) {
   renderWeather(pos);
   d3.select("#strip .playhead").attr("x1", stripX(state.t)).attr("x2", stripX(state.t));
   highlightRows();
+  if (!state.playing) opts.onState?.({ t: state.t >= U.t1 ? null : new Date(state.t).toISOString().slice(0, 10) });
 }
 
 // A marker for each part on record, labelled with its name; names of markers close together are
@@ -587,3 +618,5 @@ function el(tag, cls, text) {
   if (text !== undefined) e.textContent = text;
   return e;
 }
+
+} };

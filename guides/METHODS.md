@@ -303,9 +303,10 @@ caching off so edits show on reload.
 
 | Page | What it shows |
 |---|---|
-| `patrols.html` + `patrols.js` | Map of every patrol, playback following the boat, course/speed gauge, patrol log, report-page viewer |
-| `army.html` + `army.js` | Map of one Army unit at a time (`records/army/army.json`): its stations as typed, routes and sea crossings, Battery D's engagements, playback, station log, page viewer |
-| `seabees.html` + `seabees.js` | Map of one Seabee battalion at a time (`records/seabees/seabees.json`): each part's line and where it was that day, ships along their logged positions, the day's weather, playback, station log, page viewer |
+| `subject.html` + `subject.js` | One page for every subject (a boat, a ship, an Army unit, a Seabee battalion, a convoy) at three depths: the account, the records (the maps below, as panels under `site/panels/`), the working. `subjects.html` is the index |
+| `panels/patrols.js` | Map of every patrol, playback following the boat, course/speed gauge, patrol log, report-page viewer |
+| `panels/army.js` | Map of one Army unit at a time (`records/army/army.json`): its stations as typed, routes and sea crossings, Battery D's engagements, playback, station log, page viewer |
+| `panels/seabees.js` | Map of one Seabee battalion at a time (`records/seabees/seabees.json`): each part's line and where it was that day, ships along their logged positions, the day's weather, playback, station log, page viewer |
 | `dives.html` + `dives.js` | Dive profile: depth, temperature layers, weather strip, seafloor, moon phases, playback, and a day-and-night chart with one row per day |
 | `zones.html` + `zones.js` | Explainer: the Navy's lettered time zones over the Pacific, every position coloured by its typed zone, one moment on six clocks |
 | `grids.html` + `grids.js` | Explainer (Europe): the five map grids in the Army records, their lettered 100 km squares, a decoder, and every reference checked against its named town |
@@ -327,7 +328,7 @@ Design rules followed:
   panel and scale.
 - **Assumptions are visible.** Hatched = not logged; dashed ring = left off
   the track; tooltips say "assumed".
-- **Deep links.** `patrols.html?patrol=2&t=1944-07-04T04:42Z` and the same
+- **Deep links.** `subject.html?s=bang&period=2&t=1944-07-04T04:42Z&view=records` and the same
   for `dives.html`. The two pages link to each other at the same moment.
 
 ---
@@ -342,7 +343,7 @@ uv run tools/fetch_weather.py               # ERA5 along tracks
 uv run tools/build_dives.py                 # bundle records/boats/ss-385-bang/dives.json
 uv run tools/check_crossrefs.py             # attacks vs. Japanese records, minutes and miles apart
 uv run tools/build_engagement.py            # the engagement and convoy pages' JSON
-python3 tools/serve.py                       # http://localhost:8385/patrols.html
+python3 tools/serve.py                       # http://localhost:8385/site/subject.html?s=bang
 ```
 
 To re-read the Japanese records: `python3 tools/jacar.py fetch C08050103200 C08030140600 C08030140700 C08030512800`

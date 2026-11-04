@@ -68,7 +68,7 @@ The code was written for one boat. What has been generalized, and what hasn't ye
 | `PATROLS` and `SHIPS` arrays (names, dates, area, captain) in `patrols.js` | Each vessel's hand-edited `ship.yml`, gathered into `records/ships.json` by `check_track.py --geojson` |
 | `MAX_KTS = 20.5` in `check_track.py` | `max_kts` in `ship.yml` |
 | `CONTEXT` and `SKY_NOTES` in `build_dives.py` | Per-boat `dives.yml` |
-| Page title and text say "BANG" | `patrols.html?ship=<name>` with a ship picker; the wording comes from `ship.yml`, with defaults by kind of vessel |
+| Page title and text say "BANG" | `subject.html?s=<name>`, one page per subject; the wording comes from `ship.yml` (its `plain` line and `map:`), with defaults by kind of vessel |
 | Tools take a patrol number | Tools take `<boat>/<patrol>` (`bang/1`), a boat (`bang`), or `all` |
 
 Still to do:

@@ -1,7 +1,65 @@
-// Ship tracks: a boat's war patrols (patrols.html?ship=bang, the default) or a ship's war diary
-// (patrols.html?ship=haynsworth). Renders the GeoJSON that tools/check_track.py builds from the
-// hand-transcribed positions.csv files; each vessel's wording comes from its ship.yml, through
-// records/ships.json. RECORDS and CACHE are set in config.js.
+// A boat's war patrols or a ship's war diary on the records depth of subject.html (guides/OPERATIONS-VIEWER.md 5.2):
+// the map with playback following the vessel, the course and speed made good, the patrol log and the report-page viewer,
+// as patrols.html drew them until phase 6 folded the four side-list apps into the subject page as panels. Renders the
+// GeoJSON that tools/check_track.py builds from the hand-transcribed positions.csv files; the vessel's wording comes
+// from its ship.yml through records/ships.json. RECORDS and CACHE are set in config.js; the scan viewer (#scan) and the
+// tooltip (#tip) are the page's, shared by every panel. One panel mounts at a time, so its controls keep their ids.
+//
+//   PatrolsPanel.mount(host, S, { period, t, onState })
+//     host      the element the panel fills (the page gives it class "records p-patrols")
+//     S         the subject from records/subjects.json (a boat or a ship)
+//     period    the patrol to open on ("all", a number, or nothing: one patrol opens itself, several open on all)
+//     t         an ISO minute to open centred on the vessel at (dives.html links here so)
+//     onState   called with { period, t } as the reader moves, so the page can keep the address current
+window.PatrolsPanel = { mount(host, S, opts = {}) {
+  host.innerHTML = `
+  <p class="intro more-links"></p>
+  <div class="filters">
+    <div class="seg" id="patrol-seg" role="group" aria-label="Patrol"></div>
+    <label class="check"><input type="checkbox" id="show-off" checked> Show fixes left off the track</label>
+    <a class="more-links" id="to-dives" hidden>Her dive profile, every dive and depth charge ›</a>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="main">
+    <div class="card map-card">
+      <div class="legend" id="legend"></div>
+      <div class="map-wrap">
+        <svg class="map" role="img" aria-label="Map of the track"></svg>
+        <div class="zoom-btns">
+          <button id="zin" aria-label="Zoom in">+</button>
+          <button id="zout" aria-label="Zoom out">−</button>
+          <button id="zreset" aria-label="Reset view">⟲</button>
+        </div>
+        <div class="hint" id="hint">Scroll or pinch to zoom · drag to pan</div>
+        <div class="gauge" id="gauge" hidden aria-live="off">
+          <svg class="compass" id="compass" width="76" height="76" aria-hidden="true"></svg>
+          <div class="g-read">
+            <div class="g-label">Course made good</div><div class="g-value" id="g-course">—</div>
+            <div class="g-label">Speed made good</div><div class="g-value" id="g-speed">—</div>
+            <div class="g-leg" id="g-leg"></div>
+          </div>
+        </div>
+      </div>
+      <div class="timeline" id="timeline" hidden>
+        <button class="play" id="play" aria-label="Play">▶</button>
+        <svg class="strip-svg" id="strip"></svg>
+        <input type="range" class="scrub" id="scrub" min="0" max="1000" value="1000" aria-label="Patrol time">
+        <div class="now"><span id="now-local"></span>
+          <label class="follow"><input type="checkbox" id="follow" checked> Follow the boat while playing</label>
+          <span id="now-utc"></span></div>
+      </div>
+    </div>
+    <div class="card side">
+      <div class="side-head">
+        <h2 id="side-title">Patrols</h2>
+        <div class="seg" id="log-filter" role="group" aria-label="Log filter" hidden>
+          <button data-f="events" aria-pressed="true">Contacts &amp; events</button>
+          <button data-f="all" aria-pressed="false">All fixes</button>
+        </div>
+      </div>
+      <div class="list" id="list"></div>
+    </div>
+  </div>`;
 
 // What a ship.yml leaves out, by kind of vessel. A submarine's page reads as a set of war patrols.
 let RULER = null;   // scalebar.js
@@ -26,22 +84,7 @@ const DEFAULTS = {
              { cls: "event", text: "Logged event", ifPresent: true }],
   },
 };
-let SHIPS, SHIP, PATROLS, PORTS, PLACES, LABEL;
-
-// Pick the vessel from ?ship= (folder name or name, e.g. ss-385-bang or bang) and fill in defaults.
-function chooseShip(ships) {
-  const q = new URLSearchParams(location.search).get("ship") ?? "bang";
-  const s = ships.find(d => d.key === q || d.alias === q) ?? ships.find(d => d.alias === "bang") ?? ships[0];
-  const title = `USS ${s.name} (${s.hull})`;
-  const sub = s.kind === "submarine";
-  const n = s.periods.length;
-  return {
-    ...DEFAULTS[sub ? "submarine" : "ship"], short: s.name, title,
-    heading: `${title} — ${sub ? "war patrol tracks" : "ship tracks"}`,
-    intro: `Every position ${s.name} reported in ${sub ? `the ${n === 1 ? "war patrol report" : `${n} war patrol reports`} transcribed so far` : "her war diary"}, transcribed from the `,
-    ports: [], places: [], ...s,
-  };
-}
+let SHIP, PATROLS, PORTS, PLACES, LABEL;
 
 // Report section -> map class
 const CLASS = { bt: "fix", noon: "fix", radar: "fix", narrative: "fix", diary: "fix", action: "fix", air: "air", attack: "attack", gun: "attack",
@@ -67,15 +110,22 @@ const MIN_LEG_HOURS = 2;       // course/speed are averaged over at least this l
 const FOLLOW_EASE = 0.2;       // fraction of the way the camera catches up each frame
 let DATA, LAND, proj, path, zoom, delaunay, hitPoints = [];
 
-const svg = d3.select("#map");
+const svg = d3.select(host.querySelector("svg.map"));
 const tip = document.getElementById("tip");
 const fmtDay = d3.utcFormat("%-d %b %Y");
 const fmtUTC = d3.utcFormat("%-d %b %Y · %H%M GMT");
 
 // ── Data ────────────────────────────────────────────────────────────────────
 d3.json(RECORDS + "ships.json").then(ships => {
-  SHIPS = ships.filter(s => s.geojson);   // a ship with no positions yet has no map
-  SHIP = chooseShip(SHIPS);
+  const s = ships.find(d => d.key === S.id) ?? ships.find(d => d.alias === S.alias);
+  const title = `USS ${s.name} (${s.hull})`;
+  const sub = s.kind === "submarine";
+  const n = s.periods.length;
+  SHIP = {
+    ...DEFAULTS[sub ? "submarine" : "ship"], short: s.name, title,
+    intro: `Every position ${s.name} reported in ${sub ? `the ${n === 1 ? "war patrol report" : `${n} war patrol reports`} transcribed so far` : "her war diary"}, transcribed from the `,
+    ports: [], places: [], ...s,
+  };
   ({ periods: PATROLS, ports: PORTS, places: PLACES } = SHIP);
   LABEL = { ...BASE_LABEL, ...SHIP.labels };
   return Promise.all([
@@ -87,14 +137,13 @@ d3.json(RECORDS + "ships.json").then(ships => {
   DATA = prepare(geo);
   applyShip();
   buildControls();
-  new ResizeObserver(() => render()).observe(document.querySelector(".map-wrap"));
-  // dives.html links here as patrols.html?patrol=2&t=1944-07-04T04:42Z
-  const q = new URLSearchParams(location.search);
-  const qp = +q.get("patrol");
+  new ResizeObserver(() => render()).observe(host.querySelector(".map-wrap"));
+  // the address: subject.html?s=bang&period=2&t=1944-07-04T04:42Z (dives.html links here so)
+  const qp = +opts.period;
   select(PATROLS.some(p => p.n === qp) ? qp : PATROLS.length === 1 ? PATROLS[0].n : null);
-  if (state.patrol !== null && q.get("t")) {
+  if (state.patrol !== null && opts.t) {
     state.focus = true;   // open centred on the boat at that moment (see focusView)
-    setTime(Date.parse(q.get("t")));
+    setTime(Date.parse(opts.t));
     render();
   }
 });
@@ -125,24 +174,15 @@ function prepare(geo) {
 // ── Controls ────────────────────────────────────────────────────────────────
 // Page wording and ship picker.
 function applyShip() {
-  document.title = SHIP.heading;
-  document.querySelector("header h1").textContent = SHIP.heading;
   // the National Archives folder: the ship.yml's, or the one the first point's page is in
   const naId = SHIP.catalogId ?? DATA.points.find(d => d.page)?.page.match(/^rg\d+-(\d+)\//)?.[1];
   const a = el("a", null, SHIP.introLink);
   a.href = `https://catalog.archives.gov/id/${naId}`; a.target = "_blank"; a.rel = "noopener";
-  document.querySelector("header p").replaceChildren(SHIP.intro, a, SHIP.introEnd);
-  document.getElementById("map").setAttribute("aria-label", `Map of ${SHIP.short}'s track`);
+  host.querySelector(".intro").replaceChildren(SHIP.intro, a, SHIP.introEnd);
+  svg.attr("aria-label", `Map of ${SHIP.short}'s track`);
   document.getElementById("to-dives").hidden = !SHIP.dives;
   document.getElementById("follow").nextSibling.textContent = ` Follow the ${SHIP.kind === "submarine" ? "boat" : "ship"} while playing`;
   document.getElementById("show-off").closest("label").hidden = !DATA.points.some(p => p.off);
-  const pick = document.getElementById("ship-pick");
-  SHIPS.forEach(s => {
-    const o = el("option", null, `USS ${s.name} (${s.hull})`);
-    o.value = s.alias; o.selected = s.key === SHIP.key;
-    pick.append(o);
-  });
-  pick.addEventListener("change", () => { location.search = `?ship=${pick.value}`; });
 }
 
 function buildControls() {
@@ -196,24 +236,28 @@ function select(n) {
   renderSide();
   render();
   updateDivesLink();
+  opts.onState?.({ period: n === null ? "all" : n, t: null });
 }
 
 // Keep the "Dive profile" nav link pointing at the same patrol and moment
 function updateDivesLink() {
-  const a = document.getElementById("to-dives");
-  if (!a || !SHIP.dives) return;
   const q = new URLSearchParams();
   if (state.patrol !== null) {
     q.set("patrol", state.patrol);
     if (state.t !== null) q.set("t", new Date(state.t).toISOString().slice(0, 16) + "Z");
   }
+  // the page keeps the address current (subject.html?s=…&period=N&t=…), except at a patrol's end, its resting place
+  if (state.patrol !== null && state.t !== null && !state.playing && state.t < current().times.at(-1))
+    opts.onState?.({ period: state.patrol, t: new Date(state.t).toISOString().slice(0, 16) + "Z" });
+  const a = document.getElementById("to-dives");
+  if (!a || !SHIP.dives) return;
   a.href = "dives.html" + (q.size ? `?${q}` : "");
 }
 
 // ── Map ─────────────────────────────────────────────────────────────────────
 function render() {
   if (!DATA) return;
-  const box = document.querySelector(".map-wrap").getBoundingClientRect();
+  const box = host.querySelector(".map-wrap").getBoundingClientRect();
   const W = Math.max(300, box.width), H = Math.max(300, box.height);
   svg.attr("viewBox", `0 0 ${W} ${H}`);
   svg.selectAll("*").remove();
@@ -312,7 +356,7 @@ function homeView(W, H) {
   return d3.zoomIdentity.translate(W / 2, H / 2).scale(k).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
 }
 
-// Deep links (patrols.html?patrol=2&t=...) open centred on the boat at that time
+// Deep links (subject.html?s=bang&period=2&t=...) open centred on the boat at that time
 function focusView(W, H) {
   const [cx, cy] = proj(positionAt(current(), state.t));
   return d3.zoomIdentity.translate(W / 2, H / 2).scale(Math.max(state.home.k, 4)).translate(-cx, -cy);
@@ -749,3 +793,5 @@ function iconFor(d) {
     .attr("stroke-width", 1.5).attr("stroke-dasharray", d.cls === "off" ? "2 2" : null);
   return v.node();
 }
+
+} };

@@ -1,4 +1,4 @@
-// What the engagement pages draw the same way (engagement.html, convoys.html, lanes.html): tooltips, silhouettes,
+// What the engagement pages draw the same way (engagement.html, subject.html's convoy panel, lanes.html): tooltips, silhouettes,
 // citation links, the land. The computation is in engage.js; the encodings are guides/ENGAGEMENTS.md's
 // ("Encodings, the same on every page").
 const EV = (() => {

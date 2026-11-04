@@ -55,7 +55,7 @@ end is the density layers. Note which pages hold what.
 2. `uv run tools/check_track.py all --geojson` rebuilds the tracks and `ships.json`.
 3. `uv run tools/check_sources.py` must pass (every row cited, inventory matches the folders).
 4. Set the patrol's status in `inventory.yml` (`mapped` once it's on the map) and the files done.
-5. Open `site/patrols.html?ship=<name>` in light and dark mode: every point should open its page.
+5. Open `site/subject.html?s=<name>&view=records` in light and dark mode: every point should open its page.
 
 ## Rules
 

@@ -4,6 +4,7 @@
 // links, and handles the little Markdown the text uses: *italics*, **bold**, `code`, and [words](address).
 //
 //   Links.render(text, { cites, family, steps })
+//     ship, unit, convoy  a subject's own page, subject.html?s=<id> (records/subjects.json knows every id and alias)
 //     cites    the resolved citations: operations.json's "cites" ({ "howe-nwa/35/p676": {href, short, page} })
 //     family   on a family's page: { root: the family site's address, pages: [its own pages' names] }
 //     steps    on an engagement's page, its story's steps (engagement.json "steps"): { id: {href} }. A [[step:s7|words]]
@@ -23,15 +24,20 @@ const Links = (() => {
     const fam = ctx.family;
     switch (kind) {
       case "op": return a(`#op-${target}`, label || esc(target));
-      case "ship": return a(new URL(`patrols.html?ship=${encodeURIComponent(target)}`, KIT_SITE).href, label || esc(target));
-      case "unit": return a(new URL(`army.html?unit=${encodeURIComponent(target)}${t}`, KIT_SITE).href, label || esc(target));
-      case "convoy": return a(new URL(`convoys.html?c=${encodeURIComponent(target)}`, KIT_SITE).href, label || esc(target));
+      // a subject's own page (subject.html?s=<id>): a boat or ship by its name, a unit by its id, a convoy by its id;
+      // a day (`@1944-08-15`) opens the records depth on that day
+      case "ship": return a(new URL(`subject.html?s=${encodeURIComponent(target)}${t ? `${t}&view=records` : ""}`, KIT_SITE).href, label || esc(target));
+      case "unit": return a(new URL(`subject.html?s=${encodeURIComponent(target)}${t ? `${t}&view=records` : ""}`, KIT_SITE).href, label || esc(target));
+      case "convoy": return a(new URL(`subject.html?s=${encodeURIComponent(target)}`, KIT_SITE).href, label || esc(target));
       case "engagement": return a(new URL(`engagement.html?e=${encodeURIComponent(target)}`, KIT_SITE).href, label || esc(target));
       case "page": {
         const href = fam && fam.pages.includes(target) ? new URL(`${target}.html`, fam.root).href : new URL(`${target}.html`, KIT_SITE).href;
         return a(href, label || esc(target));
       }
       case "who":
+        // the family seam (guides/OPERATIONS-VIEWER.md 2.1, 10): a person is never a subject of the kit. A family's own site
+        // attaches one to a subject by date, on its own page; the kit's subject.html accepts `&who=…&t=…` beside `s=` and
+        // ignores `who`, so a family's script may read it there (army.html?who= redirects to it, the query carried across)
         if (fam) return a(new URL(`army.html?who=${encodeURIComponent(target)}${t}`, fam.root).href, label || esc(target));
         break;
       case "step": {

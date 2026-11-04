@@ -5,7 +5,6 @@
 //   Solar and UGS 72               ships/de-221-solar/track.geojson
 //   Neuburg's five minutes         engagements/neuburg-1945-04-26/engagement.json
 //   Algiers to Germany's stages    chapter.js (army/army.json, operations/operations.json, engagements/index.json)
-//   every ship's track             ships.json and each ship's track geojson
 //   what else, and what's wanted   ships.json, army/army.json, engagements/index.json, inventory.yml
 
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -385,65 +384,6 @@ async function neuburg() {
   });
 }
 
-// ── Every ship's track: a small map of each vessel, opening its page on patrols.html ─────────────
-async function fleet() {
-  const [ships, world] = await Promise.all([d3.json(RECORDS + "ships.json"), d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json")]);
-  const land = topojsonFeature(world);
-  const withTracks = ships.filter(s => s.geojson);
-  const geos = await Promise.all(withTracks.map(s => d3.json(RECORDS + s.geojson)));
-  const hullNo = s => +/\d+/.exec(s.hull)[0];
-  const groups = [
-    ["Submarines: war patrol reports", withTracks.filter(s => s.kind === "submarine")],
-    ["Surface ships: war diaries", withTracks.filter(s => s.kind !== "submarine")],
-  ];
-  const host = d3.select("#fleet");
-  const W = 320, H = 200;
-  for (const [title, list] of groups) {
-    if (!list.length) continue;
-    host.append("h3").attr("class", "fleet-head").text(title);
-    const grid = host.append("div").attr("class", "fleet");
-    for (const s of list.sort((a, b) => hullNo(a) - hullNo(b))) {
-      const geo = geos[withTracks.indexOf(s)];
-      const lines = geo.features.filter(f => f.geometry.type === "LineString");
-      const points = geo.features.filter(f => f.geometry.type === "Point");
-      const attacks = points.filter(f => f.properties.kind === "attack");
-      const url = `patrols.html?ship=${s.alias}`;
-      const name = s.kind === "submarine" ? `USS ${s.name}` : (s.title || `USS ${s.name}`).replace(/\s*\(.*\)$/, "");
-      const card = grid.append("div").attr("class", "ship-card");
-
-      // the map: every track the ship's records give, fitted to them
-      const proj = d3.geoMercator().rotate([s.rotate ?? -160, 0])
-        .fitExtent([[14, 14], [W - 14, H - 14]], { type: "MultiPoint", coordinates: points.map(f => f.geometry.coordinates) })
-        .clipExtent([[0, 0], [W, H]]);
-      const path = d3.geoPath(proj);
-      const svg = card.append("a").attr("class", "thumb").attr("href", url)
-        .append("svg").attr("viewBox", [0, 0, W, H]).attr("role", "img").attr("aria-label", `Map of ${name}'s tracks`);
-      svg.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([10, 10])()));
-      svg.append("path").attr("class", "land").attr("d", path(land));
-      for (const f of lines) svg.append("path").attr("class", "trk").attr("d", path(f));
-      for (const f of attacks) {
-        const p = f.properties, xy = proj(f.geometry.coordinates);
-        svg.append("circle").attr("class", p.assumed ? "atk assumed" : "atk").attr("r", 3).attr("cx", xy[0]).attr("cy", xy[1])
-          .on("click", e => { e.preventDefault(); open(pageUrl(p.page)); })
-          .append("title").text(`${p.ref || "Attack"}, ${p.local}${p.assumed ? " (position assumed)" : ""}: ${p.page}`);
-      }
-
-      // what it is, when, and how much the records give
-      const per = s.periods, many = per.length > 1;
-      const span = many ? `${per.length} war patrols, ${d3.utcFormat("%b %Y")(d3.min(lines, f => Date.parse(f.properties.start)))} – ${d3.utcFormat("%b %Y")(d3.max(lines, f => Date.parse(f.properties.end)))}`
-        : `${per[0].name[0] + per[0].name.slice(1).toLowerCase()}, ${per[0].dates}`;
-      const nAtk = attacks.length;
-      card.append("h3").html(`<a href="${url}">${esc(name)}</a> <span class="hull">${esc(s.hull)}</span>`);
-      card.append("p").text(`${s.class}-class ${s.kind}`);
-      card.append("p").text(span);
-      if (!many && per[0].area) card.append("p").text(per[0].area);
-      card.append("p").text(`${points.length} positions${s.kind === "submarine" ? ` · ${nAtk} torpedo attack${nAtk === 1 ? "" : "s"}` : ""}`);
-      if (many) card.append("p").attr("class", "pn")
-        .html(`Patrol ${per.map(p => `<a href="${url}&amp;patrol=${p.n}" title="${esc(`${p.name}, ${p.dates}${p.area ? `: ${p.area}` : ""}`)}">${p.n}</a>`).join(" ")}`);
-    }
-  }
-}
-
 // ── Algiers to Germany: the stages in the order the units went (worked out in chapter.js) ─────────
 async function stages() {
   const [C, ops] = await Promise.all([Chapter.load(), d3.json(RECORDS + "operations/operations.json")]);
@@ -474,13 +414,13 @@ async function lists() {
     const d = d3.min(s.periods, p => periodStart(p.dates));
     const sub = s.kind === "submarine";
     const what = sub && s.periods.length > 1
-      ? `${s.name} (${s.hull}), war patrols ${s.periods.map(p => `<a href="patrols.html?ship=${s.alias}&amp;patrol=${p.n}">${p.n}</a>`).join(", ")}`
-      : `<a href="patrols.html?ship=${s.alias}">${sub ? `${s.name} (${s.hull}), ${esc(s.periods[0].name.toLowerCase())}` : `USS ${s.name} (${s.hull}), ${esc(s.periods[0].name)}`}</a>`;
+      ? `${s.name} (${s.hull}), war patrols ${s.periods.map(p => `<a href="subject.html?s=${s.alias}&amp;period=${p.n}&amp;view=records">${p.n}</a>`).join(", ")}`
+      : `<a href="subject.html?s=${s.alias}">${sub ? `${s.name} (${s.hull}), ${esc(s.periods[0].name.toLowerCase())}` : `USS ${s.name} (${s.hull}), ${esc(s.periods[0].name)}`}</a>`;
     pac.push([d, row(month(d), what, "on the map")]);
   }
   const ordinal = n => n + (/1[123]$/.test(n) ? "th" : { 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th");
   for (const [k, u] of Object.entries(inv.seabees || {})) if (u.record?.from)
-    pac.push([Date.parse(u.record.from), row(month(Date.parse(u.record.from)), `<a href="seabees.html?unit=${k}">${ordinal(parseInt(k))} Naval Construction Battalion</a>`, word[u.record.status] || u.record.status)]);
+    pac.push([Date.parse(u.record.from), row(month(Date.parse(u.record.from)), `<a href="subject.html?s=${k}">${ordinal(parseInt(k))} Naval Construction Battalion</a>`, word[u.record.status] || u.record.status)]);
   pac.sort((a, b) => a[0] - b[0]);
   const pacTodo = [];
   for (const [hull, b] of Object.entries(inv.boats || {})) {
@@ -497,7 +437,7 @@ async function lists() {
   table("also-atlantic", "Also in the Atlantic", sol);
 
   // Europe: the units the stages above leave out (never overseas), and what's still to find
-  const eur = (await STAGED).home.map(u => row(month(u.stations[0].date), `<a href="army.html?unit=${u.unit}">${esc(u.name)}</a>, to ${month(u.stations[u.stations.length - 1].date)}`,
+  const eur = (await STAGED).home.map(u => row(month(u.stations[0].date), `<a href="subject.html?s=${u.unit}">${esc(u.name)}</a>, to ${month(u.stations[u.stations.length - 1].date)}`,
     "in the United States and Britain only", false));
   const after = part => { const m = /^after-(\d{4})-(\d{2})$/.exec(part); return m ? `its records after ${d3.utcFormat("%B %Y")(new Date(Date.UTC(+m[1], +m[2] - 1)))} (not online)` : part; };
   for (const [k, u] of Object.entries(inv.units || {})) for (const [part, r] of Object.entries(u)) if (part !== "record")
@@ -526,7 +466,6 @@ haynsworth().catch(failed("#fig-haynsworth", "figure"));
 seabees().catch(failed("#fig-seabees", "figure"));
 solar().catch(failed("#fig-solar", "map"));
 neuburg().catch(failed("#fig-neuburg", "figure"));
-fleet().catch(failed("#fleet", "list"));
 const STAGED = stages();
 STAGED.catch(failed("#stages", "list"));
 // the nav's stage links (index.html#stage-italy) land on an empty div until the stages are drawn: scroll again then

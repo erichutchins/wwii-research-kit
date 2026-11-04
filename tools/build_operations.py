@@ -12,10 +12,10 @@ an aside (a qualification). Every paragraph ends with its citation, [[cite:howe-
 Links are written by name, not address, so they work on any page and can be checked:
   [[cite:howe-nwa/35/p676]]           a page of a source in SOURCES.yml
   [[op:husky|the invasion of Sicily]] an operation's chapter (by its file name)
-  [[ship:bang]]                       a boat's or ship's track (the name in ships.json)
-  [[unit:106aaa-d@1944-08-15|...]]    a unit on the Army map, on a day (army/units.csv)
+  [[ship:bang]]                       a boat's or ship's own page (site/subject.html?s=…; the name in ships.json)
+  [[unit:106aaa-d@1944-08-15|...]]    a unit's own page, on a day (army/units.csv)
   [[page:zones|...]]                  one of the kit's pages (site/zones.html)
-  [[convoy:te-04]]                    a convoy's record (records/convoys/<id>/convoy.md; site/convoys.html)
+  [[convoy:te-04]]                    a convoy's record (records/convoys/<id>/convoy.md; its own page, site/subject.html)
   [[engagement:te-04-1944-05-03]]     an engagement (records/engagements/<id>/; site/engagement.html)
   [[step:s7|at 1250 she was hit]]     a step of an engagement's story: on its page, sets the clock and the map to it (events.yml `step`)
   [[who:<person>@1942-11-11|...]]     a person on a family's Army map: only in a family's own files (--family)

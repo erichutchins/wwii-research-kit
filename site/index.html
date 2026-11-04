@@ -21,7 +21,7 @@
     <h1>Charting WWII History</h1>
     <p class="lede">Ships' and units' own records, beside <i>the other side's records of the same minutes</i>, on one map
       and one clock. Every mark opens the page it was read from.</p>
-    <nav class="chapters" aria-label="Chapters"><a href="#pacific">Pacific</a><a href="#atlantic">Atlantic</a><a href="#europe">Algiers to Germany</a><a href="#ships">Every ship's track</a><a href="#reference">Reading the records</a><a href="#yourself">Do this yourself</a></nav>
+    <nav class="chapters" aria-label="Chapters"><a href="#pacific">Pacific</a><a href="#atlantic">Atlantic</a><a href="#europe">Algiers to Germany</a><a href="subjects.html">Every subject</a><a href="#reference">Reading the records</a><a href="#yourself">Do this yourself</a></nav>
   </header>
 
   <section class="chapter" id="pacific">
@@ -29,7 +29,7 @@
 
     <article class="feature" id="f-luzon">
       <h3>Submarines attacking a Japanese convoy in the Luzon Strait, 29–30 April 1944</h3>
-      <p class="dek"><a href="patrols.html?ship=bang&amp;patrol=1">BANG</a>, <a href="patrols.html?ship=parche&amp;patrol=1">PARCHE</a> and <a href="patrols.html?ship=tinosa&amp;patrol=6">TINOSA</a> hunted convoy TAMA-17 through the Luzon Strait as a wolfpack. Their three
+      <p class="dek"><a href="subject.html?s=bang&amp;period=1">BANG</a>, <a href="subject.html?s=parche&amp;period=1">PARCHE</a> and <a href="subject.html?s=tinosa&amp;period=6">TINOSA</a> hunted convoy TAMA-17 through the Luzon Strait as a wolfpack. Their three
         patrol reports kept three different clocks, and the convoy's own record kept Tokyo time. Put on one clock, they
         tell the same night from both sides.</p>
       <div class="side" id="luzon-side"></div>
@@ -45,7 +45,7 @@
           <div class="now" id="now"></div>
         </div>
       </figure>
-      <p class="more"><a href="engagement.html?e=tama-17-1944-04-29&amp;view=records">The whole engagement, with the order of battle and every entry</a>; then <a href="engagement.html?e=te-04-1944-05-03">TE-04, four days later</a>, and <a href="convoys.html">every convoy the boats met</a></p>
+      <p class="more"><a href="engagement.html?e=tama-17-1944-04-29&amp;view=records">The whole engagement, with the order of battle and every entry</a>; then <a href="engagement.html?e=te-04-1944-05-03">TE-04, four days later</a>, and <a href="subjects.html">every convoy the boats met, among the subjects</a></p>
     </article>
 
     <article class="feature" id="f-haynsworth">
@@ -61,14 +61,14 @@
 
     <article class="feature" id="f-seabees">
       <h3>Construction across the Pacific: the 20th Seabees, 1942–1945</h3>
-      <p class="dek">A construction battalion rarely stayed in one place. The <a href="seabees.html">20th</a> crossed the Pacific in two waves,
+      <p class="dek">A construction battalion rarely stayed in one place. The <a href="subject.html?s=20ncb">20th</a> crossed the Pacific in two waves,
         split into echelons and detached companies across the Solomons and New Guinea, and came together again on
         Saipan and Okinawa. Its muster rolls follow every part.</p>
       <div class="side"><p>Blue lines are parts of the battalion; the black line is the battalion together. Point at a
         part to see where it went.</p></div>
       <figure class="fig" id="fig-seabees"></figure>
       <p class="readout" id="seabees-read" aria-live="polite"></p>
-      <p class="more"><a href="seabees.html">Every station on the map, with the ships that carried them and the day's weather</a></p>
+      <p class="more"><a href="subject.html?s=20ncb&amp;view=records">Every station on the map, with the ships that carried them and the day's weather</a></p>
     </article>
 
     <div class="also" id="also-pacific"></div>
@@ -82,7 +82,7 @@
         Africa. On 17 February 1945, entering the Strait with UGS 72, two ships in her convoy were hit.</p>
       <div class="side" id="solar-side"></div>
       <figure class="fig" id="fig-solar"></figure>
-      <p class="more"><a href="patrols.html?ship=solar">All of Solar's war diaries on the map</a></p>
+      <p class="more"><a href="subject.html?s=solar">All of Solar's war diaries, on her own page</a></p>
     </article>
     <div class="also" id="also-atlantic"></div>
   </section>
@@ -107,17 +107,17 @@
       <div class="side"><p>The Army's B time and German summer time were both UTC+2: no conversion.</p>
         <p>Open marks are secondary: a published account not yet checked against a German record.</p></div>
       <figure class="fig" id="fig-neuburg"></figure>
-      <p class="more"><a href="https://github.com/erichutchins/wwii-unit-records/tree/main/engagements/neuburg-1945-04-26">The engagement's entries and the evidence, in the records</a> · <a href="army.html?unit=106aaa-d&amp;t=1945-04-26">the 106th AAA on the Army map</a></p>
+      <p class="more"><a href="https://github.com/erichutchins/wwii-unit-records/tree/main/engagements/neuburg-1945-04-26">The engagement's entries and the evidence, in the records</a> · <a href="subject.html?s=106aaa-d&amp;t=1945-04-26&amp;view=records">Battery D of the 106th AAA on that day</a></p>
     </article>
     <div class="also" id="also-europe"></div>
   </section>
 
   <section class="chapter" id="ships">
-    <h2>Every ship's track</h2>
-    <p class="intro">Each boat and ship on its own map, every position its reports give. Choose one to follow it
-      patrol by patrol, or day by day through its war diary; every mark there opens the page it was read from.
-      Orange marks are attacks, as on the maps.</p>
-    <div id="fleet"></div>
+    <h2>Every subject</h2>
+    <p class="intro">Each boat, ship, Army unit, Seabee battalion and convoy the records follow has a page of its own, at three
+      depths: the account (what it was, and its journey in stages), the records (its own map and every entry, each opening
+      the page it was read from) and the working (how each position was placed, and what is assumed).
+      <a href="subjects.html">The index of every subject</a>.</p>
   </section>
 
   <section class="chapter" id="reference">

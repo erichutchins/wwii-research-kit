@@ -12,7 +12,8 @@
 #   every track.geojson, every boat's tracks.geojson and ships.json (check_track.py all --geojson),
 #   army/army.json, seabees/seabees.json, operations/operations.json, boats/ss-385-bang/dives.json,
 #   silhouettes/silhouettes.json, and through their own `check`: engagements/*/engagement.json,
-#   engagements/index.json, convoys/convoys.json (build_engagement.py) and reference/glossary.json (build_glossary.py).
+#   engagements/index.json, convoys/convoys.json (build_engagement.py), subjects.json (build_subjects.py, after the army,
+#   seabees and engagement builds it reads) and reference/glossary.json (build_glossary.py).
 # Not guarded, because the committed file can't be rebuilt without the network or the git-ignored sources/ cache:
 #   scans.json (nara.py index reads sources/nara/*/urls.txt; without the cache it only rewrites what it has),
 #   seafloor.csv, weather.csv, army/seafloor.csv, seabees/weather.csv (NOAA, ERA5, ISD downloads),
@@ -52,6 +53,7 @@ fresh "boats/ss-385-bang/dives.json (build_dives.py)" boats/ss-385-bang/dives.js
 uv run --quiet tools/build_silhouettes.py > /dev/null
 fresh "silhouettes/silhouettes.json (build_silhouettes.py)" silhouettes/silhouettes.json || stale=1
 uv run --quiet tools/build_engagement.py check
+uv run --quiet tools/build_subjects.py check
 uv run --quiet tools/build_glossary.py check
 
 out=$(uv run --quiet tools/check_attacks.py 2>&1) || { echo "$out"; exit 1; }; echo "$out" | tail -1

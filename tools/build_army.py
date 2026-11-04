@@ -2,7 +2,7 @@
 # requires-python = ">=3.9"
 # dependencies = []
 # ///
-"""Check the Army transcriptions and build records/army/army.json for site/army.html.
+"""Check the Army transcriptions and build records/army/army.json for the subject pages (site/subject.html, the Army panel).
 
 Inputs (hand-edited, the source of truth; columns in records/army/README.md):
   units.csv      batteries, companies, detachments, a division, and their lineage

@@ -1,58 +1,43 @@
-// convoys.html?c=<id>: every convoy the boats met (records/convoys/convoys.json, tools/build_engagement.py).
-// Routes run through reference/lanes/lanes.yml's nodes: a leg touching an assumed waypoint is dotted, a leg straight
-// between two ports dashed. Ships' bars: solid from a Japanese record, outlined from a secondary source, hatched where
-// inferred, dotted where the record gives no date. Encodings: guides/ENGAGEMENTS.md.
-(async () => {
+// A convoy's voyage and its ships day by day on the records depth of subject.html (guides/OPERATIONS-VIEWER.md 5.2): its
+// route on the map, where the boats saw and attacked it, its ships against the days, and the convoy's own story, as
+// convoys.html drew them until phase 6 folded the four side-list apps into the subject page as panels (the ledger of
+// every convoy is subjects.html's). Reads records/convoys/convoys.json (tools/build_engagement.py). Routes run through
+// reference/lanes/lanes.yml's nodes: a leg touching an assumed waypoint is dotted, a leg straight between two ports
+// dashed. Ships' bars: solid from a Japanese record, outlined from a secondary source, hatched where inferred, dotted
+// where the record gives no date. Encodings: guides/ENGAGEMENTS.md. The computation is engage.js's, the shared drawing
+// engage-views.js's.
+//
+//   ConvoyPanel.mount(host, S, opts)   host: the element the panel fills (class "records p-convoy"); S: the convoy's
+//                                      subject from records/subjects.json
+window.ConvoyPanel = { async mount(host, S) {
   const E = Engage, esc = EV.esc;
+  host.innerHTML = `
+  <div class="voyage">
+    <div class="card">
+      <div class="legend" id="v-legend"></div>
+      <svg class="vmap" id="vmap" role="img" aria-label="The convoy's route and where the boats met it"></svg>
+      <p class="key" id="v-mapnote"></p>
+    </div>
+    <div class="card">
+      <h2>Its ships, day by day</h2>
+      <svg class="roster" id="roster" role="img" aria-label="The convoy's ships against the days of its voyage"></svg>
+      <p class="key" id="v-rosternote"></p>
+    </div>
+  </div>
+  <section class="card"><h2>The convoy's record</h2><div class="story" id="v-story"></div></section>`;
   const [J, world] = await Promise.all([fetch(RECORDS + "convoys/convoys.json").then(r => r.json()), d3.json(EV.LAND_50M), SILHOUETTES]);
-  const LAND = EV.land(world), N = J.lanes, CV = J.convoys;
-  const want = new URLSearchParams(location.search).get("c");
-  let cur = CV.find(c => c.id === want) || CV.find(c => c.id === "te-04") || CV[0];
+  const LAND = EV.land(world), N = J.lanes;
+  const c = J.convoys.find(x => x.id === S.id);
+  if (!c) { host.innerHTML = `<p class="account-none">No convoy ${esc(S.id)} in convoys.json.</p>`; return; }
+  const boatColour = id => `var(--c${c.boats.findIndex(b => b.id === id) + 1})`;
+  document.getElementById("v-story").innerHTML = c.sections.map(s => `${s.heading ? `<h3>${esc(s.heading)}</h3>` : ""}${s.paras.map(p => `<p>${Links.render(p.text)}</p>`).join("")}`).join("");
 
-  // ---------- the ledger
-  const sunk = c => c.ships.filter(s => /^sunk/.test(s.fate || "")).length;
-  const grade = xs => xs.some(s => s.basis === "reported" || s.basis === "inferred") ? "●" : xs.length ? "◐" : "○";
-  const words = { "●": "from a Japanese record", "◐": "only from a secondary source", "○": "not found yet" };
-  const dot = (g, what) => `<td class="dot" title="${esc(what)}: ${words[g]}">${g}</td>`;
-  const route = c => [c.from, ...(c.via || []), c.to].filter(Boolean).join(" → ");
-  document.getElementById("ledger").innerHTML = `<thead><tr><th>Convoy</th><th>Route</th><th>Met</th><th>Boats</th><th class="num">Ships named</th><th class="num">Sunk</th>
-    <th title="Its sailing, from any record">Sailing</th><th title="Its ships, as named">Ships</th><th title="Its escorts">Escorts</th><th title="Stops along the way">Stops</th><th title="Where the boats saw it">Seen</th></tr></thead>
-    <tbody>${CV.map(c => {
-      const merch = c.ships.filter(s => !/escort/.test(s.role)), esc_ = c.ships.filter(s => /escort/.test(s.role));
-      const sailing = c.voyage.find(v => v.event === "sailed");
-      return `<tr data-id="${esc(c.id)}" tabindex="0"><td class="nm">${esc(c.convoy)} ${c.name_ja ? `<span lang="ja" data-tr="Convoy ${esc(c.convoy)}, as the Japanese records write it">${esc(c.name_ja)}</span>` : ""}</td><td>${esc(route(c))}</td>
-        <td>${c.engagements.map(e => `<a href="engagement.html?e=${esc(e.id)}">${esc(e.short)}</a>`).join(", ")}</td><td>${esc(c.boats.map(b => b.name).join(", "))}</td>
-        <td class="num">${c.ships.length}</td><td class="num">${sunk(c)}</td>
-        ${dot(sailing ? (sailing.basis === "secondary" ? "◐" : "●") : /secondary/.test(c.sailed || "") ? "◐" : c.sailed ? "●" : "○", "Sailing")}
-        ${dot(grade(merch), "Ships")}${dot(grade(esc_), "Escorts")}${dot(c.voyage.filter(v => v.event !== "sailed").length ? grade(c.voyage) : "○", "Stops")}
-        ${dot(c.sightings.length ? "●" : "○", "Seen by the boats")}</tr>`;
-    }).join("")}</tbody>`;
-  document.querySelectorAll("#ledger tbody tr").forEach(tr => {
-    const go = () => { cur = CV.find(c => c.id === tr.dataset.id); history.replaceState(null, "", "?c=" + cur.id); draw(); };
-    tr.addEventListener("click", ev => { if (!ev.target.closest("a")) go(); });
-    tr.addEventListener("keydown", ev => { if (ev.key === "Enter") go(); });
-  });
-
-  // ---------- the picked convoy
-  const boatColour = (c, id) => `var(--c${c.boats.findIndex(b => b.id === id) + 1})`;
-  function draw() {
-    const c = cur;
-    document.querySelectorAll("#ledger tbody tr").forEach(tr => tr.setAttribute("aria-selected", tr.dataset.id === c.id));
-    document.getElementById("v-eyebrow").textContent = `Convoy ${c.convoy}${c.name_ja ? " · " + c.name_ja : ""}`;
-    document.getElementById("v-title").textContent = route(c);
-    document.getElementById("v-lede").innerHTML = [c.sailed && `Sailed ${esc(c.sailed)}`, c.arrived && `arrived ${esc(c.arrived)}`, c.size && `${esc(c.size)} ships`,
-      c.cargo && esc(c.cargo), c.engagements.length && `met by ${esc(c.boats.map(b => b.name).join(", "))}: ${c.engagements.map(e => `<a href="engagement.html?e=${esc(e.id)}">${esc(e.title)}</a>`).join("; ")}`].filter(Boolean).join(" · ");
-    document.getElementById("v-story").innerHTML = c.sections.map(s => `${s.heading ? `<h2>${esc(s.heading)}</h2>` : ""}${s.paras.map(p => `<p>${Links.render(p.text)}</p>`).join("")}`).join("");
-    drawMap(c);
-    drawRoster(c);
-  }
-
-  function drawMap(c) {
+  function drawMap() {
     const svg = d3.select("#vmap"), W = svg.node().clientWidth, H = svg.node().clientHeight;
     svg.selectAll("*").remove();
     const nodes = (c.route || []).map(id => ({ id, ...N[id] }));
     const pts = [...nodes.map(n => [n.lon, n.lat]), ...c.sightings.map(s => [s.lon, s.lat]), ...c.hits.map(h => [h.lon, h.lat]), ...c.attacks.map(a => [a.lon, a.lat])];
-    if (!pts.length) return;
+    if (!pts.length || !W) return;
     const proj = d3.geoMercator().fitExtent([[30, 30], [W - 30, H - 30]], { type: "MultiPoint", coordinates: pts });
     const path = d3.geoPath(proj);
     svg.append("path").attr("class", "land").attr("d", path(LAND));
@@ -68,23 +53,24 @@
         .text(n.name + (stops.length ? " · " + stops.map(v => `${v.event} ${E.day(E.T(v.tokyo))}`).join(", ") : ""));
     });
     const mk = (lon, lat) => svg.append("g").attr("class", "mk").attr("transform", `translate(${proj([lon, lat])})`);
-    c.sightings.forEach(s => mk(s.lon, s.lat).call(g => g.append("circle").attr("r", 4.5).attr("fill", "var(--surface)").attr("stroke", boatColour(c, s.who)).attr("stroke-width", 1.8))
+    c.sightings.forEach(s => mk(s.lon, s.lat).call(g => g.append("circle").attr("r", 4.5).attr("fill", "var(--surface)").attr("stroke", boatColour(s.who)).attr("stroke-width", 1.8))
       .on("mouseenter", ev => EV.showTip(ev, `<div class="v">${esc(s.name)} · ${esc(s.ref)}</div><div class="k">${esc(s.local)}</div><div class="m">Sighted: the convoy's position as the boat reported it</div>`)).on("mousemove", EV.moveTip).on("mouseleave", EV.hideTip));
-    c.attacks.forEach(a => mk(a.lon, a.lat).call(g => g.append("path").attr("d", EV.shape.diamond).attr("fill", boatColour(c, a.who)))
+    c.attacks.forEach(a => mk(a.lon, a.lat).call(g => g.append("path").attr("d", EV.shape.diamond).attr("fill", boatColour(a.who)))
       .on("mouseenter", ev => EV.showTip(ev, `<div class="v">${esc(a.name)} · ${esc(a.title)}</div><div class="k">${E.hhmm(E.T(a.utc))} GMT ${E.day(E.T(a.utc))}</div>`)).on("mousemove", EV.moveTip).on("mouseleave", EV.hideTip));
     c.hits.forEach(h => mk(h.lon, h.lat).call(g => EV.outcomeMark(g, h.mark || "miss", h.basis === "secondary"))
       .on("mouseenter", ev => EV.showTip(ev, `<div class="v">${esc(h.title)}</div><div class="k">${esc(h.local)}</div><div class="m">${esc((h.kind || "").replace(/_/g, " "))} (the Japanese record)</div>`)).on("mousemove", EV.moveTip).on("mouseleave", EV.hideTip));
     document.getElementById("v-legend").innerHTML = [
-      ...c.boats.map(b => `<span class="boat"><svg width="12" height="12" viewBox="-6 -6 12 12"><path d="${EV.shape.diamond}" fill="${boatColour(c, b.id)}"/></svg>${esc(b.name)}</span>`),
+      ...c.boats.map(b => `<span class="boat"><svg width="12" height="12" viewBox="-6 -6 12 12"><path d="${EV.shape.diamond}" fill="${boatColour(b.id)}"/></svg>${esc(b.name)}</span>`),
       `<span>${EV.legendMark.sighted("var(--ink-2)")}Sighted</span>`, `<span>${EV.legendMark.sunk}Sunk</span>`, `<span>${EV.legendMark.hit}Hit</span>`,
       `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" class="route assumed"/></svg>Assumed route</span>`,
       `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" class="route straight"/></svg>Straight between ports</span>`].join("");
     document.getElementById("v-mapnote").textContent = "The route is drawn through reference waypoints, none yet traced from the escorts' charts: an assumption, not a track. The marks are the records': where the boats saw and attacked the convoy, and where the Japanese record puts a ship hit.";
   }
 
-  function drawRoster(c) {
+  function drawRoster() {
     const svg = d3.select("#roster"), W = svg.node().clientWidth;
     svg.selectAll("*").remove();
+    if (!W) return;
     const day = s => s ? E.T(String(s).slice(0, 10)) : null;
     const dates = [...c.voyage.map(v => E.T(v.tokyo)), ...c.ships.flatMap(s => [day(s.from), day(s.to)]), ...c.engagements.flatMap(e => e.window ? [E.T(e.window.from), E.T(e.window.to)] : []),
       day(/^\d{4}-\d\d-\d\d/.test(c.sailed || "") ? c.sailed : null)].filter(x => x != null);
@@ -136,7 +122,8 @@
     document.getElementById("v-rosternote").textContent = "Solid: dates from a Japanese record; outlined: a secondary source; hatched: inferred; dotted: the record gives no date, so the ship is shown across what's known of the voyage. ·e marks an escort. Shaded: the days of the engagements. Dates are Tokyo time.";
   }
 
+  const draw = () => { drawMap(); drawRoster(); };
   draw();
   let rw = 0;
-  new ResizeObserver(() => { const w = document.querySelector(".wrap").clientWidth; if (w !== rw) { rw = w; draw(); } }).observe(document.querySelector(".wrap"));
-})();
+  new ResizeObserver(() => { const w = host.clientWidth; if (w !== rw) { rw = w; draw(); } }).observe(host);
+} };

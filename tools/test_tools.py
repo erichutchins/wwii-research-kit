@@ -29,6 +29,7 @@ import bezugspunkt
 import build_engagement
 import build_operations
 import build_seabees
+import build_subjects
 import check_sources
 import check_track
 import jgrid
@@ -721,6 +722,87 @@ class EngagementIntelligence(unittest.TestCase):
             for f in records.load_yaml(path) or []:
                 self.assertIn(f.get("event"), build_engagement.FRUPAC_KIND, f"{path}: {f.get('id')}")
         self.assertTrue(set(build_engagement.FRUPAC_KIND.values()) <= build_engagement.KINDS)
+
+
+class Subjects(unittest.TestCase):
+    """build_subjects.py against a records folder made here: one subject of each kind, the relations merged from every
+    dataset into one shape, and a subject without a plain line failing."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.rec = Path(self._tmp.name).resolve()
+        w = lambda name, text: (self.rec / name).parent.mkdir(parents=True, exist_ok=True) or (self.rec / name).write_text(text, encoding="utf-8")
+        w("SOURCES.yml", "nara-catalog:\n  title: NARA\n  short: National Archives\n  kind: record\n  match: '^rg(\\d+)-(\\d+)/p(\\d+)$'\n"
+          "  link: https://catalog.archives.gov/id/{2}?objectPage={3}\n"
+          "etoob:\n  title: Order of battle\n  short: ETO OB\n  kind: assessment\n  match: '^etoob-(\\w+)/p(\\d+)$'\n  link: https://example.org/{1}/{2}\n"
+          "jacar:\n  title: JACAR\n  short: JACAR\n  kind: record\n  match: '^jacar:(C\\d{11})( p\\d+)?$'\n  link: https://www.jacar.archives.go.jp/das/image/{1}\n")
+        w("inventory.yml", "boats:\n  SS-385:\n    folder: boats/ss-385-bang\n    patrols:\n      1: { status: mapped, nara: [74802746], first_fix: 1944-03-30, last_fix: 1944-05-15, files: [positions] }\n"
+          "units:\n  67ca-med:\n    record: { status: mapped }\nseabees:\n  20ncb:\n    record: { status: mapped }\ncommands:\n  comsubpac:\n    records:\n      1944-10: { status: transcribed, nara: [139761402] }\n")
+        w("boats/ss-385-bang/ship.yml", "name: BANG\nhull: SS-385\nclass: Balao\nkind: submarine\nplain: a fleet submarine of the Balao class\nmax_kts: 20.5\nmap:\n  periods:\n    - { n: 1, name: First War Patrol, dates: 29 Mar – 14 May 1944 }\n")
+        w("boats/ss-385-bang/patrol-1/positions.csv", "source,ref,date,time,zone,lat_raw,lon_raw,page,on_track,note\nnoon,noon,1944-04-29,1200,K,19-26N,118-45E,rg367-74802746/p16,yes,\n")
+        w("boats/ss-385-bang/tracks.geojson", '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"kind":"noon","ref":"noon","patrol":1,"on_track":true,"utc":"1944-04-29T02:00Z"},"geometry":{"type":"Point","coordinates":[118.75,19.43]}}]}')
+        w("army/units.csv", "unit,name,short,note\n67ca-med,Medical Detachment,Med. Det.,aid men\n9ad,9th Armored Division,9th AD,a division\n")
+        w("army/units.yml", "67ca-med:\n  plain: the aid men of a regiment\n9ad:\n  plain: an armored division\n")
+        w("army/relations.csv", "unit,relation,other,other_name,from,to,basis,page,note\n67ca-med,part_of,9ad,9th Armored Division,..1944-01-01,,reported,etoob-9AD/p499,a row\n")
+        w("army/leads.yml", "- statement: where it stood on 8 May\n  units: [9ad]\n  said_by: the booklet\n  ref: [etoob-9AD/p501]\n  searched: the order of battle\n  still: the division's report\n")
+        w("army/army.json", '{"units":[{"unit":"67ca-med","name":"Medical Detachment","stations":[{"date":"1943-03-28","lat":35.7,"lon":-0.6,"place":"Oran","source":"regt","placed":"town","station":"x"},{"date":"1943-05-05","lat":37.0,"lon":9.6,"place":"Mateur","source":"mr","placed":"town","station":"y"}],"actions":[]},{"unit":"9ad","name":"9th Armored Division","stations":[],"actions":[]}],"routes":[]}')
+        w("seabees/units.csv", "unit,name,note\n20ncb,20th Naval Construction Battalion,Seabees\n")
+        w("seabees/units.yml", "20ncb:\n  plain: a naval construction battalion\n")
+        w("seabees/parts.csv", "unit,part,parent,from,to,note\n20ncb,Forward Echelon,battalion,1943-05-13,1944-06-06,About 500 men (rg24-190273312/p0041)\n")
+        w("seabees/seabees.json", '{"rows":[{"id":0,"unit":"20ncb","part":"battalion","date":"1942-08-20","station":"x","place":"Norfolk","lat":36.8,"lon":-76.3,"source":"muster","assumed":"","links":[]}],"parts":[],"voyages":[],"projects":[],"weather":{}}')
+        w("convoys/tama-17/convoy.md", "---\nconvoy: TAMA-17\nname_ja: タマ一七\nplain: a Takao–Manila convoy\nfrom: Takao\nto: Manila\nsailed: 1944-04-28\nroute: []\nvoyage: []\nships:\n  - ship: Takegawa Maru\n    role: merchant\n    to: 1944-04-29\n    source: jacar:C08050103200\n    page: p23\n    basis: reported\n---\n\nTakao to Manila.\n")
+        w("convoys/convoys.json", '{"lanes":{},"convoys":[{"id":"tama-17","sightings":[],"hits":[],"attacks":[]}]}')
+        w("commands/comsubpac/command.yml", "name: Commander Submarine Force\nshort: ComSubPac\nkind: command\nof: us\nplain: the submarine force's headquarters\n")
+        w("commands/comsubpac/task_organization.csv", "unit,title,page\nG 17.1,Empire Patrol Group.,rg38-139761402/p03\nG 17.11 through G 17.24 inclusive,Coordinated Attack Groups.,rg38-139761402/p03\n")
+        w("commands/comsubpac/disposition.csv", "date,page,section,boat,name,unit,note\n1944-10-31,rg38-139761402/p18,Enroute patrol stations,BANG,BANG,17.18.2,\n")
+        w("engagements/index.json", "[]")
+        self.patch = mock.patch.object(build_subjects, "RECORDS", self.rec)
+        self.patch.start()
+        self.patch_r = mock.patch.object(records, "RECORDS", self.rec)
+        self.patch_r.start()
+        self.patch_o = mock.patch.object(build_operations.records, "RECORDS", self.rec)
+        self.patch_o.start()
+
+    def tearDown(self):
+        self.patch.stop()
+        self.patch_r.stop()
+        self.patch_o.stop()
+        self._tmp.cleanup()
+
+    def test_one_subject_of_each_kind_with_its_plain_line(self):
+        b, subjects = build_subjects.build()
+        self.assertEqual(b.problems, [])
+        self.assertEqual({s["kind"] for s in subjects}, {"boat", "unit", "battalion", "convoy", "command"})
+        by = {s["id"]: s for s in subjects}
+        self.assertEqual(by["ss-385-bang"]["alias"], "bang")
+        self.assertEqual(by["ss-385-bang"]["plain"], "a fleet submarine of the Balao class")
+        self.assertEqual(by["ss-385-bang"]["periods"][0]["status"], "mapped")
+        self.assertEqual(by["67ca-med"]["periods"][0], {"month": "1943-03", "stations": 1, "source": "regt", "assumed": True, "sources": ["regt"], "places": ["Oran"]})
+        self.assertEqual(by["67ca-med"]["theatre"], "mediterranean")
+        self.assertEqual(by["9ad"]["leads"][0]["statement"], "where it stood on 8 May")
+        self.assertEqual(by["tama-17"]["name"], "Convoy TAMA-17")
+
+    def test_relations_from_every_dataset_in_one_shape(self):
+        _, subjects = build_subjects.build()
+        by = {s["id"]: s for s in subjects}
+        keys = {"relation", "dir", "other", "other_name", "from", "to", "basis", "ref", "cite", "note"}
+        for s in subjects:
+            for r in s["relations"]:
+                self.assertEqual(set(r), keys, s["id"])
+        # relations.csv, both ways
+        self.assertEqual([(r["relation"], r["dir"], r["other"]) for r in by["67ca-med"]["relations"]], [("part_of", "of", "9ad")])
+        self.assertEqual([(r["relation"], r["dir"], r["other"]) for r in by["9ad"]["relations"]], [("part_of", "to", "67ca-med")])
+        # a part of the battalion, its page read out of the note; a ship in the convoy; a boat in a task unit; the force's groups
+        self.assertEqual(by["20ncb"]["relations"][0]["other_name"], "Forward Echelon")
+        self.assertEqual(by["20ncb"]["relations"][0]["cite"][0]["ref"], "rg24-190273312/p0041")
+        self.assertEqual((by["tama-17"]["relations"][0]["other_name"], by["tama-17"]["relations"][0]["to"]), ("Takegawa Maru", "1944-04-29"))
+        self.assertEqual(by["ss-385-bang"]["relations"][0]["other_name"], "Task Unit 17.18.2, Coordinated Attack Groups")
+        self.assertEqual(by["comsubpac"]["relations"][0]["other"], "G 17.1")
+
+    def test_a_subject_without_a_plain_line_fails(self):
+        (self.rec / "army/units.yml").write_text("67ca-med:\n  plain: the aid men\n", encoding="utf-8")
+        b, _ = build_subjects.build()
+        self.assertEqual(b.problems, ["army/units.csv 9ad: no `plain` line in army/units.yml (what it was, in a line, ours)"])
 
 
 class EngagementCheck(unittest.TestCase):

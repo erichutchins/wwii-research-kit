@@ -544,6 +544,19 @@ reach ring, now prose) have no home on the generic map yet, and would be further
 hook into the Haynsworth page (`HAYNSWORTH_EXTRA`) went with the page, so its own pages need the panel registry
 instead. Phase 6 is next.
 
+**Done** (4 November 2026): phase 6. `tools/build_subjects.py` writes `records/subjects.json`, one entry for each of 86
+subjects (17 boats, 23 ships, 36 Army units, 2 battalions, 7 convoys, the submarine force's headquarters) with its
+plain line, periods, the relations merged from every dataset into one shape, its engagements and which record files it
+has; a subject without a `plain` line fails the build. `subject.html?s=<id>` has the three depths: the account (the
+plain line as the eyebrow, the designation as the title, the organizations, the strip map by stage or patrol, the
+coverage bar, the war around each stage, three doors), the records (the four apps as panels under `site/panels/`), the
+working (placement, the speed check on the page, relations, `army/leads.yml`, coverage). `subjects.html` is the index.
+The four old pages are redirects that carry their parameters across. What the data taught: the 67th CA (AA)'s units
+have no rows in `relations.csv` yet, so the Medical Detachment's organizations card says so instead of the mockup's
+rows (the ORGANIZATION line on its reports is the source to read); a unit's "beside it" is by geometry (an engagement
+whose box holds a station in its window) until a relation names the battalion; a subject's theatre is read from its
+positions; and a battalion's stages are calendar years, since no countries divide the Pacific. Phase 7 is next.
+
 ## 10. Open questions
 
 - **Colour for more than three followed subjects.** The 62nd CA (AA) has fourteen units with stations around Oran and

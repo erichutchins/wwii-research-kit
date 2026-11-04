@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Subjects</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="engage.css">
+<link rel="stylesheet" href="subject.css">
+<!-- The index of every subject the records follow (records/subjects.json, tools/build_subjects.py), by kind and theatre:
+     the boats and their patrols, the ships, the Army units, the Seabee battalions, the convoys (the ledger, with what the
+     records give of each: ● from a Japanese record, ◐ only from a secondary source, ○ not found yet) and the commands.
+     Each opens its own page, subject.html?s=<id>. subjects.js fills it. -->
+</head>
+<body>
+<div class="wrap index">
+  <header>
+    <nav class="nav" aria-label="The kit" data-nav></nav>
+    <script src="nav.js"></script>
+    <div class="eyebrow">Every subject the records follow</div>
+    <h1>Subjects</h1>
+    <p class="lede">A subject is something the records follow: a boat, a ship, an Army unit, a Seabee battalion, a convoy, a command.
+      Each is named first by what it was, in our words, and then by its designation, the records'; each opens its own page, at
+      three depths: the account, the records, the working.</p>
+  </header>
+  <div id="index"></div>
+</div>
+<div id="tip" hidden></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="subjects.js"></script>
+<script src="glossary.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>
