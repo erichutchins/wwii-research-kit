@@ -184,7 +184,20 @@ Promise.all([
   new ResizeObserver(() => render()).observe(document.querySelector(".map-wrap"));
   document.getElementById("probe").addEventListener("input", e => probe(e.target.value));
   probe(document.getElementById("probe").value);
+  fromQuery();
 });
+
+// grids.html?ref=V-044572 (the glossary's card on a grid reference): the reference in the probe, so its point is drawn,
+// on the grid an entry typed it on when one did (otherwise on every grid that reads it). Nothing else changes nothing.
+function fromQuery() {
+  const ref = (new URLSearchParams(location.search).get("ref") || "").trim();
+  if (!ref) return;
+  const norm = s => (s || "").toUpperCase().replace(/[\s-]+/g, "");
+  const typed = REFS.find(r => r.key && norm(r.grid) === norm(ref));
+  if (typed) { state.grid = typed.key; render(); }
+  document.getElementById("probe").value = ref;
+  probe(ref);
+}
 
 // Every 100 km square whose centre falls in the grid's box, as a lon/lat polygon
 function squares(g) {

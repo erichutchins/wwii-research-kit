@@ -18,6 +18,22 @@
 #   see     a kit page that explains more (optional; relative to site/)
 #   unless  phrases that contain the term but mean something else, left unmarked (optional; e.g. "AP Hill" for AP)
 #
+# `patterns` are the records' notations (a time with its zone letter, a grid reference, a kana position code, an attack
+# sheet's angles): glossary.js marks each distinct value once per passage, and the card links the explainer page opened
+# at that value. Each entry:
+#   id       short, kebab-case, unique
+#   name     the card's heading ("a time with its zone letter")
+#   pattern  a regular expression that reads the same in JavaScript and Python's re: plain groups, no named groups, no
+#            \p{}, no inline flags, fixed-width lookbehind only, kana written literally, [A-Za-z0-9] rather than \w or
+#            \b (which mean different things to the two engines next to kana). The build compiles it.
+#   example  one form from the records; it must match the whole pattern
+#   not      forms the pattern must not match anywhere in (optional): the abbreviation-and-digits the terms treat as a
+#            grid reference, a date, a hull number, a page citation, a pronoun after a time
+#   says     what the notation is, as for a term: only what the source supports
+#   source   as for a term
+#   see      the explainer page with the value in its query: $0 is the whole match, $1..$9 the groups
+#            (zones.html?zone=$2, grids.html?ref=$0); the page is checked to exist in site/
+#
 # Ships aren't listed here: every ship in records/ships.json is linked to its track. Their bare names (without "USS")
 # are only matched when they're listed under ships.bare, since Washington, Missouri or Bougainville are also places.
 
@@ -401,3 +417,82 @@ terms:
     says: >-
       The US National Archives and Records Administration, where most of these records are kept.
     source: https://www.archives.gov/about
+
+# ── The notations: a regular expression and a target per notation (guides/OPERATIONS-VIEWER.md 5.4) ───────
+patterns:
+  # A lowercase letter after the zone is left alone: "1604 I sighted" is the captain writing, "2201 I." the zone.
+  - id: zone-time
+    name: a time with its zone letter
+    pattern: '(?<![0-9A-Za-z.:-])([01][0-9][0-5][0-9]|2[0-4][0-5][0-9]) ?(IK|KL|LM|TU|UV|VW|WX|XY|[A-IK-Y]|Z)(?![0-9A-Za-z-])(?! [a-z])'
+    example: 2201 I
+    not: [VT 0893, 1944-04-29, p03, SS-385, at 1604 I sighted the convoy, "0603 Hrs"]
+    says: >-
+      The time as the record typed it, then the letter of the time zone its clock kept (zone time, ZT). Z is
+      Greenwich Civil Time (GCT). Two records can only be compared once both are on one clock.
+    source: opnav-29-p1000/X; opnav-29-p1000/G
+    see: zones.html?zone=$2
+  # The Army's grids as the stations type them: a square's letter (one, or the 500 km block's letter before it, which
+  # the 894th's pages type in lower case: vV044572, wF6317) and 4, 6 or 8 digits with a hyphen, a space or nothing, or
+  # 2 digits after a hyphen or a space (RA 25, O-34; "L45" is a lead's number). Not the Kriegsmarine's C-squares (below),
+  # a task force, a Luftwaffe wing (KG 54), a torpedo mark, a page, nor "A 90 mm" or "A 1600".
+  - id: army-grid
+    name: a grid reference
+    pattern: '(?<![A-Za-z0-9-])(?!C[A-Z])(?!TF|TG|JV|OP|TM|FM|SS|DD|DE|AP|AK|AO|CV|PC|RG|KG|JG|ZG|SG|LG)(?:([a-z]?[A-HJ-Z])(?:-?[0-9]{4}|[- ]?[0-9]{6}|[- ]?[0-9]{8}|[- ][0-9]{2})|([A-HJ-Z]{2})(?:[- ]?[0-9]{4}|[- ]?[0-9]{6}|[- ]?[0-9]{8}|[- ][0-9]{2}))(?![0-9A-Za-z-])(?!\.[0-9])(?! [a-z])'
+    example: V-044572
+    not: [2201 I, TF 58, TG 58.3, JV 44, Mk 14, p03, SS-385, CJ 9472, 1944-04-29, "0893", XXIII 97, 123S, KG 54, L45, A 1600 hrs, A 90 mm gun]
+    says: >-
+      A position read on a map's military grid, the lines that divide it into squares: a square's letter and an even
+      number of digits. Which grid it is on has to be worked out from the date and the towns the entry names.
+    source: tm-20-205/n181
+    see: grids.html?ref=$0
+  - id: german-point
+    name: a German Army reference point
+    pattern: '(?<![A-Za-z0-9-])([IVXL]{2,6}) ?([0-9]{1,3})(?![0-9A-Za-z.-])'
+    example: XXIII 97
+    not: [V-044572, VT 0893, II Corps, 2201 I, World War II 1945]
+    says: >-
+      A point on the German Army's reference-point map (Bezugspunktkarte 1:100000): the sheet's block, a Roman numeral,
+      and the point's number in it, as XIV Panzer Corps' reports give a position.
+    source: t312-0090/f0003; t314-0544/f0361
+    see: german.html?ref=$0
+  - id: naval-square
+    name: a Kriegsmarine naval square
+    pattern: '(?<![A-Za-z0-9-])(?!CV|CA|CL|CB|CC|CP)(C[A-Z]) ?([0-9]{2,4})(?![0-9A-Za-z.-])(?! [A-Z][a-z])'
+    example: CJ 9472
+    not: [VT 0893, CV 16, CA 1944, V-044572, CJ-9472, CO 14 Tk Bn]
+    says: >-
+      A square of the German Navy's Marinequadratkarte: two letters name a large square, and every digit after them
+      splits the square before it three by three, numbered like a telephone keypad.
+    source: schmidt-mqs/p23; skl:55/p397
+    see: german.html?ref=$0
+  # Two kana, one or two numerals, then kana: the convoy names (タマ一七) have no kana after the numerals
+  - id: kana-code
+    name: a kana position code
+    pattern: '(?<![ァ-ヶ])([ァ-ヶ]{2})([一二三四五六七八九〇]{1,2})([ぁ-ゖァ-ヶ]{1,2})(?![ぁ-ゖァ-ヶ一-龥])'
+    example: メキ三ツ
+    not: [タマ一七, タカ九〇九, ニテ四次ニ, 二十一日]
+    says: >-
+      The Japanese Navy's code for a position: two kana name a square about 20 miles across, the rest the point in it.
+      The kit's key is worked out from Japanese reports that give both the code and the position.
+    source: https://github.com/erichutchins/wwii-research-kit/blob/main/guides/JAPANESE-GRID.md
+    see: jgrid.html?code=$0
+  - id: track-angle
+    name: a track angle, as the attack sheet types it
+    pattern: '(?<![A-Za-z0-9.-])([0-9]{1,3}(?:\.[0-9])?)([SP])(?![A-Za-z0-9-])'
+    example: 123S
+    not: [27-28S, SS-385, 153-02E, 0893 VT, 2201 I, 90 P]
+    says: >-
+      The angle at which the torpedo's track crosses the target's: measured from the target's bow, 0° to 180°, to
+      starboard (S) or port (P). A 90° track hits square on the beam.
+    source: usf-25a/4107
+    see: torpedo.html?track=$0
+  - id: gyro-angle
+    name: a gyro angle
+    pattern: '(?<![A-Za-z])([Gg]yros?(?: angles?)? ?\(?)([0-9]{3}(?:\.[0-9])?)(?![0-9A-Za-z])'
+    example: Gyro 013
+    not: [gyro + 180, gyro angles by hand, Gyro 13]
+    says: >-
+      The turn set into a torpedo before firing, so that it swings onto its course after leaving the tube: measured
+      from the submarine's bow, 0° to 360° clockwise (a straight shot from a stern tube is 180°).
+    source: usf-25a/4107
+    see: torpedo.html?gyro=$2

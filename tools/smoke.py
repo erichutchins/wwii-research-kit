@@ -6,7 +6,8 @@
 
 Every page in site/, and every view a page opens from the address (each engagement at its depths, each subject at its
 account and at its records for every period, the five walked-through subjects at their working too, BANG's dives by
-patrol), in light and dark mode, at desktop and phone width.
+patrol, each explainer opened at a notation as the glossary's cards link it), in light and dark mode, at desktop and
+phone width.
 A view fails on:
   - an error in the console, or an uncaught exception;
   - a request to this site that fails or answers 4xx/5xx (a missing data file, a renamed script);
@@ -55,7 +56,13 @@ def kit_views(root=KIT):
     out += engagement_views(rec / "engagements", "site/engagement.html")
     out += subject_views(rec / "subjects.json", "site/subject.html")
     out += [f"site/dives.html?patrol={p['patrol']}" for p in load(rec / "boats/ss-385-bang/dives.json")["patrols"]]
+    out += EXPLAINER_VIEWS
     return out
+
+
+# the explainers opened at a value, as the glossary's cards link them (reference/glossary.yml `patterns`, `see`)
+EXPLAINER_VIEWS = ["site/zones.html?zone=K", "site/grids.html?ref=V-044572", "site/jgrid.html?code=メキ三ツ",
+                   "site/german.html?ref=XXIII 97", "site/german.html?ref=CJ 9472", "site/torpedo.html?track=123S&gyro=013"]
 
 
 def engagement_views(folder, page):
