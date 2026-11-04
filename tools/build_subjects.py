@@ -185,7 +185,7 @@ class Build:
                 inv_b = (inv.get("boats") or {}).get(hull) or {}
                 for n in records.patrols(d.name):
                     pd = d / f"patrol-{n}"
-                    files = {p.stem: p for p in pd.iterdir() if p.suffix in (".csv", ".yml")}
+                    files = {p.stem: p for p in sorted(pd.iterdir()) if p.suffix in (".csv", ".yml")}
                     for k, p in files.items():
                         recs[k] = recs.get(k, 0) + (sum(1 for _ in csv.DictReader(p.open(encoding="utf-8"))) if p.suffix == ".csv"
                                                     else len(records.load_yaml(p) or []))
