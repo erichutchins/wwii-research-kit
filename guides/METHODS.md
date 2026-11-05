@@ -241,6 +241,20 @@ TINOSA Patrol 3 (October 1943) added more, for a ship with no convoy and no esco
   says quickly whether an attack was reported at all. It compiles the Combined Fleet's signals, so it repeats the
   ship's own telegrams and counts once with them. A ship damaged but still steaming may not be in it (TINOSA's 4 October
   tanker isn't).
+- **How the summary runs, and where it misleads** (the 2026 pass over every patrol's months, lead L98). Two volumes:
+  December 1941 to December 1943 (`C16120655900`) and January 1944 to February 1945 (`C16120658900`), one code a month
+  (June 1944 `C16120659700` to February 1945 `C16120660500`). It **stops at February 1945**: for later attacks, search by
+  command and month. Some months add tables of ships sunk and damaged, with times; these can be filed in the next
+  month's part (June 1944's opens with May's tables), and some months have none.
+  - **A bare tick-and-name line is dated when the loss was reported, not when it happened.** In February 1945 the
+    narrative has "✓大暁丸 沈没" on the 9th; the 1st Escort Fleet's loss table (`C08030142100` p46) has her sunk on the
+    7th at 0450 off Indochina. So a line with no time or place may be days late: never pair it on its date alone. A line
+    that gives its own time and place ("二九 〇二三〇 バーシー海峡E 香取丸 … 被雷沈") carries the event's date; pair that.
+  - **Its silence is not evidence**, in the last months above all: January and February 1945 have nothing in the Yellow
+    Sea, though Kume and Sanuki Maru were sunk there on 28 January (her captain's telegram in the 103rd Squadron's
+    diary, `C08030075600` pp. 13-14). The 1st Escort Fleet's loss tables cover its southern routes only and leave them
+    out too. Say "no entry in the summary", not "nothing sank".
+  - **Its hand writes 9 like an f or a P** (Toyama Maru's "708f" is 7,089 tons): read tonnages with that in mind.
 - **A ship sailing alone is in the diaries of the ships sent to help her.** Kazahaya, an oiler on passage to Truk, has no
   escort diary, and `jacar.py search "風早"` didn't find her. Her own signals ("three hits, ability to steam doubtful",
   her list and speed, her positions, the boiler room torpedoed, the time she sank) and the rescue totals are in the

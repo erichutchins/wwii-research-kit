@@ -39,7 +39,5 @@ nodes:
   w-s91: {name: south-west of Pratas, lon: 116.0, lat: 19.3, assumed: "where No. 91 was attacked (the Hong Kong fleet's narrative), toward Hong Kong"}
   w-hainan: {name: east of Hainan, lon: 111.6, lat: 18.7, assumed: "east from Yulin along Hainan's south coast"}
   w-etw: {name: east of Formosa, lon: 122.55, lat: 24.6, assumed: "up Formosa's east coast, west of Yonaguni"}
-  w-scape: {name: off South Cape, lon: 120.85, lat: 21.7, assumed: "rounding Formosa's southern cape"}
-  w-etw2: {name: east of Formosa (south), lon: 121.75, lat: 23.0, assumed: "up Formosa's east coast"}
   w-izu: {name: off the Izu Islands, lon: 139.5, lat: 33.5, assumed: "south along the Izu Islands"}
   w-bonin: {name: toward the Bonins, lon: 137.9, lat: 29.3, assumed: "south toward the Bonins, by BANG's attack position"}

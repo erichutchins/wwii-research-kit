@@ -24,7 +24,8 @@ Read `guides/METHODS.md` ("The Japanese side") and, for position codes, `guides/
    division's war diary (戦時日誌), the escort ship's battle report (戦闘詳報), the guard district's
    radio log, and the designated-ship movement tables (指定船舶行動表) for merchant ships.
    Always search JACAR, even when combinedfleet has the story. First check the Navy's monthly
-   summary of attacks on shipping (大東亜戦争経過概要（護衛対潜関係）, `C16120655900` and its parts);
+   summary of attacks on shipping (大東亜戦争経過概要（護衛対潜関係）, `C16120655900` and its parts; it ends in
+   February 1945, dates a bare loss line when it was reported, not when it happened, and its silence is no evidence);
    for a ship sailing alone, read the telegram log (令達報告等) of the commands sent to help her; and
    search by command and month, since the search text misses much. Japanese Wikipedia often names
    the JACAR page: a finding aid, not a citation. Details: METHODS.md, "The Japanese side".
