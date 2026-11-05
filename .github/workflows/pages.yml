@@ -58,22 +58,33 @@ jobs:
           cp -r site reference records _site/
           rm -rf _site/records/.git
           printf '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=site/"><title>WWII research kit</title><a href="site/">WWII research kit</a>\n' > _site/index.html
-      - name: Version the pages' scripts and stylesheets by commit (a new page never runs an older cached script)
+      - name: Version the pages' scripts, stylesheets and data by commit (a new page never runs on older cached files)
         # Pages lets a browser keep each file 10 minutes, so just after a deploy a page could load with the scripts of
-        # the deploy before (a new tab button, an old observer.js that doesn't know it). Each local .js and .css a page
-        # names gets ?v=<commit>; external addresses, anchors and ones that already carry a query are left alone.
+        # the deploy before (a new tab button, an old observer.js that doesn't know it), or with new data beside old
+        # (a new subjects.json naming a patrol whose positions an old tracks.geojson doesn't have yet: "0 fixes").
+        # Each local .js and .css a page names gets ?v=<commit>; external addresses, anchors and ones that already carry
+        # a query are left alone. The data the scripts fetch (records/, reference/, build.json) gets the same through a
+        # small script put first in each page's <head>: it wraps fetch (which d3.json and d3.csv call) and adds ?v=<commit>
+        # to every request to this site that has no query, .js and .css aside. Local serving (tools/serve.py) sends no-cache
+        # and needs none of this.
         run: |
           python3 - "$(git rev-parse --short HEAD)" <<'PY'
           import pathlib, re, sys
           v = sys.argv[1]
           ref = re.compile(r'((?:src|href)=")((?![a-z][a-z0-9+.-]*:|//|#)[^"?#]+\.(?:js|css))(")')
-          n = 0
+          wrap = ('<script>(() => { const f = window.fetch.bind(window); window.fetch = (u, o) => {'
+                  ' if (typeof u === "string" || u instanceof URL) { const a = new URL(u, location.href);'
+                  ' if (a.origin === location.origin && !a.search && !/\\.(js|css)$/.test(a.pathname)) {'
+                  f' a.search = "v={v}"; u = a.href; }} }} return f(u, o); }}; }})();</script>')
+          head = re.compile(r'(<head[^>]*>(?:\s*<meta charset[^>]*>)?)', re.I)
+          n = d = 0
           for p in pathlib.Path("_site/site").rglob("*.html"):
               s = p.read_text(encoding="utf-8")
               t, k = ref.subn(lambda m: f"{m[1]}{m[2]}?v={v}{m[3]}", s)
-              if k:
-                  p.write_text(t, encoding="utf-8"); n += k
-          print(f"{n} script and stylesheet addresses versioned ?v={v}")
+              t, j = head.subn(lambda m: m[1] + wrap, t, count=1)
+              if k or j:
+                  p.write_text(t, encoding="utf-8"); n += k; d += j
+          print(f"{n} script and stylesheet addresses versioned ?v={v}; data fetches versioned on {d} pages")
           PY
       - name: Stamp the build (time, and each repository's commit and date) for the page footer
         run: |
