@@ -233,6 +233,35 @@ Patrols 2–4 added two lessons:
   `/bundles/apps/pdfjs/web/viewer.html?file=…` (the path is in the iframe on
   `/das/image/<code>`). Its page numbers are the PDF's, the same as `pNN`.
 
+TINOSA Patrol 3 (October 1943) added more, for a ship with no convoy and no escort:
+
+- **Start with the Navy's daily summary of attacks on shipping.** 大東亜戦争経過概要（護衛対潜関係）
+  (`jacar:C16120655900`, one part a month; October 1943 is `C16120658600`) is a handwritten day-by-day list, Navy-wide, of
+  ships attacked: time, ship, tonnage, speed, place given from a base ("トラックノNW二五〇′"), torpedoes taken, outcome. It
+  says quickly whether an attack was reported at all. It compiles the Combined Fleet's signals, so it repeats the
+  ship's own telegrams and counts once with them. A ship damaged but still steaming may not be in it (TINOSA's 4 October
+  tanker isn't).
+- **A ship sailing alone is in the diaries of the ships sent to help her.** Kazahaya, an oiler on passage to Truk, has no
+  escort diary, and `jacar.py search "風早"` didn't find her. Her own signals ("three hits, ability to steam doubtful",
+  her list and speed, her positions, the boiler room torpedoed, the time she sank) and the rescue totals are in the
+  telegram log (三、令達報告等) of the 2nd Destroyer Squadron's war diary, whose destroyers were sent out to her
+  (`C08030101300`, pp. 22–29). A telegram log gives each signal's day, sender, addressees, sent and received times
+  and text. Find the day with a contact sheet of the pages, then read the columns at 300–450 dpi.
+- **Search the commands, not only the ship.** JACAR's search text covers only part of a long record. Search the commands
+  that would have handled the event (the base force, the fleet, the squadron that sent help) with the month as the
+  date range (`jacar.py search "第２水雷戦隊" 1943-10 1943-10`), and read the record's contents page first: a fleet's
+  monthly part can hold only its tables of ships' movements (the 4th Fleet's October 1943, `C08030018500`).
+- **Japanese Wikipedia is a finding aid.** Its articles on Imperial Navy ships often quote primary records with the
+  JACAR code and page, and published sources such as 戦史叢書 and the diary of Prince Takamatsu (高松宮日記). Use them to
+  find pages and to read faint characters (罐室被雷, "boiler room torpedoed", on Kazahaya's last telegram), but cite the
+  scan you read, and label anything you haven't read yourself as secondary.
+- **Reference books.** Find a Japanese book's exact title in the National Diet Library's catalogue
+  (`ndlsearch.ndl.go.jp`) and check its digital copy's access: open on the internet, in libraries only, or at the NDL
+  only (`dl.ndl.go.jp/pid/<id>`; the NDL's copy service will send pages). `tools/gbooks.py search` finds Google Books
+  volumes and snippets; a snippet is a lead, not a reading.
+- **Rendering.** `jacar.py fetch` renders pages only when poppler's `pdftoppm` is installed; without it, render the
+  saved PDF with PyMuPDF.
+
 The Imperial Navy kept Tokyo time (zone I, −9). With that assumption,
 Nittatsu Maru's log and BANG's attack sheets agree to 1–7 minutes on four
 attacks; see `records/README.md` for the table. The one large gap (86 minutes,
@@ -255,6 +284,14 @@ of BANG's attacks:
    it as ±0.1–0.3°.
 3. Tie it to an attack with `match`, `candidate` or `context`, and say why.
    `check_crossrefs.py` prints the gap, reading the note's time as zone I.
+
+The zoom viewer now sits behind a bot check for scripts as well. Find the map with `frupac.py date`, give a person the
+viewer's full address with its `resolution`, `lat` and `lon` query (the viewer's own coordinates, in the full image's
+pixels), and read their full-resolution screenshot. On a bare overlay whose meridian labels are out of frame, place
+marks against two known places in the frame (Truk's dot and Chichi Jima for the October 1943 map). The October 1943 map
+also plots routes from intercepted routing messages: a line labelled with the message's date-time group (`271500`),
+its points numbered by day, ending at the port. Those points are planned positions, not reported ones; a red star on
+one marks an attack on that route.
 
 Limits to keep in mind:
 
