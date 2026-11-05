@@ -53,7 +53,7 @@ h2 { font-size: 21px; font-weight: 400; margin: 26px 0 8px; } h3 { font-size: 17
 .who .n b { font-weight: 700; letter-spacing: .02em; } .who .n i { color: var(--ink-3); }
 .doors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 22px; }
 .door { border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; text-decoration: none; display: block; }
-.door b { display: block; font-weight: 700; margin-bottom: 4px; } .door b::after { content: " ›"; color: var(--ink-3); }
+.door b { display: block; font-weight: 700; margin-bottom: 4px; } .door b::after { content: " →"; color: var(--ink-3); }
 .door .n { font: 15px var(--serif); color: var(--ink-2); } .door .n .typed { color: var(--ink); }
 .door .list { font-size: 14.5px; color: var(--ink-3); margin-top: 6px; line-height: 1.5; }
 .out p { margin: 0 0 8px; } .out .src { display: inline; white-space: normal; }

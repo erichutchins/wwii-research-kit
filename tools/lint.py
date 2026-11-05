@@ -173,6 +173,20 @@ def fmt_yaml_tab(L):
                 yield p, i, "indents with a tab", ""
 
 
+ANGLE_QUOTE = re.compile(r"[‹›]|&[lr]saquo;|\\0*203[aA9]\b")
+
+
+@rule("FMT005", "a single angle quote (‹ ›) in a page, a script or a stylesheet")
+def fmt_angle_quote(L):
+    """ET Book, the pages' serif, draws its single angle quotes as ligatures: › as "ffl" and ‹ as "ffi" (the roman and
+    italic glyphs are the ligatures' outlines; the bold is nearly so). Write → for "on to" (ET Book has none, so the next
+    font in the stack draws it), or « » where a quotation needs guillemets."""
+    for p in L.per_file(".html", ".js", ".css"):
+        for i, ln in enumerate(L.text(p).splitlines(), 1):
+            if ANGLE_QUOTE.search(ln):
+                yield p, i, "has a single angle quote, which ET Book draws as a ligature (ffl, ffi)", ""
+
+
 # ── CSV: shape ───────────────────────────────────────────────────────────────
 
 DATE_COLUMNS = re.compile(r"^(date|from|to|from_date|to_date|sailed|arrived|landed|date_fix)$")

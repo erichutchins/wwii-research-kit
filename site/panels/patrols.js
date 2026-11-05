@@ -17,7 +17,7 @@ window.PatrolsPanel = { mount(host, S, opts = {}) {
   <div class="filters">
     <div class="seg" id="patrol-seg" role="group" aria-label="Patrol"></div>
     <label class="check"><input type="checkbox" id="show-off" checked> Show fixes left off the track</label>
-    <a class="more-links" id="to-dives" hidden>Her dive profile, every dive and depth charge ›</a>
+    <a class="more-links" id="to-dives" hidden>Her dive profile, every dive and depth charge →</a>
   </div>
   <div class="stats" id="stats"></div>
   <div class="main">

@@ -170,6 +170,13 @@ class LintFiles(LintCase):
         L = self.kit({"tab.yml": "a:\n\tb: 1\n  \tc: 2\n", "spaces.yml": "a:\n  b: 1\n", "data.csv": "a\n\tx\n"})
         self.assertEqual(self.flagged(L, "FMT004"), [("tab.yml", 2), ("tab.yml", 3)])
 
+    def test_fmt005_a_single_angle_quote_in_a_page(self):
+        # the character, its HTML entity or its CSS escape, in a page, script or stylesheet; « », → and the records pass
+        L = self.kit({"a.css": '.door b::after { content: " ›"; }\n.x::after { content: "\\203A"; }\n',
+                      "b.html": "<a>the records &rsaquo;</a>\n<a>« quoted » →</a>\n",
+                      "c.js": "const back = '‹ before';\n", "notes.md": "a › in prose\n"})
+        self.assertEqual(self.flagged(L, "FMT005"), [("a.css", 1), ("a.css", 2), ("b.html", 1), ("c.js", 1)])
+
 
 class LintCsv(LintCase):
     def test_csv001_a_repeated_empty_or_padded_column_name(self):

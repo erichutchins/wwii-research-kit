@@ -105,10 +105,12 @@ a.spanel:hover { background: var(--wash); }
 .records .side-head h2 { font-size: 19px; font-weight: 400; font-style: italic; margin: 0; padding: 0; }
 .records .side-head .seg button { padding: 3px 8px; font-size: 14.5px; }
 .records .list { overflow-y: auto; position: relative; overscroll-behavior: contain; }
-.records .row { display: grid; grid-template-columns: 16px 1fr; gap: 8px; width: 100%; text-align: left; font: inherit; background: none; border: 0;
-                border-bottom: 1px solid var(--rule); padding: 8px 14px; color: var(--ink); cursor: pointer; }
+/* a list row; an entry (entry.css) lays itself out, so these leave it alone */
+.records .row:not(.entry) { display: grid; grid-template-columns: 16px 1fr; gap: 8px; width: 100%; text-align: left; font: inherit; background: none; border: 0;
+                          border-bottom: 1px solid var(--rule); padding: 8px 14px; color: var(--ink); cursor: pointer; }
+.records .row { cursor: pointer; }
 .records .row:hover, .records .row:focus-visible { background: var(--wash); }
-.records .row.current { background: var(--wash); box-shadow: inset 3px 0 0 var(--series-track); }
+.records .row.current:not(.entry) { background: var(--wash); box-shadow: inset 3px 0 0 var(--series-track); }
 .records .row.future { color: var(--ink-3); }
 .records .row .note { color: var(--ink-2); font-size: 15.5px; }
 .records .pcard { display: block; width: 100%; text-align: left; font: inherit; color: var(--ink); cursor: pointer; background: none; border: 0;

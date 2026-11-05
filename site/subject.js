@@ -366,7 +366,7 @@
       const besideHTML = beside.length ? `<div class="ctx">${w.mine.length ? "In it: " : "Beside it: "}${beside.join("; ")}.</div>` : "";
       const reading = s.reading ? `<div class="ctx"><i>Reading the records here:</i> ${s.reading.map(([h, t2, w2]) => `<a href="${esc(h)}">${esc(t2)}</a>, ${esc(w2)}`).join("; ")}</div>` : "";
       const where = S.kind === "unit" ? (places.slice(0, 7).join(", ") + (places.length > 7 ? ` … ${places[places.length - 1]}` : "")) : s.where || places.slice(0, 6).join(", ");
-      const link = IN("account") ? `<a href="${esc(address("records", S.kind === "boat" ? { period: s.id } : S.kind === "unit" || S.kind === "battalion" ? { t: new Date(s.from).toISOString().slice(0, 10) } : {}))}">the records ›</a>` : "";
+      const link = IN("account") ? `<a href="${esc(address("records", S.kind === "boat" ? { period: s.id } : S.kind === "unit" || S.kind === "battalion" ? { t: new Date(s.from).toISOString().slice(0, 10) } : {}))}">the records →</a>` : "";
       return `<div class="stage"><div class="when">${esc(span(new Date(s.from), new Date(s.to)) || fmtMon(new Date(s.from)))}</div><div>
         <b>${i + 1} ${esc(s.name)}</b>${s.sub ? ` <i>${esc(s.sub)}</i>` : ""}${where ? ` · ${esc(where)}` : ""} · ${counts} · ${link}<br>${fs}${ctx}${besideHTML}${reading}</div></div>`;
     }).join("");

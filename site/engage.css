@@ -144,7 +144,8 @@ button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible
 .door { border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; text-decoration: none; display: block; background: var(--surface); min-width: 0; }
 a.door:hover { background: var(--wash); }
 .door b { display: block; font-weight: 700; margin-bottom: 4px; }
-.door b::after { content: " ›"; color: var(--ink-3); }
+/* only a door that is a link: Journeys and Beside it are lists of links, not one */
+a.door b::after { content: " →"; color: var(--ink-3); }
 .door .n { font-size: 15.5px; color: var(--ink-2); }
 .door .n .typed { font-family: var(--typed); font-size: .92em; color: var(--ink); }
 .door .list { display: block; font-size: 14.5px; color: var(--ink-3); margin-top: 6px; line-height: 1.5; }
