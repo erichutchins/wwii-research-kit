@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["playwright"]
+# dependencies = ["playwright==1.64.1"]
 # ///
 """Open every page of the site in a headless browser and fail on anything that breaks it.
 
@@ -12,14 +12,18 @@ A view fails on:
   - an error in the console, or an uncaught exception;
   - a request to this site that fails or answers 4xx/5xx (a missing data file, a renamed script);
   - an empty figure: a visible SVG larger than an icon with nothing drawn in it.
-A failed request to another site (the D3 and atlas CDNs) is a warning: the network, not the page.
+A failed request to another site (the D3 and atlas CDNs) is a warning: the network, not the page. Each address on another
+site is fetched once per run and answered from memory after that (every view opens in a new context, with an empty
+cache), so a view waits on the network only for this site's files.
 
 The builds check the data; this checks the pages against it. It would have caught the front page's "Also in Europe"
 error (a unit with no stations) the day it broke.
 
-Usage: uv run tools/smoke.py [--quick] [--only SUBSTRING] [-j N] [--list]
-       --quick   every view at desktop width in light mode, and the pages themselves in all four combinations
-First run: `uv run --with playwright playwright install chromium` if no Chromium is installed.
+Usage: uv run tools/smoke.py [--quick] [--only SUBSTRING] [--shard I/N] [-j N] [--list] [--install]
+       --quick     every view at desktop width in light mode, and the pages themselves in all four combinations
+       --shard I/N every N-th view from the I-th (1-based), so N runs together check every view once (the CI's matrix)
+       --install   install the Chromium this script's pinned Playwright drives, and stop (`--install --with-deps` in the
+                   CI, which adds the system libraries); run it once before the first run, and after the pin moves
 The family repository runs its own pages through `views()` and `run()` here (its tests/smoke.py).
 """
 import argparse
@@ -117,6 +121,14 @@ def seabee_views(path, page="site/subject.html"):
     return [f"{page}?s={u}" for u in load(path)["units"]]
 
 
+def shard(views, spec):
+    """Every N-th view from the I-th, for --shard I/N (1-based)."""
+    i, n = (int(x) for x in spec.split("/"))
+    if not 1 <= i <= n:
+        raise SystemExit(f"--shard {spec}: want I/N with 1 <= I <= N")
+    return views[i - 1::n]
+
+
 class Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):   # the base class's signature: quiet
         pass
@@ -131,15 +143,51 @@ def serve(root):
         request_queue_size = 128
         daemon_threads = True
 
+        def handle_error(self, request, client_address):   # a view closed before its file was sent: not a fault
+            pass
+
     srv = Server(("127.0.0.1", 0), functools.partial(Quiet, directory=str(root)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv, f"http://127.0.0.1:{srv.server_address[1]}/"
 
 
-async def check(browser, base, view, size, scheme):
+class Remote:
+    """Another site's files, fetched once per run and answered from memory after that. A failed fetch isn't kept, and
+    the request fails as it would have (a warning)."""
+
+    def __init__(self, base):
+        self.base, self.got = base, {}
+
+    def elsewhere(self, url):
+        return not url.startswith(self.base)
+
+    async def fetch(self, route):
+        r = await route.fetch()
+        if not r.ok:
+            raise RuntimeError(f"{r.status}")
+        # the body comes back decoded, so the encoding and length headers no longer describe it
+        headers = {k: v for k, v in r.headers.items() if k.lower() not in ("content-encoding", "content-length")}
+        return r.status, headers, await r.body()
+
+    async def answer(self, route):
+        if route.request.method != "GET":
+            return await route.continue_()
+        url = route.request.url
+        if url not in self.got:   # the first view to ask fetches it; the others asking meanwhile wait on the same fetch
+            self.got[url] = asyncio.ensure_future(self.fetch(route))
+        try:
+            status, headers, body = await asyncio.shield(self.got[url])
+        except Exception:
+            self.got.pop(url, None)
+            return await route.abort()
+        await route.fulfill(status=status, headers=headers, body=body)
+
+
+async def check(browser, base, view, size, scheme, remote):
     """Load one view; return (problems, warnings)."""
     w, h = SIZES[size]
     ctx = await browser.new_context(viewport={"width": w, "height": h}, color_scheme=scheme)
+    await ctx.route(remote.elsewhere, remote.answer)
     page = await ctx.new_page()
     bad, warn = [], []
     page.on("console", lambda m: m.type == "error" and bad.append(f"console: {m.text[:300]}"))
@@ -166,12 +214,13 @@ async def run_async(root, views, combos, jobs):
 
     srv, base = serve(root)
     sem = asyncio.Semaphore(jobs)
+    remote = Remote(base)
     async with async_playwright() as p:
         browser = await p.chromium.launch()
 
         async def one(view, size, scheme):
             async with sem:
-                return view, size, scheme, *await check(browser, base, view, size, scheme)
+                return view, size, scheme, *await check(browser, base, view, size, scheme, remote)
 
         results = await asyncio.gather(*(one(v, sz, sc) for v in views for sz, sc in combos(v)))
         await browser.close()
@@ -202,10 +251,19 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--only", help="check only the views whose address contains this")
+    ap.add_argument("--shard", help="I/N: check every N-th view from the I-th")
+    ap.add_argument("--install", action="store_true", help="install the pinned Playwright's Chromium and stop")
+    ap.add_argument("--with-deps", action="store_true", help="with --install: the system libraries too (the CI)")
     ap.add_argument("-j", "--jobs", type=int, default=6)
     ap.add_argument("--list", action="store_true", help="list the views and stop")
     a = ap.parse_args()
+    if a.install:
+        import subprocess
+        return subprocess.call([sys.executable, "-m", "playwright", "install", *(["--with-deps"] if a.with_deps else []),
+                                "chromium"])
     views = [v for v in kit_views() if not a.only or a.only in v]
+    if a.shard:
+        views = shard(views, a.shard)
     if a.list:
         print("\n".join(views))
         return 0

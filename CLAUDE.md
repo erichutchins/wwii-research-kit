@@ -112,7 +112,7 @@ uv run tools/lint.py [--select REF,ORF] [--explain CODE]   # lint.toml; must rep
 uv run tools/check_sources.py [--fetch]       # citations resolve; inventory matches the folders
 tools/check_builds.sh                         # every build: 0 problems, generated files up to date
 uv run tools/test_tools.py                    # the tools' computation against hand-worked cases
-uv run tools/smoke.py [--quick] [--only engagement]  # every page in a browser (2-3 min; --quick under 1)
+uv run tools/smoke.py [--quick] [--only engagement]  # every page in a browser (2-3 min; --quick under 1; --install first)
 uv run tools/build_engagement.py              # engagements and convoys -> their JSON; `check` in CI; 0 problems
 prek run --all-files [--hook-stage pre-push]  # the hooks by hand
 ```

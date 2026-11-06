@@ -1,5 +1,6 @@
 # Publish the kit to GitHub Pages: the site at /site/, with the records submodule beside it,
-# after the checks the pre-push hook runs (.pre-commit-config.yaml): ruff and ty, the lint, every build, every page.
+# after the checks the pre-push hook runs (.pre-commit-config.yaml): ruff and ty, the lint, every build (check), and every
+# page (smoke, in four parts at once). Actions are pinned to a commit, with the tag it was beside.
 name: pages
 
 on:
@@ -19,11 +20,14 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
           persist-credentials: false
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: tools/*.py
       - name: The tools' Python (ruff; ty, each tool against its own header and the baseline)
         run: |
           uvx ruff@0.16.10 check
@@ -32,23 +36,45 @@ jobs:
         run: uv run tools/lint.py
       - name: Every build checks out and its JSON is up to date; citations, attacks, tracks; the computation's tests
         run: tools/check_builds.sh
-      - name: Every page loads clean, light and dark, desktop and phone
-        run: |
-          uv run --with playwright playwright install --with-deps chromium
-          uv run tools/smoke.py
 
-  deploy:
-    needs: check
+  smoke:
+    # Every page loads clean, light and dark, desktop and phone: the views split four ways (smoke.py --shard), each part
+    # on its own runner, since one runner takes about ten minutes over them all
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pages: write
-      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: tools/*.py
+      - name: Chromium for the Playwright smoke.py pins, with its system libraries
+        run: uv run tools/smoke.py --install --with-deps
+      - name: Every page loads clean (part ${{ matrix.shard }} of 4)
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: uv run tools/smoke.py --shard "$SHARD/4"
+
+  deploy:
+    needs: [check, smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write      # to publish the site
+      id-token: write   # deploy-pages proves to Pages which workflow is publishing
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
           persist-credentials: false
@@ -93,8 +119,8 @@ jobs:
           printf '{"built":"%s","kit":{"sha":"%s","date":"%s"},"records":{"sha":"%s","date":"%s"}}\n' \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$kit_sha" "$kit_date" "$rec_sha" "$rec_date" > _site/site/build.json
           cat _site/site/build.json
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
           path: _site
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
