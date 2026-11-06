@@ -145,19 +145,27 @@ def region(M, scan, x, y, w, h, width=None):
     return Image.open(io.BytesIO(body)).convert("RGB")
 
 
+def base_towns(M):
+    """The towns this day's sheet is matched to: its base's `towns` in records/fronts/bases.yml (the catalogue's `base`)."""
+    base = catalogue()[M.name].get("base", "")
+    bases = records.load_yaml(REC / "bases.yml") if (REC / "bases.yml").exists() else []
+    return base, next((b.get("towns") or "" for b in bases if b.get("base") == base), "")
+
+
 def skeleton(M):
     """The YAML a reader writes once the title is read (records/fronts/<map>.yml), to fill in."""
+    base, towns = base_towns(M)
     return "\n".join([
         f"# {M.name}: the sheet as read on its title, and the hand decisions its trace needed (tools/trace_front.py;",
         "# fronts/README.md). The towns are <map>-gcps.csv, the symbols <map>-units.csv; the GeoJSON is generated.",
         f"item: {M.item}", f"date: {M.date}",
-        "as_of: DD1200 MON 1945          # the situation's day and hour, as the title gives it (or 2400 HRS D MONTH 1944)",
+        "as_of: DD1200 MON 1945          # the situation's day and hour, as the title gives it (or 1200 HRS D MONTH 1944)",
         "report:                          # the G-3 report's number, where the title gives one",
         f'title: "HQ Twelfth Army Group situation map, to accompany G-3 report no. NNN: situation as of {M.date}"   # as read',
         "read: the title on the sheet, <date>",
-        "gcps_from: 12ag-1945-03-07       # the day whose towns this sheet's are matched to (the same base sheet), or gcps_read: by eye",
-        "exclude:   # boxes on the scan (x0, y0, x1, y1) whose heavy ink isn't the front, each with why",
-        "  - {box: [3700, 1420, 4280, 2000], why: \"the 21st/12th Army Group boundary from Aachen north-east (the 1:1,000,000 sheet)\"}",
+        f"gcps_from: {towns or '<towns>'}       # base {base or '?'}'s towns (records/fronts/bases.yml){'' if towns else ': none yet, read them first (the skill, step 2)'}",
+        "exclude:   # boxes on the scan (x0, y0, x1, y1) whose heavy ink isn't the front, each with why: the title block's",
+        "           # lettering and the legend (their places vary day to day), and every boundary drawn heavy with no ticks",
         "flip: []   # stretches turned by hand after a look: {at: [x, y], why: ...}",
         "checked: []   # stretches whose ticks didn't tell, found the right way by eye: {at: [x, y], why: ...}",
     ])
@@ -875,6 +883,10 @@ def main():
         dest = Path(a.overlay) if a.overlay else work / "overlay.jpg"
         im.save(dest, quality=85)
         print(f"wrote {dest}")
+        if not a.overlay and not a.crop:   # the whole traced area at a glance: where the front is, what's magenta
+            im.thumbnail((1800, 1800))
+            im.save(work / "overlay-sheet.jpg", quality=85)
+            print(f"wrote {work / 'overlay-sheet.jpg'} (the whole sheet, small: read it first)")
 
 
 if __name__ == "__main__":

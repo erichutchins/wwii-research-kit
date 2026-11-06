@@ -49,7 +49,7 @@ on the overlay or with `--look`, every symbol on `boxes.jpg` and again on `units
 ## Report back (short)
 
 1. The title as read (date, hour, report number) and whether it agrees with the catalogue.
-2. The towns: how many of twenty agreed, the median, any placed through the transform.
+2. The towns: how many agreed of how many, any placed through the transform.
 3. The front: stretches by how they were turned; every stretch you flipped, confirmed or left out, with its reason;
    the sides check's result (any town on the wrong side, and what you make of it).
 4. The symbols (if in scope): how many read, how many listed, how many the finder missed; the ones you are unsure of.

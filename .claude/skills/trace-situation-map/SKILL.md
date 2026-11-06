@@ -74,8 +74,9 @@ the sheet, not a corner of it: the trace covers the points' spread and nothing o
 uv run tools/trace_front.py 12ag-1945-03-08 --overlay --sides
 ```
 
-Read `overlay.jpg` closely, in parts if you need to (`--overlay /tmp/x.jpg --crop X Y W H`, scan coordinates on its
-edges). What to check, and what was learnt the hard way:
+Read `overlay-sheet.jpg` first: the whole traced area, small, enough to see where the front runs and which stretches
+are magenta. Then read the overlay in parts (`--overlay /tmp/x.jpg --crop X Y W H`, scan coordinates on its edges;
+`overlay.jpg` is the whole sheet at full size, too big to read at once). What to check, and what was learnt the hard way:
 
 - **The 12th Army Group ticks its front on its own side** (the US side), not the enemy's: the legend's sample, and every
   stretch, has the US divisions on the ticked side. The red ticks the overlay draws (each run's right) must fall on the
@@ -87,9 +88,18 @@ edges). What to check, and what was learnt the hard way:
 - Stretches that meet two at a time are one line and are turned together by their summed ticks (`line` in the output);
   a fork breaks the chain. A corridor's head is a short heavy arc, often set apart from its sides by the division's own
   symbol, with no ticks: it comes out `unsure`, and is usually ticked inside (the US side) once you look.
-- Every blue line must be front. A heavy line that isn't (an army or army group boundary, which carries no ticks) is left
-  out with a box in the YAML's `exclude`; the army group boundary from Aachen is left out on every day of the
-  1:1,000,000 sheet (the skeleton carries its box).
+- Every blue line must be front. Across a whole sheet three kinds of heavy ink are not, and each is left out with a box
+  in the YAML's `exclude` (a stretch is left out when its middle falls in a box; keep a box off the front's own
+  stretches): **the title block's lettering** (top left on the 1:1,000,000 sheet: "SECRET", the situation's date, and
+  from 1945 the report number and a signature), **the legend** (bottom left: U.S., British, Enemy and a sample of the
+  front line, ticks and all), and **boundaries drawn heavy with no ticks** (army group boundaries, and an army
+  boundary's last stretch to the front). Their places vary day to day: the title and legend are lettered by hand on
+  each sheet. On 22 December 1944 (`records/fronts/12ag-1944-12-22.yml`, traced by hand to settle this) eleven boxes
+  did it: the title, the legend, the First Canadian/Second British army boundary, the Twenty One/Twelfth army group
+  boundary from Louvain to the front at Geilenkirchen (three boxes), the Twelfth/Sixth from south of Nancy along the
+  Marne-Rhine canal to Sarrebourg and on to the front (three), the First/Third's end at Sierck, the Seventh/First
+  French's stub on the Rhine, and one enemy division's box. A boundary is a heavy black line with no ticks either side
+  (the grey ticked lines beside it are railways): `--look` at it before leaving it out.
 - A magenta stretch, marked `?`, couldn't be told from its ticks or its neighbours. Look at it (`--look X,Y`): if it runs
   the right way (the map's ticks on its right), add it to `checked`; if not, to `flip`. Each with its reason.
 - `--sides` runs the page's own side test on the towns: each should be on the side of the front the map shows it on
