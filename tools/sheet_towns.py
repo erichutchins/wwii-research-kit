@@ -23,7 +23,10 @@ first (a ring template, matched near the prediction) and lost to the letters' bo
 city; a reader does it at a glance. `accept`: the readings, one a line (`12 2037,3966`; `12 none` for a town the sheet
 draws as an area, or not at all; a later line for the same number replaces an earlier one, so a second look (`crops
 --with readings.txt --only 12,27`, whose predictions are then good to about 10 px) is appended to the file), with the seeds, into records/fronts/towns-<base>.csv (`read` says which), and the
-conic fit's residuals, the towns that disagree most first, for a second look.
+conic fit's residuals, the towns that disagree most first, for a second look. A sheet that draws no graticule inside
+the map, only ticks on its neat line (the 1:750,000 sheets of late August and early September 1944), is fitted on the
+ticks: `accept` on its margins file writes each tick with the coordinate read and the other from the conic solved on
+them all, and the row says so.
 
 Better than towns: **the sheet's graticule**. The 1:1,000,000 sheets print a meridian and a parallel every degree, and
 a crossing is an exact control point with no geocoder's centroid and no name to match. `crops --graticule` makes the
@@ -122,7 +125,7 @@ def cmd_crops(a):
                 seeds.append({"town": c["town"], "x": x, "y": y, "lat": c["lat"], "lon": c["lon"]})
     if lines:   # the margins solve the first fit (crossings on one neat line alone are collinear and fit nothing)
         pts = [(float(r["lon"]), float(r["lat"]), float(r["x"]), float(r["y"])) for r in seeds]
-        seeds = conic_from_lines(pts, lines)
+        seeds, _ = conic_from_lines(pts, lines)
     if len(seeds) < 3:
         sys.exit(f"{on} has no towns yet: read the sheet's margins and give them with --with: where a labelled meridian's tick "
                  f"meets the top or bottom neat line (`1W 2460,330`), a labelled parallel's the left or right (`49.5N 60,2210`), "
@@ -253,7 +256,7 @@ def conic_from_lines(points, lines, n=None):
             X, Y = probe.to_px([[lo, la]], T)[0]
             seeds.append({"town": f"margins {lo:g} {la:g}", "x": f"{X:.1f}", "y": f"{Y:.1f}", "lon": f"{lo}", "lat": f"{la}"})
     print(f"the margins: {len(lon_pts)} points on meridians, {len(lat_pts)} on parallels, solved to {rms:.1f} px rms")
-    return seeds
+    return seeds, (lambda x, y: tuple(float(v) for v in probe.to_ll([[x, y]], T)[0]))
 
 
 def crossing_ll(name):
@@ -272,6 +275,7 @@ def cmd_accept(a):
     cands = {r["n"]: r for r in csv.DictReader(open(OUT / f"{a.base}-candidates.csv"))}
     item = tf.sitmap(on).item
     out = [{**r, "on": on} for r in seeds]
+    margin_pts = []
     for v in readings(a.readings):
         if v[1] == "none":
             continue
@@ -281,10 +285,26 @@ def cmd_accept(a):
             out.append({"town": v[0], "x": x, "y": y, "read": "graticule crossing read by eye on the sheet's margin", "lat": f"{lat:g}", "lon": f"{lon:g}",
                         "source": f"loc-12ag/{item}", "query": "", "on": on})
             continue
+        if LINE.fullmatch(v[0]) and (not v[0].isdigit() or v[0] == "0"):   # a margin tick: one coordinate known
+            kind, val = line_value(v[0])
+            margin_pts.append((kind, val, float(x), float(y)))
+            continue
         c = cands[v[0]]
         what = "graticule crossing" if CROSSING.fullmatch(c["town"]) else "ring"
         out.append({"town": c["town"], "x": x, "y": y, "read": f"{what} read by eye on a crop round the conic's prediction", "lat": c["lat"], "lon": c["lon"],
                     "source": c["source"], "query": c["query"], "on": on})
+    if margin_pts and len(out) - len(seeds) < 6:
+        # a sheet that prints its graticule only as ticks on the neat line (B07, B08): the ticks are the control, each
+        # with one coordinate read and the other from the conic solved on all of them together, and the row says so
+        pts = [(float(r["lon"]), float(r["lat"]), float(r["x"]), float(r["y"])) for r in out]
+        _, to_ll = conic_from_lines(pts, margin_pts)
+        for kind, val, x, y in margin_pts:
+            lon, lat = to_ll(x, y)
+            name = f"{abs(val):g}{('W' if val < 0 else 'E') if kind == 'lon' else ('S' if val < 0 else 'N')} tick"
+            other = "latitude" if kind == "lon" else "longitude"
+            out.append({"town": name, "x": f"{x:g}", "y": f"{y:g}", "read": f"{'meridian' if kind == 'lon' else 'parallel'} tick where it meets the neat line, read by eye on the margin; its {other} from the conic solved on the margins (the sheet draws no graticule inside)",
+                        "lat": f"{lat:.5f}" if kind == "lon" else f"{val:g}", "lon": f"{val:g}" if kind == "lon" else f"{lon:.5f}",
+                        "source": f"loc-12ag/{item}", "query": "", "on": on})
     path = tf.REC / f"towns-{a.base}.csv"
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, ["town", "x", "y", "read", "lat", "lon", "source", "query", "on"], lineterminator="\n", extrasaction="ignore")

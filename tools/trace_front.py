@@ -256,7 +256,7 @@ class Conic:
         return res, np.array(loo)
 
 
-CROSSING = re.compile(r"\d+(?:\.\d+)?[EW] \d+(?:\.\d+)?[NS]")   # a graticule crossing named by its degrees, "7E 50N"
+CROSSING = re.compile(r"\d+(?:\.\d+)?[EW] \d+(?:\.\d+)?[NS]|\d+(?:\.\d+)?[EWNS] tick")   # a graticule crossing named by its degrees, "7E 50N", or a margin tick, "1W tick"
 
 
 def make_fit(gcps):

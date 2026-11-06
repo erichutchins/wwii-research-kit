@@ -84,7 +84,7 @@ class Margins(unittest.TestCase):
                 x, y = fit.to_px([[lon, lat]])[0]
                 lines.append(("lat", float(lat), float(x), float(y)))
         with contextlib.redirect_stdout(io.StringIO()):
-            seeds = st.conic_from_lines([], lines, n=fit.n)
+            seeds, _ = st.conic_from_lines([], lines, n=fit.n)
         got = tf.Conic(seeds, n=fit.n)
         pts = [[-1.5, 49.2], [0.5, 50.1], [-0.3, 48.6]]
         self.assertLess(np.abs(got.to_px(pts) - fit.to_px(pts)).max(), 3)
