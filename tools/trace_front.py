@@ -61,6 +61,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage as ndi
+from scipy.optimize import minimize_scalar
 from scipy.sparse import coo_matrix
 from scipy.sparse.csgraph import dijkstra
 from scipy.spatial import KDTree
@@ -198,6 +199,69 @@ class Fit:
         return res, np.array(loo)
 
 
+class Conic:
+    """lon/lat <-> pixel through the sheet's own projection: a conformal conic (Lambert's; the 1:1,000,000 sheet names
+    it "Conical Orthomorphic"), on the sphere, and an affine transform to the scan. Its cone constant is fitted to the
+    towns when there are enough of them (MIN), else taken from the Europe sheets' usual parallels (40 and 56 N), which
+    matters only at a sheet's edges. Over a whole sheet the polynomial (Fit) bends and this doesn't: from the March
+    twenty alone it puts Reims, Amiens, Strasbourg and Münster within 40 px of their rings, 3,000 px away."""
+    MIN = 30
+
+    def __init__(self, gcps, n=None):
+        self.px = np.array([[float(r["x"]), float(r["y"])] for r in gcps])
+        self.ll = np.array([[float(r["lon"]), float(r["lat"])] for r in gcps])
+        self.names = [r["town"] for r in gcps]
+        self.lon0, self.lat0 = np.radians(self.ll.mean(0))
+        if n is None and len(gcps) >= self.MIN:
+            n = float(minimize_scalar(lambda v: self._solve(v)[1], bounds=(0.3, 0.95), method="bounded").x)
+        self.n = n if n is not None else self.cone(40.0, 56.0)
+        self.T, self.rms_px = self._solve(self.n)
+
+    @staticmethod
+    def cone(p1, p2):
+        p1, p2 = np.radians(p1), np.radians(p2)
+        return float(np.log(np.cos(p1) / np.cos(p2)) / np.log(np.tan(np.pi / 4 + p2 / 2) / np.tan(np.pi / 4 + p1 / 2)))
+
+    def _xy(self, lonlat, n):
+        lon, lat = np.radians(np.atleast_2d(lonlat).astype(float)).T
+        rho = np.tan(np.pi / 4 + lat / 2) ** -n
+        rho0 = np.tan(np.pi / 4 + self.lat0 / 2) ** -n
+        th = n * (lon - self.lon0)
+        return np.c_[rho * np.sin(th), rho0 - rho * np.cos(th)]
+
+    def _solve(self, n, m=None):
+        m = np.ones(len(self.ll), bool) if m is None else m
+        D = np.c_[self._xy(self.ll[m], n), np.ones(int(m.sum()))]
+        T = np.linalg.lstsq(D, self.px[m], rcond=None)[0]
+        return T, float(np.sqrt(((D @ T - self.px[m]) ** 2).sum(1).mean()))
+
+    def to_px(self, lonlat, T=None):
+        xy = self._xy(lonlat, self.n)
+        return np.c_[xy, np.ones(len(xy))] @ (self.T if T is None else T)
+
+    def to_ll(self, px, T=None):
+        T = self.T if T is None else T
+        XY = (np.atleast_2d(px).astype(float) - T[2]) @ np.linalg.inv(T[:2])
+        rho0 = np.tan(np.pi / 4 + self.lat0 / 2) ** -self.n
+        rho = np.hypot(XY[:, 0], rho0 - XY[:, 1])
+        th = np.arctan2(XY[:, 0], rho0 - XY[:, 1])
+        return np.degrees(np.c_[self.lon0 + th / self.n, 2 * np.arctan(rho ** (-1 / self.n)) - np.pi / 2])
+
+    def residuals_km(self):
+        res = km(self.to_ll(self.px), self.ll)
+        loo = []
+        for k in range(len(self.px)):
+            m = np.arange(len(self.px)) != k
+            loo.append(km(self.to_ll(self.px[k:k + 1], self._solve(self.n, m)[0]), self.ll[k:k + 1])[0])
+        return res, np.array(loo)
+
+
+def make_fit(gcps):
+    """The fit for a day: the conic once the towns cover a sheet (Conic.MIN or more, as a base's towns-*.csv gives
+    them), the polynomial for the March days' twenty (their GeoJSON must not move)."""
+    return Conic(gcps) if len(gcps) >= Conic.MIN else Fit(gcps)
+
+
 def km(a, b):
     a, b = np.radians(np.atleast_2d(a)), np.radians(np.atleast_2d(b))
     h = np.sin((b[:, 1] - a[:, 1]) / 2) ** 2 + np.cos(a[:, 1]) * np.cos(b[:, 1]) * np.sin((b[:, 0] - a[:, 0]) / 2) ** 2
@@ -227,15 +291,24 @@ def gcps_from(base, other, rows, patch=140, search=60):
     return out, (int(dx), int(dy))
 
 
-def register(src, other):
-    """`src`'s towns (a SitMap whose rings are in records/fronts/<src>-gcps.csv) found on the scan `other` and checked
-    against one another: two printings of one base differ by an affine transform (the scans' placing and the paper),
-    fitted to the matches that agree with it (within 4 px, refitted). Returns the towns' rows, the matches, which agree,
-    each match's distance off the transform, where the transform puts each town, and the sheets' offset. --gcps-from
-    writes the result; sitmap_bases.py check runs it on a base sheet's first day and writes nothing (0 of 20 agree: not
-    this base; 19 or 20 of 20: the same plate, however the sheet is trimmed)."""
-    rows = list(csv.DictReader(open(REC / f"{src.name}-gcps.csv")))
-    base = np.asarray(Image.open(CACHE / src.scan).convert("L"))
+def towns_of(name):
+    """A set of towns read by eye, and the scan their x, y are on: a day's (`12ag-1945-03-07`, records/fronts/<day>-gcps.csv
+    on that day's scan) or a base sheet's (`towns-B11.csv`, records/fronts/towns-B11.csv, whose `on` column names the
+    day; records/fronts/bases.yml says which base has one)."""
+    if name.endswith(".csv"):
+        rows = list(csv.DictReader(open(REC / name)))
+        return rows, CACHE / sitmap(rows[0]["on"]).scan
+    return list(csv.DictReader(open(REC / f"{name}-gcps.csv"))), CACHE / sitmap(name).scan
+
+
+def register(rows, src_scan, other):
+    """The towns `rows` (their x, y on the scan `src_scan`) found on the scan `other` and checked against one another:
+    two printings of one base differ by an affine transform (the scans' placing and the paper), fitted to the matches
+    that agree with it (within 4 px, refitted). Returns the rows, the matches, which agree, each match's distance off
+    the transform, where the transform puts each town, and the sheets' offset. --gcps-from writes the result;
+    sitmap_bases.py check runs it on a base sheet's first day and writes nothing (0 of 20 agree: not this base; 19 or
+    20 of 20: the same plate, however the sheet is trimmed)."""
+    base = np.asarray(Image.open(src_scan).convert("L"))
     found, (dx, dy) = gcps_from(base, other, rows)
     A = np.array([[float(r["x"]), float(r["y"]), 1.0] for r in rows])
     B = np.array([[r["x"], r["y"]] for r in found], float)
@@ -579,7 +652,7 @@ def main():
     ap.add_argument("--fetch", action="store_true", help="download the map's scan from the Library's tile server")
     ap.add_argument("--overlay", nargs="?", const="", help="draw the trace over the scan (to the work folder, or a path)")
     ap.add_argument("--crop", type=int, nargs=4, help="the overlay's part of the scan: X Y W H")
-    ap.add_argument("--gcps-from", nargs="?", const="", metavar="MAP", help="write this map's towns, matched to another map's (the YAML's gcps_from)")
+    ap.add_argument("--gcps-from", nargs="?", const="", metavar="MAP", help="write this map's towns, matched to another map's or a base sheet's (towns-B11.csv; the YAML's gcps_from)")
     ap.add_argument("--boxes", action="store_true", help="find and number the symbols' boxes, with a sheet to read them")
     ap.add_argument("--title", nargs="*", type=int, metavar="N", help="the sheet's title block (or the region X Y W H), to read its date and report")
     ap.add_argument("--look", nargs="+", metavar="X,Y", help="magnified crops of the scan round these points")
@@ -645,12 +718,12 @@ def main():
         a.gcps_from = a.gcps_from or M.gcps_from
         if not a.gcps_from:
             sys.exit(f"which day's towns to match to? --gcps-from MAP, or gcps_from in records/fronts/{a.map}.yml")
-        src = sitmap(a.gcps_from)
-        if not (REC / f"{a.gcps_from}-gcps.csv").exists():
-            sys.exit(f"{a.gcps_from} has no towns yet (records/fronts/{a.gcps_from}-gcps.csv): a new base sheet's are read by eye")
-        if not (CACHE / src.scan).exists():
-            sys.exit(f"no scan of {a.gcps_from} at {CACHE / src.scan}: fetch it too (the matching needs both sheets)")
-        rows, found, ok, res, pred, (dx, dy) = register(src, np.asarray(Image.open(scan).convert("L")))
+        if not (REC / (a.gcps_from if a.gcps_from.endswith(".csv") else f"{a.gcps_from}-gcps.csv")).exists():
+            sys.exit(f"{a.gcps_from} has no towns yet: a new base sheet's are read by eye (records/fronts/bases.yml)")
+        rows, src_scan = towns_of(a.gcps_from)
+        if not src_scan.exists():
+            sys.exit(f"no scan at {src_scan}: fetch it too (the matching needs both sheets)")
+        rows, found, ok, res, pred, (dx, dy) = register(rows, src_scan, np.asarray(Image.open(scan).convert("L")))
         if ok.sum() < 12 or np.median(res[ok]) > 2:
             sys.exit(f"the matches don't agree on one transform ({ok.sum()} within 4 px): check the overlay, or is this "
                      f"another base sheet (records/fronts/bases.yml)?")
@@ -669,10 +742,10 @@ def main():
         print(f"wrote records/fronts/{a.map}-gcps.csv")
         return
 
-    fit = Fit(list(csv.DictReader(open(REC / f"{a.map}-gcps.csv"))))
+    fit = make_fit(list(csv.DictReader(open(REC / f"{a.map}-gcps.csv"))))
     res, loo = fit.residuals_km()
     fit_km = round(float(np.sqrt((loo ** 2).mean())), 1)
-    print(f"fit: {len(res)} towns, rms {np.sqrt((res ** 2).mean()):.1f} km, leave-one-out rms {fit_km} km, "
+    print(f"fit ({'conic' if isinstance(fit, Conic) else 'polynomial'}): {len(res)} towns, rms {np.sqrt((res ** 2).mean()):.1f} km, leave-one-out rms {fit_km} km, "
           f"worst {loo.max():.1f} km ({fit.names[int(loo.argmax())]})")
     for n, r, lo in sorted(zip(fit.names, res, loo), key=lambda t: -t[2])[:5]:
         print(f"   {n:14s} {r:4.1f} km (left out: {lo:4.1f} km)")

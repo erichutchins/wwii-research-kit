@@ -42,22 +42,25 @@ uv run tools/trace_front.py 12ag-1945-03-08 --fetch      # the scan, about 6 MB,
 ## 2. The towns
 
 ```bash
-uv run tools/trace_front.py 12ag-1945-03-08 --gcps-from       # matched to the YAML's gcps_from day (both scans needed)
+uv run tools/trace_front.py 12ag-1945-03-08 --gcps-from       # matched to the YAML's gcps_from (both scans needed)
 ```
+
+`gcps_from` is the base's `towns` in `records/fronts/bases.yml`: `towns-B11.csv` for any day of the 1:1,000,000 plate
+(6 September 1944 to 6 April 1945; 81 towns across the sheet, so the trace covers the sheet), or a day's name whose
+twenty were read by eye (the March days use `12ag-1945-03-07`, and keep their polynomial fit).
 
 The daily sheets are printings of one base map for months at a time, so a day's towns are found by matching the rings
 of a day already read. Match to a day whose towns were **read by eye** on that base sheet: the day's `base` in
-`sitmaps.csv`, and that base's `towns` in `records/fronts/bases.yml` (7 March 1945's twenty serve every day from
-6 September 1944 to 6 April 1945, one plate; on 22 December 1944 they agree 20 of 20, median half a pixel). It must
-report at least 12 of 20 towns agreeing; a town off the transform is placed through it and says so. Don't edit the gcps
+`sitmaps.csv`, and that base's `towns` in `records/fronts/bases.yml` (on 22 December 1944 the sheet's 79 agree 71
+within 4 px, the March twenty 20 of 20). It must report at least 12 towns agreeing; a town off the transform is placed through it and says so. Don't edit the gcps
 file by hand.
 
 **A base without `towns` in `bases.yml`** (the 1:500,000 and 1:750,000 sheets of June–September 1944, north Germany
 7–18 April 1945, the portrait 1:1,400,000 sheet from 19 April; `tools/sitmap_bases.py check` tells for a doubtful one)
-has no towns to match to. Its towns are read by eye once, as 7 March's were: find
-each ring on the scan, check it, give its place today (OSM Nominatim) in the gcps file, write `gcps_read: by eye` in
-the YAML, and say so in the README. Twenty towns spread over the part of the sheet to be traced, not a corner of it:
-the trace covers the towns' spread and nothing outside it.
+has no towns to match to. Its towns are read once, across the sheet: three or four rings by eye to seed the conic, then
+`tools/sheet_towns.py crops` round the conic's prediction for a list of candidate towns and a reader's pass over the
+crops (`guides/SITUATION-MAPS.md` §5), into `records/fronts/towns-<base>.csv`, and `bases.yml` says so. Forty or more
+spread over the sheet, not a corner of it: the trace covers the towns' spread and nothing outside it.
 
 ## 3. The front, and the check
 

@@ -212,13 +212,11 @@ def cmd_check(a):
     if not rows:
         sys.exit(f"no day of {a.base} in the catalogue: group --write first")
     first = min(rows, key=lambda r: r["date"])
-    src = trace_front.sitmap(a.towns)
-    if not (trace_front.REC / f"{a.towns}-gcps.csv").exists():
-        sys.exit(f"{a.towns} has no towns (records/fronts/{a.towns}-gcps.csv)")
-    for item in (src.item, first["item"]):
+    towns, src_scan = trace_front.towns_of(a.towns)
+    for item in (towns[0].get("on") and trace_front.sitmap(towns[0]["on"]).item or trace_front.sitmap(a.towns).item, first["item"]):
         loc_sitmaps.fetch_item(item)
     other = np.asarray(Image.open(loc_sitmaps.scan_path(first["item"])).convert("L"))
-    towns, _found, ok, res, _, (dx, dy) = trace_front.register(src, other)
+    towns, _found, ok, res, _, (dx, dy) = trace_front.register(towns, src_scan, other)
     n = int(ok.sum())
     med = f"{np.median(res[ok]):.1f}" if n else "-"
     print(f"{a.towns}'s towns on {a.base}'s first day, 12ag-{first['date']} ({first['item']}): {n} of {len(towns)} agree, "
@@ -240,7 +238,7 @@ def main():
     g.set_defaults(fn=cmd_group)
     c = sub.add_parser("check")
     c.add_argument("base", help="B01 ... as sitmaps.csv has it")
-    c.add_argument("--towns", default="12ag-1945-03-07", help="the day whose towns, read by eye, to match")
+    c.add_argument("--towns", default="12ag-1945-03-07", help="the towns to match: a day's, read by eye, or a base sheet's file (towns-B11.csv)")
     c.set_defaults(fn=cmd_check)
     a = ap.parse_args()
     a.fn(a)

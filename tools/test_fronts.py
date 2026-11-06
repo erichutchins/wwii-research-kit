@@ -1,0 +1,64 @@
+# /// script
+# requires-python = ">=3.10,<3.14"
+# dependencies = ["numpy", "scipy", "pillow", "scikit-image", "pyyaml"]
+# ///
+"""The situation maps' fit (tools/trace_front.py) against worked cases: the conic recovers a sheet drawn on a known
+conformal conic, exactly and both ways; the choice of fit follows the number of towns. Apart from test_tools.py because
+trace_front needs numpy, scipy and scikit-image, which the rest of the tools' tests don't.
+
+    uv run tools/test_fronts.py
+"""
+import sys
+import unittest
+from pathlib import Path
+
+import numpy as np
+
+sys.path.insert(0, str(Path(__file__).parent))
+import trace_front as tf
+
+
+def sheet(n_towns, seed=1, p1=45.0, p2=55.0, lon0=5.0):
+    """Towns spread over a sheet, placed on it by a Lambert conic with the given parallels and an affine (a scale of
+    1,200 px a unit, a 1.5 degree turn, an offset): what a scan of such a sheet gives, without the drafting's error."""
+    rng = np.random.default_rng(seed)
+    lon = rng.uniform(1.5, 9.5, n_towns)
+    lat = rng.uniform(47.8, 52.2, n_towns)
+    n = tf.Conic.cone(p1, p2)
+    p1r = np.radians(p1)
+    F = np.cos(p1r) * np.tan(np.pi / 4 + p1r / 2) ** n / n
+    rho = F / np.tan(np.pi / 4 + np.radians(lat) / 2) ** n
+    rho0 = F / np.tan(np.pi / 4 + np.radians(50.0) / 2) ** n
+    th = n * np.radians(lon - lon0)
+    x, y = rho * np.sin(th), rho0 - rho * np.cos(th)
+    a = np.radians(1.5)
+    px = 1200 * 6371 / 1000 * (x * np.cos(a) - y * np.sin(a)) + 3300
+    py = 1200 * 6371 / 1000 * (x * np.sin(a) + y * np.cos(a)) + 3000
+    return [{"town": f"t{i}", "x": f"{px[i]:.3f}", "y": f"{py[i]:.3f}", "lon": f"{lon[i]:.6f}", "lat": f"{lat[i]:.6f}"} for i in range(n_towns)]
+
+
+class ConicFit(unittest.TestCase):
+    def test_recovers_a_sheet_on_a_known_conic_both_ways(self):
+        rows = sheet(40)
+        fit = tf.Conic(rows)
+        self.assertAlmostEqual(fit.n, tf.Conic.cone(45.0, 55.0), places=3)
+        self.assertLess(fit.rms_px, 0.05)
+        ll = fit.to_ll(fit.px)
+        self.assertLess(np.abs(ll - fit.ll).max(), 1e-5)
+        _res, loo = fit.residuals_km()
+        self.assertLess(loo.max(), 0.01)
+
+    def test_few_towns_take_the_usual_parallels_and_still_fit_locally(self):
+        rows = [r for r in sheet(600, seed=2) if 6.4 <= float(r["lon"]) <= 8.0 and 50.1 <= float(r["lat"]) <= 51.1][:20]
+        self.assertGreaterEqual(len(rows), 12)
+        fit = tf.Conic(rows)
+        self.assertAlmostEqual(fit.n, tf.Conic.cone(40.0, 56.0))
+        self.assertLess(fit.rms_px, 0.5)   # the wrong parallels cost nothing over a degree or two
+
+    def test_the_fit_follows_the_number_of_towns(self):
+        self.assertIsInstance(tf.make_fit(sheet(20)), tf.Fit)
+        self.assertIsInstance(tf.make_fit(sheet(tf.Conic.MIN)), tf.Conic)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=1)

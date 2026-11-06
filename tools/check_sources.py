@@ -85,6 +85,8 @@ def key(path):
     -> 'fronts/units.csv' (one pair of files a map)"""
     if path.parent.name == "fronts" and path.name.endswith(("-gcps.csv", "-units.csv")):
         return "fronts/" + path.name.rsplit("-", 1)[1]
+    if path.parent.name == "fronts" and path.name.startswith("towns-"):   # a base sheet's towns: the gcps columns
+        return "fronts/gcps.csv"
     for k in (f"{path.parent.name}/{path.name}", f"{path.parent.parent.name}/{path.name}"):
         if k in CITES or k in UNCITED:
             return k

@@ -38,6 +38,12 @@ repos:
         language: system
         pass_filenames: false
         files: ^(tools|reference)/
+      - id: test-fronts
+        name: "the situation maps' fit (the conic, both ways)"
+        entry: uv run --quiet tools/test_fronts.py
+        language: system
+        pass_filenames: false
+        files: ^tools/(trace_front|sheet_towns|test_fronts)\.py$
       - id: test-engage
         name: "the engagement pages' computation (engage.js)"
         entry: node site/engage.test.js

@@ -59,6 +59,7 @@ uv run --quiet tools/build_glossary.py check
 out=$(uv run --quiet tools/check_attacks.py 2>&1) || { echo "$out"; exit 1; }; echo "$out" | tail -1
 node site/engage.test.js > /dev/null
 out=$(uv run --quiet tools/test_tools.py 2>&1) || { echo "$out"; exit 1; }; echo "$out" | tail -1
+out=$(uv run --quiet tools/test_fronts.py 2>&1) || { echo "$out"; exit 1; }; echo "$out" | tail -1
 
 [ $stale = 0 ] || { echo "a generated file is out of date: commit it"; exit 1; }
 echo "builds: all up to date"
