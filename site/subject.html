@@ -13,13 +13,14 @@
 <link rel="stylesheet" href="chapter.css">
 <link rel="stylesheet" href="engage.css">
 <link rel="stylesheet" href="subject.css">
-<!-- One page for every subject the records follow (subject.html?s=<id>&view=account|records|working; records/subjects.json,
-     built by tools/build_subjects.py), at three depths (guides/OPERATIONS-VIEWER.md 4, 5.2, 7.2), chosen by the address and
-     the switch under the breadcrumb. The account (the default): the plain line, the designation, what it was, the lede
-     from the record, its organizations, the strip map, the coverage bar, the stage rows and three doors. The records: the
-     subject's own map with the date strip and its entries, as a panel by its kind (site/panels/*.js), with one scan
-     viewer and one tooltip for every panel. The working: the placement table, the speed check, the relations, the leads,
-     the coverage by month. subject.js fills the page. -->
+<!-- One page for every subject the records follow (subject.html?s=<id>[&view=placement]; records/subjects.json, built by
+     tools/build_subjects.py), at two depths (guides/OPERATIONS-VIEWER.md 4, 5.2, 7.2), chosen by the address and the
+     switch under the lede. The page (the default), top to bottom: the plain line, the designation, what it was, the lede
+     from the record, its organizations, the strip map, the coverage bar, the stage rows, and then the record itself: the
+     subject's own map with the date strip and its entries, as a panel by its kind (site/panels/*.js), with one scan viewer
+     and one tooltip for every panel. Placement and leads (view=placement): the placement table, the speed check, the
+     relations, the leads, the coverage by month. The old addresses (view=account|records|working) still arrive.
+     subject.js fills the page. -->
 </head>
 <body>
 <div class="wrap">
@@ -27,17 +28,17 @@
     <nav class="nav" aria-label="The kit" data-nav></nav>
     <script src="nav.js"></script>
     <nav class="crumb" id="crumb" aria-label="Where this is in the kit" hidden></nav>
-    <nav class="depths" id="depths" aria-label="How deep to read"></nav>
     <div class="eyebrow" id="eyebrow"></div>
     <h1 id="title">Subjects</h1>
     <p class="plain" id="plain"></p>
     <p class="lede" id="lede"></p>
+    <nav class="depths" id="depths" aria-label="The page, or how it was placed"></nav>
   </header>
 
   <div class="account" id="account" hidden></div>
   <p class="cap" id="cap" hidden style="color:var(--ink-3);font-size:14.5px;margin:0"></p>
-  <div class="doors" id="doors" hidden></div>
 
+  <h2 class="sec" id="records-h" hidden>The record, as typed <span>every mark opens the page it was read from</span></h2>
   <div class="records" id="records" hidden></div>
 
   <div class="working" id="working" hidden></div>

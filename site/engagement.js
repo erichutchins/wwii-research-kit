@@ -1,27 +1,29 @@
-// engagement.html?e=<id>&view=account|records|working: one engagement from both sides' records, at three depths
+// engagement.html?e=<id>[&view=questions]: one engagement from both sides' records, at two depths
 // (guides/OPERATIONS-VIEWER.md, 4). Reads records/engagements/index.json and records/engagements/<id>/engagement.json
 // (tools/build_engagement.py); the computation is engage.js's, the shared drawing engage-views.js's. Encodings:
-// guides/ENGAGEMENTS.md. The account (the default) is one static screen: the outcome in the records' terms, the
-// subjects, the span, the map with every mark shown, and three doors. The records is the chart-room sheet: the map
-// with its clock and lanes and the two-sided log when the frame is clocked, the chronology when it is dated, the order
-// of battle and the story; `&at=<ISO minute>` sets its clock. When the story is told in steps (the build's `steps`:
+// guides/ENGAGEMENTS.md. The page (the default) reads top to bottom: the outcome in the records' terms, the subjects
+// and the span; the map, with its clock and lanes and the two-sided log when the frame is clocked (`&at=<ISO minute>`
+// sets the clock), the chronology when it is dated; the order of battle; the story; then the frame's own figures,
+// where our voice leads and is labelled: the periscope, the panels (panels.js: the registry of each engagement's
+// panels, each a module under site/panels/), closing in. When the story is told in steps (the build's `steps`:
 // entries carrying `step`, framed by the front matter), the story sits beside the map as the narrative, and each
 // [[step:]] link in it (links.js) sets the clock to the step's time and the map to its framing; `&step=<id>` opens
-// there, and the clock's playback marks the step it is in. The working is where our voice leads, labelled: the
-// periscope, closing in, the frame's own figures (panels.js: the registry of each engagement's panels, each a module
-// under site/panels/), the Sources view (one moment at a time, source by source), the claims board and how this was
-// read. Each is a part of this one page, shown by the address. A frame whose records sit closer than a world coastline
-// tells (Algiers) names a relief and a road map in its front matter, drawn under the marks; a frame inland (Remagen) a
-// relief with its rivers, and a dated situation map's front and units (records/fronts/), with each followed unit's way in.
+// there, and the clock's playback marks the step it is in. Questions and sources (view=questions) is the claims
+// board, the Sources view (one moment at a time, source by source, where more than one source speaks to a question)
+// and how this was read. Both are parts of this one page, shown by the address; the old addresses
+// (view=account|records|working) open the page or the questions. A frame whose records sit closer than a world
+// coastline tells (Algiers) names a relief and a road map in its front matter, drawn under the marks; a frame inland
+// (Remagen) a relief with its rivers, and a dated situation map's front and units (records/fronts/), with each followed
+// unit's way in.
 (async () => {
   const E = Engage, esc = EV.esc;
   const index = await fetch(RECORDS + "engagements/index.json").then(r => r.json());
   const params = new URLSearchParams(location.search), want = params.get("e");
   const id = index.some(x => x.id === want) ? want : "tama-17-1944-04-29";
-  const DEPTHS = ["account", "records", "working"];
-  const VIEW = DEPTHS.includes(params.get("view")) ? params.get("view") : "account";
+  // the two depths: the page, and the questions behind it; the old three-depth addresses still arrive
+  const VIEW = ["questions", "working"].includes(params.get("view")) ? "questions" : "page";
   const IN = v => VIEW === v;
-  const address = (eid, view) => `?e=${encodeURIComponent(eid)}&view=${view}`;
+  const address = (eid, view) => `?e=${encodeURIComponent(eid)}${view === "questions" ? "&view=questions" : ""}`;
   const [D, world] = await Promise.all([fetch(`${RECORDS}engagements/${id}/engagement.json`).then(r => r.json()),
     d3.json(EV.LAND_10M), SILHOUETTES]);
   const LAND = EV.land(world);
@@ -32,19 +34,19 @@
   const RIVERS = (await Promise.all((D.relief || []).filter(r => r.rivers)
     .map(r => d3.json(`${RECORDS}relief/${r.name}/rivers.geojson`).catch(() => null)))).filter(Boolean);
   // the dated situation maps (records/fronts/, the front matter's `fronts`, in date order): each one's front line and unit
-  // symbols, the staff's picture of its day, drawn under the records as context; the account shows the first, the records
-  // depth the latest at its clock
+  // symbols, the staff's picture of its day, drawn under the records as context; the page shows the latest at its clock,
+  // or steps through them when there is no clock
   const SITMAPS = (await Promise.all((D.fronts || []).map(f => d3.json(`${RECORDS}fronts/${f.name}.geojson`)
     .then(gj => ({ meta: f, gj }), () => null)))).filter(Boolean);
   // the story's steps (the build's `steps`): each with the time of its earliest clocked entry and its framing; a
-  // [[step:]] link's address opens the records depth at that step
+  // [[step:]] link's address opens the page at that step
   const STEPS = (D.steps || []).map(st => ({ ...st, ms: E.T(st.utc || st.key) }));
-  const stepHref = st => `${address(id, "records")}${st.utc ? `&at=${encodeURIComponent(st.utc)}` : ""}&step=${encodeURIComponent(st.id)}`;
+  const stepHref = st => `${address(id, "page")}${st.utc ? `&at=${encodeURIComponent(st.utc)}` : ""}&step=${encodeURIComponent(st.id)}`;
   const STEP_LINKS = Object.fromEntries(STEPS.map(st => [st.id, { href: stepHref(st) }]));
   const stepOf = sid => STEPS.find(st => st.id === sid);
-  // the frame's own figures (panels.js), on the working
-  const FIGURES = (typeof PANELS === "object" && PANELS[D.id]) || [];   // counted on every depth, mounted on the working
-  const PANEL_LIST = IN("working") ? FIGURES : [];
+  // the frame's own figures (panels.js), after the story
+  const FIGURES = (typeof PANELS === "object" && PANELS[D.id]) || [];
+  const PANEL_LIST = IN("page") ? FIGURES : [];
   // the breadcrumb: the theatre, the operation and the engagement before and after (chapter.js); the page opened with
   // no engagement named is the picker, and says so
   const crumb = document.getElementById("crumb");
@@ -106,7 +108,7 @@
   const timed = D.events.filter(e => e.ms != null && !Number.isNaN(e.ms));
   let t0 = D.window ? E.T(D.window.from) : d3.min(timed, e => e.ms), t1 = D.window ? E.T(D.window.to) : d3.max(timed, e => e.ms);
   if (t1 - t0 < 3600e3) { t0 -= 1800e3; t1 += 1800e3; }
-  // each followed subject's colour, the same in the account's who and on the map: the build's, else the chronology's
+  // each followed subject's colour, the same in the who at the top and on the map: the build's, else the chronology's
   // column, else the next free of the three checked ones (a followed unit with no entries of its own, Neuburg's); the
   // other side has none (dashed in the who)
   const SUBJECT_COLOUR = (() => {
@@ -126,27 +128,27 @@
   // follows it, as below. Dated or monthly: there is no clock to play, so the time controls and the log go, the map
   // stands still with every mark shown, and the chronology leads, full width, where the log was.
   const TEMPO = E.tempo(D.events), CLOCKED = TEMPO === "clocked";
-  // The clock plays only on the records depth of a clocked frame. The account's map is the same drawing with the clock
-  // at the window's end: every track, mark and place shown, no play button, no lanes, no fading (zoom and pan stay).
-  const PLAYS = CLOCKED && IN("records");
+  // The clock plays on the page of a clocked frame, stopped until pressed: it opens at the window's end (or `&at=`), so
+  // every track, mark and place is shown first.
+  const PLAYS = CLOCKED && IN("page");
   if (PLAYS) useSitmap(sitmapAt(params.get("at") ? E.T(params.get("at")) : t1));
-  // a dated frame has no clock to play; its records depth steps through the day maps instead (`&on=1945-03-13`) on the
+  // a dated frame has no clock to play; its page steps through the day maps instead (`&on=1945-03-13`) on the
   // clocked frames' bar, a map at a time (drawDays), the stations drawn to the map's day
-  const STEPPER = !PLAYS && IN("records") && SITMAPS.length > 1;
+  const STEPPER = !PLAYS && IN("page") && SITMAPS.length > 1;
   if (STEPPER) useSitmap(SITMAPS.find(S => S.meta.date === params.get("on")) || SITMAPS[0]);
-  // the story told in steps sits beside the map on the records depth, with the log behind a tab when the clock plays
-  const STEPPED = IN("records") && STEPS.length > 0;
+  // the story told in steps sits beside the map, with the log behind a tab when the clock plays
+  const STEPPED = IN("page") && STEPS.length > 0;
   if (!PLAYS) {
     document.querySelector(".time").hidden = !STEPPER;
     document.querySelector(".side").hidden = !STEPPED;
-    document.getElementById("action").classList.add(IN("account") ? "account" : "dated");
+    document.getElementById("action").classList.add("dated");
   }
   if (STEPPED) document.getElementById("action").classList.add("stepped");
-  document.getElementById("action").hidden = IN("working");
-  document.getElementById("account").hidden = !IN("account");
-  document.getElementById("doors").hidden = !IN("account");
-  document.getElementById("story").hidden = !IN("records") || STEPPED;   // beside the map instead, as the narrative
-  // the clock the address asks for (`&at=1944-04-29T13:01Z`): the records depth of a clocked frame opens at that minute
+  document.getElementById("action").hidden = IN("questions");
+  document.getElementById("account").hidden = IN("questions");
+  document.getElementById("picker").hidden = IN("questions");
+  document.getElementById("story").hidden = IN("questions") || STEPPED;   // beside the map instead, as the narrative
+  // the clock the address asks for (`&at=1944-04-29T13:01Z`): the page of a clocked frame opens at that minute
   const AT = PLAYS && params.get("at") ? E.T(params.get("at")) : null;
   const OWN = D.clock && D.gmt ? D.clock : (D.theater === "pacific" && D.gmt ? "I" : "");
   const OWN_NAME = { I: "Item (Tokyo time)", B: "Baker", K: "King", H: "How" };
@@ -161,22 +163,24 @@
   document.getElementById("title").textContent = D.title;
   const render = s => Links.render(s, { cites: D.cites || {}, steps: STEP_LINKS });
   if (top && top.paras.length) document.getElementById("lede").innerHTML = render(top.paras[0].text);
-  // the story's Sources (and What is missing) sections belong to the working, under how this was read; the rest is the
-  // records' narrative; the Outcome and Clocks sections also go to the account
+  // the story's Sources (and What is missing) sections belong to the questions, under how this was read; the rest is
+  // the records' narrative; the Outcome and Clocks sections also go to the top of the page
   const sourcesSec = s => /^sources\b|what('s| is) missing/i.test(s.heading || "");
+  const outcomeSec = s => /^outcome$/i.test(s.heading || "");   // at the top of the page, so not again in the story
   const sectionsHTML = list => list.map(s => {
     const paras = s === top ? s.paras.slice(1) : s.paras;
     if (!s.heading && !paras.length) return "";
     return `${s.heading ? `<h2>${esc(s.heading)}</h2>` : ""}${paras.map(p => `<p class="${p.aside ? "aside" : ""}">${render(p.text)}</p>`).join("")}`;
   }).join("");
-  document.getElementById("story").innerHTML = sectionsHTML(secs.filter(s => !sourcesSec(s)));
-  if (STEPPED) document.getElementById("narrative-text").innerHTML = sectionsHTML(secs.filter(s => s.heading && !sourcesSec(s)));
+  document.getElementById("story").innerHTML = sectionsHTML(secs.filter(s => !sourcesSec(s) && !outcomeSec(s)));
+  if (STEPPED) document.getElementById("narrative-text").innerHTML = sectionsHTML(secs.filter(s => s.heading && !sourcesSec(s) && !outcomeSec(s)));
   const SOURCES_HTML = sectionsHTML(secs.filter(sourcesSec));
   document.getElementById("sources").innerHTML = SOURCES_HTML;
-  document.getElementById("sources-card").hidden = !(IN("working") && SOURCES_HTML);
+  document.getElementById("sources-card").hidden = !(IN("questions") && SOURCES_HTML);
 
   // ---------- the convoy's path as the boats saw it (ours): the ship contacts, at the target's position, and the
-  // Japanese record's positions, straight between them. Closing in is computed from it, and the account draws it dotted.
+  // Japanese record's positions, straight between them. Closing in is computed from it, and the map draws it dotted, to
+  // the clock.
   // A sighting the report itself contradicts (its fix note says so) is left off, and listed.
   const contradicts = f => /contradict/i.test(f.fix || "");
   const contradicted = D.fixes.filter(f => f.kind === "ship" && contradicts(f));
@@ -200,12 +204,12 @@
     D.positions.length && `<span><svg width="10" height="10" viewBox="-5 -5 10 10"><rect x="-3" y="-3" width="6" height="6" fill="var(--ink-3)"/></svg>A place in the records</span>`,
     D.positions.some(r => r.lat2 != null) && `<span><svg width="16" height="12" viewBox="0 0 16 12"><rect x="1" y="1" width="14" height="10" fill="none" stroke="var(--ink-2)" stroke-width="1.2"/></svg>A grid square the record names (our decoding)</span>`,
     (D.relief || []).length && `<span><svg width="18" height="12" viewBox="0 0 18 12"><rect x="1" y="1" width="16" height="10" fill="var(--land)" stroke="var(--coast)"/></svg>Relief and coast: today's elevation (SRTM, USGS)${RIVERS.length ? "; rivers from Natural Earth" : ""}</span>`,
-    FRONT && `<span>${EV.legendMark.front}<span>The front at ${IN("account") || SITMAPS.length < 2 ? esc(FRONT_HOUR) : `1200 on ${esc(SITMAP_DAYS.slice(0, -1).join(", "))} and ${esc(SITMAP_DAYS[SITMAP_DAYS.length - 1])} ${esc(d3.utcFormat("%B %Y")(new Date(SITMAPS[0].meta.date)))}, ${STEPPER ? "the day chosen under the map" : "the latest at the clock"}`}, as the <a href="${esc(SITMAP.meta.cite.href)}" target="_blank" rel="noopener">12th Army Group's ${SITMAPS.length > 1 && !IN("account") ? "maps" : "map"}</a> drew it (traced, ± about ${Math.max(1, Math.round(SITMAP.meta.fit_km * 2))} km), ticked as the map ticks it, on its own side</span></span>`,
+    FRONT && `<span>${EV.legendMark.front}<span>The front at ${SITMAPS.length < 2 ? esc(FRONT_HOUR) : `1200 on ${esc(SITMAP_DAYS.slice(0, -1).join(", "))} and ${esc(SITMAP_DAYS[SITMAP_DAYS.length - 1])} ${esc(d3.utcFormat("%B %Y")(new Date(SITMAPS[0].meta.date)))}, ${STEPPER ? "the day chosen under the map" : "the latest at the clock"}`}, as the <a href="${esc(SITMAP.meta.cite.href)}" target="_blank" rel="noopener">12th Army Group's ${SITMAPS.length > 1 ? "maps" : "map"}</a> drew it (traced, ± about ${Math.max(1, Math.round(SITMAP.meta.fit_km * 2))} km), ticked as the map ticks it, on its own side</span></span>`,
     FRONT_UNITS.some(u => !u.opposed) && `<span>${EV.legendMark.unitUs}A US division or corps on that map: in its area, not at a position</span>`,
     FRONT_UNITS.some(u => u.opposed) && `<span>${EV.legendMark.unitEnemy}The enemy as that map placed them (US intelligence)</span>`,
     Object.values(STATIONS).some(rows => rows.length > 1) && `<span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" class="way" stroke="var(--ink-2)"/></svg>A unit's stations, joined straight; lighter in the week before the engagement</span>`,
     ROADS && `<span><svg width="22" height="10"><line x1="1" y1="5" x2="21" y2="5" class="road"/></svg>Primary roads of 1942 (OSS Map 967, traced, ± about 4 km)</span>`,
-    IN("account") && PATH.length > 1 && `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--ink-3)" stroke-width="1.4" stroke-dasharray="2 4"/></svg><i>The convoy's path as the boats saw it (ours)</i></span>`,
+    PATH.length > 1 && `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--ink-3)" stroke-width="1.4" stroke-dasharray="2 4"/></svg><i>The convoy's path as the boats saw it (ours; to the clock)</i></span>`,
   ].filter(Boolean).join("");
 
   // ---------- map
@@ -321,14 +325,14 @@
   // which side is whose: each side's mark (EV.insignia) and its name. One place for each, chosen once for every day's map
   // (on its side of the front in all of them, Engage.frontSide; clear of all their symbols, the stations and the places;
   // near the line), so stepping from day to day never moves it: it marks a side, not anything at that spot. Under the
-  // map's own side, the map's hour, where nothing else on the map gives it (the account, a clock that plays); the stepper
+  // map's own side, the map's hour, where nothing else on the map gives it (a clock that plays); the stepper
   // gives the day where there is one.
   let sidesAt = null;   // [[x, y, side], ...] for the current zoom, kept while the day changes
   function drawSides(fresh = false) {
     gFront.selectAll(".side").remove();
     if (!FRONT || !proj) { drawRiverNames(busyPoints()); return; }
     const own = SITMAPS.flatMap(S => S.placed).find(u => !u.opposed)?.of, enemy = SITMAPS.flatMap(S => S.placed).find(u => u.opposed)?.of;
-    const shown = IN("account") ? [SITMAPS[0]] : SITMAPS;   // the maps this depth can show
+    const shown = SITMAPS;   // every day's map: the page can show each
     if (fresh || !sidesAt) {
       const lines = shown.map(S => S.runs.map(r => r.map(c => P(c[0], c[1]))));
       const toLine = (line, [x, y]) => d3.min(line.flatMap(r => r.slice(1).map((b, i) => {
@@ -369,9 +373,9 @@
   // (where it went between them is not recorded), the days before lighter, an arrowhead at the last; each dot links to its
   // page, and gives its date on hover (the day shown is the stepper's or the map's, so the line carries no dates)
   const dm = d3.utcFormat("%-d %b"), dayOf = d3.utcFormat("%Y-%m-%d");
-  // to what day the ways are drawn: on the account with a situation map, to the map's day, so the picture is one moment;
-  // on the records depth with a clock, to the clock's day; otherwise all of them
-  const waysTo = () => PLAYS ? dayOf(new Date(t)) : SITMAPS.length && (IN("account") || STEPPER) ? SITMAP.meta.date : "9999";
+  // to what day the ways are drawn: with a clock, to the clock's day; with a situation map chosen on the map, to the
+  // map's day, so the picture is one moment; otherwise all of them
+  const waysTo = () => PLAYS ? dayOf(new Date(t)) : SITMAPS.length && STEPPER ? SITMAP.meta.date : "9999";
   let waysDrawn = null;
   function drawWays(limit = waysTo()) {
     waysDrawn = limit;
@@ -410,7 +414,7 @@
   if (!D.box) document.querySelector(".map-box").hidden = true;
 
   function drawStatic() {
-    if (!D.box || document.getElementById("action").hidden) return;   // (the working has no map: nothing to fit)
+    if (!D.box || document.getElementById("action").hidden) return;   // (the questions have no map: nothing to fit)
     const el = svg.node(); W = el.clientWidth; H = el.clientHeight;
     if (W < 120 || H < 120) return;   // not laid out yet (a resize in progress): a fit to nothing would draw inside out
     const b = D.box, m = Math.min(44, W * 0.06);
@@ -430,12 +434,16 @@
     gPlace.selectAll("*").remove();
     D.places.filter(p => inView(P(p.lon, p.lat))).forEach(p => gPlace.append("text").attr("class", "place")
       .attr("x", P(p.lon, p.lat)[0]).attr("y", P(p.lon, p.lat)[1]).attr("text-anchor", "middle").style("font-size", p.small ? "10px" : null).text(p.name));
-    // the account: the convoy's observed path, dotted (ours; the caption says so)
-    gPath.selectAll("path").data(IN("account") && PATH.length > 1 ? [PATH] : []).join("path").attr("class", "trk observed")
-      .attr("d", d3.line().x(p => P(p.lon, p.lat)[0]).y(p => P(p.lon, p.lat)[1]));
+    drawPath();
     drawMarks();
   }
 
+  // the convoy's observed path, dotted (ours; the legend says so), as far as the clock
+  function drawPath() {
+    const upTo = PLAYS ? PATH.filter(p => E.T(p.utc) <= t) : PATH;
+    gPath.selectAll("path").data(upTo.length > 1 ? [upTo] : []).join("path").attr("class", "trk observed")
+      .attr("d", d3.line().x(p => P(p.lon, p.lat)[0]).y(p => P(p.lon, p.lat)[1]));
+  }
   function drawMarks() {
     const items = [];
     D.fixes.filter(f => f.kind !== "attack" && !f.ref.endsWith(" fired")).forEach(f =>
@@ -570,6 +578,7 @@
     // between two sheets nothing is drawn that neither gives), the old faded out under the new
     if (proj && PLAYS && SITMAPS.length > 1 && sitmapAt(t) !== SITMAP) switchSitmap(sitmapAt(t));
     if (proj) {
+      if (PLAYS) drawPath();
       const line = d3.line().x(p => P(...p)[0]).y(p => P(...p)[1]);
       const rows = [], nows = [];
       TRACKED.forEach(p => {
@@ -665,7 +674,7 @@
     document.getElementById("side-sub").textContent = PLAYS ? "Each step sets the clock and the map; click one to go there" : "Each step frames the map; click one to go there";
   }
 
-  // ---------- the frame's own figures (panels.js): each engagement's panels, mounted on the working, a card each
+  // ---------- the frame's own figures (panels.js): each engagement's panels, after the story, a card each
   function drawPanels() {
     const host = document.getElementById("panels");
     host.hidden = !PANEL_LIST.length;
@@ -722,7 +731,7 @@
   });
   document.getElementById("scrub").addEventListener("input", e => { if (STEPPER) { stopDays(); goDay(+e.target.value); return; } stop(); setTime(+e.target.value); });
 
-  // ---------- the day maps' timeline (a dated frame's records depth with several situation maps): the clocked frames'
+  // ---------- the day maps' timeline (a dated frame's page with several situation maps): the clocked frames'
   // bar, a day at a time. The lanes are the followed units' stations and each side's entries, each at its day (or its
   // minute where the record gives one); the axis has a tick for each map's day; the cursor is the map shown, at its hour.
   // The play steps a map at a time (never a glide); the slider and a click on the lanes go to the nearest map.
@@ -785,8 +794,8 @@
 
   // ---------- the chronology, when the frame has no clock to play: Engage's rows and columns, EV's drawing
   function drawChronology() {
-    document.getElementById("chron-card").hidden = CLOCKED || !IN("records");
-    if (CLOCKED || !IN("records")) return;
+    document.getElementById("chron-card").hidden = CLOCKED || !IN("page");
+    if (CLOCKED || !IN("page")) return;
     EV.chronology(document.getElementById("chron"), { rows: E.chronologyRows(D.events, TEMPO), columns: E.chronologyColumns(D.events, PARTS), tempo: TEMPO, nameOf });
     document.getElementById("chron-title").textContent = TEMPO === "monthly" ? "The records, by the month" : "The records, by the day";
     document.getElementById("chron-note").textContent = (TEMPO === "monthly"
@@ -842,7 +851,7 @@
   let cx = null, cy = null;
   function drawClosing() {
     const card = document.getElementById("closing-card");
-    card.hidden = !(IN("working") && Object.keys(D.convoys).length && series.length);
+    card.hidden = !(IN("page") && Object.keys(D.convoys).length && series.length);
     if (card.hidden) return;
     const s = d3.select("#closing"), w = s.node().clientWidth, h = 220, m = { l: 48, r: 90, t: 12, b: 26 };
     s.selectAll("*").remove();
@@ -874,10 +883,11 @@
   // moment is a pairing of an attack with a Japanese record (the boat's claims.yml, `pairs`), or a question the
   // engagement's claims.yml leaves open; the computation is Engage's, the drawing EV's.
   const QUESTIONS_BY = E.claimMoments(D.claims);
-  const MOMENTS = [...E.pairMoments(D), ...QUESTIONS_BY];
+  // a question every answer of which comes from one source has nothing to set side by side: the board alone shows it
+  const MOMENTS = [...E.pairMoments(D), ...QUESTIONS_BY.filter(q => q.columns.length > 1)];
   function drawMoments() {
     const card = document.getElementById("moments-card");
-    card.hidden = !(IN("working") && MOMENTS.length);
+    card.hidden = !(IN("questions") && MOMENTS.length);
     if (card.hidden) return;
     const el = document.getElementById("moments");
     el.innerHTML = "";
@@ -885,7 +895,7 @@
     document.getElementById("moments-sub").textContent = `${n(MOMENTS.length, "moment")}: each column is one source, as typed, in its own language and on its own clock`;
   }
   function drawClaims() {
-    document.getElementById("claims-card").hidden = !(IN("working") && D.claims.length);
+    document.getElementById("claims-card").hidden = !(IN("questions") && D.claims.length);
     if (D.claims.length) EV.board(document.getElementById("claims"), QUESTIONS_BY);
   }
 
@@ -907,14 +917,10 @@
         <p class="muted">Silhouettes are drawn to one scale, from the class's own recognition plate where the library has it (hover for which); otherwise the kind of ship only. Italic names come from a secondary source.</p>`;
     }).join("");
     const jpHTML = jp.length ? `<h3>The target</h3><div class="plates">${jp.map(p => plate(p.name, p.note || p.kind, p.sil || EV.category(p.kind), "var(--ink-3)", "", "", "As the boat identified it")).join("")}</div>` : "";
-    const armyHTML = army.length ? `<h3>The units</h3><ul class="units">${army.map(p => `<li><a href="subject.html?s=${encodeURIComponent(p.unit)}&amp;t=${t0}&amp;view=records">${esc(p.name)}</a>${p.basis && p.basis !== "reported" ? ` <i>(${esc(p.basis)})</i>` : ""}${p.note ? ` <span class="muted">${esc(p.note)}</span>` : ""}</li>`).join("")}</ul>` : "";
+    const armyHTML = army.length ? `<h3>The units</h3><ul class="units">${army.map(p => `<li><a href="subject.html?s=${encodeURIComponent(p.unit)}&amp;t=${t0}">${esc(p.name)}</a>${p.basis && p.basis !== "reported" ? ` <i>(${esc(p.basis)})</i>` : ""}${p.note ? ` <span class="muted">${esc(p.note)}</span>` : ""}</li>`).join("")}</ul>` : "";
     const usHTML = us.length ? `<h3>${us.length > 1 ? ownName : us[0].kind === "submarine" ? "The boat" : ownName}</h3><div class="plates">${usPlates.join("")}</div>` : "";
     document.getElementById("oob").innerHTML = `<div class="pack">${usHTML}${armyHTML}</div><div>${convoyHTML}${jpHTML}</div>`;
-    // the account's "Who" already shows our own side's plates, so there the card is the other side's alone (the
-    // convoy's ships and their fates, the target as the boat saw it), and goes when there is no other side drawn
-    const card = document.getElementById("oob-card");
-    card.classList.toggle("other", IN("account"));
-    card.hidden = IN("working") || (IN("account") && !(convoyHTML || jpHTML));
+    document.getElementById("oob-card").hidden = IN("questions");
   }
 
   // ---------- time and playback
@@ -935,9 +941,9 @@
   }
   playBtn.addEventListener("click", () => STEPPER ? (dayTimer ? stopDays() : playDays()) : playing ? stop() : play());
 
-  // ---------- the observer view (observer.js): each attack whose data sheet is transcribed; it lives in the working
-  // (the card measures itself when mounted, so it is mounted only where it is shown); picking one moves the clock
-  const observer = IN("working") ? Observer.mount({ D, colour, nameOf, setPageTime: ms => { stop(); setTime(ms); highlightRow(ms); } }) : { pick() {} };
+  // ---------- the observer view (observer.js): each attack whose data sheet is transcribed, among the figures (the
+  // card measures itself when mounted, so it is mounted only where it is shown); picking one moves the clock
+  const observer = IN("page") ? Observer.mount({ D, colour, nameOf, setPageTime: ms => { stop(); setTime(ms); highlightRow(ms); } }) : { pick() {} };
   const sheetOf = e => e && e.kind === "attack" && D.sheets?.[e.actor]?.[e.title.replace(" (narrative)", "")] ? e : null;
   document.getElementById("log").addEventListener("click", ev => {
     const row = ev.target.closest(".row"), e = row && D.events[[...row.parentNode.children].indexOf(row)];
@@ -945,8 +951,8 @@
   });
   gMk.on("click.observer", ev => { const d = d3.select(ev.target.closest("g.mk")).datum(); const e = d && d.es && d.es.find(sheetOf); if (e) observer.pick(e.actor, e.title.replace(" (narrative)", "")); });
 
-  // ---------- the depths: the switch under the breadcrumb, with each depth's count; the account's card and doors
-  // (guides/OPERATIONS-VIEWER.md, 4.1). Every number is counted from the frame's own JSON, never written in.
+  // ---------- the depths: the switch under the lede, each saying what it holds; the outcome, who and when at the top
+  // of the page (guides/OPERATIONS-VIEWER.md, 4.1). Every number is counted from the frame's own JSON, never written in.
   // the item an entry was read from: its citation's stem (the archive's item: a microfilm roll, a JACAR reference, a
   // catalog page without its page number), so that a boat's track, depths, sheets and narrative, all one report, count
   // once; an entry with no citation counts by the record its source names
@@ -968,29 +974,39 @@
   const SHEETS = Object.entries(D.sheets || {}).flatMap(([actor, byRef]) => Object.keys(byRef).map(ref => ({ actor, ref })));
   const QUESTIONS = QUESTIONS_BY.length;
   const CLOSING = !!(Object.keys(D.convoys).length && series.length);
-  const working = [SHEETS.length && n(SHEETS.length, "attack sheet"), CLOSING && "closing in", FIGURES.length && n(FIGURES.length, "figure"), MOMENTS.length && n(MOMENTS.length, "moment"), QUESTIONS && n(QUESTIONS, "open question"), SOURCES_HTML && "sources"].filter(Boolean);
-  const recordsLine = `${n(D.events.length, "entry", "entries")} · ${kindsLine} · ${n(LANGS, "language")}`;
-  document.getElementById("depths").innerHTML = [["account", "The account", "one screen, nothing moves"], ["records", "The records", recordsLine],
-    ["working", "The working", working.length ? working.join(" · ") : "nothing to show yet"]]
+  const figures = [SHEETS.length && "at the periscope", FIGURES.length && n(FIGURES.length, "figure"), CLOSING && "closing in"].filter(Boolean);
+  const pageLine = ["the outcome", PLAYS || CLOCKED ? "the map with its clock" : "the map", `${n(D.events.length, "entry", "entries")} from ${kindsLine}`, STEPS.length ? "the story in steps" : "the story", ...figures].join(" · ");
+  const questions = [QUESTIONS && `${n(QUESTIONS, "question")} the records leave open`, MOMENTS.length && "answers side by side", SOURCES_HTML && "how this was read"].filter(Boolean);
+  document.getElementById("depths").innerHTML = [["page", "The engagement", pageLine], ["questions", "Questions and sources", questions.length ? questions.join(" · ") : "nothing listed yet"]]
     .map(([v, name, line]) => `<a href="${esc(address(id, v))}"${IN(v) ? ' aria-current="page"' : ""}>${name}<small>${esc(line)}</small></a>`).join("");
-  document.getElementById("working-none").hidden = !(IN("working") && !working.length);
-  document.getElementById("working-none").textContent = "The working has nothing to show for this engagement yet: no attack sheet is transcribed, there is no convoy to close on, it has no figures of its own, no attack is paired with a record of the other side, the records leave no question listed, and the story has no sources section.";
+  document.getElementById("working-none").hidden = !(IN("questions") && !questions.length);
+  document.getElementById("working-none").textContent = "Nothing is listed for this engagement yet: the records leave no question listed, no attack is paired with a record of the other side, and the story has no sources section.";
 
-  if (IN("account")) {
+  if (IN("page")) {
     // the outcome, in the records' terms: the story's Outcome section, its citations links as in the story
-    const outcome = secs.find(s => /^outcome$/i.test(s.heading || ""));
+    const outcome = secs.find(outcomeSec);
     document.getElementById("outcome").innerHTML = outcome && outcome.paras.length ? outcome.paras.map(p => `<p>${render(p.text)}</p>`).join("")
-      : `<p class="none">The story has no outcome section yet: what the records say is in the records depth, and the questions they leave open in the working.</p>`;
+      : `<p class="none">The story has no outcome section yet: what the records say is below, and the questions they leave open are under Questions and sources.</p>`;
     // who: one row per participant, the followed subjects in their colours (the chronology's: the build's or the next
     // free of the three checked ones), the other side dashed; the hull, kind and CO as the JSON gives them; the
     // silhouette at the library's one scale, as the order of battle draws it
     const barOf = p => SUBJECT_COLOUR[p.id];
     const convoyWords = p => { const c = D.convoys[p.convoy]; return c ? [[c.from, ...(c.via || []), c.to].filter(Boolean).join(" → "), c.sailed && `sailed ${c.sailed}`, c.ships.length && `${n(c.ships.length, "ship")} named in its record`].filter(Boolean).join("; ") : ""; };
+    // each subject's own page (subject.html?s=…, guides/OPERATIONS-VIEWER.md 5.2): a boat at the patrol, a unit on the day
+    const first = d3.utcFormat("%Y-%m-%d")(new Date(t0));
+    const journey = p => {
+      if (p.track) { const [key, patrol] = p.track.split("/"); return `subject.html?s=${encodeURIComponent(key)}${patrol ? `&amp;period=${encodeURIComponent(patrol)}` : ""}`; }
+      if (p.convoy) return `subject.html?s=${encodeURIComponent(p.convoy)}`;
+      if (p.unit) return `subject.html?s=${encodeURIComponent(p.unit)}&amp;t=${first}`;
+      return "";
+    };
     document.getElementById("who").innerHTML = PARTS.map(p => {
       const bar = barOf(p);
       const words = p.convoy ? [p.kind, convoyWords(p)] : [p.hull, p.kind === "army" ? "Army unit" : p.kind, p.co, p.basis && p.basis !== "reported" && `${p.basis}: not named by the engagement's own entries`];
       const sil = p.sil ? EV.sil(p.sil, bar || "var(--ink-3)", { ftPx: 0.42 }) : "";
-      return `<div class="subj"><span class="bar${bar ? "" : " dash"}" style="${bar ? `--bar:${bar}` : ""}"></span><span class="n"><b>${esc(p.name)}</b> <i>${esc(words.filter(Boolean).join(" · "))}</i></span>${sil}</div>`;
+      const own = journey(p);
+      const name = own ? `<a href="${own}" title="${esc(p.name)}: its own page, before and after this">${esc(p.name)}</a>` : esc(p.name);
+      return `<div class="subj"><span class="bar${bar ? "" : " dash"}" style="${bar ? `--bar:${bar}` : ""}"></span><span class="n"><b>${name}</b> <i>${esc(words.filter(Boolean).join(" · "))}</i></span>${sil}</div>`;
     }).join("");
     // when: the window (GMT where the records give a zone) and its length; the Clocks section's first paragraph under it
     const fmt = d3.utcFormat(t1 - t0 > 3 * 86400e3 || !CLOCKED ? "%-d %B %Y" : "%-d %B %H%M"), hours = Math.round((t1 - t0) / 3600e3);
@@ -1000,31 +1016,14 @@
     document.getElementById("when").innerHTML = `${esc(span)}.${clocks && clocks.paras.length ? ` <span class="k">${render(clocks.paras[0].text)}</span>` : ""}`;
     // the caption under the static map: what is drawn, and which of it is ours
     const placed = D.positions.some(r => r.lat != null && (r.basis === "assumed" || r.basis === "approx" || r.basis === "hand-placed"));
-    document.getElementById("cap").textContent = ["The account is static: no clock, and nothing needs a hover; the records and the working have both.",
+    document.getElementById("cap").textContent = [
+      PLAYS && "The clock is stopped at the window's end, so every track and mark is shown; press play to watch the day pass. Each mark opens its entry.",
       TRACKED.length && "A line between a subject's reported positions is straight, and where it went between them is not recorded.",
       PATH.length > 1 && "The convoy's path, dotted, is computed from where the boats sighted it and where the Japanese record puts it: that is ours.",
       placed && "A faint square is a place we placed, not one the record gives.",
-      FRONT && `The front and the units are the 12th Army Group's map at ${FRONT_HOUR}, traced: the army group's picture of that day, context for the records, not their positions.${SITMAPS.length > 1 ? ` The records depth steps through its maps of ${SITMAP_DAYS.join(", ")} March.` : ""}`,
-      Object.values(STATIONS).some(rows => rows.length > 1) && `A unit's dashed line joins its stations straight: where it went between them is not recorded.${FRONT ? ` Its stations are drawn to the map's day, ${d3.utcFormat("%-d %B")(new Date(SITMAPS[0].meta.date))}, so the picture is one moment.` : ""}`].filter(Boolean).join(" ");
+      FRONT && `The front and the units are the 12th Army Group's map at ${FRONT_HOUR}, traced: the army group's picture of that day, context for the records, not their positions.${SITMAPS.length > 1 ? (STEPPER ? ` The bar under the map steps through its maps of ${SITMAP_DAYS.join(", ")} ${d3.utcFormat("%B")(new Date(SITMAPS[0].meta.date))}, a day at a time.` : " As the clock passes noon, the next day's map takes its place.") : ""}`,
+      Object.values(STATIONS).some(rows => rows.length > 1) && `A unit's dashed line joins its stations straight: where it went between them is not recorded.${FRONT && (STEPPER || PLAYS) ? " Its stations are drawn to the map's day, so the picture is one moment." : ""}`].filter(Boolean).join(" ");
     document.getElementById("cap").hidden = false;
-    // the doors: the records and the working, with their counts; the journeys, each subject's own page
-    const first = d3.utcFormat("%Y-%m-%d")(new Date(t0));
-    const journey = p => {
-      // each subject's own page (subject.html?s=…, guides/OPERATIONS-VIEWER.md 5.2): a boat at the patrol, a unit on the day
-      if (p.track) { const [key, patrol] = p.track.split("/"); return `<a href="subject.html?s=${encodeURIComponent(key)}${patrol ? `&amp;period=${encodeURIComponent(patrol)}` : ""}">${esc(p.name)}${patrol ? ` patrol ${esc(patrol)}` : ", her track"}</a>`; }
-      if (p.convoy) return `<a href="subject.html?s=${encodeURIComponent(p.convoy)}">${esc(p.name)}: its ships and voyage</a>`;
-      if (p.unit) return `<a href="subject.html?s=${encodeURIComponent(p.unit)}&amp;t=${first}">${esc(p.name)}: its stations</a>`;
-      return "";
-    };
-    const journeys = PARTS.map(journey).filter(Boolean);
-    const recordNames = [...new Set(RECS.values())], shown = recordNames.slice(0, 6);   // two FRUPAC maps are one name
-    document.getElementById("doors").innerHTML = `
-      <a class="door" href="${esc(address(id, "records"))}"><b>The records</b><span class="n"><span class="typed">${D.events.length}</span> ${D.events.length === 1 ? "entry" : "entries"} from ${esc(kindsLine)} in ${n(LANGS, "language")}${D.fixes.length ? `, and <span class="typed">${D.fixes.length}</span> ${D.fixes.length === 1 ? "fix" : "fixes"}` : ""}</span>
-        <span class="list">${esc(shown.join(" · "))}${recordNames.length > shown.length ? ` · and ${recordNames.length - shown.length} more` : ""} · ${PLAYS || CLOCKED ? "the map with the clock, one lane per subject, and the two-sided log" : "the map, and the chronology by the day"}${STEPS.length ? `, with the story in ${n(STEPS.length, "step")} beside the map` : ""}</span></a>
-      <a class="door" href="${esc(address(id, "working"))}"><b>The working</b><span class="n">${working.length ? esc(working.join("; ")) : "nothing to show yet"}</span>
-        <span class="list">${esc([SHEETS.length && `at the periscope: ${SHEETS.map(s => `${nameOf(s.actor)} ${s.ref}`).join(", ")}`, CLOSING && "closing in", FIGURES.length && `figures: ${FIGURES.map(f => f.heading).join("; ")}`, MOMENTS.length && `source by source: ${n(MOMENTS.length, "moment")}`, QUESTIONS && "what the records leave open", SOURCES_HTML && "how this was read"].filter(Boolean).join(" · ")) || "no attack sheet, no closing in, no figure, no pair, no open question, no sources section"}</span></a>
-      <div class="door"><b>Journeys</b><span class="n">each subject's own record, before and after</span>
-        <span class="list">${journeys.length ? journeys.join(" · ") : "no subject here has a page of its own yet"}</span></div>`;
   }
 
   drawOOB(); drawMoments(); drawClaims(); drawPanels(); drawLog(); drawChronology(); drawStatic(); drawLanes(); drawClosing();

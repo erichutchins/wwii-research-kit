@@ -19,7 +19,7 @@
     const xs = ALL.filter(s => s.kind === kind).sort((a, b) => hullNo(a) - hullNo(b));
     if (!xs.length) return;
     out.push(`<h2>${title}</h2><p class="key">${note}</p><div class="ledger-wrap"><table class="ledger"><thead><tr><th>Subject</th><th>What it was</th><th>${kind === "boat" ? "Patrols" : "Record"}</th><th>When</th><th class="num">Positions</th><th>Status</th></tr></thead><tbody>${xs.map(s => {
-      const periods = kind === "boat" ? s.periods.map(p => `<a href="${esc(href(s))}&amp;period=${p.n}&amp;view=records" title="${esc(`${p.name}, ${p.dates}${p.area ? `: ${p.area}` : ""}`)}">${p.n}</a>`).join(" ") : esc(s.periods[0]?.name || "");
+      const periods = kind === "boat" ? s.periods.map(p => `<a href="${esc(href(s))}&amp;period=${p.n}" title="${esc(`${p.name}, ${p.dates}${p.area ? `: ${p.area}` : ""}`)}">${p.n}</a>`).join(" ") : esc(s.periods[0]?.name || "");
       const fixes = s.periods.reduce((a, p) => a + (p.fixes || 0), 0);
       const status = [...new Set(s.periods.map(p => p.status).filter(Boolean))].join(", ") + (s.periods[0]?.months ? ` · ${s.periods[0].months.filter(m => /mapped|partial/.test(m.status)).length} of ${s.periods[0].months.length} months` : "");
       return `<tr><td class="nm">${link(s, esc(s.name))}</td><td class="plain">${esc(s.plain)}</td><td class="pn">${periods}</td><td class="st">${esc(span(s))}</td><td class="num">${fixes}</td><td class="st">${esc(status)}</td></tr>`;

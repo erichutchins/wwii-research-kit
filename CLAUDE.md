@@ -125,7 +125,7 @@ those, a `plain` line, `army/units.yml`, `seabees/units.yml`, `army/leads.yml`, 
 
 ## Pages
 
-Where the pages are going (subjects, frames, the three depths; the design, checked against TAMA-17 and the 67th CA (AA)'s
+Where the pages are going (subjects, frames, the two depths; the design, checked against TAMA-17 and the 67th CA (AA)'s
 Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page or a view.
 
 - Every mark links to its source page (the scan viewer falls back to the archive's URL from
@@ -168,7 +168,8 @@ Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page
   observer view (`site/observer.js`) draws each attack from its sheet with `engage.js`'s `attackSheet` and `attackAt`;
   beside its periscope, in tabs, the Torpedo Data Computer's faces (`site/tdc.js`, drawing only, the values `tdcAt`'s).
 - Verify changes in a browser: light and dark mode, every subject on `subject.html` (a boat, a ship, a unit, a
-  battalion, a convoy, at its three depths), every engagement on `engagement.html`, no console errors.
+  battalion, a convoy, its page and its placement), every engagement on `engagement.html` (the page and its questions), no
+  console errors.
 
 ## Don't
 

@@ -1,5 +1,5 @@
-// USS Haynsworth (DD-700), 6 April 1945: the figures of her engagement's working (panels.js registers them for
-// engagement.html?e=haynsworth-1945-04-06&view=working). The drawing is the former story page's, mounted into a host
+// USS Haynsworth (DD-700), 6 April 1945: the figures of her engagement (panels.js registers them for
+// engagement.html?e=haynsworth-1945-04-06, after the story). The drawing is the former story page's, mounted into a host
 // element by each panel instead of into the page's own ids: the last five minutes as the action report tells them, in
 // schematic panels; the Judy beside the ship to scale at 100 and 150 ft; an estimated path for the last half-minute,
 // with the assumptions as controls; where she was hit, by frame; TG 58.3 and its pickets as the 6 April records name

@@ -1,19 +1,20 @@
-// subject.html?s=<id>&view=account|records|working: one journey page for every subject the records follow (a boat, a
-// ship, an Army unit, a Seabee battalion, a convoy, a command), at three depths (guides/OPERATIONS-VIEWER.md 4, 5.2, 7.2).
+// subject.html?s=<id>[&view=placement]: one journey page for every subject the records follow (a boat, a ship, an Army
+// unit, a Seabee battalion, a convoy, a command), at two depths (guides/OPERATIONS-VIEWER.md 4, 5.2, 7.2).
 // Reads records/subjects.json (tools/build_subjects.py: the registry of every subject, with its plain line, periods,
 // organizations, engagements and record counts), and for the depths the subject's own built records (ships.json and its
 // track GeoJSON, army/army.json, seabees/seabees.json, convoys/convoys.json), operations/operations.json for the war
 // around it and chapter.js for a unit's stages.
-//   The account (the default): the plain line as the eyebrow and the designation as the title; what it was; a lede
-//   computed from the record; its organizations as dated rows with their pages; the strip map (one small panel per
-//   stage, patrol or voyage, legs solid where its own report places both ends, dashed where an end is assumed, dotted
-//   at sea); the coverage bar by month and source; the stage rows with the war around them (operations whose area and
-//   dates hold a station: context, not participation; beside it, the engagements the subject or its battalion was in);
-//   and three doors.
-//   The records: today's app for its kind as a panel (site/panels/*.js): the map with the date strip and the entries
-//   list, the scan dialog shared (#scan), &period= (a patrol) and &t= (a day or a minute) carried in the address.
-//   The working: how each station was placed, the speed check of the legs (computed here from the fixes), the
-//   relations with their pages, the leads, the coverage by month.
+//   The page (the default), top to bottom: the plain line as the eyebrow and the designation as the title; what it was;
+//   a lede computed from the record; its organizations as dated rows with their pages; the strip map (one small panel
+//   per stage, patrol or voyage, legs solid where its own report places both ends, dashed where an end is assumed,
+//   dotted at sea); the coverage bar by month and source; the stage rows with the war around them (operations whose
+//   area and dates hold a station: context, not participation; beside it, the engagements the subject or its battalion
+//   was in); then the record itself, today's app for its kind as a panel (site/panels/*.js): the map with the date
+//   strip and the entries list, the scan dialog shared (#scan), &period= (a patrol) and &t= (a day or a minute) carried
+//   in the address; a stage row's link lands on it (#records) at that period or day.
+//   Placement and leads (view=placement): how each station was placed, the speed check of the legs (computed here from
+//   the fixes), the relations with their pages, the leads, the coverage by month. The old addresses
+//   (view=account|records|working) open the page or the placement.
 // &who=…&t=… is the family seam (links.js, `who`): a family's own script reads `who`; the kit ignores it.
 (async () => {
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -21,12 +22,12 @@
   const ALL = await fetch(RECORDS + "subjects.json").then(r => r.json());
   const want = params.get("s");
   const S = ALL.find(x => x.id === want || x.alias === want) || ALL.find(x => x.id === "ss-385-bang") || ALL[0];
-  const DEPTHS = ["account", "records", "working"];
-  const VIEW = DEPTHS.includes(params.get("view")) ? params.get("view") : "account";
+  // the two depths: the page, and how it was placed; the old three-depth addresses still arrive
+  const VIEW = ["placement", "working"].includes(params.get("view")) ? "placement" : "page";
   const IN = v => VIEW === v;
   const address = (view, extra = {}) => {
     const q = new URLSearchParams({ s: S.alias || S.id });
-    if (view !== "account") q.set("view", view);
+    if (view === "placement") q.set("view", view);
     for (const [k, v] of Object.entries(extra)) if (v != null && v !== "") q.set(k, v);
     return `?${q}`;
   };
@@ -51,12 +52,28 @@
   };
 
   // ---------- header: the plain line first, then the designation; the lede comes with the data
-  document.title = `${S.short || S.name} · ${IN("account") ? "the account" : IN("records") ? "the records" : "the working"}`;
+  document.title = IN("placement") ? `${S.short || S.name} · placement and leads` : S.short || S.name;
   document.getElementById("eyebrow").textContent = [S.plain, NATION[S.of] || S.of, years].filter(Boolean).join(" · ");
   document.getElementById("title").innerHTML = esc(S.name) + (S.name_ja ? ` <span lang="ja" data-tr="Convoy ${esc(S.short)}, as the Japanese records write it">${esc(S.name_ja)}</span>` : "");
   const sources = S.kind === "boat" ? "ship.yml" : S.kind === "ship" ? "ship.yml" : S.kind === "unit" ? "army/units.yml" : S.kind === "battalion" ? "seabees/units.yml" : S.kind === "convoy" ? "convoy.md" : "command.yml";
   // the plain line is the eyebrow (and the breadcrumb): here the record's own note on the unit, or the plain line alone
   document.getElementById("plain").innerHTML = `<b>What it was.</b> ${S.note ? esc(S.note) : esc(S.plain[0].toUpperCase() + S.plain.slice(1)) + "."} <span class="src">(${S.note ? (S.kind === "convoy" ? "its record" : "units.csv") : esc(sources)})</span> <span class="k">The plain words are ours; the designation is the records'.</span>`;
+
+  // ---------- the record itself, under the journey: the panel for the subject's kind. Mounted first, since it needs
+  // none of the journey's data (the rows, the world atlas, the operations), so it draws as soon as its own records
+  // arrive; the journey fills in above it
+  const HAS_RECORD = S.kind === "unit" || S.kind === "battalion" ? !!(S.records || {}).stations : S.kind === "boat" || S.kind === "ship" ? !!S.geojson : S.kind === "convoy";
+  if (IN("page")) {
+    const host = document.getElementById("records");
+    host.hidden = false;
+    document.getElementById("records-h").hidden = false;
+    if (S.kind === "command") document.getElementById("lede").textContent = "The command's rows are in the records; this page draws nothing of them yet.";
+    const PANEL = { boat: window.PatrolsPanel, ship: window.PatrolsPanel, unit: window.ArmyPanel, battalion: window.SeabeesPanel, convoy: window.ConvoyPanel }[S.kind];
+    host.classList.add({ boat: "p-patrols", ship: "p-patrols", unit: "p-army", battalion: "p-seabees", convoy: "p-convoy", command: "p-command" }[S.kind]);
+    if (PANEL && HAS_RECORD) PANEL.mount(host, S, { period: params.get("period"), t: params.get("t"), onState });
+    else if (PANEL) host.innerHTML = `<p class="account-none">No record of its own is entered for this ${esc((KIND_WORD[S.kind] || S.kind).replace(/^an? /, ""))} yet${S.relations.length ? ": it is here for its relations, under Placement and leads" : ""}.</p>`;
+    else host.innerHTML = `<p class="account-none">No panel draws a ${esc(KIND_WORD[S.kind] || S.kind)}'s rows yet: ${Object.entries(S.records || {}).map(([k, v]) => `${k}.csv (${v} rows)`).join(", ")} are in <a href="https://github.com/erichutchins/wwii-unit-records/tree/main/commands/comsubpac">the records</a>.</p>`;
+  }
 
   // ---------- the subject's own built records, by kind
   const WORLD = d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json").then(w => topojson.feature(w, w.objects.land)).catch(() => null);
@@ -73,7 +90,7 @@
   const LEDE_WORDS = { bn: "the battalion's journal", regt: "the Regimental HQ Battery's reports", hist: "the 894th's printed history", aar: "Third Army's situation maps", div: "division-level sources", btry: "the battalion's records" };
   const ledeWords = k => LEDE_WORDS[k] || OWN_WORDS[k] || k;
 
-  // Every kind becomes one shape for the account and the working: `rows` (its stations or fixes in order, each with a
+  // Every kind becomes one shape for the journey and the placement: `rows` (its stations or fixes in order, each with a
   // time, a point or none, whether its position is the subject's own or assumed, its source and its words), `legs`
   // between consecutive placed rows (own, assumed, sea or rail), and `stages` (the strip's panels: a unit's by chapter.js's
   // countries, a boat's by patrol, a battalion's by year, a ship's or a convoy's one).
@@ -185,8 +202,9 @@
   const workingLine = [assumedLegs.length && n(assumedLegs.length, "assumed leg"), assumedRows.length && `${assumedRows.length} ${S.kind === "convoy" ? "not from a record" : "assumed"}`,
     (S.kind === "unit" || S.kind === "battalion") && "the coverage", S.kind !== "convoy" && S.kind !== "command" && "the speed check", S.leads.length && n(S.leads.length, "lead")].filter(Boolean).join(" · ");
   const stagesWord = S.kind === "boat" ? n(stages.length, "patrol") : S.kind === "ship" ? "one record" : S.kind === "convoy" ? "one voyage" : n(stages.length, "stage");
-  document.getElementById("depths").innerHTML = [["account", "The account", `the journey in ${stagesWord}`], ["records", "The records", recordsLine || "nothing drawn yet"],
-    ["working", "The working", workingLine || "nothing to show yet"]]
+  const KIND_TAB = { boat: "The boat", ship: "The ship", unit: "The unit", battalion: "The battalion", convoy: "The convoy", command: "The command" };
+  document.getElementById("depths").innerHTML = [["page", KIND_TAB[S.kind] || "The subject", `the journey in ${stagesWord} · ${recordsLine || "nothing drawn yet"}`],
+    ["placement", "Placement and leads", workingLine || "nothing to show yet"]]
     .map(([v, name, line]) => `<a href="${esc(address(v, { period: params.get("period"), t: params.get("t") }))}"${IN(v) ? ' aria-current="page"' : ""}>${name}<small>${esc(line)}</small></a>`).join("");
 
   // ---------- the breadcrumb: Subjects / the subject / its period; for a unit, its engagements before and after
@@ -198,7 +216,7 @@
   };
   const crumbEl = document.getElementById("crumb");
   // (the guide's wording, 5.3: Subjects / BANG / Patrol 1; the theatre's link is in the account's "the war around" rows)
-  const trail = Chapter.trail([{ href: "subjects.html", text: "Subjects" }, crumbPeriod() ? { href: address("account"), text: S.name } : S.name, crumbPeriod()]);
+  const trail = Chapter.trail([{ href: "subjects.html", text: "Subjects" }, crumbPeriod() ? { href: address("page"), text: S.name } : S.name, crumbPeriod()]);
   const engs = S.engagements || [];
   const tNow = params.get("t") ? T(params.get("t")) : null;
   const before = tNow == null ? null : engs.filter(e => T(e.to || e.from) < tNow).pop(), after = tNow == null ? null : engs.find(e => T(e.from) > tNow);
@@ -296,7 +314,9 @@
     return { campaigns, mine, kinEngs, near };
   }
 
-  if (IN("account")) {
+  // where a stage row lands: the record below, at that patrol or day
+  const recordAt = s => address("page", S.kind === "boat" ? { period: s.id } : S.kind === "unit" || S.kind === "battalion" ? { t: new Date(s.from).toISOString().slice(0, 10) } : {}) + "#records";
+  if (IN("page")) {
     const [LAND, ops, index] = await Promise.all([WORLD, OPS, INDEX]);
     const OPLIST = ops.operations || [];
     const host = document.getElementById("account");
@@ -326,7 +346,7 @@
     const rels = S.relations.slice().sort((a, b) => (a.from || a.to || "").localeCompare(b.from || b.to || ""));
     const orgTitle = S.kind === "convoy" ? "Its ships, as the records name them" : S.kind === "command" ? "Its task organization, as the diary gives it" : S.kind === "battalion" ? "Its parts, as the records give them" : "Its organizations, as the records give them";
     const orgNone = S.kind === "unit" ? "No relation of this unit is in relations.csv yet (part of, attached to, under command); units.csv's note above says what its reports call it. A relation is added when its page is read." : "None recorded.";
-    const orgHTML = `<div class="card pad"><h3>${orgTitle}</h3>${rels.length ? `<div class="org">${(rels.length > 14 ? rels.slice(0, 14) : rels).map(relLine).join("")}</div>${rels.length > 14 ? `<p class="k">and ${rels.length - 14} more, in the working.</p>` : ""}` : `<p class="account-none">${orgNone}</p>`}</div>`;
+    const orgHTML = `<div class="card pad"><h3>${orgTitle}</h3>${rels.length ? `<div class="org">${(rels.length > 14 ? rels.slice(0, 14) : rels).map(relLine).join("")}</div>${rels.length > 14 ? `<p class="k">and ${rels.length - 14} more, under Placement and leads.</p>` : ""}` : `<p class="account-none">${orgNone}</p>`}</div>`;
 
     // the strip map and its key
     const stripHTML = `<h2 class="sec">The journey, ${S.kind === "boat" ? "patrol by patrol" : S.kind === "ship" ? "as her diary gives it" : S.kind === "convoy" ? "the voyage" : "stage by stage"}</h2>
@@ -366,60 +386,28 @@
       const besideHTML = beside.length ? `<div class="ctx">${w.mine.length ? "In it: " : "Beside it: "}${beside.join("; ")}.</div>` : "";
       const reading = s.reading ? `<div class="ctx"><i>Reading the records here:</i> ${s.reading.map(([h, t2, w2]) => `<a href="${esc(h)}">${esc(t2)}</a>, ${esc(w2)}`).join("; ")}</div>` : "";
       const where = S.kind === "unit" ? (places.slice(0, 7).join(", ") + (places.length > 7 ? ` … ${places[places.length - 1]}` : "")) : s.where || places.slice(0, 6).join(", ");
-      const link = IN("account") ? `<a href="${esc(address("records", S.kind === "boat" ? { period: s.id } : S.kind === "unit" || S.kind === "battalion" ? { t: new Date(s.from).toISOString().slice(0, 10) } : {}))}">the records →</a>` : "";
+      const link = `<a href="${esc(recordAt(s))}">the record, below ↓</a>`;
       return `<div class="stage"><div class="when">${esc(span(new Date(s.from), new Date(s.to)) || fmtMon(new Date(s.from)))}</div><div>
         <b>${i + 1} ${esc(s.name)}</b>${s.sub ? ` <i>${esc(s.sub)}</i>` : ""}${where ? ` · ${esc(where)}` : ""} · ${counts} · ${link}<br>${fs}${ctx}${besideHTML}${reading}</div></div>`;
     }).join("");
 
-    // the doors
-    const recordsDoor = S.kind === "unit" ? `<span class="typed">${recs.stations || 0}</span> stations as typed${recs.actions ? ` · <span class="typed">${recs.actions}</span> actions` : ""}${recs.ships ? ` · <span class="typed">${recs.ships}</span> crossings` : ""} · the map with the date strip`
-      : S.kind === "battalion" ? `<span class="typed">${recs.stations || 0}</span> stations as typed · <span class="typed">${recs.parts || 0}</span> parts · <span class="typed">${recs.voyages || 0}</span> voyages${recs.projects ? ` · <span class="typed">${recs.projects}</span> projects` : ""} · the map with the date strip`
-      : S.kind === "convoy" ? `<span class="typed">${recs.ships || 0}</span> ships against the days · the voyage map · the convoy's own record`
-      : S.kind === "command" ? Object.entries(recs).map(([k, v]) => `<span class="typed">${v}</span> ${k.replace(/_/g, " ")} rows`).join(" · ")
-      : `<span class="typed">${recs.positions || 0}</span> positions${recs.attacks ? ` · <span class="typed">${recs.attacks}</span> attacks` : ""}${recs.depths ? ` · <span class="typed">${recs.depths}</span> depth entries` : ""} · the map with playback, the log and every report page`;
-    const recordsList = S.kind === "unit" ? [...new Set(rows.flatMap(r => r.ships.map(sh => `${sh.ship || sh.as_typed || "an unrecorded ship"} (${sh.status})`)))].join(" · ") || "the stations as typed, each with its page"
-      : S.kind === "battalion" ? (extra.projects || []).map(p => p.title).join(" · ") || "the stations, parts and voyages"
-      : S.kind === "boat" ? [S.dives && "her dive profile (dives.html)", recs.japanese && "the Japanese records of her attacks", recs.frupac && "the FRUPAC radio-intelligence notes", recs.attacks && "the attack data sheets"].filter(Boolean).join(" · ")
-      : S.kind === "convoy" ? `${S.route_words} · ${n(recs.sightings || 0, "sighting", "sightings")} by the boats · ${n(recs.hits || 0, "ship hit", "ships hit")} in the Japanese record` : "";
-    const workingList = [S.kind === "unit" && `${ownRows.length} at a town or grid reference from its own report`, assumedRows.length && S.kind === "unit" && `${assumedRows.length} with a headquarters (${[...new Set(assumedRows.map(r => r.source))].map(sourceWords).join("; ")})`,
-      S.kind === "battalion" && assumedRows.length && `${assumedRows.length} with the place assumed`, assumedLegs.length && `${assumedLegs.length} legs drawn on an assumed route`,
-      S.kind !== "convoy" && S.kind !== "command" && "the speed check", S.leads.length ? `leads: ${S.leads.length}` : "leads: none yet for this subject"].filter(Boolean).join(" · ");
-    const besideAll = engs.map(e => `<a href="engagement.html?e=${esc(e.id)}">${esc(e.short || e.title)}</a>`);
-    const opsAll = [...new Map(stages.flatMap(s => warAround(s, OPLIST, index).campaigns).map(o => [o.id, o])).values()];
-    document.getElementById("doors").innerHTML = `
-      <a class="door" href="${esc(address("records"))}"><b>The records</b><span class="n">${recordsDoor}</span><span class="list">${esc(recordsList)}</span></a>
-      <a class="door" href="${esc(address("working"))}"><b>The working</b><span class="n">how each ${S.kind === "boat" || S.kind === "ship" ? "position" : S.kind === "convoy" ? "ship and stop" : "station"} was placed, and what is assumed</span><span class="list">${esc(workingList)}</span></a>
-      <div class="door"><b>Beside it</b><span class="n">${S.kind === "convoy" ? "the engagements where the boats met it" : "the engagements it was in, and the war around its stations"}</span>
-        <span class="list">${[besideAll.length ? besideAll.join(" · ") : "no engagement names it yet", opsAll.length ? `the operations it sat inside: ${opsAll.map(o => esc(o.short || o.name)).join(", ")} (context, not participation)` : ""].filter(Boolean).join(" · ")}</span></div>`;
-    document.getElementById("doors").hidden = false;
 
     host.innerHTML = `${orgHTML}${stripHTML}${covHTML}<div class="stages">${stageRows}</div>`;
     const strip = host.querySelector(".strip");
     stages.forEach((s, i) => {
       const a = document.createElement("a");
       a.className = "spanel";
-      a.href = address("records", S.kind === "boat" ? { period: s.id } : S.kind === "unit" || S.kind === "battalion" ? { t: new Date(s.from).toISOString().slice(0, 10) } : {});
+      a.href = recordAt(s);
       a.innerHTML = `<h3>${i + 1} ${esc(s.name)}<span>${esc(span(new Date(s.from), new Date(s.to)) || fmtMon(new Date(s.from)))} · ${S.kind === "boat" || S.kind === "ship" ? n(s.rows.filter(r => !r.offtrack).length, "fix", "fixes") : S.kind === "convoy" ? n(s.rows.length, "stop") : n(s.rows.length, "station")}</span></h3>`;
       a.append(stripPanel(s, LAND));
       strip.append(a);
     });
-    document.getElementById("cap").textContent = `The account is static: no clock, and nothing needs a hover; the records and the working have both. ${S.kind === "boat" || S.kind === "ship" ? "A line between reported positions is straight, and where she went between them is not recorded." : S.kind === "convoy" ? "The route is drawn through reference waypoints, none traced from a chart: an assumption, not a track." : "A station holds until the next change; a dashed leg is drawn on an assumed route, a hollow station is a headquarters' position with the unit assumed near it."}`;
+    document.getElementById("cap").textContent = `${S.kind === "boat" || S.kind === "ship" ? "A line between reported positions is straight, and where she went between them is not recorded." : S.kind === "convoy" ? "The route is drawn through reference waypoints, none traced from a chart: an assumption, not a track." : "A station holds until the next change; a dashed leg is drawn on an assumed route, a hollow station is a headquarters' position with the unit assumed near it."}`;
     document.getElementById("cap").hidden = false;
   }
 
-  // ---------- the records depth: the panel for the subject's kind
-  if (IN("records")) {
-    const host = document.getElementById("records");
-    host.hidden = false;
-    document.getElementById("lede").textContent = S.kind === "command" ? "The command's rows are in the records; this page draws nothing of them yet." : "The record as typed, every mark opening the page it was read from.";
-    const PANEL = { boat: window.PatrolsPanel, ship: window.PatrolsPanel, unit: window.ArmyPanel, battalion: window.SeabeesPanel, convoy: window.ConvoyPanel }[S.kind];
-    host.classList.add({ boat: "p-patrols", ship: "p-patrols", unit: "p-army", battalion: "p-seabees", convoy: "p-convoy", command: "p-command" }[S.kind]);
-    if (PANEL) PANEL.mount(host, S, { period: params.get("period"), t: params.get("t"), onState });
-    else host.innerHTML = `<p class="account-none">No panel draws a ${esc(KIND_WORD[S.kind] || S.kind)}'s rows yet: ${Object.entries(recs).map(([k, v]) => `${k}.csv (${v} rows)`).join(", ")} are in <a href="https://github.com/erichutchins/wwii-unit-records/tree/main/commands/comsubpac">the records</a>.</p>`;
-  }
-
-  // ---------- the working: the placement table, the speed check, the relations, the leads, the coverage by month
-  if (IN("working")) {
+  // ---------- placement and leads: the placement table, the speed check, the relations, the leads, the coverage by month
+  if (IN("placement")) {
     const host = document.getElementById("working");
     host.hidden = false;
     document.getElementById("lede").textContent = "Where our voice leads, and is labelled: how each position was placed, what the speed check says of the legs, the organizations with their pages, the leads, and the coverage month by month.";

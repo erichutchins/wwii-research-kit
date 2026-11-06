@@ -354,7 +354,7 @@ caching off so edits show on reload.
 
 | Page | What it shows |
 |---|---|
-| `subject.html` + `subject.js` | One page for every subject (a boat, a ship, an Army unit, a Seabee battalion, a convoy) at three depths: the account, the records (the maps below, as panels under `site/panels/`), the working. `subjects.html` is the index |
+| `subject.html` + `subject.js` | One page for every subject (a boat, a ship, an Army unit, a Seabee battalion, a convoy) its journey and its record (the maps below, as panels under `site/panels/`) on one page, and placement and leads behind it. `subjects.html` is the index |
 | `panels/patrols.js` | Map of every patrol, playback following the boat, course/speed gauge, patrol log, report-page viewer |
 | `panels/army.js` | Map of one Army unit at a time (`records/army/army.json`): its stations as typed, routes and sea crossings, Battery D's engagements, playback, station log, page viewer |
 | `panels/seabees.js` | Map of one Seabee battalion at a time (`records/seabees/seabees.json`): each part's line and where it was that day, ships along their logged positions, the day's weather, playback, station log, page viewer |
@@ -379,7 +379,7 @@ Design rules followed:
   panel and scale.
 - **Assumptions are visible.** Hatched = not logged; dashed ring = left off
   the track; tooltips say "assumed".
-- **Deep links.** `subject.html?s=bang&period=2&t=1944-07-04T04:42Z&view=records` and the same
+- **Deep links.** `subject.html?s=bang&period=2&t=1944-07-04T04:42Z` and the same
   for `dives.html`. The two pages link to each other at the same moment.
 
 ---

@@ -8,7 +8,7 @@ the other. Every engagement is one folder, `records/engagements/<id>/`, and one 
 The convoys the boats met have their own records (`records/convoys/<id>/convoy.md`) and pages: `site/subject.html?s=<id>` (the ledger of every convoy is `site/subjects.html`)
 (the ledger, and each convoy's voyage and ships) and `site/lanes.html` (the lanes, month by month, and a voyage as a
 timetable). Haynsworth and Algiers are also told as stories: their `engagement.md` carries the account in steps
-(`[[step:]]` links that set the clock and the map), and their figures are panels of the working (`site/panels/`).
+(`[[step:]]` links that set the clock and the map), and their figures are panels after the story (`site/panels/`).
 
 This guide holds the reasons and the method. The schema, every file and every field, is `records/README.md` ("An
 engagement", "A convoy", "A patrol's Japanese record"), and the validator is `tools/build_engagement.py`: it checks
@@ -120,9 +120,9 @@ new format is converted for good: no reader for the old one is kept.
 | A time placed by the account's order | the time in italics, and the reason under the entry |
 | The front, as a dated situation map drew it (`records/fronts/`) | a heavy line in the second ink, ticked as the 12th Army Group's maps tick it, on their own side: the staff's record of the day, context for the frame |
 | A situation map's list (the enemy divisions it lists as facing the bridgehead) | under the map, its symbols in the map's order, said to be a list: listed, not placed |
-| Several days' situation maps | the account shows the first; the records depth the latest at its clock, or, in a dated frame (no clock to play), the day chosen on the bar under the map (the clocked frames' bar, a map at a time: a lane per followed unit's stations and per side's entries, a tick for each map's day, the play stepping through them): a step, never a glide between two maps, the old faded under the new |
+| Several days' situation maps | the latest at the clock, or, in a dated frame (no clock to play), the day chosen on the bar under the map (the clocked frames' bar, a map at a time: a lane per followed unit's stations and per side's entries, a tick for each map's day, the play stepping through them): a step, never a glide between two maps, the old faded under the new |
 | A unit on that map | the Army's symbol (FM 21-30): the map's own side an open box, solid; the enemy hatched in the lighter ink (the map's intelligence picture); in its area, not at a position |
-| A followed unit's stations around the window | dots in its colour, joined dashed (straight between stations), lighter in the week before, an arrowhead at the last, no dates on the line (each dot's on hover; the day shown is the map's, or the one chosen on the bar); with a situation map, drawn only to the map's day on the account (one moment), and to the clock's day on the records depth |
+| A followed unit's stations around the window | dots in its colour, joined dashed (straight between stations), lighter in the week before, an arrowhead at the last, no dates on the line (each dot's on hover; the day shown is the map's, or the one chosen on the bar); with a situation map, drawn to the day shown (the clock's, or the bar's), so the picture is one moment |
 | A symbol that is a followed unit, or its division or command that day (`army/relations.csv`) | ringed in the subject's colour: heavy for the unit itself, light for its division or command |
 | Whose side is whose | each side's 1944–45 vehicle marking (the US star in its circle, the Balkenkreuz) with its name, on its side of the front, in one place for every day's map (it marks a side, not anything at that spot, so it never moves as the days change); not flags (Germany's of 1945 carried the swastika) |
 

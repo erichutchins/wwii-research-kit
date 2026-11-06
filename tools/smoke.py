@@ -4,8 +4,8 @@
 # ///
 """Open every page of the site in a headless browser and fail on anything that breaks it.
 
-Every page in site/, and every view a page opens from the address (the four theatres, each engagement at its depths,
-each subject at its account and at its records for every period, the five walked-through subjects at their working too,
+Every page in site/, and every view a page opens from the address (the four theatres, each engagement's page and its
+questions, each subject's page (a boat's at every patrol), the five walked-through subjects at their placement too,
 BANG's dives by patrol, each explainer opened at a notation as the glossary's cards link it), in light and dark mode, at
 desktop and phone width.
 A view fails on:
@@ -73,49 +73,48 @@ EXPLAINER_VIEWS = ["site/zones.html?zone=K", "site/grids.html?ref=V-044572", "si
 
 
 def engagement_views(folder, page):
-    """Each engagement at its depths (engagement.html?e=<id>&view=account|records|working): the account (the default)
-    and the records (the map with the clock and the log, or the chronology) for every one, and the working where the
-    frame has something to show there (an attack sheet's periscope, a convoy to close on, a pairing of an attack with the
-    other side's record or a question the records leave open, for the Sources view), from its engagement.json."""
+    """Each engagement at its two depths (engagement.html?e=<id>[&view=questions]): the page (the outcome, the map with
+    the clock and the log or the chronology, the story and the figures) for every one, and the questions where the frame
+    has something to show there (a pairing of an attack with the other side's record or a question the records leave
+    open, for the claims board and the Sources view), from its engagement.json. The old addresses (view=account, records,
+    working) must still arrive: one of each is opened."""
     out = []
     for x in load(folder / "index.json"):
         d = load(folder / x["id"] / "engagement.json")
-        out += [f"{page}?e={x['id']}", f"{page}?e={x['id']}&view=records"]
-        if d.get("sheets") or d.get("convoys") or d.get("pairs") or d.get("claims"):
-            out.append(f"{page}?e={x['id']}&view=working")
+        out.append(f"{page}?e={x['id']}")
+        if d.get("pairs") or d.get("claims"):
+            out.append(f"{page}?e={x['id']}&view=questions")
+    out += [f"{page}?e=tama-17-1944-04-29&view=records", f"{page}?e=tama-17-1944-04-29&view=working", f"{page}?e=remagen-1945-03-07&view=account"]
     return out
 
 
 # the subjects whose pages the guide walks through (guides/OPERATIONS-VIEWER.md 7.2 and the phase-6 check): their
-# working depth is opened too
+# placement is opened too
 WORKED = ("67ca-med", "ss-385-bang", "20ncb", "tama-17", "dd-700-haynsworth")
 
 
 def subject_views(path, page):
-    """Each subject at its account (subject.html?s=<id>), and at its records for each period (a boat's every patrol
-    and all of them together; a unit, battalion, ship or convoy once), from subjects.json; the walked-through subjects
-    at their working too. A subject with no record of its own yet (a unit entered for its relations) has an account only."""
+    """Each subject's page (subject.html?s=<id>: its journey, and its record under it), a boat's at each patrol too, from
+    subjects.json; the walked-through subjects at their placement (view=placement) as well, and one at each old address
+    (view=account, records, working), which must still arrive."""
     out = []
     for s in load(path):
         out.append(f"{page}?s={s['id']}")
         if s["kind"] == "boat":
-            out += [f"{page}?s={s['id']}&period={p['n']}&view=records" for p in s["periods"]]
-            if len(s["periods"]) > 1:
-                out.append(f"{page}?s={s['id']}&view=records")
-        elif s["kind"] in ("ship", "battalion", "convoy") or (s["kind"] == "unit" and s["records"].get("stations")):
-            out.append(f"{page}?s={s['id']}&view=records")
+            out += [f"{page}?s={s['id']}&period={p['n']}" for p in s["periods"]]
         if s["id"] in WORKED:
-            out.append(f"{page}?s={s['id']}&view=working")
+            out.append(f"{page}?s={s['id']}&view=placement")
+    out += [f"{page}?s=67ca-med&view=records", f"{page}?s=67ca-med&view=working", f"{page}?s=ss-385-bang&period=2&view=account"]
     return out
 
 
 def army_views(path, page="site/subject.html"):
     """A family's pages still ask for these by name: each Army unit with stations, on its subject page."""
-    return [f"{page}?s={u['unit']}&view=records" for u in load(path)["units"] if u["stations"]]
+    return [f"{page}?s={u['unit']}" for u in load(path)["units"] if u["stations"]]
 
 
 def seabee_views(path, page="site/subject.html"):
-    return [f"{page}?s={u}&view=records" for u in load(path)["units"]]
+    return [f"{page}?s={u}" for u in load(path)["units"]]
 
 
 class Quiet(http.server.SimpleHTTPRequestHandler):

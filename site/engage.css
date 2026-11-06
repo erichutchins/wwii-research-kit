@@ -138,16 +138,19 @@ button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible
 .story .aside { font-style: italic; }
 .src { font-size: 14.5px; color: var(--ink-3); }
 
-/* the three depths (guides/OPERATIONS-VIEWER.md, 4): the switch under the breadcrumb, the account's card and its doors */
-.depths { display: flex; flex-wrap: wrap; margin: 0 0 10px; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; width: max-content; max-width: 100%; }
+/* the two depths (guides/OPERATIONS-VIEWER.md, 4): the switch under the lede, each tab saying what it holds; the
+   outcome, who and when at the top of the page */
+.depths { display: flex; flex-wrap: wrap; margin: 14px 0 0; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; width: max-content; max-width: 100%; }
 .depths a { text-decoration: none; padding: 7px 16px; color: var(--ink-2); font-size: 15.5px; border-right: 1px solid var(--rule); }
 .depths a:last-child { border-right: 0; }
 .depths a:hover { background: var(--wash); color: var(--ink); }
 .depths a[aria-current="page"] { background: var(--ink); color: var(--page); }
 .depths a small { display: block; font-size: 13px; color: inherit; opacity: .75; }
-.account { padding: 14px 16px; font-size: 16.5px; }
+.account { padding: 14px 16px; font-size: 16.5px; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 0 28px; align-items: start; }
 .account h3 { font-size: 17px; font-weight: 700; margin: 14px 0 6px; }
 .account h3:first-child { margin-top: 0; }
+.account .subj .n b a { color: inherit; text-decoration-color: var(--rule); }
+.account .subj .n b a:hover { text-decoration-color: currentColor; }
 .account .out p { margin: 0 0 8px; }
 .account .out .src { display: inline; white-space: normal; }
 .account .none { font-style: italic; color: var(--ink-3); }
@@ -159,19 +162,6 @@ button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible
 .account .subj .sil { align-self: center; max-width: 130px; height: auto; }
 .account #when { margin: 0; }
 .account .k { font-style: italic; color: var(--ink-3); font-size: 14.5px; }
-.doors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.door { border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; text-decoration: none; display: block; background: var(--surface); min-width: 0; }
-a.door:hover { background: var(--wash); }
-.door b { display: block; font-weight: 700; margin-bottom: 4px; }
-/* only a door that is a link: Journeys and Beside it are lists of links, not one */
-a.door b::after { content: " →"; color: var(--ink-3); }
-.door .n { font-size: 15.5px; color: var(--ink-2); }
-.door .n .typed { font-family: var(--typed); font-size: .92em; color: var(--ink); }
-.door .list { display: block; font-size: 14.5px; color: var(--ink-3); margin-top: 6px; line-height: 1.5; }
-.door .list a { text-decoration: underline; text-decoration-color: var(--rule); }
-.door .list a:hover { color: var(--ink); text-decoration-color: currentColor; }
-.oob-card.other .pack { display: none; }
-.oob-card.other .oob { grid-template-columns: minmax(0, 1fr); }
 p.none { margin: 0; font-style: italic; color: var(--ink-3); }
 
 #tip { position: fixed; z-index: 10; pointer-events: none; max-width: 320px; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 3px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-size: 14.5px; }
@@ -181,7 +171,7 @@ p.none { margin: 0; font-style: italic; color: var(--ink-3); }
 #tip .i { color: var(--ink-3); font-style: italic; margin-top: 4px; }
 #tip hr { border: 0; border-top: 1px solid var(--rule); }
 
-@media (max-width: 760px) { .oob { grid-template-columns: minmax(0, 1fr); } .doors { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .oob { grid-template-columns: minmax(0, 1fr); } .account { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 600px) {
   nav.nav { font-size: 16.5px; gap: 2px 13px; margin-bottom: 12px; }
   nav.nav .home { flex-basis: 100%; font-size: 18.5px; }

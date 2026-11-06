@@ -387,7 +387,7 @@ def ref_deep(L):
 
 @rule("REF003", "a position whose source the patrols panel has no class for")
 def ref_position_kind(L):
-    """The patrols panel (site/panels/patrols.js, the subject page's records depth for a boat or a ship) draws each
+    """The patrols panel (site/panels/patrols.js, the subject page's record for a boat or a ship) draws each
     position by its `source` (CLASS: bt, noon, diary, attack...). A source it doesn't know breaks the whole panel
     (`SHAPE[undefined].type`): ESSEX's and CABOT's `action` rows did, unseen, until the smoke test. Add the kind to CLASS
     and BASE_LABEL in site/panels/patrols.js, or use one it knows."""

@@ -16,23 +16,23 @@
 <link rel="stylesheet" href="sources.css">
 <link rel="stylesheet" href="panels.css">
 <style>
-/* One page for every engagement (engagement.html?e=<id>&view=account|records|working; records/engagements/<id>/
-   engagement.json, built by tools/build_engagement.py), at three depths (guides/OPERATIONS-VIEWER.md, 4), chosen by the
-   address and the switch under the breadcrumb. The account (the default): the static map beside the outcome, the
-   subjects and the span, then three doors. The records: a chart-room working sheet. When the frame is clocked: the map
-   and the two-sided log side by side at one height, so playback never moves the page; one timeline lane per
-   participant under the map. When it is dated or monthly (the guide, 3): the map alone, static (with several days'
-   situation maps, the same bar under it, a map at a time), and the chronology full width under it in the log's place; then the order of battle in silhouettes, and the story. A story told in
-   steps (the build's `steps`) sits beside the map instead, as the narrative, the log behind a tab. The working: the
-   periscope, how the boats closed in, the frame's own figures (panels.js, panels.css), the Sources view (one moment at
-   a time, source by source; sources.css), the claims board, and how this was read. */
+/* One page for every engagement (engagement.html?e=<id>[&view=questions]; records/engagements/<id>/engagement.json,
+   built by tools/build_engagement.py), at two depths (guides/OPERATIONS-VIEWER.md, 4), chosen by the address and the
+   switch under the lede. The page (the default), in reading order: the outcome in the records' terms beside who and
+   when; the map; the records themselves; the order of battle; the story; then the frame's own figures. When the
+   frame is clocked: the map and the two-sided log side by side at one height, so playback never moves the page; one
+   timeline lane per participant under the map. When it is dated or monthly (the guide, 3): the map alone, static
+   (with several days' situation maps, the same bar under it, a map at a time), and the chronology full width under it
+   in the log's place. A story told in steps (the build's `steps`) sits beside
+   the map instead, as the narrative, the log behind a tab. The figures: the periscope, the frame's own panels
+   (panels.js, panels.css), how the boats closed in. Questions and sources (view=questions): the claims board, the
+   Sources view (one moment at a time, source by source; sources.css) where more than one source speaks to a
+   question, and how this was read. The old addresses (view=account|records|working) still arrive. */
 .main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 420px); gap: 14px; }
 .main.dated { grid-template-columns: minmax(0, 1fr); }
 .main.dated .map-box { height: clamp(300px, 46vh, 460px); }
 .main.dated.stepped { grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 420px); }
 .main.dated.stepped .map-box { height: clamp(340px, calc(100vh - 260px), 660px); }
-.main.account { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
-.main.account .map-box { height: clamp(320px, 52vh, 540px); }
 .cap { font-size: 14.5px; color: var(--ink-3); margin: 0; padding: 8px 14px 10px; line-height: 1.4; border-top: 1px solid var(--rule); }
 .chron-card { padding-bottom: 14px; }
 .chron-card h2 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
@@ -155,8 +155,7 @@ a.step.current { background: var(--wash); text-decoration-style: solid; text-dec
 @media (max-width: 980px) { .obs-stage { grid-template-columns: minmax(0, 1fr); row-gap: 14px; } .obs-read { grid-template-columns: repeat(3, minmax(0, 1fr)); } .obs-read > div:nth-child(3) { border-right: 0; } }
 @media (max-width: 760px) { #obs-torps { overflow-x: auto; } .obs-table { min-width: 680px; } }
 @media (max-width: 760px) {
-  .main, .main.account, .main.dated.stepped { grid-template-columns: minmax(0, 1fr); }
-  .main.account .map-box { height: 50vh; }
+  .main, .main.dated.stepped { grid-template-columns: minmax(0, 1fr); }
   .side { height: 60vh; min-height: 320px; }
   .map-box { height: 58vh; }
 }
@@ -169,14 +168,23 @@ a.step.current { background: var(--wash); text-decoration-style: solid; text-dec
     <nav class="nav" aria-label="The kit" data-nav></nav>
     <script src="nav.js"></script>
     <nav class="crumb" id="crumb" aria-label="Where this is in the kit" hidden></nav>
-    <nav class="depths" id="depths" aria-label="How deep to read"></nav>
     <div class="eyebrow" id="eyebrow"></div>
     <h1 id="title">Engagements</h1>
     <p class="lede" id="lede"></p>
+    <nav class="depths" id="depths" aria-label="The page, or the questions behind it"></nav>
   </header>
 
-  <div class="controls">
-    <label class="pick">Engagement <select id="engagement"></select></label>
+  <div class="card account" id="account" hidden>
+    <div>
+      <h3>Outcome, by the records</h3>
+      <div class="out" id="outcome"></div>
+    </div>
+    <div>
+      <h3>Who</h3>
+      <div id="who"></div>
+      <h3>When</h3>
+      <p id="when"></p>
+    </div>
   </div>
 
   <div class="main" id="action">
@@ -196,23 +204,20 @@ a.step.current { background: var(--wash); text-decoration-style: solid; text-dec
       <div class="log" id="narrative" hidden><p class="step-now" id="step-now"></p><div class="story" id="narrative-text"></div></div>
       <div class="log" id="log"></div>
     </div>
-    <div class="card account" id="account" hidden>
-      <h3>Outcome, by the records</h3>
-      <div class="out" id="outcome"></div>
-      <h3>Who</h3>
-      <div id="who"></div>
-      <h3>When</h3>
-      <p id="when"></p>
-    </div>
   </div>
-
-  <div class="doors" id="doors" hidden></div>
 
   <section class="card chron-card" id="chron-card" hidden aria-labelledby="chron-h">
     <h2 id="chron-h"><span id="chron-title">The records, by the day</span> <span>One column per record; every entry at the day it is dated; each links to its page</span></h2>
     <div id="chron"></div>
     <p class="below" id="chron-note"></p>
   </section>
+
+  <section class="card oob-card" id="oob-card" aria-labelledby="oob-h">
+    <h2 id="oob-h">Order of battle</h2>
+    <div class="oob" id="oob"></div>
+  </section>
+
+  <section class="story" id="story"></section>
 
   <section class="card observer-card" id="observer-card" hidden aria-labelledby="observer-h">
     <h2 id="observer-h">At the periscope <span>Each attack from its data sheet, second by second</span></h2>
@@ -263,6 +268,10 @@ a.step.current { background: var(--wash); text-decoration-style: solid; text-dec
     <p class="below" id="closing-note"></p>
   </section>
 
+  <div class="controls" id="picker">
+    <label class="pick">Another engagement <select id="engagement"></select></label>
+  </div>
+
   <section class="card moments-card" id="moments-card" hidden aria-labelledby="moments-h">
     <h2 id="moments-h">Source by source <span id="moments-sub">One moment at a time: each column is one source, as typed, in its own language and on its own clock</span></h2>
     <div class="moments" id="moments"></div>
@@ -280,13 +289,6 @@ a.step.current { background: var(--wash); text-decoration-style: solid; text-dec
     <div class="story" id="sources"></div>
   </section>
   <p class="none" id="working-none" hidden></p>
-
-  <section class="card oob-card" id="oob-card" aria-labelledby="oob-h">
-    <h2 id="oob-h">Order of battle</h2>
-    <div class="oob" id="oob"></div>
-  </section>
-
-  <section class="story" id="story"></section>
 </div>
 <div id="tip" hidden></div>
 

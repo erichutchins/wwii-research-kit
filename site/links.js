@@ -8,7 +8,7 @@
 //     cites    the resolved citations: operations.json's "cites" ({ "howe-nwa/35/p676": {href, short, page} })
 //     family   on a family's page: { root: the family site's address, pages: [its own pages' names] }
 //     steps    on an engagement's page, its story's steps (engagement.json "steps"): { id: {href} }. A [[step:s7|words]]
-//              link becomes <a class="step" data-step="s7" href=...>, the address that opens the records depth at that
+//              link becomes <a class="step" data-step="s7" href=...>, the address that opens the page at that
 //              step; engagement.js catches the click on its own page and moves the clock and the map instead
 //
 // Paths are worked out from this script's own address, so it works wherever the kit is.
@@ -25,9 +25,9 @@ const Links = (() => {
     switch (kind) {
       case "op": return a(`#op-${target}`, label || esc(target));
       // a subject's own page (subject.html?s=<id>): a boat or ship by its name, a unit by its id, a convoy by its id;
-      // a day (`@1944-08-15`) opens the records depth on that day
-      case "ship": return a(new URL(`subject.html?s=${encodeURIComponent(target)}${t ? `${t}&view=records` : ""}`, KIT_SITE).href, label || esc(target));
-      case "unit": return a(new URL(`subject.html?s=${encodeURIComponent(target)}${t ? `${t}&view=records` : ""}`, KIT_SITE).href, label || esc(target));
+      // a day (`@1944-08-15`) opens the page on that day
+      case "ship": return a(new URL(`subject.html?s=${encodeURIComponent(target)}${t ? `${t}` : ""}`, KIT_SITE).href, label || esc(target));
+      case "unit": return a(new URL(`subject.html?s=${encodeURIComponent(target)}${t ? `${t}` : ""}`, KIT_SITE).href, label || esc(target));
       case "convoy": return a(new URL(`subject.html?s=${encodeURIComponent(target)}`, KIT_SITE).href, label || esc(target));
       case "engagement": return a(new URL(`engagement.html?e=${encodeURIComponent(target)}`, KIT_SITE).href, label || esc(target));
       case "page": {

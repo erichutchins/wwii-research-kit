@@ -3,7 +3,7 @@
 A design for the pages, written against the records as they stand on 3 November 2026. It reconsiders the mental model
 the site grew up with (a submarine pack against a convoy, replayed on one clock) and proposes the one the records now
 need: subjects and the organizations they belong to; their movements, stations and events; the frames we put round
-them; the sources each claim rests on; and three depths of reading, from a clean account to the working. Nothing here
+them; the sources each claim rests on; and two depths of reading, the page and the questions behind it. Nothing here
 changes a transcription rule. Everything here is checked against two cases: convoy TAMA-17 in the Luzon Strait, 29–30
 April 1944 (three patrol reports, a Japanese escort diary and a ship's movement log, the FRUPAC overlays, two secondary
 sources), and the Medical Detachment, 67th Coast Artillery (AA), from Paterson, New Jersey in September 1942 to
@@ -157,7 +157,7 @@ synchrony with another: the clock is one view's device, not the page's.
 | **Map** | Where? | the subjects' movements, stations and events on the ground; with a clock when the tempo is clocked (today's engagement map and lanes), without one otherwise (a static map with the marks, a date strip at most) | all |
 | **Chronology** | In what order, by whose account? | a spine of time (hours, days or months, by the tempo), one column per source (or per side when there are many sources, each side opening into its sources), every entry at its time; `placed: seq` entries in italics; stations as bars, events as marks, movements as arrows between stations | all; it is the lead view for dated and monthly frames |
 | **Sources** | What does each source actually say, and where do they disagree? | for a moment or a question: the entries from each source side by side, as typed and as placed by us, with the minutes and miles between them computed on the page (`check_crossrefs.py`'s arithmetic, moved into `engage.js`); under it the claims board, each answer with its source's kind | all |
-| **Story** | What do we make of it? | the account in our voice, in steps that set the other views (a paragraph can carry a step, as `events.yml`'s `step` does for Haynsworth and Algiers), with the working figures a frame has (scale drawings, an estimated path, the periscope, the dive profile) | all |
+| **Story** | What do we make of it? | the account in our voice, in steps that set the other views (a paragraph can carry a step, as `events.yml`'s `step` does for Haynsworth and Algiers), with the figures a frame has (scale drawings, an estimated path, the periscope, the dive profile) | all |
 
 Which leads is decided by the tempo and nothing else:
 
@@ -165,11 +165,11 @@ Which leads is decided by the tempo and nothing else:
 - *dated*: Chronology in day columns leads (Algiers' "nights side by side" is the prototype; it becomes a shared view in
   `engage-views.js` and `algiers.html`'s own copy goes); the Map is static with the places and stations, no play button.
   The one exception: a frame with several days' situation maps (`records/fronts/`, Remagen) steps through them on its
-  records depth, on the clocked frames' own bar under the map (the play button, the readout, a lane per followed unit
+  page, on the clocked frames' own bar under the map (the play button, the readout, a lane per followed unit
   and per side, the slider), a map at a time: the axis has a tick for each map's day, the cursor is the map shown, the
   play steps (never a glide), and the slider or a click on the lanes goes to the nearest map. Its subjects' stations are
-  drawn to the day shown; the account keeps one map, the first (added 6 Nov 2026, to show the bridgehead growing day by
-  day; the bar the same as the naval frames' since then).
+  drawn to the day shown (added 6 Nov 2026, to show the bridgehead growing day by day; the bar the same as the naval
+  frames' since then).
 - *monthly*: the journey's strip (stages, as `chapter.js` computes them) leads, with the Map under it.
 
 The map keeps its encodings as they are (`guides/ENGAGEMENTS.md`, "Encodings"); they are the model's first implementation
@@ -177,19 +177,35 @@ and they hold: solid from the record, outlined from a secondary source, hatched 
 known points, red only for hits. Colour follows the **followed subject** (at most three, the checked colours), not "the US
 boat": in an Army frame the three colours are three batteries; the other side is ink wherever it appears.
 
-## 4. Three depths
+## 4. Two depths
 
-Progressive disclosure is the page's structure, not an afterthought. Every frame page has three depths, and the reader
-chooses to go down.
+Progressive disclosure is the page's structure, not an afterthought. Every frame page is one page that reads top to
+bottom, from the records' own summary to the records themselves to our figures, and behind it one more depth, where
+the questions are. The reader goes down by scrolling, and across by one switch. There were three depths once (the
+account, the records, the working, 3 November 2026; §9); the account's first screen and the records' sheet are now
+one page, because the first screen held nothing the sheet didn't and sent the reader on, and *the working* named a
+method where a reader wanted to know what was behind the door.
 
-### 4.1 The account (what you see first)
+### 4.1 The page (what you see first, and then all of it)
 
-One screen, two at most. The title, the eyebrow (theatre · operation), the lede, **the outcome in the records' own
-terms**, the subjects with their silhouettes, the span, a **static** map (the tracks and the marks, no clock), and one
-summary line per side: *BANG fired 24 torpedoes in four attacks; the Japanese record has two ships sunk and one
-missed*. Then three doors: *the records* (how many entries, from how many sources, in how many languages), *the
-working* (how many questions the records leave open), and the subjects' own journeys. Nothing on this screen moves,
-nothing needs a hover, and every number on it is the records' or says it is ours.
+The title, the eyebrow (theatre · operation), the lede; then the switch, which names the two depths by what they
+hold. Under it, in order:
+
+1. **The outcome in the records' own terms** beside *who* (the subjects with their silhouettes, each name a link to
+   its own page) and *when* (the span, the clocks). Every number on this screen is the records' or says it is ours.
+   An engagement whose story has no *Outcome* section says so here, instead of inventing one: that is the cue to
+   write it.
+2. **The map**, with its clock and lanes when the tempo is clocked (the clock opens stopped at the window's end, so
+   every track and mark is shown; press play), and the two-sided log beside it; the chronology under it when the
+   frame is dated. A story told in steps sits beside the map as the narrative. Nothing here is ours except the GMT
+   conversion and the placement of each mark, and both say how they were done (the zone letter beside each time;
+   `basis` on each position); the convoy's observed path is dotted and the caption says it is ours.
+3. **The order of battle**, in silhouettes at the library's one scale.
+4. **The story**, the records' narrative from `engagement.md` (its *Outcome* already at the top, its *Sources* behind
+   the switch).
+5. **The figures**, where our voice leads and is labelled: the periscope and the Torpedo Data Computer, the frame's
+   own panels (Haynsworth's frames and the Judy to scale), *closing in*, each with the assumptions it rests on stated
+   under it.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -197,41 +213,38 @@ nothing needs a hover, and every number on it is the records' or says it is ours
 │ Convoy TAMA-17, 29–30 April 1944                                                                 │
 │ BANG's first attacks: four approaches on a Takao–Manila convoy over one night, with PARCHE and   │
 │ TINOSA closing in on her reports; beside them the convoy's own record of the same minutes.       │
-├──────────────────────────────────────────┬───────────────────────────────────────────────────────┤
-│                                          │ Outcome, by the records                               │
-│   [static map: three tracks, the        │  Japanese loss list: Takegawa Maru, Nittatsu Maru,     │
-│    convoy's observed path dotted,        │  both to BANG. No loss matches PARCHE's or TINOSA's   │
-│    two red ✕, one red ring]              │  attacks next morning.                                │
-│                                          │ Who                                                   │
-│                                          │  ▬ BANG  ▬ PARCHE  ▬ TINOSA   ╌ Convoy TAMA-17 (9)    │
-│                                          │ When    29 Apr 0600 – 30 Apr 0800 GMT (26 h)          │
-├──────────────────────────────────────────┴───────────────────────────────────────────────────────┤
-│ The records ›  44 entries · 5 records · 2 languages · 27 fixes   The working ›  3 pairs, 4 open  │
-│ Journeys ›  BANG patrol 1 · PARCHE patrol 1 · TINOSA patrol 6 · convoy TAMA-17 · the lane        │
+│ ┌──────────────────────────────────────────────┬─────────────────────────────────────────┐       │
+│ │ The engagement                               │ Questions and sources                   │       │
+│ │ the outcome · the map with its clock ·       │ 4 questions the records leave open ·    │       │
+│ │ 49 entries from 5 records · the story · …    │ answers side by side · how this was read│       │
+│ └──────────────────────────────────────────────┴─────────────────────────────────────────┘       │
+├──────────────────────────────────────────────────┬───────────────────────────────────────────────┤
+│ Outcome, by the records                          │ Who   ▬ BANG  ▬ PARCHE  ▬ TINOSA  ╌ TAMA-17   │
+│  Japanese loss list: Takegawa Maru, Nittatsu     │ When  29 Apr 0600 – 30 Apr 0800 GMT, 26 hours │
+│  Maru, both to BANG. No loss matches …           │                                               │
+├──────────────────────────────────────────────────┴───────────────────────────────────────────────┤
+│ [the map, the clock stopped at the end: three tracks, the path dotted, two ✕]  │ [both sides' log]│
+│ Order of battle · The story · At the periscope · Closing in                                      │
 └──────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 The records (on demand)
+### 4.2 Questions and sources (behind the switch)
 
-The frame's entries, every one as typed and linking to its page. This is today's engagement page: the map with its
-clock and lanes when the tempo is clocked; the chronology; filters by subject, side, source kind and entry kind; the
-record's voice throughout, with originals and translations. Nothing here is ours except the GMT conversion and the
-placement of each mark, and both say how they were done (the zone letter beside each time; `basis` on each position).
+What the records leave open: the claims board (`claims.yml`) and the leads (`leads.yml`, §8), each answer badged with
+the kind of evidence it is; the Sources view for each question more than one source speaks to (one moment at a time,
+a column per source, as typed, on its own clock, with the minutes and miles between them computed under it); and
+*how this was read*: the sources' section of `engagement.md`, what is still missing, the explainers for the notations
+the frame uses (§5.4). A question every answer of which comes from one source has nothing to set side by side, so
+the board alone shows it.
 
-### 4.3 The working (on demand)
+The two depths are one page with two parts (`?view=questions`; the page by default), not two pages: the address of
+an entry (`&at=1944-04-29T13:01Z`) opens the page at that minute, a step's (`&step=s7`) at that step, and a claim's
+opens the questions. The old addresses (`view=account|records|working`) still arrive, on the page or the questions.
+A story page's steps (Haynsworth's, Algiers') are the page's narrative, and the two hand-built pages became two
+engagements with their own figures registered (`site/panels.js`).
 
-Where our voice is allowed to lead, and labelled: the Sources view for each question; the claims board (`claims.yml`)
-and the leads (`leads.yml`, §8) under *what the records leave open*; the computed layers (the convoy's observed path and
-*closing in*, the estimated path, the sky, the firing solution) each with the assumptions it rests on stated under it;
-the frame's own figures (the periscope and the Torpedo Data Computer, the dive profile, Haynsworth's frames and the
-Judy to scale); the cross-references (minutes and miles between a pair of entries); and *how this was read*: the
-sources' section of `engagement.md`, the explainers for the notations the frame uses (§5.4).
-
-The three depths are one page with three parts (`?view=account|records|working`, the account by default), not three
-pages: the address of an entry (`&at=1944-04-29T13:01Z`) opens the records depth at that minute, and a claim's address
-opens the working at that question. A story page's steps (Haynsworth's, Algiers') become the account's and the records'
-narrative, so the two hand-built pages become two engagements with their own working figures registered, and `OWN_PAGE`
-in `chapter.js` goes.
+On a subject page (§5.2) the second depth is **Placement and leads**: how each position was placed, the speed check,
+the organizations with their pages, the leads, the coverage month by month.
 
 ## 5. Navigation
 
@@ -243,9 +256,9 @@ Front page                 the theatres, each with its featured frames; what's n
 │                          with its engagements; its subjects; its explainers ("reading the records here")
 │   ├─ Operation           what it was for and what it meant, cited; its area and dates; the engagements inside it;
 │   │                      the subjects with stations inside it (context, not participation)
-│   │   └─ Engagement      account › records › working (§4)
-│   └─ Subject (journey)   account › records › working: the subject's own record, period by period (a patrol, a month,
-│                          a voyage); the engagements it was in as stops; the operations around it as a band
+│   │   └─ Engagement      the page › questions and sources (§4)
+│   └─ Subject (journey)   the page › placement and leads: the subject's own record, period by period (a patrol, a
+│                          month, a voyage); the engagements it was in as stops; the operations around it as a band
 ├─ Reading the records     the explainers: time zones, the three grids, torpedo fire control, silhouettes, the glossary
 ├─ Researching a relative
 └─ Do this yourself
@@ -259,11 +272,12 @@ Italy, France, Germany) are that theatre's own grouping and stay.
 
 ### 5.2 One subject page
 
-`subject.html?s=<id>` replaces the four side-list apps. Its account is the subject's card: name as the records give
-it, kind, silhouette, its organizations over time (a dated list: part of, attached to, in pack, in convoy), the
-periods of its record (patrols; months; voyages) and how far each is along (`inventory.yml`'s status), and a static map
-of the whole journey. Its records depth is the map with the date strip and the list of its own entries, which is what
-the four apps draw now; the panels that only one kind of record has are shown only when it has them:
+`subject.html?s=<id>` replaces the four side-list apps. Its page opens on the subject's card: name as the records
+give it, kind, silhouette, its organizations over time (a dated list: part of, attached to, in pack, in convoy), the
+periods of its record (patrols; months; voyages) and how far each is along (`inventory.yml`'s status), and a strip map
+of the whole journey, stage by stage. Under the card, on the same page, the record itself: the map with the date strip
+and the list of its own entries, which is what the four apps drew; a stage row lands on it at that patrol or day. The
+panels that only one kind of record has are shown only when it has them:
 
 | Panel | Shown when the subject has |
 |---|---|
@@ -274,9 +288,9 @@ the four apps draw now; the panels that only one kind of record has are shown on
 | the ships of the convoy day by day (today `convoys.html`'s roster) | `convoy.md` `ships:` |
 | construction projects | `seabees/projects/` |
 
-Its working depth: the leads and open questions about the subject, the placement bases (how many stations are at a
-town, an offset, a grid reference, a headquarters assumed), the speed check's results, the sources' coverage month by
-month (§7.3).
+Behind the switch, *Placement and leads* (`?view=placement`): the leads and open questions about the subject, the
+placement bases (how many stations are at a town, an offset, a grid reference, a headquarters assumed), the speed
+check's results, the sources' coverage month by month (§7.3).
 
 The four apps are the first version of these panels, not wasted work: `patrols.js`, `army.js`, `seabees.js` and
 `convoys.js` each become a panel module the subject page loads by record kind, and the four CSS token sets become one.
@@ -305,8 +319,8 @@ records need ("reading the records here", as the stages do now).
 
 ## 6. Visual hierarchy
 
-The type's three voices are the backbone, and the depths give them their places: ET Book for the account and the
-working; TT2020 for every typed word of a record; Shippori Mincho for Japanese. The eye should be able to tell, without
+The type's three voices are the backbone, and the page's order gives them their places: ET Book for the outcome, the
+figures and the questions; TT2020 for every typed word of a record; Shippori Mincho for Japanese. The eye should be able to tell, without
 reading, which words are the record's. No capitals for labels, italics instead.
 
 | Element | Treatment |
@@ -318,7 +332,7 @@ reading, which words are the record's. No capitals for labels, italics instead.
 | An original and its translation | the original first in its own voice and language, the translation under it in ours, a hair smaller |
 | A computed layer | hatched or dotted on the map; in text, an italic *assumed* or *computed* with the assumption under the figure, not in a footnote |
 | The colours | the three checked colours for the followed subjects, ink for everyone else, red for hits only; text never wears a colour except a subject's own label |
-| Depth | the account has no controls; the records have the clock, filters and the scan viewer; the working has the sliders and the tabs. A control is a sign the reader has gone down a depth |
+| Depth | the top of the page has no controls; the map has the clock, filters and the scan viewer; the figures have the sliders and the tabs; the questions have the board. A control is a sign the reader has gone down the page |
 
 A page should read as a well-made entry in a reference work at the top, a chart-room sheet in the middle, and a
 researcher's desk at the bottom.
@@ -336,7 +350,7 @@ sinkings (secondary); JANAC's credit (assessment). Tempo: clocked.
 **The account.** The wireframe in §4.1. The static map shows the three tracks, the convoy's observed path dotted (ours,
 and the caption says so), the two sinkings and the miss. The outcome quotes the loss list and BANG's claim side by
 side in two sentences. The doors: 44 entries from five records in two languages (the three narratives, Nittatsu Maru's
-log and the escort division's diary) and 27 fixes; the working's three attack–record pairs from BANG's `claims.yml`
+log and the escort division's diary) and 27 fixes; the questions' three attack–record pairs from BANG's `claims.yml`
 and the four open items that today sit in `guides/ENGAGEMENTS.md`'s "Open work" (this engagement has no `claims.yml`
 of its own, which is what `leads.yml` in §8 is for); the three patrols, the convoy and the lane.
 
@@ -378,7 +392,7 @@ the distance between two positions) is done on the page by `engage.js` and label
 `weight` kept where a record is used as a recollection would be. Repetition isn't corroboration: combinedfleet and
 JANAC repeating the loss list show as one column each, and the board counts them once.
 
-**The journeys.** From the account's doors: BANG's subject page at patrol 1 (`patrols.html?ship=bang&patrol=1` today),
+**The journeys.** From the who's links at the top of the page: BANG's subject page at patrol 1 (`patrols.html?ship=bang&patrol=1` today),
 with her dives and the FRUPAC notes beside each attack; the convoy's page (`convoys.html?c=tama-17` today) with its
 ships day by day; the lane's month (`lanes.html`). The breadcrumb: *Pacific / the Luzon Strait, April–May 1944 /
 TAMA-17*, with TE-04 four days later as the next engagement.
@@ -511,6 +525,16 @@ depths. What the data taught: six of the hand-built frames have no *Outcome* sec
 rather than inventing one; and counting "records" from an entry's `source` text is phase 4's heuristic again. Phase 4
 is next, and it is the first to touch the records.
 
+**Done** (6 November 2026): three depths became two (§4). The account's screen and the records' sheet are one page in
+reading order (outcome, who and when; the map; the order of battle; the story; the figures, which moved out of the
+working), and the second depth is named for what it holds: *Questions and sources* on an engagement, *Placement and
+leads* on a subject (whose record now sits under its journey, the stage rows landing on it). The switch sits under
+the lede and says what each depth holds; the doors went with the account. What the data taught: every European
+engagement (Algiers, Filignano, Venafro, Remagen, Neuburg) lacked an *Outcome* section, so the first screen of the
+pages with the situation maps opened on "no outcome yet"; the five are written now, each sentence a record's with its
+citation. And a question every answer of which comes from one source (sixteen of Remagen's) made the Sources view
+repeat the board, so it shows only questions with two or more sources.
+
 **Done** (3 November 2026): phase 4, the records and the build. Every one of the 99 sources in `SOURCES.yml` carries a
 `kind` and most an `of`; `check_sources.py` fails without a kind. `side` is gone: every participant, entry and position
 carries `of`, the nationality as the record gives it, and the build derives `followed` (a participant with a track or a
@@ -590,12 +614,12 @@ engagement page prints no date beside its times, so the zone card gives the offs
 ## 10. Open questions
 
 - **Colour for more than three followed subjects.** The 62nd CA (AA) has fourteen units with stations around Oran and
-  Algiers in 1942–43. Small multiples (one map per battery at one scale) or a picker, as the rule says; the account's
+  Algiers in 1942–43. Small multiples (one map per battery at one scale) or a picker, as the rule says; the page's
   strip map is already small multiples by stage. Which the subject page uses for a battalion with many parts is to be
   tried on the 62nd and the 20th NCB.
 - **The convoy as a subject with a record of its own against the boats' sightings of it.** The convoy's observed path
   is computed from the boats' ship contacts and the Japanese positions. On the convoy's own page it is the lead layer
-  and it is ours; the account must say so in its first line.
+  and it is ours; the page must say so in its first line.
 - **Operations without a page of their own yet.** The Pacific has none in `operations/`; the lanes' month-by-month view
   is the nearest thing to the war at sea's own frame, and may be the Pacific theatre page's spine until the operations
   are written.

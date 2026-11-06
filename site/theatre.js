@@ -135,13 +135,13 @@
   for (const s of subs.filter(s => s.kind !== "unit")) {
     const when = span(s.first, s.last), t = T0(s.first || "9999");
     if (s.kind === "boat") {
-      const patrols = s.periods.map(p => `<a href="${subjHref(s, `&amp;period=${p.n}&amp;view=records`)}" title="${esc(`${p.name}, ${p.dates}`)}">${p.n}</a>`).join(", ");
+      const patrols = s.periods.map(p => `<a href="${subjHref(s, `&amp;period=${p.n}`)}" title="${esc(`${p.name}, ${p.dates}`)}">${p.n}</a>`).join(", ");
       rows.push([t, row(when, `<a href="${subjHref(s)}">${esc(s.name)}</a>, <i>${esc(s.plain)}</i>: war patrol${s.periods.length === 1 ? "" : "s"} ${patrols}`, [...new Set(s.periods.map(p => p.status))].join(", "))]);
     } else if (s.kind === "ship") {
       rows.push([t, row(when, `<a href="${subjHref(s)}">${esc(s.name)}</a>, <i>${esc(s.plain)}</i>`, esc(s.periods.map(p => p.name).join("; ")))]);
     } else if (s.kind === "battalion") {
       for (const [y, ps] of d3.groups(s.periods, p => p.month.slice(0, 4)))
-        rows.push([T0(`${y}-01-01`), row(y, `<a href="${subjHref(s, `&amp;t=${ps[0].month}-01&amp;view=records`)}">${esc(s.name)}</a>, <i>${esc(s.plain)}</i>`, `${n(ps.filter(p => p.stations).length, "month")} with stations`)]);
+        rows.push([T0(`${y}-01-01`), row(y, `<a href="${subjHref(s, `&amp;t=${ps[0].month}-01`)}">${esc(s.name)}</a>, <i>${esc(s.plain)}</i>`, `${n(ps.filter(p => p.stations).length, "month")} with stations`)]);
     } else if (s.kind === "convoy") {
       rows.push([t, row(when, `<a href="${subjHref(s)}">${esc(s.name)}</a>, <i>${esc(s.plain)}</i>`, s.engagements.length ? `met: ${s.engagements.map(e => `<a href="engagement.html?e=${esc(e.id)}">${esc(e.short || e.title)}</a>`).join(", ")}` : "its voyage")]);
     } else if (s.kind === "command") {

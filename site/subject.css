@@ -1,9 +1,9 @@
 /* The subject pages (subject.html, subjects.html; guides/OPERATIONS-VIEWER.md 5.2, 7.2): one journey page for a boat, a
-   ship, an Army unit, a Seabee battalion, a convoy or a command, at three depths. The skin is engage.css's (the one token
+   ship, an Army unit, a Seabee battalion, a convoy or a command, at two depths. The skin is engage.css's (the one token
    vocabulary; the three checked colours --c1..--c3, red for hits alone); this adds what the subject pages have of their
-   own: the account (the plain line, the organizations, the strip map, the coverage bar, the stage rows, the doors: the
-   mockup guides/mockups/67ca-med-account.html), the working (the placement table, the speed check, the leads), and the
-   records depth's panels (site/panels/*.js), each scoped under its own class (.p-patrols, .p-army, .p-seabees,
+   own: the top of the page (the plain line, the organizations, the strip map, the coverage bar, the stage rows: the
+   mockup guides/mockups/67ca-med-account.html), the placement (the placement table, the speed check, the leads), and the
+   record's panels (site/panels/*.js), each scoped under its own class (.p-patrols, .p-army, .p-seabees,
    .p-convoy), with the rules the four side-list apps carried in their own pages.
    One subject, so one colour: the subject's own marks take --c1; the categorical marks the panels keep (a torpedo or
    gun attack, an aircraft contact, an action from a battalion's history) take --c2 and --c3, the other two checked
@@ -27,6 +27,7 @@
 .org .src { white-space: normal; }
 .org .n { color: var(--ink-3); font-size: 14px; }
 h2.sec { font-size: 21px; font-weight: 400; font-style: normal; color: var(--ink); margin: 14px 0 0; padding: 0; }
+h2.sec span { font-style: italic; color: var(--ink-3); font-size: 14.5px; margin-left: 10px; }
 /* the strip map: one small panel per stage (a unit), per patrol (a boat), per record (a ship), the voyage (a convoy) */
 .strip { display: grid; grid-template-columns: repeat(var(--n, 5), minmax(0, 1fr)); gap: 10px; }
 .strip.few { grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); max-width: calc(var(--n, 1) * 320px + (var(--n, 1) - 1) * 10px); }
@@ -61,10 +62,9 @@ a.spanel:hover { background: var(--wash); }
 .stage .ctx i { color: var(--ink-3); }
 .stage .ctx a { color: inherit; }
 .stage .ja { font-family: var(--ja); font-weight: 500; }
-.doors .door .list a { color: inherit; }
 .account-none { font-style: italic; color: var(--ink-3); }
 
-/* ── the working ───────────────────────────────────────────────────────────── */
+/* ── placement and leads ───────────────────────────────────────────────────────────── */
 .wk { padding-bottom: 14px; }
 .wk .below { color: var(--ink-2); font-size: 15px; margin: 6px 14px 0; max-width: 95ch; }
 .wk table { border-collapse: collapse; margin: 6px 14px 0; font-size: 15px; max-width: calc(100% - 28px); }
@@ -78,7 +78,7 @@ a.spanel:hover { background: var(--wash); }
 .wk .fast { color: var(--hit); }
 .wk .wrapx { overflow-x: auto; }
 
-/* ── the records depth: the panels ─────────────────────────────────────────── */
+/* ── the record: the panels ─────────────────────────────────────────── */
 .records { display: grid; gap: 14px; }
 .records .filters { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
 .records .check { display: inline-flex; gap: 6px; align-items: center; color: var(--ink-2); margin-left: 12px; font-size: 15.5px; }

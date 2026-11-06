@@ -34,7 +34,7 @@ its entries' positions. The build writes `steps`, in time order, each with its t
 name the map's base where the records' places are closer than a world coastline tells (Algiers); a relief built with its
 rivers carries them. `fronts` names the traced situation maps (records/fronts/<name>.geojson: the front line and the unit
 symbols as the staff drew them on a day), in date order, drawn as context under the records: the account shows the first,
-the records depth the latest at the clock. A participant followed by its `unit` brings
+the page the latest at the clock. A participant followed by its `unit` brings
 its stations (records/army/army.json, those placed) from APPROACH_DAYS before the window to its end: where it came from.
 
 Sides are not stored (guides/OPERATIONS-VIEWER.md 2.4: a nationality as the record gives it, never a bloc). The records

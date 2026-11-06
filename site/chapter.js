@@ -158,10 +158,10 @@ const Chapter = (() => {
   // one stage of a theatre page: its heading and where it is, and every unit with stations there, opening on the Army
   // map on the day it arrived
   function stageHTML(s) {
-    const units = s.runs.map(r => `<tr><td class="when">${span(r.from, r.to)}</td><td class="what"><a href="subject.html?s=${r.u.unit}&amp;t=${iso(r.from)}&amp;view=records">${esc(r.u.name)}</a></td><td class="state">${r.n} station${r.n === 1 ? "" : "s"} here</td></tr>`).join("");
+    const units = s.runs.map(r => `<tr><td class="when">${span(r.from, r.to)}</td><td class="what"><a href="subject.html?s=${r.u.unit}&amp;t=${iso(r.from)}">${esc(r.u.name)}</a></td><td class="state">${r.n} station${r.n === 1 ? "" : "s"} here</td></tr>`).join("");
     return `
       <h3 id="stage-${s.id}"><span class="n">${s.n}</span> ${s.name}${s.runs.length ? ` <span class="when">${span(s.t0, s.t1)}</span>` : ""}</h3>
-      <p class="where">${esc(s.where[0].toUpperCase() + s.where.slice(1))}.${s.runs.length ? ` <a href="subject.html?s=${s.runs[0].u.unit}&amp;t=${iso(s.t0)}&amp;view=records">The Army map on ${fmt(s.t0)}</a>, the first station here.` : ""}</p>
+      <p class="where">${esc(s.where[0].toUpperCase() + s.where.slice(1))}.${s.runs.length ? ` <a href="subject.html?s=${s.runs[0].u.unit}&amp;t=${iso(s.t0)}">The Army map on ${fmt(s.t0)}</a>, the first station here.` : ""}</p>
       ${units ? `<div class="also"><table><tbody>${units}</tbody></table></div>` : `<p class="none">No unit with a station here yet.</p>`}`;
   }
 
@@ -190,7 +190,7 @@ const Chapter = (() => {
     // records (army/actions.csv), which opens the unit's own page on that day
     const ofUnit = (u, dir) => {
       const engs = T.engagements.filter(x => x !== e && x.units.some(v => v.unit === u.unit)).map(x => ({ t: dir < 0 ? x.t1 : x.t0, html: link(x) }));
-      const acts = (C.actions[u.unit] || []).map(a => ({ t: a.t, html: `<a href="subject.html?s=${encodeURIComponent(u.unit)}&amp;t=${a.date}&amp;view=records" title="${esc(a.text)}">${fmt(a.t)}</a>: <span class="said">${esc(a.text.length > 64 ? a.text.slice(0, 62).replace(/\s+\S*$/, "") + " …" : a.text)}</span>` }));
+      const acts = (C.actions[u.unit] || []).map(a => ({ t: a.t, html: `<a href="subject.html?s=${encodeURIComponent(u.unit)}&amp;t=${a.date}" title="${esc(a.text)}">${fmt(a.t)}</a>: <span class="said">${esc(a.text.length > 64 ? a.text.slice(0, 62).replace(/\s+\S*$/, "") + " …" : a.text)}</span>` }));
       const xs = [...engs, ...acts].filter(x => dir < 0 ? x.t < e.t0 : x.t > e.t1).sort((a, b) => dir * (a.t - b.t));
       return xs.length ? arrow(dir, xs[0].html) : none(dir);
     };
@@ -200,10 +200,10 @@ const Chapter = (() => {
       return xs.length ? arrow(dir, link(xs[0])) : none(dir);
     };
     const units = e.units.map(u => `<tr><td class="u">${esc(u.name)}${u.basis !== "reported" ? ` <i title="not named by this engagement's own entries">(${esc(u.basis)})</i>` : ""}</td>
-      <td>${ofUnit(u, -1)}</td><td>${ofUnit(u, 1)}</td><td><a href="subject.html?s=${encodeURIComponent(u.unit)}&amp;t=${iso(e.t0)}&amp;view=records">its stations on its own page</a></td></tr>`);
+      <td>${ofUnit(u, -1)}</td><td>${ofUnit(u, 1)}</td><td><a href="subject.html?s=${encodeURIComponent(u.unit)}&amp;t=${iso(e.t0)}">its stations on its own page</a></td></tr>`);
     const boats = e.boats.map(name => {
       const S = C.subjects.find(x => x.kind === "boat" && x.short === name), period = S?.engagements.find(x => x.id === e.id)?.period;
-      const own = S ? `<a href="subject.html?s=${encodeURIComponent(S.alias || S.id)}${period ? `&amp;period=${esc(period)}` : ""}&amp;view=records">${period ? `her patrol ${esc(period)}` : "her track"} on her own page</a>` : "";
+      const own = S ? `<a href="subject.html?s=${encodeURIComponent(S.alias || S.id)}${period ? `&amp;period=${esc(period)}` : ""}">${period ? `her patrol ${esc(period)}` : "her track"} on her own page</a>` : "";
       return `<tr><td class="u">${esc(name)}</td><td>${ofBoat(name, -1)}</td><td>${ofBoat(name, 1)}</td><td>${own}</td></tr>`;
     });
     const follow = [...units, ...boats].join("");

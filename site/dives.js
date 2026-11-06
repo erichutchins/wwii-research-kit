@@ -821,7 +821,7 @@ function renderSide() {
     pg.href = "#";
     pg.addEventListener("click", ev => { ev.preventDefault(); ev.stopPropagation(); openScan(e); });
     const mp = el("a", null, "On the map ↗");
-    mp.href = `subject.html?s=bang&period=${P.n}&t=${e.utc}&view=records`;
+    mp.href = `subject.html?s=bang&period=${P.n}&t=${e.utc}`;
     mp.addEventListener("click", ev => ev.stopPropagation());
     links.append(pg, mp);
     body.append(links);
@@ -941,11 +941,11 @@ function openScan(e) {
   document.getElementById("scan").showModal();
 }
 
-// the link to BANG's own page (subject.html, the records depth), at the patrol and moment on view
+// the link to BANG's own page (subject.html), at the patrol and moment on view
 function updateMapLink() {
   const t = state.t ?? (state.domain[0] + state.domain[1]) / 2;
   const a = document.getElementById("to-map");
-  if (a) a.href = `subject.html?s=bang&period=${P.n}&t=${new Date(t).toISOString().slice(0, 16)}Z&view=records`;
+  if (a) a.href = `subject.html?s=bang&period=${P.n}&t=${new Date(t).toISOString().slice(0, 16)}Z`;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
