@@ -102,6 +102,7 @@ class SitMap:
     title: str = ""
     report: str = ""
     gcps_from: str = ""
+    radius: int = 0                                        # the front's weight on this sheet, if not the default 4
     runs: tuple = ()                                       # [[(x, y), ...], ...] on the scan, the enemy's side on the left
     exclude: tuple = ()                                    # boxes on the scan whose heavy ink isn't the front (boundaries)
     flip: tuple = ()                                       # points on stretches whose ticks don't tell their side, to turn
@@ -129,7 +130,7 @@ def sitmap(name):
     return SitMap(name=name, item=row["item"], scan=f"g5701s-{row['item']}.jp2", cite=f"loc-12ag/{row['item']}", date=row["date"],
                   width=int(row.get("width") or 6700), height=int(row.get("height") or 6000), read=bool(y),
                   as_of=str(y.get("as_of") or ""), title=str(y.get("title") or ""), report=str(y.get("report") or ""),
-                  gcps_from=str(y.get("gcps_from") or ""),
+                  gcps_from=str(y.get("gcps_from") or ""), radius=int(y.get("radius") or 0),
                   runs=tuple([tuple(p) for p in run] for run in y.get("runs") or []),
                   exclude=tuple(tuple(int(v) for v in d["box"]) for d in y.get("exclude") or []),
                   flip=pts("flip"), checked=pts("checked"))
@@ -716,7 +717,8 @@ def write_units(map_name, M, spec, boxes_csv):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("map", help="a day's map, 12ag-YYYY-MM-DD (records/fronts/sitmaps.csv)")
-    ap.add_argument("--radius", type=int, default=4, help="opening disk radius in pixels (the front's weight)")
+    ap.add_argument("--radius", type=int, help="opening disk radius in pixels (the front's weight): the YAML's radius, "
+                    "else 4 (3 on the 1:500,000 Normandy sheet, B01, whose front is drawn finer)")
     ap.add_argument("--fetch", action="store_true", help="download the map's scan from the Library's tile server")
     ap.add_argument("--overlay", nargs="?", const="", help="draw the trace over the scan (to the work folder, or a path)")
     ap.add_argument("--crop", type=int, nargs=4, help="the overlay's part of the scan: X Y W H")
@@ -823,7 +825,7 @@ def main():
         print(f"   {n:14s} {r:4.1f} km (left out: {lo:4.1f} km)")
 
     g = np.asarray(Image.open(scan).convert("L"))
-    heavy = heavy_ink(g, a.radius, min_area=2000 if M.runs else 500)
+    heavy = heavy_ink(g, a.radius or M.radius or 4, min_area=2000 if M.runs else 500)
     if a.boxes:
         area = area_of(fit)
         bx = find_boxes(g, heavy, area)
