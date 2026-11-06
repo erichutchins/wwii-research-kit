@@ -29,7 +29,10 @@ Better than towns: **the sheet's graticule**. The 1:1,000,000 sheets print a mer
 a crossing is an exact control point with no geocoder's centroid and no name to match. `crops --graticule` makes the
 candidates itself, every crossing (at `--step` degrees) the fit puts on the sheet, named `7E 50N`, and labels each crop
 with the name rather than a number (the numbering changes as the fit moves crossings on and off the sheet; a name
-doesn't); the reader reads the crossing of the two thin lines and writes `7E 50N x,y`. A new base has no fit to start from: its seeds are three or four crossings read by eye
+doesn't); the reader reads the crossing of the two thin lines and writes `7E 50N x,y`. A new sheet's seeds are its
+margins: where each labelled meridian's tick meets the top or bottom neat line (`1W 2460,330`) and each labelled
+parallel's the left or right (`49.5N 60,2210`), two or more of each, which `conic_from_lines` solves into a first fit
+good to a few tens of pixels; or three or four crossings read by eye (`7E 50N 693,5750`). A new base has no fit to start from: its seeds are three or four crossings read by eye
 on the sheet's margins, where the degrees are printed, given in the readings file as `7E 50N 693,5750` (the crossing
 named, then its x,y), and `--with seeds.txt` builds the first fit from them (the cone constant the Europe sheets'
 usual, which the whole sheet's crossings then refine). The 1:1,000,000 plate's towns-B11.csv was read from towns
@@ -102,6 +105,7 @@ def cmd_crops(a):
     seeds = list(csv.DictReader(open(tf.REC / f"{on}-gcps.csv"))) if (tf.REC / f"{on}-gcps.csv").exists() else []
     cands = [] if a.graticule else geocode(list(csv.DictReader(open(a.candidates))))
     prev = {r["n"]: r for r in csv.DictReader(open(OUT / f"{a.base}-candidates.csv"))} if (OUT / f"{a.base}-candidates.csv").exists() else {}
+    lines = []
     for path in a.with_ or []:
         for v in readings(path):
             if v[1] == "none":
@@ -110,12 +114,19 @@ def cmd_crops(a):
             if CROSSING.fullmatch(v[0]):
                 lon, lat = crossing_ll(v[0])
                 seeds.append({"town": v[0], "x": x, "y": y, "lat": f"{lat}", "lon": f"{lon}"})
+            elif LINE.fullmatch(v[0]):
+                kind, val = line_value(v[0])
+                lines.append((kind, val, float(x), float(y)))
             else:   # a number: of the last run's candidates (sheet_towns.py crops numbers them anew each run)
                 c = prev[v[0]] if v[0] in prev else cands[int(v[0]) - 1]
                 seeds.append({"town": c["town"], "x": x, "y": y, "lat": c["lat"], "lon": c["lon"]})
+    if lines and len(seeds) < 3:
+        pts = [(float(r["lon"]), float(r["lat"]), float(r["x"]), float(r["y"])) for r in seeds]
+        seeds = conic_from_lines(pts, lines)
     if len(seeds) < 3:
-        sys.exit(f"{on} has no towns yet: read three or four graticule crossings by eye on the sheet's margins and give "
-                 f"them with --with (`7E 50N 693,5750` a line)")
+        sys.exit(f"{on} has no towns yet: read the sheet's margins and give them with --with: where a labelled meridian's tick "
+                 f"meets the top or bottom neat line (`1W 2460,330`), a labelled parallel's the left or right (`49.5N 60,2210`), "
+                 f"two or more of each; or three or four crossings (`7E 50N 693,5750`)")
     rgb = np.asarray(Image.open(scan).convert("RGB"))
     H, W = rgb.shape[:2]
     fit = tf.Conic(seeds)
@@ -160,16 +171,72 @@ def readings(path):
     """The readings file: `n x,y` or `n none` a line, or a graticule crossing named by its degrees, `7E 50N x,y`
     (a seed on a new sheet); after a `#` a comment; a later line for the same n (a second look) replaces the earlier."""
     out = {}
-    for ln in Path(path).read_text().splitlines():
+    for k, ln in enumerate(Path(path).read_text().splitlines()):
         v = ln.split("#")[0].split()
         if len(v) >= 3 and CROSSING.fullmatch(f"{v[0]} {v[1]}"):
             v = [f"{v[0]} {v[1]}", *v[2:]]
         if len(v) >= 2:
-            out[v[0]] = v
+            # a point on one line (`1W 2460,330`) is kept by its own line, several to a label
+            out[f"{v[0]}@{k}" if LINE.fullmatch(v[0]) and not v[0].isdigit() else v[0]] = v
     return list(out.values())
 
 
 CROSSING = re.compile(r"(\d+(?:\.\d+)?)([EW]) (\d+(?:\.\d+)?)([NS])")
+LINE = re.compile(r"(\d+(?:\.\d+)?)([EWNS])")   # a point on one graticule line, named by its degree: `1W` or `49.5N`
+
+
+def line_value(name):
+    """`1W` -> ("lon", -1.0); `49.5N` -> ("lat", 49.5)."""
+    m = LINE.fullmatch(name)
+    if m is None:
+        raise ValueError(f"not a graticule line's name: {name!r} (1W, 49.5N)")
+    v = float(m.group(1))
+    return ("lon" if m.group(2) in "EW" else "lat"), (-v if m.group(2) in "WS" else v)
+
+
+def conic_from_lines(points, lines, n=None):
+    """The conic from points on the sheet's margins that lie on ONE known graticule line each (where a labelled
+    meridian's tick meets the top or bottom neat line, a labelled parallel's the left or right), with any full
+    crossings: a new sheet's margins give these at a glance, where its interior crossings take a fit to find. The affine
+    (six numbers) is first solved as if the sheet were square to the degrees, then refined by least squares on every
+    constraint (a point's longitude or latitude through the conic against its label; a crossing's both), the cone
+    constant the Europe sheets' usual. Returns a Conic built on nine points the solved transform places over the sheet
+    (its seeds), good to a few tens of pixels: enough to crop round every crossing and read it."""
+    from scipy.optimize import least_squares
+    n = n if n is not None else tf.Conic.cone(40.0, 56.0)
+    lon_pts = [(x, y, v) for (kind, v, x, y) in lines if kind == "lon"] + [(x, y, lon) for lon, lat, x, y in points]
+    lat_pts = [(x, y, v) for (kind, v, x, y) in lines if kind == "lat"] + [(x, y, lat) for lon, lat, x, y in points]
+    if len(lon_pts) < 2 or len(lat_pts) < 2:
+        sys.exit("the margins must give at least two meridians and two parallels (1W 2460,330; 49.5N 60,2210)")
+    # a first guess, square to the degrees: x from longitude, y from latitude
+    ax, bx = np.polyfit([v for _, _, v in lon_pts], [x for x, _, _ in lon_pts], 1)
+    ay, by = np.polyfit([v for _, _, v in lat_pts], [y for _, y, _ in lat_pts], 1)
+    lon0 = float(np.mean([v for _, _, v in lon_pts])); lat0 = float(np.mean([v for _, _, v in lat_pts]))
+    probe = tf.Conic([{"town": "", "x": ax * lo + bx, "y": ay * la + by, "lon": lo, "lat": la}
+                      for lo in (lon0 - 1, lon0 + 1) for la in (lat0 - 1, lat0 + 1)], n=n)
+    T0 = probe.T.ravel()
+
+    def residuals(t):
+        T = t.reshape(3, 2)
+        r = []
+        for x, y, v in lon_pts:
+            r.append((probe.to_ll([[x, y]], T)[0][0] - v) * abs(ax))
+        for x, y, v in lat_pts:
+            r.append((probe.to_ll([[x, y]], T)[0][1] - v) * abs(ay))
+        return r
+
+    sol = least_squares(residuals, T0)
+    T = sol.x.reshape(3, 2)
+    rms = float(np.sqrt(np.mean(np.square(sol.fun))))
+    lons = np.linspace(min(v for _, _, v in lon_pts), max(v for _, _, v in lon_pts), 3)
+    lats = np.linspace(min(v for _, _, v in lat_pts), max(v for _, _, v in lat_pts), 3)
+    seeds = []
+    for lo in lons:
+        for la in lats:
+            X, Y = probe.to_px([[lo, la]], T)[0]
+            seeds.append({"town": f"margins {lo:g} {la:g}", "x": f"{X:.1f}", "y": f"{Y:.1f}", "lon": f"{lo}", "lat": f"{la}"})
+    print(f"the margins: {len(lon_pts)} points on meridians, {len(lat_pts)} on parallels, solved to {rms:.1f} px rms")
+    return seeds
 
 
 def crossing_ll(name):

@@ -56,6 +56,40 @@ class Crossings(unittest.TestCase):
         self.assertEqual(st.readings(f.name), [["12", "none"], ["7E 50N", "693,5750"]])
 
 
+class Margins(unittest.TestCase):
+    """sheet_towns.py: a new sheet's first fit from points on its margins that lie on one labelled line each."""
+
+    def test_a_line_name_reads(self):
+        import sheet_towns as st
+        self.assertEqual(st.line_value("1W"), ("lon", -1.0))
+        self.assertEqual(st.line_value("49.5N"), ("lat", 49.5))
+        self.assertIsNone(st.LINE.fullmatch("7E 50N"))
+
+    def test_margins_solve_to_a_fit_good_to_a_few_pixels(self):
+        import contextlib
+        import io
+
+        import sheet_towns as st
+        rows = sheet(400, seed=3)
+        fit = tf.Conic(rows)
+        # the sheet's frame: meridians 2W..1E ticked where they meet the top edge (lat 50.3) and bottom (48.2),
+        # parallels 49N, 49.5N, 50N where they meet the left edge (lon 2.2W) and right (1.3E)
+        lines = []
+        for lon in (-2, -1, 0, 1):
+            for lat in (50.3, 48.2):
+                x, y = fit.to_px([[lon, lat]])[0]
+                lines.append(("lon", float(lon), float(x), float(y)))
+        for lat in (49, 49.5, 50):
+            for lon in (-2.2, 1.3):
+                x, y = fit.to_px([[lon, lat]])[0]
+                lines.append(("lat", float(lat), float(x), float(y)))
+        with contextlib.redirect_stdout(io.StringIO()):
+            seeds = st.conic_from_lines([], lines, n=fit.n)
+        got = tf.Conic(seeds, n=fit.n)
+        pts = [[-1.5, 49.2], [0.5, 50.1], [-0.3, 48.6]]
+        self.assertLess(np.abs(got.to_px(pts) - fit.to_px(pts)).max(), 3)
+
+
 class ConicFit(unittest.TestCase):
     def test_recovers_a_sheet_on_a_known_conic_both_ways(self):
         rows = sheet(40)
