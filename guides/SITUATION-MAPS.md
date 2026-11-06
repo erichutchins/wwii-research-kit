@@ -185,8 +185,11 @@ What B needs in the tool, in order:
    has the crossing under the cross and reads most of the rest. Done this way on 6 November 2026 for the north
    Germany sheet (B13, `towns-B13.csv`: 26 crossings, 0.50 km rms, 1.1 km at worst, which register on 13 April at 25 of
    26) and the 1:1,400,000 sheet (B14, `towns-B14.csv`: 60 crossings, 0.82 km rms, 1.8 km at worst, which register on
-   1 May at 57 of 60), each two reader passes of about two minutes. The 1:1,000,000 plate's crossings agreed with its
-   towns' fit within 10 px, so `towns-B11.csv` stands.
+   1 May at 57 of 60), each two reader passes of about two minutes, and for the May printing of the 1:1,400,000 sheet
+   (B15, `towns-B15.csv`: 58 crossings, 0.67 km rms, from one pass seeded by B14's crossings shifted by the scans'
+   offset; B14's own points register on it at only 1 of 13, the May scan being 1.7 per cent larger, which is why a
+   printing scanned differently gets its own file). The 1:1,000,000 plate's crossings agreed with its towns' fit
+   within 10 px, so `towns-B11.csv` stands.
 3. Done: `--gcps-from towns-B11.csv` matches the sheet's towns on any day of the plate (22 December 1944: 71 of 79
    within 4 px of one affine transform, the rest placed through it), and the trace covers the sheet.
 4. A `--base` overview in the work folder of each day so a reviewer can see at a glance where the front is on the

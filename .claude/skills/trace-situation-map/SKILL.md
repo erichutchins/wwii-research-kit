@@ -47,7 +47,8 @@ uv run tools/trace_front.py 12ag-1945-03-08 --gcps-from       # matched to the Y
 
 `gcps_from` is the base's `towns` in `records/fronts/bases.yml`: `towns-B11.csv` for any day of the 1:1,000,000 plate
 (6 September 1944 to 6 April 1945; 81 towns across the sheet, so the trace covers the sheet), `towns-B13.csv` for
-7–18 April 1945 and `towns-B14.csv` for 19 April to 19 May (the sheets' graticule crossings, 26 and 60), or a day's
+7–18 April 1945, `towns-B14.csv` for 19 April to 19 May and `towns-B15.csv` from 20 May (the sheets' graticule
+crossings, 26, 60 and 58), or a day's
 name whose twenty were read by eye (the March days use `12ag-1945-03-07`, and keep their polynomial fit).
 
 The daily sheets are printings of one base map for months at a time, so a day's towns are found by matching the rings
