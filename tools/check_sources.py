@@ -43,6 +43,8 @@ CITES = {
     "army/places.csv": ["source"],
     "roads/oss967-gcps.csv": ["source"],
     "roads/oss967-landings.csv": ["source"],
+    "fronts/gcps.csv": ["source"],    # every situation map's towns (fronts/<map>-gcps.csv)
+    "fronts/units.csv": ["map"],      # and its unit symbols (fronts/<map>-units.csv)
     "army/ships.csv": ["links"],
     "army/relations.csv": ["page"],
     "comsubpac/disposition.csv": ["page"],
@@ -78,7 +80,10 @@ UNCITED = {
 
 def key(path):
     """'records/army/stations.csv' -> 'army/stations.csv'; 'records/engagements/<id>/positions.csv' ->
-    'engagements/positions.csv'; 'records/boats/x/patrol-1/depths.csv' -> 'depths.csv'"""
+    'engagements/positions.csv'; 'records/boats/x/patrol-1/depths.csv' -> 'depths.csv'; 'records/fronts/<map>-units.csv'
+    -> 'fronts/units.csv' (one pair of files a map)"""
+    if path.parent.name == "fronts" and path.name.endswith(("-gcps.csv", "-units.csv")):
+        return "fronts/" + path.name.rsplit("-", 1)[1]
     for k in (f"{path.parent.name}/{path.name}", f"{path.parent.parent.name}/{path.name}"):
         if k in CITES or k in UNCITED:
             return k

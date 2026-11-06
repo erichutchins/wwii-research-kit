@@ -122,6 +122,70 @@ const EV = (() => {
     g.append("circle").attr("r", 7).attr("fill", fill).attr("stroke", "var(--ink-3)").attr("stroke-width", 1.2);
   }
 
+  // ---------- a situation map's picture (records/fronts/): its front line, ticked on the enemy's side, and its unit symbols
+  // as the Army drew them (FM 21-30): a box, crossed for infantry, an oval for armour (both for armored infantry), the airborne arc, a headquarters
+  // named inside; the echelon's marks over it (xx a division, xxx a corps); a division's number beside it, in the typed
+  // voice, as written. The map's own side is its record (a solid outline); the enemy is its intelligence picture (hatched,
+  // in the lighter ink), as the map hatched it.
+  const SYM = { xx: [15, 9], xxx: [24, 11], xxxx: [34, 12], xxxxx: [30, 12], xxxxxx: [40, 12] };
+  // `tie`: {colour, own} when the symbol is a followed unit (own) or its division or command: ringed in the subject's
+  // colour, heavier when it is the unit itself
+  function unitSymbol(g, u, hatch, tie) {
+    const [w, h] = SYM[u.echelon] || SYM.xx, ink = u.opposed ? "var(--ink-3)" : "var(--ink-2)", hq = (u.echelon || "").length >= 3;   // a corps or above, named inside
+    g.append("rect").attr("x", -w / 2 - 1.5).attr("y", -h / 2 - 1.5).attr("width", w + 3).attr("height", h + 3).attr("fill", "var(--surface)").attr("opacity", 0.85);
+    if (tie) g.append("rect").attr("x", -w / 2 - 3).attr("y", -h / 2 - 3).attr("width", w + 6).attr("height", h + 6).attr("rx", 2)
+      .attr("fill", "none").attr("stroke", tie.colour).attr("stroke-width", tie.own ? 2.4 : 1.3);
+    g.append("rect").attr("x", -w / 2).attr("y", -h / 2).attr("width", w).attr("height", h)
+      .attr("fill", u.opposed ? hatch : "var(--surface)").attr("stroke", ink).attr("stroke-width", 1.1);
+    if (u.arm === "infantry" || u.arm === "armored-infantry") g.append("path").attr("d", `M${-w / 2},${-h / 2}L${w / 2},${h / 2}M${-w / 2},${h / 2}L${w / 2},${-h / 2}`).attr("stroke", ink).attr("stroke-width", 0.9);
+    if ((u.arm === "armored" || u.arm === "armored-infantry") && !hq) g.append("ellipse").attr("rx", w * 0.3).attr("ry", h * 0.27).attr("fill", "none").attr("stroke", ink).attr("stroke-width", 1.1);
+    if (u.arm === "armored" && hq) g.append("rect").attr("x", -w / 2 + 2).attr("y", -h / 2 + 2).attr("width", w - 4).attr("height", h - 4).attr("rx", (h - 4) / 2).attr("fill", "none").attr("stroke", ink).attr("stroke-width", 0.9);
+    if (u.arm === "airborne") g.append("path").attr("d", `M${-w * 0.3},${h * 0.15}Q${-w * 0.15},${-h * 0.3} 0,${h * 0.05}Q${w * 0.15},${-h * 0.3} ${w * 0.3},${h * 0.15}`).attr("fill", "none").attr("stroke", ink).attr("stroke-width", 1);
+    g.append("text").attr("class", "sym-ech").attr("y", -h / 2 - 2).attr("text-anchor", "middle").attr("fill", ink).text(u.echelon);
+    if (hq) g.append("text").attr("class", "sym-hq").attr("y", 3).attr("text-anchor", "middle").attr("fill", ink).text(u.label);
+    else g.append("text").attr("class", "sym-label").attr("x", w / 2 + (tie ? 4.5 : 2.5)).attr("y", 3.5).attr("fill", tie ? tie.colour : ink)
+      .attr("font-weight", tie && tie.own ? 700 : null).text(u.label);
+  }
+  // each side's mark, to say which side of the front is whose: the vehicle and aircraft markings of 1944-45 (the US
+  // white star in its circle; the German Balkenkreuz, a cross with white edges), drawn in the inks as plain geometry,
+  // not traced from a plate; the national flags are left out (the German one of 1945 carried the swastika)
+  function insignia(g, of, size = 9) {
+    if (of === "us") {
+      const pts = d3.range(10).map(i => { const r = i % 2 ? size * 0.38 : size * 0.95, a = -Math.PI / 2 + i * Math.PI / 5; return [r * Math.cos(a), r * Math.sin(a)]; });
+      g.append("circle").attr("r", size + 1.5).attr("fill", "var(--surface)").attr("stroke", "var(--ink-2)").attr("stroke-width", 1.3);
+      g.append("path").attr("d", d3.line()(pts) + "Z").attr("fill", "var(--ink-2)");
+    } else if (of === "de") {
+      const a = size, b = size * 0.32;   // the arms' half-length and half-width; the white edge outside the black
+      const cross = (x, y) => `M${-y},${-x}H${y}V${-y}H${x}V${y}H${y}V${x}H${-y}V${y}H${-x}V${-y}H${-y}Z`;
+      g.append("path").attr("d", cross(a + 1.5, b + 1.8)).attr("fill", "var(--surface)").attr("stroke", "var(--ink-2)").attr("stroke-width", 1.1);
+      g.append("path").attr("d", cross(a, b)).attr("fill", "var(--ink-2)");
+    }
+  }
+  // the front: each run, projected, as a heavy line with short ticks every few pixels on its right: the runs are stored
+  // with the enemy's side on their left, and the 12th Army Group's maps tick the front on their own side
+  function frontLine(g, runs, P, step = 8, len = 4) {
+    runs.forEach(run => {
+      const pts = run.map(c => P(c[0], c[1]));
+      g.append("path").attr("class", "front").attr("d", d3.line()(pts));
+      let path = "", next = step / 2;
+      for (let i = 1; i < pts.length; i++) {
+        const [ax, ay] = pts[i - 1], [bx, by] = pts[i], L = Math.hypot(bx - ax, by - ay);
+        if (!L) continue;
+        const nx = ay - by, ny = bx - ax;   // the right of the way it runs, on screen (y down): the map's own side, where it ticks
+        let at = next;
+        for (; at <= L; at += step) {
+          const x = ax + (bx - ax) * at / L, y = ay + (by - ay) * at / L;
+          path += `M${x.toFixed(1)},${y.toFixed(1)}l${(nx / L * len).toFixed(1)},${(ny / L * len).toFixed(1)}`;
+        }
+        next = at - L;
+      }
+      g.append("path").attr("class", "front-tick").attr("d", path);
+    });
+  }
+  legendMark.front = `<svg width="30" height="12" viewBox="0 0 30 12"><line x1="1" y1="8" x2="29" y2="8" class="front"/><path d="M5,8v-4M13,8v-4M21,8v-4" class="front-tick"/></svg>`;
+  legendMark.unitUs = `<svg width="20" height="14" viewBox="-10 -7 20 14"><rect x="-7.5" y="-4.5" width="15" height="9" fill="var(--surface)" stroke="var(--ink-2)" stroke-width="1.1"/><path d="M-7.5,-4.5L7.5,4.5M-7.5,4.5L7.5,-4.5" stroke="var(--ink-2)" stroke-width=".9"/></svg>`;
+  legendMark.unitEnemy = `<svg width="20" height="14" viewBox="-10 -7 20 14"><defs><pattern id="hatch-unit-legend" patternUnits="userSpaceOnUse" width="3.5" height="3.5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="3.5" stroke="var(--ink-3)" stroke-width="1"/></pattern></defs><rect x="-7.5" y="-4.5" width="15" height="9" fill="url(#hatch-unit-legend)" stroke="var(--ink-3)" stroke-width="1.1"/></svg>`;
+
   // ---------- the chronology (guides/OPERATIONS-VIEWER.md, 3): a spine of hours, days or months at the left, one column
   // per record, every entry at its row in entry.css's block, the time (or "no time recorded", in italics) leading the
   // who line, since the spine already gives the day and the block's own time column is folded away (chron.css). The
@@ -244,5 +308,5 @@ const EV = (() => {
       `<span class="w ${esc(a.mark)}">${esc(a.words || "unweighed")}</span><span class="a"><b>${esc(a.answer)}</b>${a.notes.length ? ` <span class="n">${a.notes.map(esc).join(" ")}</span>` : ""} <span class="src">${[...new Set(a.sources)].filter(Boolean).map(esc).join("; ")} ${a.cites.map(c => cite(c)).join(" ")}</span></span>`).join("")}</div></div>`).join("");
   }
 
-  return { esc, showTip, moveTip, hideTip, cite, sil, category, silWords, land, LAND_10M, LAND_50M, graticule, shape, outcomeMark, legendMark, hatchDef, intelMark, chronology, sources, board };
+  return { esc, showTip, moveTip, hideTip, cite, sil, category, silWords, land, LAND_10M, LAND_50M, graticule, shape, outcomeMark, legendMark, hatchDef, intelMark, unitSymbol, frontLine, insignia, chronology, sources, board };
 })();

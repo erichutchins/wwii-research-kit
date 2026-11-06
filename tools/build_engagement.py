@@ -31,7 +31,11 @@ framing. The front matter's `steps` gives a step its framing, `view` (the name o
 `box` [[west, south], [east, north]], or a box written inline) and its `when` in words; a step with no view is framed on
 its entries' positions. The build writes `steps`, in time order, each with its time, words, view and count of entries.
 `relief` (a records/relief/<name>/ or a list of them, coarse first) and `roads` (records/roads/<name>-primary.geojson)
-name the map's base where the records' places are closer than a world coastline tells (Algiers).
+name the map's base where the records' places are closer than a world coastline tells (Algiers); a relief built with its
+rivers carries them. `fronts` names the traced situation maps (records/fronts/<name>.geojson: the front line and the unit
+symbols as the staff drew them on a day), in date order, drawn as context under the records: the account shows the first,
+the records depth the latest at the clock. A participant followed by its `unit` brings
+its stations (records/army/army.json, those placed) from APPROACH_DAYS before the window to its end: where it came from.
 
 Sides are not stored (guides/OPERATIONS-VIEWER.md 2.4: a nationality as the record gives it, never a bloc). The records
 carry `of`, the nationality of a participant, of an entry's actor (left out when the actor is a participant, whose `of`
@@ -79,12 +83,16 @@ CONVOYS = RECORDS / "convoys"
 SCANS = json.load(open(RECORDS / "scans.json", encoding="utf-8"))
 SIL = json.load(open(RECORDS / "silhouettes" / "silhouettes.json", encoding="utf-8"))
 SIL_IDS = set(SIL["categories"]["shapes"]) | set(SIL["ships"]) | set(SIL["aircraft"])
+ARMY = {u["unit"]: u.get("stations") or [] for u in json.load(open(RECORDS / "army" / "army.json", encoding="utf-8"))["units"]}
+with open(RECORDS / "army" / "relations.csv", encoding="utf-8", newline="") as f:
+    RELATIONS = list(csv.DictReader(f))   # a unit's division and command on a date: ties a situation map's symbol to a subject
 with open(RECORDS / "army" / "units.csv", encoding="utf-8", newline="") as f:
     ARMY_UNITS = {r["unit"] for r in csv.DictReader(f)}   # a participant's `unit:` (followed from one engagement to the next)
+APPROACH_DAYS = 7   # a unit's stations this many days before the window are drawn with it: the way it came
 MAX_BOATS = 3   # the page's three categorical colours are checked for three boats; check again before a fourth
 
 FM = {"title", "short", "eyebrow", "theater", "clock", "window", "participants", "places", "against", "steps", "views",
-      "relief", "roads"}
+      "relief", "roads", "fronts"}
 STEP = {"view", "when"}      # a step's framing and its words; its time and entries come from events.yml
 VIEW = {"name", "box"}       # a named framing of the map
 PART = {"id", "name", "of", "kind", "sil", "hull", "co", "track", "convoy", "unit", "basis", "note"}
@@ -518,6 +526,9 @@ class Build:
         steps = self.steps(fm.get("steps"), views, events, positions, carried, where)
         relief = self.relief(fm.get("relief"), where)
         roads = self.roads(fm.get("roads"), where)
+        fronts = [f for f in (self.front(n, where, parts) for n in (fm.get("fronts") or [])) if f]
+        if [f["date"] for f in fronts] != sorted(f["date"] for f in fronts):
+            self.bad(where, "`fronts` must be in date order")
 
         # the window: as given, or the span of the timed entries
         win = fm.get("window") or {}
@@ -557,6 +568,16 @@ class Build:
                     seen_ja.add((p["track"], j["id"]))
                     japanese.append(j)
             pairs += prs
+        # each unit's stations, placed, from APPROACH_DAYS before the window to its end (its own record's places)
+        stations = {}
+        for p in parts:
+            if p.get("unit") and start and end:
+                rows = [r for r in ARMY.get(p["unit"], []) if r.get("lat") is not None
+                        and (start - timedelta(days=APPROACH_DAYS)).date().isoformat() <= r["date"] <= end.date().isoformat()]
+                stations[p["id"]] = [{"date": r["date"], "lat": r["lat"], "lon": r["lon"], "place": r.get("place", ""),
+                                      "words": r.get("station", ""), "precision": r.get("precision", ""),
+                                      "inside": r["date"] >= start.date().isoformat(),
+                                      "cite": self.cite(r.get("page"), f"{where}: {p['unit']} {r['date']}")} for r in rows]
         by_unit = {p["track"]: p["id"] for p in parts if p.get("track")}
         outcome = {}
         for x in pairs:
@@ -577,6 +598,7 @@ class Build:
         pts = [(f["lon"], f["lat"]) for f in fixes] + [(e["lon"], e["lat"]) for e in events if e.get("lat") is not None]
         pts += [(r["lon"], r["lat"]) for r in positions.values() if r.get("lat") is not None]
         pts += [(f["lon"], f["lat"]) for p in parts if p.get("kind") != "submarine" for f in tracks.get(p["id"], [])]
+        pts += [(r["lon"], r["lat"]) for rows in stations.values() for r in rows]
         box = None
         if pts:
             lons, lats = [x for x, _ in pts], [y for _, y in pts]
@@ -597,7 +619,7 @@ class Build:
                 "window": {"from": iso(start), "to": iso(end)} if start else None, "gmt": bool(start),
                 "participants": parts, "own": own, "against": against,
                 "places": fm.get("places") or [], "sections": secs, "cites": cites, "box": box,
-                "steps": steps, "relief": relief, "roads": roads,
+                "steps": steps, "relief": relief, "roads": roads, "fronts": fronts, "stations": stations,
                 "tracks": tracks, "fixes": fixes, "events": events, "claims": claims, "pairs": moments,
                 "positions": list(positions.values()), "convoys": conv, "sheets": sheets}
 
@@ -683,7 +705,7 @@ class Build:
                 self.bad(where, f"relief {n!r} has no records/relief/{n}/relief.json (tools/build_relief.py)")
                 continue
             meta = json.load(open(path, encoding="utf-8"))
-            out.append({"name": str(n), "box": meta["box"], "source": meta.get("source", "")})
+            out.append({"name": str(n), "box": meta["box"], "source": meta.get("source", ""), "rivers": bool(meta.get("rivers"))})
         return out
 
     def roads(self, name, where):
@@ -694,6 +716,48 @@ class Build:
             self.bad(where, f"roads {name!r} has no records/roads/{name}-primary.geojson")
             return ""
         return str(name)
+
+    @staticmethod
+    def commands(unit, date):
+        """The units a unit belonged to or was under on a date, from army/relations.csv (part_of, under_command,
+        attached_to; an undated row always holds), two steps up: [(other, [(relation, other, page), ...]), ...]."""
+        def holds(r):
+            lo, hi = r["from"].strip("."), r["to"].strip(".")
+            return (not lo or lo <= date) and (not hi or date <= hi)
+        out, todo = [], [(unit, [])]
+        while todo:
+            u, path = todo.pop(0)
+            for r in RELATIONS:
+                if r["unit"] == u and r["relation"] in ("part_of", "under_command", "attached_to") and holds(r):
+                    step = path + [(r["relation"], r["other"], r["page"])]
+                    out.append((r["other"], step))
+                    if len(step) < 2:
+                        todo.append((r["other"], step))
+        return out
+
+    def front(self, name, where, parts=()):
+        """`front`: a traced situation map, records/fronts/<name>.geojson: its date, hour, title, citation and fit, and
+        `ties`: which of its symbols are a followed unit, or its division or command on the map's date (army/relations.csv),
+        each with the relations that tie it and their citations."""
+        if not name:
+            return None
+        path = RECORDS / "fronts" / f"{name}.geojson"
+        if not path.exists():
+            self.bad(where, f"front {name!r} has no records/fronts/{name}.geojson (tools/trace_front.py)")
+            return None
+        gj = json.load(open(path, encoding="utf-8"))
+        meta = gj["properties"]
+        on_map = {f["properties"].get("unit") for f in gj["features"] if f["properties"].get("unit")}
+        ties = {}
+        for p in parts:
+            if not p.get("unit"):
+                continue
+            for other, path in [(p["unit"], [])] + self.commands(p["unit"], meta["date"]):
+                if other in on_map:
+                    ties.setdefault(other, []).append({"participant": p["id"], "path": [
+                        {"relation": rel, "other": o, "cite": self.cite(pg, f"{where}: {p['unit']} {rel} {o}")} for rel, o, pg in path]})
+        return {"name": str(name), **{k: meta[k] for k in ("date", "as_of", "title", "fit_km", "box")},
+                "cite": self.cite(meta["cite"], where), "ties": ties}
 
     @staticmethod
     def pair(x, by_unit):

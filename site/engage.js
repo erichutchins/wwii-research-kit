@@ -37,6 +37,8 @@
 //   Engage.claimMoments(claims)       the questions the records leave open, each with its answers by source (the Sources view) and
 //                                     merged by their words (the claims board)
 //   Engage.badge(claim)               an answer's badge: its source's kind, and its weight where that differs
+//   Engage.frontSide(runs, [lon, lat])   which side of a situation map's front a point lies: 1 on the enemy's (the
+//                                     runs' left, as records/fronts/ stores them), -1 on the map's own, by the nearest leg
 const Engage = (() => {
   const ZONE_LETTERS_E = "ABCDEFGHIKLM", ZONE_LETTERS_W = "NOPQRSTUVWXY";
   // the half-hour zones the war diaries type (tools/check_track.py ZONES)
@@ -568,7 +570,27 @@ const Engage = (() => {
     return { mark, words: w && w !== mark ? `${mark} · as ${w}` : mark };
   }
 
-  return { zoneHours, toUTC, T, coord, offset, nm, posAt, observedPath, closing, fireControl, apparentSize, sky, localNoon, light, story, hhmm, day,
+  // ---------- a point against a traced front (records/fronts/), which may be many short stretches. The runs are stored
+  // with the enemy's side on their left. Every leg within half again the nearest leg's distance votes its side (the sign
+  // of the cross product: positive, a turn to the left, is the enemy's), weighted by how squarely the point lies to its
+  // side (the sine of the angle) and by its nearness, so a short stretch the point lies along, beyond its end, counts for
+  // little. On a plane scaled by the cosine of the latitude (a few hundred km at most). 1 the enemy's side, -1 the map's
+  // own, 0 when nothing tells.
+  function frontSide(runs, p) {
+    const k = Math.cos(p[1] * Math.PI / 180), X = q => [q[0] * k, q[1]], [px, py] = X(p);
+    const legs = [];
+    runs.forEach(run => { for (let i = 1; i < run.length; i++) {
+      const [ax, ay] = X(run[i - 1]), [bx, by] = X(run[i]), dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy);
+      if (!L) continue;
+      const u = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (L * L)));
+      legs.push({ d: Math.hypot(px - ax - u * dx, py - ay - u * dy), sin: (dx * (py - ay) - dy * (px - ax)) / (L * (Math.hypot(px - ax, py - ay) || 1e-9)) });
+    } });
+    if (!legs.length) return 0;
+    const near = Math.min(...legs.map(l => l.d));
+    return Math.sign(legs.filter(l => l.d <= near * 1.5 + 1e-9).reduce((v, l) => v + l.sin / (l.d + 1e-6), 0));
+  }
+
+  return { frontSide, zoneHours, toUTC, T, coord, offset, nm, posAt, observedPath, closing, fireControl, apparentSize, sky, localNoon, light, story, hhmm, day,
            gyroOf, coursesOf, offsetOf, firingTimes, torpedoKnots, attackSheet, attackAt, tdcAt,
            tempo, chronologyRows, chronologyColumns, recordWords, hitKind, head, nation, sourceKindWord, columnChip,
            apart, pairMoments, claimMoments, badge };

@@ -531,7 +531,7 @@ class EngagementVocabulary(unittest.TestCase):
         problems, _ = self.build(engagement="---\nshort: x\ncolour: red\nparticipants: []\n---\n\nWords.\n", events="")
         said = "\n".join(problems)
         self.assertIn("`title` is missing", said)
-        self.assertIn("unknown field 'colour' (known: against, clock, eyebrow, participants, places, relief, roads, short, steps, theater, title, views, window)", said)
+        self.assertIn("unknown field 'colour' (known: against, clock, eyebrow, fronts, participants, places, relief, roads, short, steps, theater, title, views, window)", said)
 
     def test_a_step_link_names_a_step_some_entry_carries(self):
         # the story's [[step:]] links set the clock and the map to a step; a step is defined by the entries that carry it

@@ -56,7 +56,7 @@
   const clip = ([w, s, e, n]) => { const a = op && op.area; if (!a) return [w, s, e, n]; const b = [Math.max(w, a[0]), Math.max(s, a[1]), Math.min(e, a[2]), Math.min(n, a[3])]; return b[0] < b[2] && b[1] < b[3] ? b : null; };
   subs.forEach(s => { const b = s.box && clip(s.box); if (b) addBox(b); });
   const [w0, e0] = op && op.area ? [op.area[0], op.area[2]] : d3.extent(corners, c => c[0]);
-  const ruler = scaleBar(box, { units: T.id === "pacific" || T.id === "atlantic" ? ["nm"] : ["km"] });
+  const ruler = scaleBar(box, { units: T.id === "pacific" || T.id === "atlantic" ? ["nm"] : ["mi", "km"] });
   // (the ring runs clockwise, as d3-geo wants an exterior ring; the other way round fills the rest of the sphere)
   const rect = ([w, s, e, n]) => ({ type: "Polygon", coordinates: [[[norm(w), s], [norm(w), n], [norm(e), n], [norm(e), s], [norm(w), s]]] });
   let tracks = [];   // the followed subjects' tracks and stations, as geo lines, once loaded

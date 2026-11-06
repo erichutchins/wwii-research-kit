@@ -26,6 +26,16 @@ console.log(E.coord("1?-21N") === null ? "ok  " : (failed++, "FAIL"), "an unread
 const [lon, lat] = E.offset(129.1667, 26.8333, 60, 12);
 near(E.nm([129.1667, 26.8333], [lon, lat]), 12, 0.05, "12 nm offset comes back as 12 nm");
 
+// A front's side: the 12th Army Group's front of 7 March 1945 runs south down the Rhine with the enemy on its left (east,
+// in lon/lat with north up): Bonn's east bank is the enemy's, Euskirchen (the US First Army's) the map's own
+const front = [[[6.98, 50.80], [7.02, 50.70], [7.05, 50.62]]];
+console.log(E.frontSide(front, [7.10, 50.70]) === 1 ? "ok  " : (failed++, "FAIL"), "a point east of a front run south is the enemy's side");
+console.log(E.frontSide(front, [6.79, 50.66]) === -1 ? "ok  " : (failed++, "FAIL"), "Euskirchen, west of it, is the map's own side");
+// cut into short stretches, as the later days' fronts are, and a town well off the line (Siegburg, Euskirchen): the
+// stretches beside it decide, not the end of one it lies beyond
+const cut = [[[6.98, 50.80], [6.99, 50.78]], [[6.99, 50.78], [7.00, 50.75]], [[7.00, 50.75], [7.01, 50.72]], [[7.01, 50.72], [7.02, 50.70]], [[7.02, 50.70], [7.05, 50.62]]];
+console.log(E.frontSide(cut, [7.207, 50.793]) === 1 && E.frontSide(cut, [6.787, 50.661]) === -1 && E.frontSide(cut, [7.10, 50.85]) === 1 ? "ok  " : (failed++, "FAIL"), "a front in stretches: a town off the line reads its side from the stretches beside it");
+
 // A track is straight between fixes, and never runs beyond its first or last fix
 const track = [{ utc: "1944-05-03T00:00Z", lon: 120, lat: 20 }, { utc: "1944-05-03T02:00Z", lon: 121, lat: 21 }];
 near(E.posAt(track, E.T("1944-05-03T01:00Z"))[0], 120.5, 1e-9, "halfway in time is halfway along");

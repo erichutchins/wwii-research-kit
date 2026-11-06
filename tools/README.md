@@ -54,7 +54,7 @@ tool's docstring says more than this list; the rules are in `CLAUDE.md`.
 | `uv run tools/fetch_weather.py [bang/1 …]` | Hourly ERA5 weather along each track (Open-Meteo), cached in `sources/era5/` | After positions change |
 | `python3 tools/fetch_station_weather.py seabees` | A shore unit's daily weather at its stations: ISD observations where a station was near, ERA5 everywhere | After a shore unit's stations change |
 | `uv run tools/army_seafloor.py` | The seafloor under the Army units' LST crossings (`records/army/seafloor.csv`) | After `build_army.py`, if a crossing changed |
-| `uv run tools/build_relief.py algiers 2.72 36.60 3.42 37.08 --zoom 12` | Shaded relief and a land mask for a map view (`records/relief/<view>/`), from the AWS Terrain Tiles: today's ground, not the war's | Adding a map view that needs relief |
+| `uv run tools/build_relief.py algiers 2.72 36.60 3.42 37.08 --zoom 12 [--rivers]` | Shaded relief and a land mask for a map view (`records/relief/<view>/`), from the AWS Terrain Tiles: today's ground, not the war's; with `--rivers`, Natural Earth's rivers inside the box | Adding a map view that needs relief |
 
 ## The builds
 
@@ -74,6 +74,7 @@ fails if one is out of date.
 | `uv run tools/trace_silhouette.py PLATE.png --crop X Y W H [--symmetric] [--open 2] --preview /tmp/p.png` | A silhouette traced from a recognition plate's scan into a path for `silhouettes.yml` | Adding a silhouette (the skill `add-silhouette`) |
 | `uv run tools/build_glossary.py [check]` | `reference/glossary.json` from `reference/glossary.yml`; every term cites its source; each notation pattern compiles, matches its example and none of its `not` forms, and links a page in `site/` | After editing `reference/glossary.yml` or `records/SOURCES.yml` |
 | `uv run tools/trace_roads.py [--write-routes] [--overlay /tmp/o.jpg]` | The primary roads of OSS Map No. 967 (Algeria and Tunisia, 1942) traced from the scan to `records/roads/oss967-primary.geojson`, and the Army's road moves routed along them | Once per scan; again if a road move or a control point changes |
+| `uv run tools/trace_front.py 12ag-1945-03-07 [--overlay /tmp/o.jpg --crop X Y W H]` | A dated situation map's front line traced from the scan (fitted to its town rings; the front by its weight, through waypoints read by eye) and its unit symbols placed, to `records/fronts/<map>.geojson` | Once per map; again if a control point, a waypoint or a symbol changes |
 | `uv run tools/oss967_landings.py [--overlay /tmp/l.jpg]` | The same map's landing-place arrows read into `records/roads/oss967-landings.csv` | Once per scan, with `trace_roads.py` |
 
 ## Viewing

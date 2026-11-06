@@ -12,9 +12,12 @@ records/relief/<name>/:
   shade.png    hillshade (sun from the north-west, 45 degrees up) as black (shadow) and white (lit) with alpha,
                drawn over the land fill; flat ground stays clear.
   relief.json  the box ([west, south], [east, north]) in degrees, the zoom, and the source.
+  rivers.geojson  with --rivers: Natural Earth's 1:10m river centrelines (SOURCES.yml natural-earth) inside the box,
+               each LineString with its `name` (the world set's; the European supplement's lines unnamed); for a frame inland, where the relief shows a valley but not its river.
 
   uv run tools/build_relief.py algiers 2.72 36.60 3.42 37.08 --zoom 12
   uv run tools/build_relief.py algiers-town 2.94 36.70 3.13 36.83 --zoom 14   (a page draws the finer one on top)
+  uv run tools/build_relief.py remagen 5.6 50.0 8.2 51.25 --zoom 10 --rivers
 """
 import argparse
 import io
@@ -27,6 +30,8 @@ from PIL import Image, ImageFilter
 from records import RECORDS
 
 TILES = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
+RIVERS = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/{}.geojson"
+RIVER_SETS = ("ne_10m_rivers_lake_centerlines", "ne_10m_rivers_europe")   # the world's, and Europe's supplement
 
 
 def tile_xy(lon, lat, z):
@@ -48,11 +53,49 @@ def fetch(z, x, y, cache):
     return Image.open(io.BytesIO(f.read_bytes())).convert("RGB")
 
 
+def clip_line(pts, box):
+    """The runs of a line's points inside the box (a run keeps the point either side of it, so it reaches the edge)."""
+    w, s, e, n = box
+    inside = [w <= x <= e and s <= y <= n for x, y in pts]
+    runs, cur = [], []
+    for k, p in enumerate(pts):
+        if inside[k] or (k + 1 < len(pts) and inside[k + 1]) or (k > 0 and inside[k - 1]):
+            cur.append([round(p[0], 4), round(p[1], 4)])
+        elif cur:
+            runs.append(cur); cur = []
+    if cur:
+        runs.append(cur)
+    return [r for r in runs if len(r) > 1]
+
+
+def rivers(box, cache):
+    feats = []
+    for name in RIVER_SETS:
+        f = cache / f"{name}.geojson"
+        if not f.exists():
+            req = urllib.request.Request(RIVERS.format(name), headers={"User-Agent": "wwii-research-kit"})
+            f.write_bytes(urllib.request.urlopen(req, timeout=120).read())
+        for x in json.loads(f.read_text(encoding="utf-8"))["features"]:
+            g = x["geometry"]
+            if not g:
+                continue
+            lines = g["coordinates"] if g["type"] == "MultiLineString" else [g["coordinates"]]
+            for ln in lines:
+                for run in clip_line(ln, box):
+                    # names from the world set only: the European supplement's are not to be trusted (it names the Lahn
+                    # at Koblenz "Ohm", a river that joins it 90 km upstream), so its lines are drawn unnamed
+                    nm = x["properties"].get("name") or "" if name == RIVER_SETS[0] else ""
+                    feats.append({"type": "Feature", "properties": {"name": nm, "source": "natural-earth"},
+                                  "geometry": {"type": "LineString", "coordinates": run}})
+    return {"type": "FeatureCollection", "features": feats}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("name")
     ap.add_argument("box", nargs=4, type=float, help="west south east north")
     ap.add_argument("--zoom", type=int, default=12)
+    ap.add_argument("--rivers", action="store_true", help="also clip Natural Earth's rivers to the box")
     a = ap.parse_args()
     w, s, e, n = a.box
     z = a.zoom
@@ -110,9 +153,14 @@ def main():
     shade.save(out / "shade.png", optimize=True)
     bw, bn = lonlat(tx0 + cx0 / 256, ty0 + cy0 / 256, z)
     be, bs = lonlat(tx0 + cx1 / 256, ty0 + cy1 / 256, z)
-    (out / "relief.json").write_text(json.dumps({
-        "box": [[round(bw, 6), round(bs, 6)], [round(be, 6), round(bn, 6)]], "zoom": z, "size": [W, H],
-        "source": "aws-terrain-tiles", "note": "Today's coastline at the tiles' resolution; harbour works since 1943 show as land."}, indent=1) + "\n")
+    meta = {"box": [[round(bw, 6), round(bs, 6)], [round(be, 6), round(bn, 6)]], "zoom": z, "size": [W, H],
+            "source": "aws-terrain-tiles", "note": "Today's coastline at the tiles' resolution; harbour works since 1943 show as land."}
+    if a.rivers:
+        rv = rivers((bw, bs, be, bn), RECORDS.parent / "sources" / "natural-earth")
+        (out / "rivers.geojson").write_text(json.dumps(rv, separators=(",", ":"), ensure_ascii=False) + "\n", encoding="utf-8")
+        meta["rivers"] = sorted({f["properties"]["name"] for f in rv["features"] if f["properties"]["name"]})
+        print(f"rivers: {len(rv['features'])} lines ({', '.join(meta['rivers'])})")
+    (out / "relief.json").write_text(json.dumps(meta, indent=1, ensure_ascii=False) + "\n")
     print(f"wrote {out}: {W}x{H} px, zoom {z}, {mpp:.0f} m/px")
 
 

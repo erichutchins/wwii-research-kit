@@ -77,6 +77,25 @@ button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .relief-shade { opacity: .75; } }
 :root[data-theme="dark"] .relief-shade { opacity: .75; }
 .road { fill: none; stroke: var(--ink-3); stroke-opacity: .5; stroke-width: 1.1; stroke-linejoin: round; pointer-events: none; }
+/* a relief's rivers (Natural Earth), drawn as the sea is (the page's colour, edged in the coast's), no new hue */
+.river-edge, .river { fill: none; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
+.river-edge { stroke: var(--coast); stroke-width: 5; }
+.river { stroke: var(--surface); stroke-width: 3.2; }
+.river-name { fill: var(--ink-3); font-size: 11px; font-style: italic; letter-spacing: .2em; paint-order: stroke; stroke: var(--land); stroke-width: 3px; pointer-events: none; }
+.front-date { fill: var(--ink-2); font-size: 11px; font-style: italic; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
+.side-name { fill: var(--ink-2); font-size: 12px; font-style: italic; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
+/* a situation map's picture (records/fronts/): the front, ticked on the enemy's side, and the units' symbols */
+.front { fill: none; stroke: var(--ink-2); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.front-tick { fill: none; stroke: var(--ink-2); stroke-width: 1.2; }
+.sym-ech, .sym-hq, .sym-label { font-family: var(--typed); pointer-events: none; }
+.sym-ech { font-size: 7px; letter-spacing: -.02em; }
+.sym-hq { font-size: 7.5px; }
+.sym-label { font-size: 9.5px; }
+.mk.unit { cursor: default; }
+/* a followed unit's stations around the window: straight between its stations (dashed), the days before lighter */
+.way { fill: none; stroke-width: 2; stroke-dasharray: 5 3; stroke-linejoin: round; }
+.way.before { stroke-opacity: .55; }
+.way-label { font-size: 11px; font-style: italic; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
 .mk { cursor: pointer; transition: opacity 120ms; }
 .mk.future { opacity: 0.2; }
 .mk.attack.future { opacity: 0; pointer-events: none; }
@@ -174,3 +193,17 @@ p.none { margin: 0; font-style: italic; color: var(--ink-3); }
   .depths a small { display: inline; margin-left: 8px; }
 }
 @media (max-width: 480px) { .wrap { padding-inline: 16px; } h1 { font-size: 26px; } .pack .plate { grid-template-columns: 120px minmax(0, 1fr); } }
+
+/* the day maps' stepper (a dated frame's records depth): the days as buttons, the one shown marked, a play that steps */
+.sitmap-steps { position: absolute; top: 10px; left: 10px; z-index: 2; display: flex; align-items: center; gap: 4px; padding: 4px 8px;
+  font: 13px/1.2 var(--serif); color: var(--ink-2); background: color-mix(in srgb, var(--surface) 90%, transparent); border: 1px solid var(--rule); border-radius: 2px; }
+.sitmap-steps button { font: inherit; color: var(--ink-2); background: none; border: 0; padding: 2px 4px; cursor: pointer; border-radius: 2px; }
+.sitmap-steps button:hover, .sitmap-steps button:focus-visible { background: var(--wash); }
+.sitmap-steps button.on { color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.sitmap-steps .play { display: inline-flex; align-items: center; padding: 4px 6px; }
+.sitmap-steps .play.on { color: var(--ink); background: var(--wash); }
+/* a situation map's list (the enemy divisions it lists as facing the bridgehead), under the map */
+.sitmap-list { margin: 8px 14px 4px; font-size: 13px; color: var(--ink-2); }
+.sitmap-list p { margin: 0 0 4px; }
+.sitmap-list .items { display: flex; flex-wrap: wrap; gap: 2px 6px; }
+.sitmap-list[hidden] { display: none; }

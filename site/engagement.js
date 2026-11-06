@@ -11,7 +11,8 @@
 // periscope, closing in, the frame's own figures (panels.js: the registry of each engagement's panels, each a module
 // under site/panels/), the Sources view (one moment at a time, source by source), the claims board and how this was
 // read. Each is a part of this one page, shown by the address. A frame whose records sit closer than a world coastline
-// tells (Algiers) names a relief and a road map in its front matter, drawn under the marks.
+// tells (Algiers) names a relief and a road map in its front matter, drawn under the marks; a frame inland (Remagen) a
+// relief with its rivers, and a dated situation map's front and units (records/fronts/), with each followed unit's way in.
 (async () => {
   const E = Engage, esc = EV.esc;
   const index = await fetch(RECORDS + "engagements/index.json").then(r => r.json());
@@ -27,6 +28,14 @@
   // the map's base where the front matter asks for one: today's relief and coastline (records/relief/<name>/, the
   // tiles' box from the build) and the traced roads of 1942 (records/roads/)
   const ROADS = D.roads ? await d3.json(`${RECORDS}roads/${D.roads}-primary.geojson`).catch(() => null) : null;
+  // a relief built with its rivers (Natural Earth): for a frame inland, where the relief shows a valley and not its river
+  const RIVERS = (await Promise.all((D.relief || []).filter(r => r.rivers)
+    .map(r => d3.json(`${RECORDS}relief/${r.name}/rivers.geojson`).catch(() => null)))).filter(Boolean);
+  // the dated situation maps (records/fronts/, the front matter's `fronts`, in date order): each one's front line and unit
+  // symbols, the staff's picture of its day, drawn under the records as context; the account shows the first, the records
+  // depth the latest at its clock
+  const SITMAPS = (await Promise.all((D.fronts || []).map(f => d3.json(`${RECORDS}fronts/${f.name}.geojson`)
+    .then(gj => ({ meta: f, gj }), () => null)))).filter(Boolean);
   // the story's steps (the build's `steps`): each with the time of its earliest clocked entry and its framing; a
   // [[step:]] link's address opens the records depth at that step
   const STEPS = (D.steps || []).map(st => ({ ...st, ms: E.T(st.utc || st.key) }));
@@ -58,6 +67,24 @@
   const byId = Object.fromEntries(PARTS.map(p => [p.id, p]));
   const opposedOf = of => D.against ? D.against.includes(of) : !!of && !(D.own || []).includes(of);
   const LIGHTER = new Set(["press", "intelligence"]);   // not a record: the lighter ink, whichever side's
+  // each sheet's front, its placed symbols and the ones it only lists (a box of the divisions facing the bridgehead, not
+  // positions), its hour in words, and its time: the sheets' "1200" taken as A (GMT+1), the army group's own time, assumed
+  SITMAPS.forEach(S => {
+    S.runs = S.gj.features.filter(f => f.properties.kind === "front").map(f => f.geometry.coordinates);
+    const units = S.gj.features.filter(f => f.properties.kind === "unit")
+      .map(f => ({ ...f.properties, lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], opposed: opposedOf(f.properties.of) }));
+    S.placed = units.filter(u => !u.list);
+    S.listed = units.filter(u => u.list);
+    S.hour = `${S.meta.as_of.slice(2, 6)} on ${d3.utcFormat("%-d %B %Y")(new Date(S.meta.date))}`;
+    S.ms = E.T(`${S.meta.date}T${String(Number(S.meta.as_of.slice(2, 4)) - 1).padStart(2, "0")}:${S.meta.as_of.slice(4, 6)}Z`);
+  });
+  // the sheet drawn now, and what the drawing reads of it
+  let SITMAP = null, FRONT = null, FRONT_RUNS = [], FRONT_UNITS = [], FRONT_HOUR = "";
+  const useSitmap = S => { SITMAP = S; FRONT = S ? S.gj : null; FRONT_RUNS = S ? S.runs : []; FRONT_UNITS = S ? S.placed : []; FRONT_HOUR = S ? S.hour : ""; };
+  const sitmapAt = ms => SITMAPS.reduce((cur, S) => (S.ms <= ms ? S : cur), SITMAPS[0] || null);
+  useSitmap(SITMAPS[0] || null);
+  const SITMAP_DAYS = SITMAPS.map(S => d3.utcFormat("%-d")(new Date(S.meta.date)));
+  const STATIONS = D.stations || {};
   const inkOf = x => LIGHTER.has(x.source_kind) ? "var(--ink-3)" : x.opposed ? "var(--japan)" : x.of ? "var(--ink-2)" : "var(--ink-3)";   // no `of`: a place
   const colour = id => byId[id]?.colour ? `var(--c${byId[id].colour})` : byId[id] ? inkOf(byId[id]) : "var(--ink-2)";
   const evColour = e => byId[e.actor] ? colour(e.actor) : inkOf(e);
@@ -79,6 +106,22 @@
   const timed = D.events.filter(e => e.ms != null && !Number.isNaN(e.ms));
   let t0 = D.window ? E.T(D.window.from) : d3.min(timed, e => e.ms), t1 = D.window ? E.T(D.window.to) : d3.max(timed, e => e.ms);
   if (t1 - t0 < 3600e3) { t0 -= 1800e3; t1 += 1800e3; }
+  // each followed subject's colour, the same in the account's who and on the map: the build's, else the chronology's
+  // column, else the next free of the three checked ones (a followed unit with no entries of its own, Neuburg's); the
+  // other side has none (dashed in the who)
+  const SUBJECT_COLOUR = (() => {
+    const colsOf = Object.fromEntries(E.chronologyColumns(D.events, PARTS).filter(c => c.subject && c.participant).map(c => [c.participant, c.colour]));
+    const used = new Set(PARTS.map(p => p.colour).filter(Boolean));
+    let slot = 1;
+    return Object.fromEntries(PARTS.map(p => {
+      if (p.colour) return [p.id, `var(--c${p.colour})`];
+      if (colsOf[p.id]) return [p.id, colsOf[p.id]];
+      if (!(p.track || p.unit)) return [p.id, null];
+      while (used.has(slot)) slot++;
+      return [p.id, slot <= 3 ? `var(--c${slot++})` : "var(--ink)"];
+    }));
+  })();
+
   // ---------- the tempo decides which view leads (guides/OPERATIONS-VIEWER.md, 3). Clocked: the map plays and the log
   // follows it, as below. Dated or monthly: there is no clock to play, so the time controls and the log go, the map
   // stands still with every mark shown, and the chronology leads, full width, where the log was.
@@ -86,6 +129,11 @@
   // The clock plays only on the records depth of a clocked frame. The account's map is the same drawing with the clock
   // at the window's end: every track, mark and place shown, no play button, no lanes, no fading (zoom and pan stay).
   const PLAYS = CLOCKED && IN("records");
+  if (PLAYS) useSitmap(sitmapAt(params.get("at") ? E.T(params.get("at")) : t1));
+  // a dated frame has no clock to play; its records depth steps through the day maps instead (`&on=1945-03-13`), the
+  // stations drawn to the map's day
+  const STEPPER = !PLAYS && IN("records") && SITMAPS.length > 1;
+  if (STEPPER) useSitmap(SITMAPS.find(S => S.meta.date === params.get("on")) || SITMAPS[0]);
   // the story told in steps sits beside the map on the records depth, with the log behind a tab when the clock plays
   const STEPPED = IN("records") && STEPS.length > 0;
   if (!PLAYS) {
@@ -151,7 +199,11 @@
     D.fixes.some(f => !f.on_track && f.kind !== "ship") && `<span><svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="4.5" fill="none" stroke="var(--ink-2)" stroke-width="1.4" stroke-dasharray="2 2"/></svg>Contradicted in the report</span>`,
     D.positions.length && `<span><svg width="10" height="10" viewBox="-5 -5 10 10"><rect x="-3" y="-3" width="6" height="6" fill="var(--ink-3)"/></svg>A place in the records</span>`,
     D.positions.some(r => r.lat2 != null) && `<span><svg width="16" height="12" viewBox="0 0 16 12"><rect x="1" y="1" width="14" height="10" fill="none" stroke="var(--ink-2)" stroke-width="1.2"/></svg>A grid square the record names (our decoding)</span>`,
-    (D.relief || []).length && `<span><svg width="18" height="12" viewBox="0 0 18 12"><rect x="1" y="1" width="16" height="10" fill="var(--land)" stroke="var(--coast)"/></svg>Relief and coast: today's elevation (SRTM, USGS)</span>`,
+    (D.relief || []).length && `<span><svg width="18" height="12" viewBox="0 0 18 12"><rect x="1" y="1" width="16" height="10" fill="var(--land)" stroke="var(--coast)"/></svg>Relief and coast: today's elevation (SRTM, USGS)${RIVERS.length ? "; rivers from Natural Earth" : ""}</span>`,
+    FRONT && `<span>${EV.legendMark.front}<span>The front at ${IN("account") || SITMAPS.length < 2 ? esc(FRONT_HOUR) : `1200 on ${esc(SITMAP_DAYS.slice(0, -1).join(", "))} and ${esc(SITMAP_DAYS[SITMAP_DAYS.length - 1])} ${esc(d3.utcFormat("%B %Y")(new Date(SITMAPS[0].meta.date)))}, ${STEPPER ? "the one chosen on the map" : "the latest at the clock"}`}, as the <a href="${esc(SITMAP.meta.cite.href)}" target="_blank" rel="noopener">12th Army Group's ${SITMAPS.length > 1 && !IN("account") ? "maps" : "map"}</a> drew it (traced, ± about ${Math.max(1, Math.round(SITMAP.meta.fit_km * 2))} km), ticked as the map ticks it, on its own side</span></span>`,
+    FRONT_UNITS.some(u => !u.opposed) && `<span>${EV.legendMark.unitUs}A US division or corps on that map: in its area, not at a position</span>`,
+    FRONT_UNITS.some(u => u.opposed) && `<span>${EV.legendMark.unitEnemy}The enemy as that map placed them (US intelligence)</span>`,
+    Object.values(STATIONS).some(rows => rows.length > 1) && `<span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" class="way" stroke="var(--ink-2)"/></svg>A unit's stations, joined straight; lighter in the week before the engagement</span>`,
     ROADS && `<span><svg width="22" height="10"><line x1="1" y1="5" x2="21" y2="5" class="road"/></svg>Primary roads of 1942 (OSS Map 967, traced, ± about 4 km)</span>`,
     IN("account") && PATH.length > 1 && `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--ink-3)" stroke-width="1.4" stroke-dasharray="2 4"/></svg><i>The convoy's path as the boats saw it (ours)</i></span>`,
   ].filter(Boolean).join("");
@@ -159,7 +211,7 @@
   // ---------- map
   const svg = d3.select("#map");
   const HATCH = EV.hatchDef(svg);   // the intelligence estimates' hatch (inferred, never solid)
-  const gLand = svg.append("g"), gGrat = svg.append("g"), gRelief = svg.append("g"), gPlace = svg.append("g"), gPath = svg.append("g"), gTrk = svg.append("g"), gMsg = svg.append("g"),
+  const gLand = svg.append("g"), gGrat = svg.append("g"), gRelief = svg.append("g"), gFront = svg.append("g"), gWay = svg.append("g"), gPlace = svg.append("g"), gPath = svg.append("g"), gTrk = svg.append("g"), gMsg = svg.append("g"),
         gNowName = svg.append("g"), gMk = svg.append("g"), gNow = svg.append("g"), gPulse = svg.append("g");
   let proj = null, BASE = null, W = 0, H = 0, quiet = false, t = t1, playing = false, raf = 0, lastT = null;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -185,8 +237,203 @@
       r.els.forEach(el => el.attr("x", a[0]).attr("y", a[1]).attr("width", b[0] - a[0]).attr("height", b[1] - a[1]));
     });
     gRelief.selectAll("path.road").data(ROADS ? [ROADS] : []).join("path").attr("class", "road").attr("d", d3.geoPath(proj));
+    gRelief.selectAll("path.river-edge").data(RIVERS).join("path").attr("class", "river-edge").attr("d", d3.geoPath(proj));
+    gRelief.selectAll("path.river").data(RIVERS).join("path").attr("class", "river").attr("d", d3.geoPath(proj));
   }
-  const ruler = scaleBar(document.querySelector(".map-box"), { units: ["nm"] });
+  // the situation map's picture: the front, then each unit's symbol (hover: what the map says, and what it doesn't)
+  function drawFront(inView) {
+    gFront.selectAll("*").remove();
+    if (!FRONT) return;
+    EV.frontLine(gFront, FRONT_RUNS, P);
+    const ECH = { xx: "division", xxx: "corps", xxxx: "army", xxxxx: "army group", xxxxxx: "theatre command" };
+    const REL = { part_of: "part of", under_command: "under", attached_to: "attached to" };
+    const unitName = id => PARTS.find(p => p.unit === id)?.name || id;
+    FRONT_UNITS.filter(u => inView(P(u.lon, u.lat))).forEach(u => {
+      const ties = (SITMAP.meta.ties || {})[u.unit] || [], own = ties.find(t => !t.path.length);
+      const tie = ties.length ? { colour: SUBJECT_COLOUR[(own || ties[0]).participant] || "var(--ink-2)", own: !!own } : null;
+      const tieHTML = ties.map(t => `<div class="m"><b>${esc(byId[t.participant].name)}</b>${t.path.length
+        ? `: ${t.path.map((x, i) => `${REL[x.relation] || x.relation} ${i === t.path.length - 1 ? `this ${ECH[u.echelon] || "unit"}` : esc(unitName(x.other))} (${EV.cite(x.cite)})`).join(", ")} on ${esc(d3.utcFormat("%-d %B")(new Date(SITMAP.meta.date)))}`
+        : ": this symbol, a subject here"}</div>`).join("");
+      const g = gFront.append("a").attr("href", SITMAP.meta.cite.href).attr("target", "_blank").attr("rel", "noopener")
+        .append("g").attr("class", "mk unit").attr("transform", `translate(${P(u.lon, u.lat).map(v => v.toFixed(1))})`);
+      EV.unitSymbol(g, u, HATCH, tie);
+      g.append("rect").attr("x", -14).attr("y", -12).attr("width", 28).attr("height", 22).attr("fill", "transparent");
+      g.on("mouseenter", ev => EV.showTip(ev, `<div class="v">${esc(E.nation(u.of))} ${esc(ECH[u.echelon] || u.echelon)} <span class="typed">${esc(u.label)}</span>${u.arm && u.arm !== "unread" ? ` <i>(${esc(u.arm)})</i>` : ""}</div>`
+        + `<div class="k">${esc(SITMAP.meta.cite.source_title)} · situation at ${esc(FRONT_HOUR)}</div>`
+        + tieHTML + `<div class="m">${u.opposed ? "Where the US army group placed it: its intelligence picture of the day, not the unit's own record." : "Where the army group placed its own unit that day."} A symbol stands in its unit's area, not at a position.</div>`
+        + `<div class="i">Traced from the scan (the fit ± ${esc(SITMAP.meta.fit_km)} km) · click for the map</div>`))
+        .on("mousemove", EV.moveTip).on("mouseleave", EV.hideTip);
+    });
+    drawListed();   // the day's list, under the map
+  }
+  // each river's name once, along its longest stretch in view, reading left to right (or down, for one running north and
+  // south), as a map letters water (in italics, spaced), where that stretch is clearest of the marks
+  function drawRiverNames(busy) {
+    gRelief.selectAll(".river-names").remove();
+    const names = gRelief.append("g").attr("class", "river-names"), longest = {};
+    RIVERS.flatMap(fc => fc.features).forEach(f => {
+      const pts = f.geometry.coordinates.map(c => P(c[0], c[1])).filter(([x, y]) => x > 20 && x < W - 20 && y > 20 && y < H - 20);
+      const len = d3.sum(pts.slice(1), (q, i) => Math.hypot(q[0] - pts[i][0], q[1] - pts[i][1]));
+      const name = f.properties.name;
+      if (name && len > 160 && len > (longest[name]?.len || 0)) longest[name] = { len, pts };
+    });
+    Object.entries(longest).forEach(([name, { len, pts }], i) => {
+      const [a, b] = [pts[0], pts[pts.length - 1]];
+      const run = Math.abs(b[0] - a[0]) >= Math.abs(b[1] - a[1]) ? (b[0] < a[0] ? [...pts].reverse() : pts) : (b[1] < a[1] ? [...pts].reverse() : pts);
+      // the clearest place along it for a name about 60 px long
+      const along = [0], need = name.length * 11;
+      run.slice(1).forEach((q, k) => along.push(along[k] + Math.hypot(q[0] - run[k][0], q[1] - run[k][1])));
+      const at = o => run[Math.max(0, d3.bisectLeft(along, o) - 1)];
+      let off = len * 0.3, clear = -1;
+      for (let o = 20; o < len - need - 20; o += 15) {
+        const c = d3.min([0, 0.5, 1].map(f => at(o + f * need)), q => d3.min(busy, b2 => Math.hypot(b2[0] - q[0], b2[1] - q[1])) ?? 999);
+        if (c > clear) { clear = c; off = o; }
+      }
+      names.append("path").attr("id", `river-${i}`).attr("d", d3.line().curve(d3.curveBasis)(run)).attr("fill", "none");
+      names.append("text").attr("class", "river-name").attr("dy", -5).append("textPath").attr("href", `#river-${i}`).attr("startOffset", off.toFixed(0)).text(name);
+    });
+  }
+  // which side is whose: each side's mark (EV.insignia) and its name, on its side of the front (Engage.frontSide), where
+  // the map is clearest within a few miles of the line: away from the symbols, the stations and the places
+  // the map's list (the enemy divisions it lists as facing the bridgehead), under the map on the page, not over the
+  // drawing: its symbols in the order the map lists them, each with its designation as written; a list, not positions
+  const overlays = () => {   // the map's own controls over the drawing, in the svg's pixels: the side marks keep clear of them
+    const at = svg.node().getBoundingClientRect();
+    return [...document.querySelectorAll(".map-box .sitmap-steps, .map-box .scalebar, .map-box .zoom-btns")].filter(el => !el.hidden)
+      .map(el => { const r = el.getBoundingClientRect(); return [r.left - at.left, r.top - at.top, r.right - at.left, r.bottom - at.top]; });
+  };
+  const LISTED = document.createElement("div");
+  LISTED.className = "sitmap-list";
+  LISTED.hidden = true;
+  document.querySelector(".map-box").after(LISTED);
+  function drawListed() {
+    const L = SITMAP ? [...SITMAP.listed].sort((a, b) => a.y - b.y || a.x - b.x) : [];
+    LISTED.hidden = !L.length;
+    if (!L.length) return;
+    const sym = u => { const w = 24 + String(u.label).length * 6.4, el = d3.create("svg").attr("width", w * 1.4).attr("height", 34).attr("viewBox", `-12 -14 ${w} 26`);
+      EV.unitSymbol(el.append("g"), u, HATCH); return el.node().outerHTML; };
+    LISTED.innerHTML = `<p><i>Facing the bridgehead, as the map at ${esc(FRONT_HOUR)} lists them</i> (a list beside the bridgehead on the map, not positions):</p>`
+      + `<div class="items">${L.map(u => `<span title="${esc(E.nation(u.of))} ${esc(u.label)}: listed, not placed">${sym(u)}</span>`).join("")}</div>`;
+  }
+  const busyPoints = () => [...(FRONT ? FRONT_UNITS.map(u => P(u.lon, u.lat)) : []),
+    ...overlays().flatMap(([x0, y0, x1, y1]) => d3.range(x0, x1 + 1, 16).flatMap(x => d3.range(y0, y1 + 1, 16).map(y => [x, y]))), ...Object.values(STATIONS).flat().map(r => P(r.lon, r.lat)),
+    ...D.positions.filter(r => r.lat != null).map(r => P(r.lon, r.lat))];
+  // which side is whose: each side's mark (EV.insignia) and its name. One place for each, chosen once for every day's map
+  // (on its side of the front in all of them, Engage.frontSide; clear of all their symbols, the stations and the places;
+  // near the line), so stepping from day to day never moves it: it marks a side, not anything at that spot. Under the
+  // map's own side, the map's hour, where nothing else on the map gives it (the account, a clock that plays); the stepper
+  // gives the day where there is one.
+  let sidesAt = null;   // [[x, y, side], ...] for the current zoom, kept while the day changes
+  function drawSides(fresh = false) {
+    gFront.selectAll(".side").remove();
+    if (!FRONT || !proj) { drawRiverNames(busyPoints()); return; }
+    const own = SITMAPS.flatMap(S => S.placed).find(u => !u.opposed)?.of, enemy = SITMAPS.flatMap(S => S.placed).find(u => u.opposed)?.of;
+    const shown = IN("account") ? [SITMAPS[0]] : SITMAPS;   // the maps this depth can show
+    if (fresh || !sidesAt) {
+      const lines = shown.map(S => S.runs.map(r => r.map(c => P(c[0], c[1]))));
+      const toLine = (line, [x, y]) => d3.min(line.flatMap(r => r.slice(1).map((b, i) => {
+        const a = r[i], dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1, u = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / L2));
+        return Math.hypot(x - a[0] - u * dx, y - a[1] - u * dy);
+      }))) ?? 999;
+      const busy = [...shown.flatMap(S => S.placed.map(u => P(u.lon, u.lat))), ...busyPoints()];
+      const rows = side => (side === -1 && !STEPPER ? [0, 26, 40] : [0, 26]), half = side => (side === -1 && !STEPPER ? 70 : 14);
+      sidesAt = [];
+      [-1, 1].forEach(side => {
+        let best = null;
+        for (let y = 40; y < H - 60; y += 12) for (let x = 40 + half(side); x < W - 60 - half(side); x += 12) {
+          const ds = lines.map(l => toLine(l, [x, y]));
+          if (Math.min(...ds) < 40 || Math.min(...ds) > 160) continue;
+          const ll = proj.invert([x, y]);
+          if (!shown.every(S => E.frontSide(S.runs, ll) === side)) continue;
+          const clear = d3.min(rows(side).flatMap(r => [x - half(side), x, x + half(side)].map(cx => [cx, y + r])),
+            ([cx, cy]) => d3.min(busy, q => Math.hypot(q[0] - cx, (q[1] - cy) * 1.6)) ?? 999);
+          const score = Math.min(clear, 90) - y * 0.15;   // clear ground first, then the top of the map
+          if (clear >= 26 && (!best || score > best.score)) best = { x, y, score };
+        }
+        if (best) sidesAt.push([best.x, best.y, side]);
+      });
+    }
+    const busy = busyPoints();
+    sidesAt.forEach(([x, y, side]) => {
+      const of = side === -1 ? own : enemy;
+      if (!of) return;
+      const g = gFront.append("g").attr("class", "side").attr("transform", `translate(${x},${y})`);
+      EV.insignia(g, of);
+      g.append("text").attr("class", "side-name").attr("y", 26).attr("text-anchor", "middle").text(E.nation(of));
+      if (side === -1 && !STEPPER) g.append("text").attr("class", "front-date").attr("y", 40).attr("text-anchor", "middle").text(`the front at ${FRONT_HOUR}`);
+      busy.push([x, y], [x, y + 22], [x, y + 36]);
+    });
+    drawRiverNames(busy);
+  }
+  // each followed unit's stations (its own record) from a week before the window to its end, joined straight and dashed
+  // (where it went between them is not recorded), the days before lighter, an arrowhead at the last; each dot links to its
+  // page, and gives its date on hover (the day shown is the stepper's or the map's, so the line carries no dates)
+  const dm = d3.utcFormat("%-d %b"), dayOf = d3.utcFormat("%Y-%m-%d");
+  // to what day the ways are drawn: on the account with a situation map, to the map's day, so the picture is one moment;
+  // on the records depth with a clock, to the clock's day; otherwise all of them
+  const waysTo = () => PLAYS ? dayOf(new Date(t)) : SITMAPS.length && (IN("account") || STEPPER) ? SITMAP.meta.date : "9999";
+  let waysDrawn = null;
+  function drawWays(limit = waysTo()) {
+    waysDrawn = limit;
+    gWay.selectAll("*").remove();
+    PARTS.forEach(p => {
+      const rows = (STATIONS[p.id] || []).filter(r => r.date <= limit);
+      if (!rows.length) return;
+      const pts = rows.map(r => P(r.lon, r.lat)), c = SUBJECT_COLOUR[p.id] || colour(p.id);
+      const k = rows.findIndex(r => r.inside), split = k < 0 ? rows.length - 1 : k;
+      if (split > 0) gWay.append("path").attr("class", "way before").attr("stroke", c).attr("d", d3.line()(pts.slice(0, split + 1)));
+      if (split < pts.length - 1) gWay.append("path").attr("class", "way").attr("stroke", c).attr("d", d3.line()(pts.slice(split)));
+      // the arrowhead, along the last leg that has a length
+      let j = pts.length - 1;
+      while (j > 0 && Math.hypot(pts[j][0] - pts[j - 1][0], pts[j][1] - pts[j - 1][1]) < 1) j--;
+      if (j > 0) {
+        const [bx, by] = pts[pts.length - 1], [ax, ay] = pts[j - 1], a = Math.atan2(by - ay, bx - ax) * 180 / Math.PI;
+        gWay.append("path").attr("d", "M0,0L-9,-4.5L-9,4.5Z").attr("fill", c).attr("transform", `translate(${bx.toFixed(1)},${by.toFixed(1)}) rotate(${a.toFixed(1)}) translate(-4,0)`);
+      }
+      rows.forEach((r, i) => {
+        const g = gWay.append("a").attr("href", r.cite.href || null).attr("target", "_blank").attr("rel", "noopener")
+          .append("g").attr("class", "mk").attr("transform", `translate(${pts[i].map(v => v.toFixed(1))})`);
+        g.append("circle").attr("r", 4.6).attr("fill", "var(--surface)");
+        g.append("circle").attr("r", 3.2).attr("fill", c).attr("fill-opacity", r.inside ? 1 : 0.6);
+        g.append("circle").attr("r", 9).attr("fill", "transparent");
+        g.on("mouseenter", ev => EV.showTip(ev, `<div class="v">${esc(p.name)} · ${esc(dm(new Date(r.date)))}</div><div class="k">${esc(r.place)}${r.precision ? " · " + esc(r.precision) : ""}</div><div class="m">${esc(r.words)}</div><div class="i">${esc(r.cite.source_title || "")} ${esc(r.cite.label || "")} · click for the page</div>`))
+          .on("mousemove", EV.moveTip).on("mouseleave", EV.hideTip);
+      });
+
+    });
+  }
+  if (STEPPER) {
+    const box = document.querySelector(".map-box"), bar = document.createElement("div");
+    bar.className = "sitmap-steps";
+    const month = d3.utcFormat("%B")(new Date(SITMAPS[0].meta.date));
+    bar.innerHTML = `<button type="button" class="play" aria-label="Step through the maps"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1,0L9,5L1,10Z" fill="currentColor"/></svg></button>`
+      + `<i>the army group's map of</i> ${SITMAPS.map((S, i) => `<button type="button" data-i="${i}">${esc(SITMAP_DAYS[i])}</button>`).join(" ")} <i>${esc(month)}</i>`;
+    box.append(bar);
+    const mark = () => bar.querySelectorAll("button[data-i]").forEach(b => b.classList.toggle("on", SITMAPS[+b.dataset.i] === SITMAP));
+    const go = i => {
+      switchSitmap(SITMAPS[i]); mark();
+      const q = new URLSearchParams(location.search); q.set("on", SITMAP.meta.date); history.replaceState(null, "", `?${q}`);
+    };
+    let timer = 0;
+    const stop = () => { clearInterval(timer); timer = 0; bar.querySelector(".play").classList.remove("on"); };
+    bar.addEventListener("click", ev => {
+      const b = ev.target.closest("button");
+      if (!b) return;
+      if (b.classList.contains("play")) {
+        if (timer) return stop();
+        let i = SITMAPS.indexOf(SITMAP);
+        if (i === SITMAPS.length - 1) { i = -1; }
+        b.classList.add("on");
+        const next = () => { i++; go(i); if (i >= SITMAPS.length - 1) stop(); };
+        next(); timer = setInterval(next, 1600);
+      } else { stop(); go(+b.dataset.i); }
+    });
+    mark();
+  }
+  // a land frame (no followed ship or boat: the Army's) in statute miles, as its reports give them, and kilometres; a sea
+  // frame in nautical miles
+  const ON_LAND = !PARTS.some(p => p.track);
+  const ruler = scaleBar(document.querySelector(".map-box"), { units: ON_LAND ? ["mi", "km"] : ["nm"] });
   const P = (lon, lat) => proj([lon, lat]);
   if (!D.box) document.querySelector(".map-box").hidden = true;
 
@@ -205,6 +452,9 @@
     EV.graticule(gGrat, proj, W, H);
     drawBase();
     const inView = ([x, y]) => x > 30 && x < W - 30 && y > 24 && y < H - 24;
+    drawFront(inView);
+    drawWays();
+    drawSides(true);
     gPlace.selectAll("*").remove();
     D.places.filter(p => inView(P(p.lon, p.lat))).forEach(p => gPlace.append("text").attr("class", "place")
       .attr("x", P(p.lon, p.lat)[0]).attr("y", P(p.lon, p.lat)[1]).attr("text-anchor", "middle").style("font-size", p.small ? "10px" : null).text(p.name));
@@ -232,6 +482,14 @@
       .attr("transform", d => `translate(${P(d.lon, d.lat).map(v => v.toFixed(1))})`);
     sel.selectAll("*").remove();
     const labelled = new Set();
+    // a place's label only where it has room: two places a few pixels apart (a bridge and its town) would print over
+    // each other, so the second keeps its mark and gives its name on hover
+    const taken = [];
+    const room = (d, text) => {
+      const [x, y] = P(d.lon, d.lat), b = [x + 6, y - 16, x + 6 + String(text).length * 6.2, y - 2];
+      if (taken.some(t => b[0] < t[2] && t[0] < b[2] && b[1] < t[3] && t[1] < b[3])) return false;
+      taken.push(b); return true;
+    };
     sel.each(function (d) {
       const g = d3.select(this);
       if (d.k === "fix") { g.append("circle").attr("r", 5).attr("fill", "var(--surface)"); g.append("circle").attr("r", 3.5).attr("fill", colour(d.f.who)); }
@@ -263,7 +521,7 @@
         g.append("rect").attr("x", -3).attr("y", -3).attr("width", 6).attr("height", 6).attr("fill", inkOf(d.r))
           .attr("fill-opacity", d.r.basis === "assumed" || d.r.basis === "approx" || d.r.basis === "hand-placed" ? 0.35 : 1);
         // few: labelled (many: on hover); a landmark (a 1942 sheet's name) only close in, where the names have room
-        if (D.positions.length <= 15 && !(d.r.kind === "landmark" && view.transform().k < 4)) g.append("text").attr("class", "port").attr("x", 6).attr("y", -5).text(d.r.label);
+        if (D.positions.length <= 15 && !(d.r.kind === "landmark" && view.transform().k < 4) && room(d, d.r.label)) g.append("text").attr("class", "port").attr("x", 6).attr("y", -5).text(d.r.label);
       }
       g.append("circle").attr("r", 11).attr("fill", "transparent");
     });
@@ -321,7 +579,24 @@
     });
   }
 
+  // another day's map in the last one's place: a step, never a glide (between two sheets nothing is drawn that neither
+  // gives), the old faded out under the new
+  function switchSitmap(S) {
+    if (!proj) { useSitmap(S); return; }
+    const old = gFront.node().cloneNode(true);
+    gFront.node().parentNode.insertBefore(old, gFront.node());
+    d3.select(old).attr("pointer-events", "none").transition().duration(reduced ? 0 : 500).attr("opacity", 0).remove();
+    useSitmap(S);
+    drawFront(([x, y]) => x > 30 && x < W - 30 && y > 24 && y < H - 24);
+    if (waysTo() !== waysDrawn) drawWays();
+    drawSides();
+    gFront.attr("opacity", 0).transition().duration(reduced ? 0 : 500).attr("opacity", 1);
+  }
   function drawFrame() {
+    if (proj && PLAYS && (STATIONS && Object.keys(STATIONS).length) && waysTo() !== waysDrawn) drawWays();
+    // the clock passing a sheet's hour: that day's front and symbols take the last one's place (a step, never a glide:
+    // between two sheets nothing is drawn that neither gives), the old faded out under the new
+    if (proj && PLAYS && SITMAPS.length > 1 && sitmapAt(t) !== SITMAP) switchSitmap(sitmapAt(t));
     if (proj) {
       const line = d3.line().x(p => P(...p)[0]).y(p => P(...p)[1]);
       const rows = [], nows = [];
@@ -669,16 +944,7 @@
     // who: one row per participant, the followed subjects in their colours (the chronology's: the build's or the next
     // free of the three checked ones), the other side dashed; the hull, kind and CO as the JSON gives them; the
     // silhouette at the library's one scale, as the order of battle draws it
-    const colsOf = Object.fromEntries(E.chronologyColumns(D.events, PARTS).filter(c => c.subject && c.participant).map(c => [c.participant, c.colour]));
-    const used = new Set(PARTS.map(p => p.colour).filter(Boolean));
-    let slot = 1;
-    const barOf = p => {
-      if (p.colour) return `var(--c${p.colour})`;
-      if (colsOf[p.id]) return colsOf[p.id];
-      if (!(p.track || p.unit)) return null;   // not followed: the other side, dashed
-      while (used.has(slot)) slot++;           // a followed subject with no entries of its own (Neuburg's units): the next free slot
-      return slot <= 3 ? `var(--c${slot++})` : "var(--ink)";
-    };
+    const barOf = p => SUBJECT_COLOUR[p.id];
     const convoyWords = p => { const c = D.convoys[p.convoy]; return c ? [[c.from, ...(c.via || []), c.to].filter(Boolean).join(" → "), c.sailed && `sailed ${c.sailed}`, c.ships.length && `${n(c.ships.length, "ship")} named in its record`].filter(Boolean).join("; ") : ""; };
     document.getElementById("who").innerHTML = PARTS.map(p => {
       const bar = barOf(p);
@@ -697,7 +963,9 @@
     document.getElementById("cap").textContent = ["The account is static: no clock, and nothing needs a hover; the records and the working have both.",
       TRACKED.length && "A line between a subject's reported positions is straight, and where it went between them is not recorded.",
       PATH.length > 1 && "The convoy's path, dotted, is computed from where the boats sighted it and where the Japanese record puts it: that is ours.",
-      placed && "A faint square is a place we placed, not one the record gives."].filter(Boolean).join(" ");
+      placed && "A faint square is a place we placed, not one the record gives.",
+      FRONT && `The front and the units are the 12th Army Group's map at ${FRONT_HOUR}, traced: the army group's picture of that day, context for the records, not their positions.${SITMAPS.length > 1 ? ` The records depth steps through its maps of ${SITMAP_DAYS.join(", ")} March.` : ""}`,
+      Object.values(STATIONS).some(rows => rows.length > 1) && `A unit's dashed line joins its stations straight: where it went between them is not recorded.${FRONT ? ` Its stations are drawn to the map's day, ${d3.utcFormat("%-d %B")(new Date(SITMAPS[0].meta.date))}, so the picture is one moment.` : ""}`].filter(Boolean).join(" ");
     document.getElementById("cap").hidden = false;
     // the doors: the records and the working, with their counts; the journeys, each subject's own page
     const first = d3.utcFormat("%Y-%m-%d")(new Date(t0));
