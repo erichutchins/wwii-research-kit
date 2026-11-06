@@ -300,7 +300,10 @@ def gcps_from(base, other, rows, patch=140, search=60, at=None):
         t = base[y - patch:y + patch, x - patch:x + patch].astype(float)
         X, Y = (int(round(at[n][0])), int(round(at[n][1]))) if at is not None else (x + dx, y + dy)
         win = other[max(0, Y - patch - search):Y + patch + search, max(0, X - patch - search):X + patch + search].astype(float)
-        if win.shape[0] < t.shape[0] or win.shape[1] < t.shape[1]:
+        # a town whose ring is off the base scan (21 March's towns west of its left edge) has no patch to match: it is
+        # placed through the transform
+        if (x < patch or y < patch or t.shape != (2 * patch, 2 * patch)
+                or win.shape[0] < t.shape[0] or win.shape[1] < t.shape[1]):
             out.append({**row, "x": X, "y": Y, "score": 0.0})
             continue
         m = match_template(win, t)
