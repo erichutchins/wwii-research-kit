@@ -22,7 +22,7 @@ trials on 6 November 2026; the costs are estimates from the March days, and say 
 | Also catalogued | one composite sheet (the Bulge, `2001628569`, no daily scan) and the collection's own record, both left out of the catalogue |
 | Scans | JPEG 2000, about 6 MB each (2.5 GB in all), about 6,650 × 5,980 px landscape to 18 April 1945, about 5,950 × 6,680 px portrait from 19 April (10 September 1944 is a double sheet, 13,008 px wide) |
 | Service | the scan by one address on the tile server (no bot check); any region at any size by IIIF (`info.json`, regions by pixel, sizes by width or percent), a crop in under a second |
-| Base maps | fifteen printings (`records/fronts/bases.yml`, B01–B15; each day's in `sitmaps.csv`, grouped by their overviews with `tools/sitmap_bases.py`): 1:500,000 sheets of Normandy (6 June – 4 August), then Brittany, the Loire, the Seine, changing every few days in August; a 1:750,000 sheet 2–5 September; one 1:1,000,000 plate of north-west Europe from 6 September 1944 to 6 April 1945, placed three ways on the paper (the March towns register on all three: 211 days from one reading); a 1:1,000,000 sheet of north Germany 7–18 April; a portrait 1:1,400,000 sheet of Germany from 19 April, with red boundaries from 20 May |
+| Base maps | fifteen printings (`records/fronts/bases.yml`, B01–B15; each day's in `sitmaps.csv`, grouped by their overviews with `tools/sitmap_bases.py`; every one but the double sheet of 10 September has its control points, `towns-<base>.csv`): 1:500,000 sheets of Normandy (6 June – 4 August), then Brittany, the Loire, the Seine, changing every few days in August; a 1:750,000 sheet 2–5 September; one 1:1,000,000 plate of north-west Europe from 6 September 1944 to 6 April 1945, placed three ways on the paper (the March towns register on all three: 211 days from one reading); a 1:1,000,000 sheet of north Germany 7–18 April; a portrait 1:1,400,000 sheet of Germany from 19 April, with red boundaries from 20 May |
 | Titles | the wording changes: "SITUATION - 2400 HRS 6 JUNE 1944, HQ FUSAG"; "SITUATION 1200 HRS 22 DECEMBER 1944, TWELFTH ARMY GROUP" (no report number); "TO ACCOMPANY G-3 REPORT NO. 275, SITUATION AS OF 071200 MAR. 1945" |
 | Dates | the catalogue's date is the title's on every sheet checked (eleven in March, one in December, one in June) |
 
@@ -144,16 +144,14 @@ The Library's servers cost patience: a second between requests, and a run's scan
 | Scope | Days | Tool work first | Reader work | Model cost, rough |
 |---|---|---|---|---|
 | **A. Catalogue, sizes, fetch** | 415 | none (done, and `fetch`) | none | nothing: 2.5 GB on disk, about half an hour |
-| **B. The control points of each base sheet** | done for the 1:1,000,000 plate (81 towns, 211 days), north Germany (26 crossings, 12 days) and the 1:1,400,000 sheet (60 crossings, 31 days; its red-overprinted printing from 20 May, B15, is read from its own scan); left: the eight 1944 sheets to 5 September | none: the conic fit, `sheet_towns.py --graticule` and the `bases` step are built | one reader per base, two passes of about two minutes (about 250,000 tokens a sheet); the two-day sheets of August 1944 only when an engagement wants them | a few dollars a base |
+| **B. The control points of each base sheet** | done for every base but the pasted double sheet of 10 September 1944 (one day): the 1:1,000,000 plate (81 towns, 211 days), north Germany (26 crossings), the 1:1,400,000 sheet and its May printing (60 and 58), the Normandy sheet (34), Brittany (31), the two sheets of mid-August (10 and 9, with a caveat), and the four sheets of late August and early September fitted on their margin ticks (16, 11, 14, 13) | none: the conic fit, `sheet_towns.py --graticule`, the margins solver and the `bases` step are built | one reader per base, one or two passes of a few minutes (about 100,000 to 250,000 tokens a sheet) | a few dollars a base |
 | **C. Every day's front** | 415 | B | the front job: a reader a day, 15 calls | low hundreds of dollars, a week of five readers at a few hours a day |
 | **D. Symbols where they matter** | the engagements' windows, the Bulge (16 December – 25 January), the Rhine crossings (7–31 March), the landings (6 June – 31 July): about 120 days | C | the symbols job: a reader a day, 40–60 calls | low hundreds of dollars |
 | **E. Symbols everywhere** | the other ~300 days | D | the same | several hundred to a thousand dollars; 20,000 symbols to review |
 
-A is done but for the fetch; B is done for every sheet from 6 September 1944 to the end (the 1:1,000,000 plate from
-its towns, north Germany and the 1:1,400,000 sheets from their graticules), and what remains of it is the 1944 sheets,
-each the same job: `sheet_towns.py crops --graticule` round a conic seeded by three or four crossings read on the
-sheet's margins, a reader's pass or two, `accept`. Do them as their days are wanted: the Normandy sheet (B01) for June,
-the rest of August only for an engagement there. Then C as the first long run, D by engagement as the kit's
+A is done but for the fetch; B is done for every base but the double sheet of 10 September 1944 (two plates pasted on
+one scan, one day: when wanted, each half is read as its own base from its own margins, which
+`sources/fronts-work/bases/B10-margins.txt` holds, and traced apart). Then C as the first long run, D by engagement as the kit's
 Army units are followed into those days, and E only if a page wants it: a front line on every day is the context the
 engagement pages need; the enemy's divisions on a quiet Tuesday in Lorraine are a catalogue nobody has asked for.
 
@@ -190,6 +188,20 @@ What B needs in the tool, in order:
    offset; B14's own points register on it at only 1 of 13, the May scan being 1.7 per cent larger, which is why a
    printing scanned differently gets its own file). The 1:1,000,000 plate's crossings agreed with its towns' fit
    within 10 px, so `towns-B11.csv` stands.
+
+   **The 1944 sheets, the same day, from their margins.** A new sheet's first fit comes from its margins alone: where
+   each labelled meridian's tick meets the top or bottom neat line and each labelled parallel's the left or right
+   (`1W 2460,330`, `49.5N 60,2210` in the readings file), which one reader reads from four margin strips in a few
+   minutes, and `conic_from_lines` solves as a similarity (a free affine's shear is not pinned by two edges and put a
+   sheet's far corners degrees out). The half-degree graticule of the 1:500,000 sheets then read as the others: the
+   Normandy sheet (B01, `towns-B01.csv`, 34 crossings, 0.14 km rms, which register on 1 July at 31 of 34) and Brittany
+   (B02, 31 crossings, 0.22 km rms) in one pass each; the Loire sheets of mid-August (B03, B04) worse, 10 and 9
+   crossings at 0.6 and 0.5 km rms after two passes, because those sheets' kilometre grid is another family of thin
+   straight lines 50 to 100 px from the graticule and the readers took it in places (`bases.yml` says a third pass
+   would tighten them if those eleven days are wanted). The four sheets of 22 August to 5 September (B05 to B08, two
+   of them 1:750,000) draw no graticule inside the map at all, only the ticks on the neat line: they are fitted on the
+   ticks, 16, 11, 14 and 13 of them, each row carrying the coordinate read and the other from the conic solved on the
+   margins and saying so, at 0.14 to 0.48 km rms; they register on another day of each base at 12 of 14 and better.
 3. Done: `--gcps-from towns-B11.csv` matches the sheet's towns on any day of the plate (22 December 1944: 71 of 79
    within 4 px of one affine transform, the rest placed through it), and the trace covers the sheet.
 4. A `--base` overview in the work folder of each day so a reviewer can see at a glance where the front is on the

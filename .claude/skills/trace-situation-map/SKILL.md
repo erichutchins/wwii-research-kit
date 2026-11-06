@@ -48,7 +48,8 @@ uv run tools/trace_front.py 12ag-1945-03-08 --gcps-from       # matched to the Y
 `gcps_from` is the base's `towns` in `records/fronts/bases.yml`: `towns-B11.csv` for any day of the 1:1,000,000 plate
 (6 September 1944 to 6 April 1945; 81 towns across the sheet, so the trace covers the sheet), `towns-B13.csv` for
 7–18 April 1945, `towns-B14.csv` for 19 April to 19 May and `towns-B15.csv` from 20 May (the sheets' graticule
-crossings, 26, 60 and 58), or a day's
+crossings, 26, 60 and 58), `towns-B01.csv` to `towns-B08.csv` for the 1944 sheets to 5 September (their crossings, or
+their margin ticks where the sheet draws no graticule inside), or a day's
 name whose twenty were read by eye (the March days use `12ag-1945-03-07`, and keep their polynomial fit).
 
 The daily sheets are printings of one base map for months at a time, so a day's towns are found by matching the rings
@@ -59,10 +60,12 @@ file by hand.
 
 **A base without `towns` in `bases.yml`** (the 1:500,000 and 1:750,000 sheets of June–September 1944, north Germany
 7–18 April 1945, the portrait 1:1,400,000 sheet from 19 April; `tools/sitmap_bases.py check` tells for a doubtful one)
-has no points to match to. Its control points are read once, across the sheet, from its own graticule: three or four
-crossings read on the margins, where the degrees are printed, to seed the conic, then `tools/sheet_towns.py crops
---graticule` round the conic's prediction for every crossing on the sheet and a reader's pass or two over the crops
-(`guides/SITUATION-MAPS.md` §5), into `records/fronts/towns-<base>.csv`, and `bases.yml` says so. Crossings spread over
+has no points to match to (only the double sheet of 10 September 1944 now). Its control points are read once, across
+the sheet, from its own graticule: the degree labels on its margins, where each labelled tick meets the neat line, to
+seed the conic (`1W 2460,330`, `49.5N 60,2210`), then `tools/sheet_towns.py crops --graticule` round the conic's
+prediction for every crossing on the sheet and a reader's pass or two over the crops (`guides/SITUATION-MAPS.md` §5),
+into `records/fronts/towns-<base>.csv`, and `bases.yml` says so. A sheet that draws no graticule inside the map is
+fitted on its margin ticks (`accept` on the margins file). Crossings spread over
 the sheet, not a corner of it: the trace covers the points' spread and nothing outside it.
 
 ## 3. The front, and the check

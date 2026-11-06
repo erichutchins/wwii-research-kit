@@ -322,19 +322,21 @@ def register(rows, src_scan, other):
     A = np.array([[float(r["x"]), float(r["y"]), 1.0] for r in rows])
 
     def fit(found):
+        # the transform fitted to the matches that agree with it, the tolerance tightened from 30 px to 4: one gross
+        # mismatch among a dozen points along two edges of a sheet twists a first fit enough to put the rest outside 4
         B = np.array([[r["x"], r["y"]] for r in found], float)
         ok = np.ones(len(rows), bool)
         T, res = np.zeros((3, 2)), np.full(len(rows), np.inf)
-        for _ in range(4):
+        for tol in (30, 12, 4, 4):
             if ok.sum() < 3:
                 break
             T = np.linalg.lstsq(A[ok], B[ok], rcond=None)[0]
             res = np.hypot(*(A @ T - B).T)
-            ok = res <= 4
+            ok = res <= tol
         return ok, res, T
 
     ok, res, T = fit(found)
-    if ok.sum() < 12 and len(rows) >= 12:
+    if ok.sum() < min(12, max(6, int(round(0.6 * len(rows))))):
         # another scanning of the plate (the 1:1,400,000 sheets of April and May 1945 differ by 1.7 % in scale): one
         # offset doesn't serve the whole sheet, so the transform is fitted loosely to what the offset found, each town
         # searched again round where it puts it, and the fit tightened. Not done when the offset serves (the March days'
