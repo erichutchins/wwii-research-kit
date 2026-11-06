@@ -612,8 +612,10 @@ def find_boxes(g, heavy, area):
     return sorted(keep, key=lambda b: (b[1] // 60, b[0]))
 
 
-def contact_sheet(rgb, points, out, half=(75, 40), scale=2.2, cols=6, labels=None):
-    """Crops of the scan round each point, magnified and numbered, in a grid: for reading symbols by eye."""
+def contact_sheet(rgb, points, out, half=(75, 40), scale=2.2, cols=6, labels=None, page=36):
+    """Crops of the scan round each point, magnified and numbered, in a grid: for reading symbols by eye. More than
+    `page` crops (a whole sheet's symbols) are also written as pages, out-1.jpg, out-2.jpg, ..., each small enough to
+    read at a glance; the numbers run on across the pages. Returns the pages written."""
     tiles = []
     for i, (x, y) in enumerate(points):
         hx, hy = half
@@ -626,10 +628,21 @@ def contact_sheet(rgb, points, out, half=(75, 40), scale=2.2, cols=6, labels=Non
     if not tiles:
         return
     w, h = tiles[0].size
-    sheet = Image.new("RGB", (cols * (w + 4), ((len(tiles) + cols - 1) // cols) * (h + 4)), "white")
-    for i, t in enumerate(tiles):
-        sheet.paste(t, ((i % cols) * (w + 4), (i // cols) * (h + 4)))
-    sheet.save(out, quality=85)
+
+    def save(part, dest):
+        sheet = Image.new("RGB", (cols * (w + 4), ((len(part) + cols - 1) // cols) * (h + 4)), "white")
+        for i, t in enumerate(part):
+            sheet.paste(t, ((i % cols) * (w + 4), (i // cols) * (h + 4)))
+        sheet.save(dest, quality=85)
+
+    save(tiles, out)
+    if len(tiles) <= page:
+        return [out]
+    out = Path(out)
+    pages = [out.with_name(f"{out.stem}-{k + 1}{out.suffix}") for k in range((len(tiles) + page - 1) // page)]
+    for k, dest in enumerate(pages):
+        save(tiles[k * page:(k + 1) * page], dest)
+    return pages
 
 
 def grid_ticks(d, x0, y0, x1, y1):
@@ -742,9 +755,12 @@ def main():
         rows = list(csv.DictReader(open(REC / f"{a.map}-units.csv")))
         tags = [f"{i} {r['of']} {r['echelon']} {r['arm'] or '-'} {r['label']}{' L' if r.get('list') else ''}" for i, r in enumerate(rows, 1)]
         out = work / "units.jpg"
-        contact_sheet(np.asarray(Image.open(scan).convert("RGB")), [(int(r["x"]) + 10, int(r["y"]) - 5) for r in rows], out,
-                      half=(80, 45), scale=2.2, cols=5, labels=tags)
-        print(f"wrote {out}: {len(rows)} symbols, each tagged with its row, side, echelon, arm and label as recorded (L: listed)")
+        for old_page in work.glob("units-[0-9]*.jpg"):
+            old_page.unlink()
+        pages = contact_sheet(np.asarray(Image.open(scan).convert("RGB")), [(int(r["x"]) + 10, int(r["y"]) - 5) for r in rows], out,
+                              half=(80, 45), scale=2.2, cols=5, labels=tags, page=30)
+        print(f"wrote {', '.join(p.name for p in pages)}: {len(rows)} symbols, each tagged with its row, side, echelon, arm "
+              f"and label as recorded (L: listed)")
         return
 
     if a.gcps_from is not None:
@@ -797,7 +813,9 @@ def main():
             w.writerow(["n", "x", "y", "w", "h"])
             w.writerows([i, *b] for i, b in enumerate(bx, 1))
         rgb = np.asarray(Image.open(scan).convert("RGB"))
-        contact_sheet(rgb, [(x + 10, y - 5) for x, y, _, _ in bx], work / "boxes.jpg")
+        for old_page in list(work.glob("boxes-[0-9]*.jpg")) + list(work.glob("boxes-overview-*.jpg")):
+            old_page.unlink()
+        pages = contact_sheet(rgb, [(x + 25, y - 5) for x, y, _, _ in bx], work / "boxes.jpg", half=(95, 42), cols=5, page=30)
         x0, y0, x1, y1 = area
         ov = Image.fromarray(rgb[y0:y1, x0:x1].copy())
         d = ImageDraw.Draw(ov)
@@ -806,8 +824,22 @@ def main():
             d.text((x - x0 - w_ // 2, y - y0 + h_ // 2 + 3), str(i), fill=(0, 100, 255))
         grid_ticks(d, x0, y0, x1, y1)
         ov.save(work / "boxes-overview.jpg", quality=80)
-        print(f"{len(bx)} boxes -> {work / 'boxes.csv'}; read them on {work / 'boxes.jpg'} (numbered) and find the ones "
-              f"missed on {work / 'boxes-overview.jpg'} (unmarked symbols; scan coordinates on its edges)")
+        tiles = []
+        if max(x1 - x0, y1 - y0) > 2600:   # a whole sheet: the overview in even tiles of about 2,000 px, overlapping
+            nx, ny = -(-(x1 - x0) // 2000), -(-(y1 - y0) // 2000)   # by 100, each with its scan coordinates on its edges
+            sx, sy = -(-(x1 - x0) // nx), -(-(y1 - y0) // ny)
+            for r in range(ny):
+                for c in range(nx):
+                    tx, ty = x0 + c * sx, y0 + r * sy
+                    a_, b_ = min(tx + sx + 100, x1), min(ty + sy + 100, y1)
+                    tile = ov.crop((tx - x0, ty - y0, a_ - x0, b_ - y0))
+                    grid_ticks(ImageDraw.Draw(tile), tx, ty, a_, b_)
+                    dest = work / f"boxes-overview-{r + 1}{chr(97 + c)}.jpg"
+                    tile.save(dest, quality=85)
+                    tiles.append(dest.name)
+        print(f"{len(bx)} boxes -> {work / 'boxes.csv'}; read them on "
+              f"{', '.join(p.name for p in pages)} (numbered) and find the ones missed on "
+              f"{', '.join(tiles) if tiles else work / 'boxes-overview.jpg'} (unmarked symbols; scan coordinates on the edges)")
         return
     sk = skeletonize(heavy)
     G, xs, ys, tree = graph(sk)

@@ -129,8 +129,11 @@ Run the trace again after each change to the YAML until the overlay is right and
 uv run tools/trace_front.py 12ag-1945-03-08 --boxes      # boxes.jpg (numbered crops), boxes-overview.jpg, boxes.csv
 ```
 
-Read every numbered box on `boxes.jpg`, then find the symbols the finder missed on `boxes-overview.jpg` (unmarked boxes:
-usually one touching its number or a line; about one in five) and read their scan coordinates off its edges. Magnify a
+Read every numbered box on `boxes.jpg` (on a whole sheet, its pages `boxes-1.jpg`, `boxes-2.jpg`, ...; the finder also
+numbers the title's letters and other lettering: skip those, they are not symbols), then find the symbols the finder
+missed on `boxes-overview.jpg` (on a whole sheet its tiles, `boxes-overview-1a.jpg` ...; unmarked boxes: usually one
+touching its number or a line; about one in five) and read their scan coordinates off its edges. A label cut off at a
+crop's edge is read on the overview. Magnify a
 hard one with `--look X,Y ...`. Write what you read to `sources/fronts-work/<map>/reading.txt`, one symbol a line:
 
 ```
@@ -142,9 +145,10 @@ hard one with `--look X,Y ...`. Write what you read to `sources/fronts-work/<map
 
 As written, nothing more:
 
-- `of`: `us` an open box, `de` a hatched box. A grey road under an open box can look like hatching: look closer. (The
-  sheets also mark British and Canadian units, with a different hatching: read them as the legend names them and say
-  so in your report; the README's vocabulary grows when the first is entered.)
+- `of`: `us` an open box, `de` a hatched box (the map's "Enemy", hatching both ways), `uk` the map's "British" (a box
+  with broken, dashed hatching). Where a label marks the unit's own nation in a US or British box, that nation:
+  `ca` ("CDN", "4 CDN"), `pl` ("POL"), `fr` ("2FR", "II FR"); the label stays as written. A grey road under an open
+  box can look like hatching: look closer.
 - `echelon`: the marks over the box, `x` brigade, `xx` division, `xxx` corps, `xxxx` army, `xxxxx` army group, `xxxxxx`
   the C in C. A corps or above carries its name inside the box.
 - `arm`: `infantry` (crossed), `armored` (oval), `armored-infantry` (both), `airborne` (the curved mark), `unread` when the
