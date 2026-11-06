@@ -944,6 +944,9 @@ class SituationMaps(unittest.TestCase):
         self.assertEqual([r["date"] for r in loc_sitmaps.select(rows, "1945-03-08")], ["1945-03-08"])
         self.assertEqual([r["date"] for r in loc_sitmaps.select(rows, "1945-03-08", "1945-03-10")], ["1945-03-08", "1945-03-09", "1945-03-10"])
         self.assertEqual([r["item"] for r in loc_sitmaps.select(rows, "ict21280")], ["ict21280"])
+        for r in rows:
+            r["base"] = "B11" if r["date"] < "1945-03-10" else "B12"
+        self.assertEqual([r["date"] for r in loc_sitmaps.select(rows, "B12")], ["1945-03-10", "1945-03-11"])
         self.assertEqual(loc_sitmaps.select(rows, "1945-04-01"), [])
 
 if __name__ == "__main__":

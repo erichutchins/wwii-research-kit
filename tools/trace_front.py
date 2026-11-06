@@ -227,6 +227,29 @@ def gcps_from(base, other, rows, patch=140, search=60):
     return out, (int(dx), int(dy))
 
 
+def register(src, other):
+    """`src`'s towns (a SitMap whose rings are in records/fronts/<src>-gcps.csv) found on the scan `other` and checked
+    against one another: two printings of one base differ by an affine transform (the scans' placing and the paper),
+    fitted to the matches that agree with it (within 4 px, refitted). Returns the towns' rows, the matches, which agree,
+    each match's distance off the transform, where the transform puts each town, and the sheets' offset. --gcps-from
+    writes the result; sitmap_bases.py check runs it on a base sheet's first day and writes nothing (0 of 20 agree: not
+    this base; 19 or 20 of 20: the same plate, however the sheet is trimmed)."""
+    rows = list(csv.DictReader(open(REC / f"{src.name}-gcps.csv")))
+    base = np.asarray(Image.open(CACHE / src.scan).convert("L"))
+    found, (dx, dy) = gcps_from(base, other, rows)
+    A = np.array([[float(r["x"]), float(r["y"]), 1.0] for r in rows])
+    B = np.array([[r["x"], r["y"]] for r in found], float)
+    ok = np.ones(len(rows), bool)
+    T = np.zeros((3, 2))
+    for _ in range(4):
+        if ok.sum() < 3:
+            break
+        T = np.linalg.lstsq(A[ok], B[ok], rcond=None)[0]
+        res = np.hypot(*(A @ T - B).T)
+        ok = res <= 4
+    return rows, found, ok, res, A @ T, (int(dx), int(dy))
+
+
 def heavy_ink(g, radius, dark=70, min_area=2000):
     """The heaviest, blackest ink: the front (and any boundary as heavy). Pieces under `min_area` px are dropped (heavy
     lettering); the stretch method keeps smaller ones (min_area 500), since a corridor's head is a short heavy arc set
@@ -627,21 +650,12 @@ def main():
             sys.exit(f"{a.gcps_from} has no towns yet (records/fronts/{a.gcps_from}-gcps.csv): a new base sheet's are read by eye")
         if not (CACHE / src.scan).exists():
             sys.exit(f"no scan of {a.gcps_from} at {CACHE / src.scan}: fetch it too (the matching needs both sheets)")
-        rows = list(csv.DictReader(open(REC / f"{a.gcps_from}-gcps.csv")))
-        base = np.asarray(Image.open(CACHE / src.scan).convert("L"))
-        found, (dx, dy) = gcps_from(base, np.asarray(Image.open(scan).convert("L")), rows)
-        A = np.array([[float(r["x"]), float(r["y"]), 1.0] for r in rows])
-        B = np.array([[r["x"], r["y"]] for r in found], float)
-        ok = np.ones(len(rows), bool)
-        for _ in range(4):
-            T = np.linalg.lstsq(A[ok], B[ok], rcond=None)[0]
-            res = np.hypot(*(A @ T - B).T)
-            ok = res <= 4
+        rows, found, ok, res, pred, (dx, dy) = register(src, np.asarray(Image.open(scan).convert("L")))
         if ok.sum() < 12 or np.median(res[ok]) > 2:
-            sys.exit(f"the matches don't agree on one transform ({ok.sum()} within 4 px): check the overlay")
+            sys.exit(f"the matches don't agree on one transform ({ok.sum()} within 4 px): check the overlay, or is this "
+                     f"another base sheet (records/fronts/bases.yml)?")
         print(f"{a.gcps_from} -> {a.map}: sheets offset {dx:+d}, {dy:+d} px; {ok.sum()} of {len(rows)} towns agree "
               f"(median {np.median(res[ok]):.1f} px)")
-        pred = A @ T
         with open(REC / f"{a.map}-gcps.csv", "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f, lineterminator="\n")
             w.writerow(["town", "x", "y", "read", "lat", "lon", "source", "query"])

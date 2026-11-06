@@ -11,11 +11,12 @@ HQ Twelfth Army Group's daily situation map for every day from 6 June 1944 to 26
 date). The Library's JSON API lists them; its tile server holds each scan as a JPEG 2000 of about 6 MB, 6,600 by 6,000
 pixels, and serves any part of it at any size through IIIF, so a title or a symbol can be read without the scan.
 
-    uv run tools/loc_sitmaps.py list                       # the listing -> records/fronts/sitmaps.csv (item, date, lccn)
+    uv run tools/loc_sitmaps.py list                       # the listing -> records/fronts/sitmaps.csv (item, date, lccn; base kept)
     uv run tools/loc_sitmaps.py sizes                      # each scan's pixel size from IIIF, into the same file (resumes)
     uv run tools/loc_sitmaps.py status                     # by month: catalogued, fetched, traced, read
     uv run tools/loc_sitmaps.py fetch 1945-03-08 [1945-03-17]   # the scans of a day or a run of days -> sources/maps/loc/
     uv run tools/loc_sitmaps.py fetch ict21277             # or by resource id
+    uv run tools/loc_sitmaps.py fetch B12                  # or every day printed on one base sheet (records/fronts/bases.yml)
     uv run tools/loc_sitmaps.py crop ict21277 4400 1900 400 300 [--width 1200] [-o out.jpg]   # a region, full resolution
     uv run tools/loc_sitmaps.py overview ict21277 [--pct 12.5] [-o out.jpg]                   # the whole sheet, small
 
@@ -43,7 +44,7 @@ TILE = "https://tile.loc.gov/storage-services/service/gmd/gmd5/g5701/g5701s/{ite
 IIIF = "https://tile.loc.gov/image-services/iiif/service:gmd:gmd5:g5701:g5701s:{item}"
 AGENT = "wwii-research-kit (research; github.com/erichutchins/wwii-research-kit)"
 PAUSE = 1.0
-COLUMNS = ["item", "date", "lccn", "width", "height"]
+COLUMNS = ["item", "date", "lccn", "width", "height", "base"]   # base: the sheet under the overprint (sitmap_bases.py group --write; records/fronts/bases.yml)
 _last = [0.0]
 
 
@@ -153,9 +154,11 @@ def fetch_item(item, quiet=False):
 
 
 def select(rows, first, last=None):
-    """The catalogue's rows for a day, a run of days (inclusive) or a resource id."""
+    """The catalogue's rows for a day, a run of days (inclusive), a resource id, or a base sheet (B01...)."""
     if first.startswith("ict"):
         return [r for r in rows if r["item"] == first]
+    if re.fullmatch(r"B\d\d", first):
+        return [r for r in rows if r.get("base") == first]
     last = last or first
     return [r for r in rows if first <= r["date"] <= last]
 

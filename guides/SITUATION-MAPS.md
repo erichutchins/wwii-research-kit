@@ -22,7 +22,7 @@ trials on 6 November 2026; the costs are estimates from the March days, and say 
 | Also catalogued | one composite sheet (the Bulge, `2001628569`, no daily scan) and the collection's own record, both left out of the catalogue |
 | Scans | JPEG 2000, about 6 MB each (2.5 GB in all), about 6,650 × 5,980 px landscape to 18 April 1945, about 5,950 × 6,680 px portrait from 19 April (10 September 1944 is a double sheet, 13,008 px wide) |
 | Service | the scan by one address on the tile server (no bot check); any region at any size by IIIF (`info.json`, regions by pixel, sizes by width or percent), a crop in under a second |
-| Base maps | at least three: a 1:500,000 sheet of Normandy ("12 AG outline maps 1:500,000, sheet 3") in June 1944; the 1:1,000,000 "12th Army Group outline map" of north-west Europe from the autumn (Paris to the Ruhr) to mid-April 1945; portrait sheets further east and south from 19 April 1945. The base changes again inside those runs as the front moves (August–September 1944 varies day to day) |
+| Base maps | fifteen printings (`records/fronts/bases.yml`, B01–B15; each day's in `sitmaps.csv`, grouped by their overviews with `tools/sitmap_bases.py`): 1:500,000 sheets of Normandy (6 June – 4 August), then Brittany, the Loire, the Seine, changing every few days in August; a 1:750,000 sheet 2–5 September; one 1:1,000,000 plate of north-west Europe from 6 September 1944 to 6 April 1945, placed three ways on the paper (the March towns register on all three: 211 days from one reading); a 1:1,000,000 sheet of north Germany 7–18 April; a portrait 1:1,400,000 sheet of Germany from 19 April, with red boundaries from 20 May |
 | Titles | the wording changes: "SITUATION - 2400 HRS 6 JUNE 1944, HQ FUSAG"; "SITUATION 1200 HRS 22 DECEMBER 1944, TWELFTH ARMY GROUP" (no report number); "TO ACCOMPANY G-3 REPORT NO. 275, SITUATION AS OF 071200 MAR. 1945" |
 | Dates | the catalogue's date is the title's on every sheet checked (eleven in March, one in December, one in June) |
 
@@ -84,9 +84,10 @@ conductor                                   readers (situation-map-reader, one d
 2 fetch the run's scans first (one process,
   a second apart), so readers never queue
   on the tile server
-3 confirm the base: overviews of the run's
-  first and last day (IIIF, 12.5 %); if new,
-  read its towns by eye (one day), commit
+3 confirm the base: sitmaps.csv's `base` and
+  bases.yml's `towns` (sitmap_bases.py check
+  on a base without them); if new, read its
+  towns by eye (one day), commit
 4 for each day in the run  ──────────────▶  title → YAML → towns → front, overlay, sides → [symbols] → report
 5 review each report: open the overlay of
   every flip and check, the units sheet
@@ -143,20 +144,25 @@ The Library's servers cost patience: a second between requests, and a run's scan
 | Scope | Days | Tool work first | Reader work | Model cost, rough |
 |---|---|---|---|---|
 | **A. Catalogue, sizes, fetch** | 415 | none (done, and `fetch`) | none | nothing: 2.5 GB on disk, about half an hour |
-| **B. The towns of each base sheet** | 3–6 bases | the projection fit; forty towns a sheet; a `bases` step that groups days by their overview's match to a known base | a person or one reader per base, an hour each | tens of dollars |
+| **B. The towns of each base sheet** | the bases without towns (`bases.yml`): north Germany in April 1945, the portrait sheet from 19 April, and the eight 1944 sheets to 5 September | the projection fit; forty towns a sheet (the `bases` step is done: every day's base is in the catalogue) | a person or one reader per base, an hour each; the two-day sheets of August 1944 only when an engagement wants them | tens of dollars |
 | **C. Every day's front** | 415 | B | the front job: a reader a day, 15 calls | low hundreds of dollars, a week of five readers at a few hours a day |
 | **D. Symbols where they matter** | the engagements' windows, the Bulge (16 December – 25 January), the Rhine crossings (7–31 March), the landings (6 June – 31 July): about 120 days | C | the symbols job: a reader a day, 40–60 calls | low hundreds of dollars |
 | **E. Symbols everywhere** | the other ~300 days | D | the same | several hundred to a thousand dollars; 20,000 symbols to review |
 
-Do A now (it is done but for the fetch), B before anything else, C as the first long run, D by engagement as the kit's
+A is done but for the fetch; B's grouping is done, and its towns are what remains before C (the March twenty serve
+every day from 6 September 1944 to 6 April 1945, but only for the Rhine country they surround: a whole sheet's front
+needs the sheet's forty). Do B's towns before anything else, C as the first long run, D by engagement as the kit's
 Army units are followed into those days, and E only if a page wants it: a front line on every day is the context the
 engagement pages need; the enemy's divisions on a quiet Tuesday in Lorraine are a catalogue nobody has asked for.
 
 What B needs in the tool, in order:
 
-1. `loc_sitmaps.py bases`: each day's overview (IIIF, 12.5 %, about 150 KB; 60 MB for the run) matched by phase
-   correlation to the overviews of the known bases' first days, so the catalogue says which base a day is on and the
-   conductor never guesses. The scan sizes alone don't tell: the trims vary day to day.
+1. Done (6 November 2026): `sitmap_bases.py` fetched each day's overview (IIIF, 12.5 %, 64 MB in all), grouped the
+   days by phase correlation of their line work (each day joins the earlier day it matches best, or starts a base), and
+   wrote each day's base into the catalogue; the fifteen groups were checked on contact sheets and are described in
+   `records/fronts/bases.yml`. `sitmap_bases.py check` then matched 7 March's towns on the first day of each
+   1:1,000,000 group: 20 of 20 on 6 September 1944, 19 of 20 on 21 March 1945, 0 of 20 on 7 April 1945. The scan sizes
+   alone don't tell: the trims vary day to day. The whole step cost one small worker and no reading of the maps.
 2. Towns across the whole sheet (forty, from the sheet's own named places, each placed today with OSM Nominatim), and a
    fit that is the sheet's projection with a small polynomial correction, checked by leave-one-out as now. The March
    twenty stay for the March days (their GeoJSON must not move).

@@ -46,13 +46,15 @@ uv run tools/trace_front.py 12ag-1945-03-08 --gcps-from       # matched to the Y
 ```
 
 The daily sheets are printings of one base map for months at a time, so a day's towns are found by matching the rings
-of a day already read. Match to a day whose towns were **read by eye** on that base sheet (7 March 1945 for the
-1:1,000,000 north-west Europe sheet, which serves at least 22 December 1944 to 17 March 1945: 20 of 20 towns agree,
-median half a pixel). It must report at least 12 of 20 towns agreeing; a town off the transform is placed through it
-and says so. Don't edit the gcps file by hand.
+of a day already read. Match to a day whose towns were **read by eye** on that base sheet: the day's `base` in
+`sitmaps.csv`, and that base's `towns` in `records/fronts/bases.yml` (7 March 1945's twenty serve every day from
+6 September 1944 to 6 April 1945, one plate; on 22 December 1944 they agree 20 of 20, median half a pixel). It must
+report at least 12 of 20 towns agreeing; a town off the transform is placed through it and says so. Don't edit the gcps
+file by hand.
 
-**A new base sheet** (the title block or the extent differs: the 1:500,000 Normandy sheets of June–August 1944, the
-portrait sheets from late April 1945) has no towns to match to. Its towns are read by eye once, as 7 March's were: find
+**A base without `towns` in `bases.yml`** (the 1:500,000 and 1:750,000 sheets of June–September 1944, north Germany
+7–18 April 1945, the portrait 1:1,400,000 sheet from 19 April; `tools/sitmap_bases.py check` tells for a doubtful one)
+has no towns to match to. Its towns are read by eye once, as 7 March's were: find
 each ring on the scan, check it, give its place today (OSM Nominatim) in the gcps file, write `gcps_read: by eye` in
 the YAML, and say so in the README. Twenty towns spread over the part of the sheet to be traced, not a corner of it:
 the trace covers the towns' spread and nothing outside it.
