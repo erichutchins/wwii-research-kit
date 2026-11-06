@@ -204,8 +204,28 @@ What B needs in the tool, in order:
    margins and saying so, at 0.14 to 0.48 km rms; they register on another day of each base at 12 of 14 and better.
 3. Done: `--gcps-from towns-B11.csv` matches the sheet's towns on any day of the plate (22 December 1944: 71 of 79
    within 4 px of one affine transform, the rest placed through it), and the trace covers the sheet.
-4. A `--base` overview in the work folder of each day so a reviewer can see at a glance where the front is on the
-   sheet before opening the overlay.
+4. Done: `--overlay` also writes `overlay-sheet.jpg`, the whole traced area at 1,800 px, read before the overlay's crops.
+
+**C, begun (6 November 2026).** 22 December 1944 was traced by hand across the whole plate first, to settle what a whole
+sheet leaves out: the title block's lettering, the legend, and boundaries drawn heavy with no ticks (eleven boxes that
+day). Neither the title nor the legend can be boxed once for a base: both are lettered by hand on each sheet and wander
+a few hundred pixels, and the title's box must stop short of the Walcheren and Tholen front just under it. Then five
+readers traced 16–20 December, front only. What the first run cost and taught:
+
+| | per day |
+|---|---|
+| reader | 9 to 25 tool calls, 40,000 to 68,000 tokens, 3 to 7 minutes |
+| boxes left out | 2 to 11 |
+| the conductor's review | 3 to 8 looks, one stretch turned in two of the five days |
+
+Every reader came back with the front whole and nothing unsure, and three of the five with a town on the wrong side that
+it put down to the test. Two of those were stretches turned the wrong way (the Colmar pocket's west side on 20 December;
+the Saar line toward Bitche and the Walcheren arc, which its reader had marked `checked`, on 17 December), and one
+reader's title box hid the Tholen front. So the review reads every town on the wrong side, and `--sides` now names the
+runs that decide each town, with each one's side and its middle on the scan: the stretch to turn is named, and the
+reader's rule is to flip or explain it, never to call it an artefact unlooked. The one true artefact was Landau, off
+the corner where the Lauter front meets the Rhine. With the six days reviewed, all six put the same 46 towns on the
+enemy's side.
 
 ## 6. What stays as it is
 

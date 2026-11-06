@@ -846,12 +846,26 @@ def main():
     print(f"{len(runs_px)} front runs, {len(units)} unit symbols -> {out.relative_to(KIT)}")
 
     if a.sides:
-        # the page's own test (site/engage.js), on every town: -1 the map's own side, 1 the enemy's, 0 nothing tells
+        # the page's own test (site/engage.js), on every town: -1 the map's own side, 1 the enemy's, 0 nothing tells;
+        # then the runs whose legs decide it (those within 1.5 times the nearest, as frontSide weighs them; the four
+        # nearest), each with its own side and its middle on the scan, so a town on the wrong side names the stretch to
+        # look at and `flip`
         js = ("const E=require(process.argv[1]);const fs=require('fs');const gj=JSON.parse(fs.readFileSync(process.argv[2]));"
-              "const runs=gj.features.filter(f=>f.properties.kind==='front').map(f=>f.geometry.coordinates);"
-              "for(const t of JSON.parse(process.argv[3]))console.log(t[0].padEnd(16),{'-1':'own (US)','1':'enemy','0':'?'}[E.frontSide(runs,[t[2],t[1]])]);")
+              "const fr=gj.features.filter(f=>f.properties.kind==='front'),runs=fr.map(f=>f.geometry.coordinates);"
+              "const dist=(run,p)=>{const k=Math.cos(p[1]*Math.PI/180);let m=Infinity;for(let i=1;i<run.length;i++){"
+              "const ax=run[i-1][0]*k,ay=run[i-1][1],dx=run[i][0]*k-ax,dy=run[i][1]-ay,L=dx*dx+dy*dy,px=p[0]*k,py=p[1];"
+              "if(!L)continue;const u=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/L));m=Math.min(m,Math.hypot(px-ax-u*dx,py-ay-u*dy));}return m;};"
+              "const out=JSON.parse(process.argv[3]).map(t=>{const p=[t[2],t[1]],d=runs.map(r=>dist(r,p)),n=Math.min(...d);"
+              "return [t[0],E.frontSide(runs,p),fr.map((f,i)=>[f.properties.run,E.frontSide([runs[i]],p),d[i]]).filter(r=>r[2]<=n*1.5+1e-9).sort((a,b)=>a[2]-b[2]).slice(0,4).map(r=>r.slice(0,2))];});"
+              "console.log(JSON.stringify(out));")
         towns = json.dumps([[n, float(la), float(lo)] for n, (lo, la) in zip(fit.names, fit.ll)])
-        subprocess.run(["node", "-e", js, str(KIT / "site" / "engage.js"), str(out), towns], check=True)
+        res = subprocess.run(["node", "-e", js, str(KIT / "site" / "engage.js"), str(out), towns], check=True,
+                             capture_output=True, text=True)
+        word = {-1: "own (US)", 1: "enemy", 0: "?"}
+        for name, side, by in json.loads(res.stdout):
+            how = ", ".join(f"run {k} {word[s].split()[0]} at {','.join(str(int(v)) for v in runs_px[k - 1][len(runs_px[k - 1]) // 2])}"
+                            for k, s in by)
+            print(f"{name:16} {word[side]:9} by {how}")
 
     if a.overlay is not None:
         # the trace in blue with short red ticks on each run's right (the map's own side: they should fall on the map's

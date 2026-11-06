@@ -108,6 +108,17 @@ are magenta. Then read the overlay in parts (`--overlay /tmp/x.jpg --crop X Y W 
   (Bad Godesberg, Königswinter, Cochem) can read either way: that is the line, not an error. The test only means
   something where the front runs through the towns' spread: a day whose front lies outside it (22 December 1944
   against the March towns) puts every town on one side, and the few stretches inside are fragments.
+- **A town on the wrong side is a wrong stretch until shown otherwise.** Each line of `--sides` ends with the runs
+  that decide the town (the overlay's numbers), each with its own side and its middle on the scan: `Zweibrücken own
+  (US) by run 33 own at 4813,4157, ...`. The run whose own side is wrong is the one to look at, and its middle is the
+  point for `flip`. Don't call a town far from the line a "test artefact" without that look: on the first five whole
+  sheets (16–20 December 1944) three such towns, put down by their readers to the line's open end or the test, were
+  each a stretch turned the wrong way (the Colmar pocket's west side, the Saar line toward Bitche, the Walcheren arc).
+  The true artefact is rarer: a town off a corner of the line, where the two legs disagree and the test weighs them
+  (Landau, off the corner where the Lauter front meets the Rhine). Check that too by the runs named.
+- A `checked` stretch is a claim that the map's ticks were seen on the overlay's red ticks. At a small scale they are
+  easy to misread; if `--sides` disagrees, believe `--sides` and look again, close (`--overlay /tmp/x.jpg --crop` a
+  few hundred pixels, enlarged).
 - A blunt dead-end spur with no ticks on either side can't be read: leave it out with a box, and say why.
 
 Run the trace again after each change to the YAML until the overlay is right and nothing is `unsure` without a reason.
