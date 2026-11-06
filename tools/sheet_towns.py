@@ -114,13 +114,13 @@ def cmd_crops(a):
             if CROSSING.fullmatch(v[0]):
                 lon, lat = crossing_ll(v[0])
                 seeds.append({"town": v[0], "x": x, "y": y, "lat": f"{lat}", "lon": f"{lon}"})
-            elif LINE.fullmatch(v[0]):
+            elif LINE.fullmatch(v[0]) and (not v[0].isdigit() or v[0] == "0"):
                 kind, val = line_value(v[0])
                 lines.append((kind, val, float(x), float(y)))
             else:   # a number: of the last run's candidates (sheet_towns.py crops numbers them anew each run)
                 c = prev[v[0]] if v[0] in prev else cands[int(v[0]) - 1]
                 seeds.append({"town": c["town"], "x": x, "y": y, "lat": c["lat"], "lon": c["lon"]})
-    if lines and len(seeds) < 3:
+    if lines:   # the margins solve the first fit (crossings on one neat line alone are collinear and fit nothing)
         pts = [(float(r["lon"]), float(r["lat"]), float(r["x"]), float(r["y"])) for r in seeds]
         seeds = conic_from_lines(pts, lines)
     if len(seeds) < 3:
@@ -175,14 +175,19 @@ def readings(path):
         v = ln.split("#")[0].split()
         if len(v) >= 3 and CROSSING.fullmatch(f"{v[0]} {v[1]}"):
             v = [f"{v[0]} {v[1]}", *v[2:]]
+        elif len(v) >= 3 and CROSSING.fullmatch(f"{v[1]} {v[0]}"):   # the parallel named first: `49N 0W x,y`
+            v = [f"{v[1]} {v[0]}", *v[2:]]
         if len(v) >= 2:
-            # a point on one line (`1W 2460,330`) is kept by its own line, several to a label
-            out[f"{v[0]}@{k}" if LINE.fullmatch(v[0]) and not v[0].isdigit() else v[0]] = v
+            # a point on one line (`1W 2460,330`; `0 4143,295`, Greenwich) is kept by its own line, several to a label
+            if LINE.fullmatch(v[0]) and (not v[0].isdigit() or (v[0] == "0" and "," in v[1])):
+                out[f"{v[0]}@{k}"] = v
+            else:
+                out[v[0]] = v
     return list(out.values())
 
 
 CROSSING = re.compile(r"(\d+(?:\.\d+)?)([EW]) (\d+(?:\.\d+)?)([NS])")
-LINE = re.compile(r"(\d+(?:\.\d+)?)([EWNS])")   # a point on one graticule line, named by its degree: `1W` or `49.5N`
+LINE = re.compile(r"(\d+(?:\.\d+)?)([EWNS]?)")   # a point on one graticule line, named by its degree: `1W` or `49.5N`; a bare `0` is Greenwich
 
 
 def line_value(name):
@@ -191,6 +196,10 @@ def line_value(name):
     if m is None:
         raise ValueError(f"not a graticule line's name: {name!r} (1W, 49.5N)")
     v = float(m.group(1))
+    if not m.group(2):
+        if v != 0:
+            raise ValueError(f"a graticule line's name needs E, W, N or S: {name!r}")
+        return "lon", 0.0
     return ("lon" if m.group(2) in "EW" else "lat"), (-v if m.group(2) in "WS" else v)
 
 
@@ -214,10 +223,17 @@ def conic_from_lines(points, lines, n=None):
     lon0 = float(np.mean([v for _, _, v in lon_pts])); lat0 = float(np.mean([v for _, _, v in lat_pts]))
     probe = tf.Conic([{"town": "", "x": ax * lo + bx, "y": ay * la + by, "lon": lo, "lat": la}
                       for lo in (lon0 - 1, lon0 + 1) for la in (lat0 - 1, lat0 + 1)], n=n)
-    T0 = probe.T.ravel()
+    # a scan differs from the projection by a similarity (scale, a small turn, an offset), not a full affine: margins
+    # that give meridians along one edge and parallels along another leave an affine's shear free, and a free shear
+    # fits the margins and puts the far corners degrees out
+    flip = -1.0 if np.linalg.det(probe.T[:2]) < 0 else 1.0
+
+    def T_of(t):
+        a, b, tx, ty = t
+        return np.array([[a, b], [-b * flip, a * flip], [tx, ty]])
 
     def residuals(t):
-        T = t.reshape(3, 2)
+        T = T_of(t)
         r = []
         for x, y, v in lon_pts:
             r.append((probe.to_ll([[x, y]], T)[0][0] - v) * abs(ax))
@@ -225,8 +241,9 @@ def conic_from_lines(points, lines, n=None):
             r.append((probe.to_ll([[x, y]], T)[0][1] - v) * abs(ay))
         return r
 
-    sol = least_squares(residuals, T0)
-    T = sol.x.reshape(3, 2)
+    t0 = [probe.T[0, 0], probe.T[0, 1], probe.T[2, 0], probe.T[2, 1]]
+    sol = least_squares(residuals, t0)
+    T = T_of(sol.x)
     rms = float(np.sqrt(np.mean(np.square(sol.fun))))
     lons = np.linspace(min(v for _, _, v in lon_pts), max(v for _, _, v in lon_pts), 3)
     lats = np.linspace(min(v for _, _, v in lat_pts), max(v for _, _, v in lat_pts), 3)
