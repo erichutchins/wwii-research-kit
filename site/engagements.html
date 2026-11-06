@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Engagements</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap">
+<link rel="stylesheet" href="chapter.css">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="engage.css">
+<link rel="stylesheet" href="subject.css">
+<!-- The index of every engagement read from both sides (records/engagements/index.json, tools/build_engagement.py), by
+     theatre and in date order: each with its dates, its lede in plain words, the subjects in it (each a link to its own
+     page) and what its page holds (entries, languages, questions, situation maps, a story in steps, attack sheets). The
+     kit's way in: the nav bar's first link (guides/OPERATIONS-VIEWER.md 5.1, 5.3). Each opens engagement.html?e=<id>.
+     engagements.js fills it. -->
+</head>
+<body>
+<div class="wrap index">
+  <header>
+    <nav class="nav" aria-label="The kit" data-nav></nav>
+    <script src="nav.js"></script>
+    <nav class="crumb" id="crumb" aria-label="Where this is in the kit"><div class="trail"><span aria-current="page">Engagements</span></div></nav>
+    <div class="eyebrow">Every engagement, read from both sides</div>
+    <h1>Engagements</h1>
+    <p class="lede">An engagement is two sides meeting at a place and a time: a pack against a convoy, a destroyer against a
+      kamikaze strike, an antiaircraft battery against a night raid. Each side kept its own records, in its own form and on
+      its own clock. Each page here puts both on one map and one clock, every mark opening the page it was read from;
+      behind it, the questions the records leave open, answered source by source. <span id="count"></span></p>
+  </header>
+  <div id="index"></div>
+</div>
+<div id="tip" hidden></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="engagements.js"></script>
+<script src="glossary.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>

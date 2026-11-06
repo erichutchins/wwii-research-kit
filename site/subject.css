@@ -323,6 +323,21 @@ a.spanel:hover { background: var(--wash); }
 .p-convoy .key { color: var(--ink-3); font-size: 14.5px; padding: 6px 14px 10px; margin: 0; }
 .p-convoy .story { padding: 0 14px 14px; }
 
+/* the engagements index (engagements.html): a theatre at a time, each engagement a row: its dates, its title, its lede
+   in plain words, the subjects in it, what its page holds */
+.index h2 .k { font-style: italic; color: var(--ink-3); font-size: 15.5px; font-weight: 400; margin-left: 10px; }
+.index h2 .k a { color: inherit; }
+.engs { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 18px 24px; margin: 16px 0 34px; }
+.engs .dates { color: var(--ink-3); font-size: 15.5px; white-space: nowrap; padding-top: 5px; font-variant-numeric: tabular-nums; }
+.engs .eng h3 { font-weight: 400; font-size: 22px; line-height: 1.25; margin: 0; }
+.engs .eng h3 a { text-decoration: none; border-bottom: 1px solid var(--rule); }
+.engs .eng h3 a:hover { border-color: var(--ink); }
+.engs .eng p { margin: 6px 0 0; max-width: 82ch; color: var(--ink-2); font-size: 16.5px; line-height: 1.45; }
+.engs .eng .with { margin-top: 5px; font-size: 14.5px; color: var(--ink-3); }
+.engs .eng .with a { color: var(--ink-2); text-decoration-color: var(--rule); }
+.engs .eng .with a:hover { color: var(--ink); text-decoration-color: currentColor; }
+@media (max-width: 640px) { .engs { grid-template-columns: minmax(0, 1fr); gap: 4px 0; } .engs .dates { padding-top: 10px; } .engs .eng { margin-bottom: 12px; } }
+
 /* the subjects index (subjects.html): a table per kind; the convoys' ledger with its symbols */
 .index h2 { font-size: 24px; font-weight: 400; font-style: normal; color: var(--ink); margin: 24px 0 6px; padding: 0; }
 .index h3 { font-size: 17px; font-weight: 400; font-style: italic; color: var(--ink-2); margin: 14px 0 4px; }

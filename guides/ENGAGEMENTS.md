@@ -3,7 +3,8 @@
 An engagement is two sides meeting at a place and a time: a pack against a convoy, a destroyer against a kamikaze
 strike, an antiaircraft battery against a night raid. Each side kept its own records, in its own form and on its own
 clock. The kit keeps each record as it is and lets them meet through ids, times and places, never by copying one into
-the other. Every engagement is one folder, `records/engagements/<id>/`, and one page, `site/engagement.html?e=<id>`.
+the other. Every engagement is one folder, `records/engagements/<id>/`, and one page, `site/engagement.html?e=<id>`;
+the index of every one, by theatre, is `site/engagements.html`, the nav bar's first link.
 
 The convoys the boats met have their own records (`records/convoys/<id>/convoy.md`) and pages: `site/subject.html?s=<id>` (the ledger of every convoy is `site/subjects.html`)
 (the ledger, and each convoy's voyage and ships) and `site/lanes.html` (the lanes, month by month, and a voyage as a

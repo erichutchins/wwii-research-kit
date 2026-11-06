@@ -59,6 +59,15 @@ h1 { font: 400 clamp(40px, 5.8vw, 66px)/1.05 "Special Elite", var(--typed); marg
 .chapter > h2 { font-weight: 400; font-style: italic; font-size: clamp(39px, 4.4vw, 53px); line-height: 1.1; margin: 0; padding-bottom: 10px; border-bottom: 1px solid var(--ink); }
 .intro { max-width: 66ch; margin: 24px 0 0; }
 
+/* The engagements: every one, a theatre a column, in date order (home.js) */
+.englist { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 40px; margin-top: 30px; }
+.englist h3 { font-weight: 400; font-style: italic; font-size: 21px; margin: 0 0 8px; color: var(--ink-2); }
+.englist ul { list-style: none; margin: 0; padding: 0; }
+.englist li { font-size: 17.5px; line-height: 1.35; margin: 0 0 9px; padding-left: 0; }
+.englist li .dates { display: block; font-size: 14.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.englist li a { text-decoration: none; border-bottom: 1px solid var(--rule); }
+.englist li a:hover { border-color: var(--ink); }
+
 /* The four theatres: a card each, with its featured figure */
 .theatres { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 44px 48px; margin-top: 36px; }
 .theatre h3 { font-weight: 400; font-size: 34.5px; line-height: 1.15; margin: 0; }
@@ -118,6 +127,7 @@ code { font: 17px var(--typed); color: var(--ink); }
 
 @media (max-width: 900px) {
   .theatres, .shelf, .steps, .help, .shelf .set { grid-template-columns: 1fr; }
+  .englist { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 600px) {
   /* nav: each group starts its own line; the dividing rules only make sense on one line */
@@ -130,6 +140,7 @@ code { font: 17px var(--typed); color: var(--ink); }
   .page { padding: 0 18px; }
   body { font-size: 20.5px; }
   .theatre h3 { font-size: 29px; }
+  .englist { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 

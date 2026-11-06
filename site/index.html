@@ -10,9 +10,10 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&family=Special+Elite&display=swap">
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="home.css">
-<!-- The front page as an index (guides/OPERATIONS-VIEWER.md 5.1): the masthead, the four theatres (each with its span,
-     what its records hold, one featured figure, static, and its page), every subject, the reference shelf, and how to do
-     it yourself. home.js draws the figures from the records and fills the counts and the wanted list. -->
+<!-- The front page as an index (guides/OPERATIONS-VIEWER.md 5.1): the masthead, the engagements (the way in: every one by
+     theatre, from engagements/index.json), the four theatres (each with its span, what its records hold, one featured
+     figure, static, and its page), every subject, the reference shelf, and how to do it yourself. home.js draws the
+     figures from the records and fills the lists, the counts and the wanted list. -->
 </head>
 <body>
 <div class="page">
@@ -23,8 +24,18 @@
     <h1>Charting WWII History</h1>
     <p class="lede">Ships' and units' own records, beside <i>the other side's records of the same minutes</i>, on one map
       and one clock. Every mark opens the page it was read from.</p>
-    <nav class="chapters" aria-label="Chapters"><a href="#theatres">The theatres</a><a href="#ships">Every subject</a><a href="#reference">Reading the records</a><a href="#yourself">Do this yourself</a></nav>
+    <nav class="chapters" aria-label="Chapters"><a href="#engagements">The engagements</a><a href="#theatres">The theatres</a><a href="#ships">Every subject</a><a href="#reference">Reading the records</a><a href="#yourself">Do this yourself</a></nav>
   </header>
+
+  <section class="chapter" id="engagements">
+    <h2>The engagements</h2>
+    <p class="intro">An engagement is two sides meeting at a place and a time, each side in its own records, on its own
+      clock. Each page puts both on one map and one clock: a convoy battle from three submarines' reports and the escort's
+      diary; a destroyer's day from her action report and the air group's; a bridgehead from a corps' report under the army
+      group's situation map of each day. Every mark opens the page it was read from, and the questions the records leave
+      open are answered source by source behind it. <a href="engagements.html">The index of every engagement</a>.</p>
+    <div class="englist" id="englist"></div>
+  </section>
 
   <section class="chapter" id="theatres">
     <h2>The theatres</h2>

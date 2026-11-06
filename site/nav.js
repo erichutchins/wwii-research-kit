@@ -2,9 +2,10 @@
 // (<nav class="nav" aria-label="The kit" data-nav></nav>) as the page is parsed, so a page added to the kit is added
 // to the bar here and nowhere else. The link to the page being read is marked aria-current="page" (the stylesheets
 // underline it); a page opened by its address (theatre.html?t=pacific) marks the link with the same query. The bar is
-// the shape of guides/OPERATIONS-VIEWER.md 5.3 and nothing else: the four theatres, the subjects (every boat, ship,
-// unit, battalion and convoy, each on its own page), reading the records (the explainers), researching a relative; no
-// ship, no view, no place. The breadcrumb under it (chapter.css, Chapter.trail) does the walking.
+// the shape of guides/OPERATIONS-VIEWER.md 5.3 and nothing else: the engagements (every one read from both sides, the
+// kit's way in), the four theatres, the subjects (every boat, ship, unit, battalion and convoy, each on its own page),
+// reading the records (the explainers), researching a relative; no ship, no view, no place. The breadcrumb under it
+// (chapter.css, Chapter.trail) does the walking.
 // Load it right after the placeholder: it then fills the bar before the rest of the header is parsed, so nothing shifts
 // or flashes. Loaded anywhere else (deferred, or in the head), it fills the bar once the document is parsed.
 // The links are the kit's pages, relative to this script, so a family's pages (which load it as kit/site/nav.js) link
@@ -13,6 +14,7 @@
   const SITE = new URL(".", document.currentScript.src);
   const BAR =
     '<a class="home" href="index.html">WWII research kit</a>' +
+    '<span class="grp"><a href="engagements.html">Engagements</a></span>' +
     '<span class="grp"><a href="theatre.html?t=pacific">Pacific</a><a href="theatre.html?t=atlantic">Atlantic</a>' +
       '<a href="theatre.html?t=mediterranean">Mediterranean</a><a href="theatre.html?t=europe">Europe</a></span>' +
     '<span class="grp ref"><a href="subjects.html">Subjects</a></span>' +

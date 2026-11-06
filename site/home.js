@@ -37,6 +37,22 @@ async function cards() {
   }
 }
 
+// ── The engagements: every one, by theatre, in date order ───────────────────────────────────────
+async function engagements() {
+  const ALL = await d3.json(RECORDS + "engagements/index.json");
+  const day = s => Date.parse(String(s).slice(0, 10) + "T00:00Z"), fmt = d3.utcFormat("%-d %b %Y"), fmtD = d3.utcFormat("%-d"), fmtDM = d3.utcFormat("%-d %b");
+  const dates = e => {
+    const a = day(e.from), b = day(e.to || e.from), A = new Date(a), B = new Date(b);
+    if (a === b) return fmt(a);
+    if (A.getUTCFullYear() === B.getUTCFullYear() && A.getUTCMonth() === B.getUTCMonth()) return `${fmtD(a)}–${fmt(b)}`;
+    return A.getUTCFullYear() === B.getUTCFullYear() ? `${fmtDM(a)} – ${fmt(b)}` : `${fmt(a)} – ${fmt(b)}`;
+  };
+  const cols = [["pacific", "Pacific"], ["atlantic", "Atlantic"], ["mediterranean", "Mediterranean"], ["europe", "Europe"]]
+    .map(([id, name]) => [name, ALL.filter(e => e.theater === id)]).filter(([, xs]) => xs.length);
+  document.getElementById("englist").innerHTML = cols.map(([name, xs]) => `<div><h3>${esc(name)}</h3><ul>${xs.map(e =>
+    `<li><span class="dates">${esc(dates(e))}</span><a href="engagement.html?e=${encodeURIComponent(e.id)}">${esc(e.title)}</a></li>`).join("")}</ul></div>`).join("");
+}
+
 // ── Pacific: the Luzon Strait at the end of the night ───────────────────────────────────────────
 async function pacific() {
   const [D, land] = await Promise.all([d3.json(RECORDS + "engagements/tama-17-1944-04-29/engagement.json"), d3.json(LAND_10M)]);
@@ -181,6 +197,7 @@ const failed = (sel, what) => err => {
   document.querySelector(sel).replaceChildren(p);
 };
 cards().catch(failed("#theatres .intro", "page"));
+engagements().catch(failed("#englist", "list"));
 pacific().catch(failed("#fig-pacific", "map"));
 atlantic().catch(failed("#fig-atlantic", "map"));
 mediterranean().catch(failed("#fig-mediterranean", "map"));

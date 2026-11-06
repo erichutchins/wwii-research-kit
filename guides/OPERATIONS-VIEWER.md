@@ -251,7 +251,10 @@ the organizations with their pages, the leads, the coverage month by month.
 ### 5.1 The shape of the site
 
 ```
-Front page                 the theatres, each with its featured frames; what's new; what's wanted; do this yourself
+Front page                 the engagements (every one, by theatre), the theatres, each with its featured frames; what's
+│                          wanted; do this yourself
+├─ Engagements             the way in: every engagement read from both sides, by theatre and in date order, each with
+│                          its lede, its subjects and what its page holds
 ├─ Theatre (4)             Pacific · Atlantic · Mediterranean · Europe: its operations in date order (the spine), each
 │                          with its engagements; its subjects; its explainers ("reading the records here")
 │   ├─ Operation           what it was for and what it meant, cited; its area and dates; the engagements inside it;
@@ -297,9 +300,10 @@ The four apps are the first version of these panels, not wasted work: `patrols.j
 
 ### 5.3 The nav bar and the breadcrumb
 
-The bar on every page is the shape of §5.1 and nothing else: the four theatres, *Subjects*, *Reading the records*,
-*Researching a relative*. No ship, no view, no place. It is one HTML fragment every page includes (`footer.js` already
-writes the footer this way), so adding a theatre is one edit.
+The bar on every page is the shape of §5.1 and nothing else: *Engagements* first (the index of every one: the pages
+read from both sides are what a visitor comes for, so they are the first link and the front page's first chapter),
+the four theatres, *Subjects*, *Reading the records*, *Researching a relative*. No ship, no view, no place. It is one
+HTML fragment every page includes (`footer.js` already writes the footer this way), so adding a theatre is one edit.
 
 The breadcrumb does the walking: *Pacific / the Luzon Strait, April–May 1944 / Convoy TAMA-17 / Attack 1*, and on a
 subject page *Subjects / BANG / Patrol 1 / 29 April*. `chapter.js`'s crumb (stage, campaign, the engagement before and

@@ -884,6 +884,19 @@ def convoy_summary(c, engs):
             "sightings": sightings, "hits": hits, "attacks": attacks}
 
 
+def plain_lede(e):
+    """The story's first paragraph in plain words: a [[kind:name|label]] link is its label (or its name), a Markdown link
+    its text; for the index page, where the lede stands without the page's links."""
+    top = next((s for s in e.get("sections") or [] if not s["heading"]), None)
+    if not top or not top["paras"]:
+        return ""
+    text = top["paras"][0]["text"]
+    text = re.sub(r"\[\[(?:cite:[^\]|]*)(?:\|([^\]]*))?\]\]", lambda m: m.group(1) or "", text)   # a bare citation goes
+    text = re.sub(r"\[\[[a-z]+:([^\]|]*)(?:\|([^\]]*))?\]\]", lambda m: m.group(2) or m.group(1), text)
+    text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def build():
     b = Build()
     convoys = {d.name: b.convoy(d) for d in sorted(CONVOYS.iterdir()) if (d / "convoy.md").exists()}
@@ -894,8 +907,17 @@ def build():
                      "units": [{"unit": p["unit"], "name": p.get("name", p["id"]), "basis": p.get("basis", "reported")}
                                for p in e["participants"] if p.get("unit")],
                      "participants": [p.get("name", p["id"]) for p in e["participants"]],
+                     # each subject with a page of its own (subject.html?s=<id>): a boat at its patrol, a unit, a convoy
+                     "subjects": [{"id": p["track"].split("/")[0] if p.get("track") else p.get("unit") or p["convoy"], "name": p.get("name", p["id"]),
+                                   **({"period": p["track"].split("/")[1]} if p.get("track") and "/" in p["track"] else {})}
+                                  for p in e["participants"] if p.get("track") or p.get("unit") or p.get("convoy")],
                      "boats": [p["name"] for p in e["participants"] if p.get("kind") == "submarine"],
-                     "convoys": list(e["convoys"]), "box": e["box"]} for e in engs), key=lambda x: x["from"])
+                     "convoys": list(e["convoys"]), "box": e["box"],
+                     # for the index page: the lede in plain words, and what the engagement has
+                     "lede": plain_lede(e), "entries": len(e["events"]), "claims": len(e["claims"]),
+                     "languages": len({x.get("lang") or "en" for x in e["events"]}),
+                     "fronts": len(e.get("fronts") or []), "steps": len(e.get("steps") or []), "sheets": sum(len(v) for v in (e.get("sheets") or {}).values()),
+                     "outcome": any(s["heading"].lower() == "outcome" for s in e.get("sections") or [])} for e in engs), key=lambda x: x["from"])
     cv = sorted((convoy_summary(c, engs) for c in convoys.values()),
                 key=lambda c: (c["engagements"][0]["window"] or {}).get("from", "") if c["engagements"] else str(c.get("sailed") or ""))
     out = {ENG / e["id"] / "engagement.json": e for e in engs}

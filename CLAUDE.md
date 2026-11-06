@@ -145,9 +145,9 @@ Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page
 - Every page has the same navigation bar, at the top of its header: an empty `<nav class="nav" aria-label="The kit"
   data-nav></nav>` followed by `<script src="nav.js"></script>`, which `site/nav.js` fills as the page is parsed (so
   nothing shifts) and marks the current page on (the query too: `theatre.html?t=pacific`). The bar is the guide's §5.3
-  and nothing else: the four theatres, *Subjects*, *Reading the records* (the explainers), *Researching a relative*; its
-  links live in `nav.js` alone. Under it, every page has the breadcrumb, `<nav class="crumb" id="crumb" aria-label="Where
-  this is in the kit">`, one markup (`chapter.css`'s `.crumb .trail`, written by `Chapter.trail(parts)` or, where it is
+  and nothing else: *Engagements* (`engagements.html`, the index of every one: the way in), the four theatres, *Subjects*,
+  *Reading the records* (the explainers), *Researching a relative*; its links live in `nav.js` alone. Under it, every
+  page has the breadcrumb, `<nav class="crumb" id="crumb" aria-label="Where this is in the kit">`, one markup (`chapter.css`'s `.crumb .trail`, written by `Chapter.trail(parts)` or, where it is
   constant, in the page's HTML): *Pacific / the operation / the engagement*, *Subjects / BANG / Patrol 1*, *Reading the
   records / Time zones*. The engagement page's crumb (`Chapter.crumb`) adds the engagement before and after in its
   theatre and each followed unit's or boat's own before and after.
@@ -156,7 +156,9 @@ Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page
   paragraphs), a static map of its records, the spine (operations in date order, engagements under them), the subjects
   here (the units' runs through the five stages, which the Mediterranean and Europe share and number across; the Pacific's
   boats, ships, battalions, convoys and command by date), what is also in the records and still to find (`inventory.yml`),
-  and the explainers its records need. The front page is an index: four cards, one static figure each, then the shelf.
+  and the explainers its records need. The front page is an index: the engagements by theatre, four theatre cards with
+  one static figure each, then the shelf. `engagements.html` (`engagements.js`) is the index of every engagement, from
+  `engagements/index.json`, whose rows carry each one's lede in plain words, its subjects and its counts for it.
 - Colours and fonts are one set of CSS variables, named in `site/viz.css` (`--page`, `--surface`, `--ink`, `--ink-2`,
   `--ink-3`, `--rule`, `--wash`, `--land`, `--coast`, `--sea-grid`, `--pencil`; `--serif`, `--typed`, `--ja`), light
   and dark; `site/engage.css`, `site/home.css` and the two story pages set the same names to their own checked values,
