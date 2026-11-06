@@ -36,6 +36,7 @@ import check_sources
 import check_track
 import jgrid
 import lint
+import loc_sitmaps
 import naval_grid
 import records
 
@@ -907,6 +908,43 @@ class EngagementCheck(unittest.TestCase):
         self.assertIsNone(build_engagement.iso(None))
         self.assertEqual(build_engagement.parse_iso("1944-05-02T22:03Z"), datetime(1944, 5, 2, 22, 3))
 
+
+
+class SituationMaps(unittest.TestCase):
+    """loc_sitmaps.py: the Library's listing read into the catalogue, and a day or a run of days picked from it."""
+
+    PAGE = {"pagination": {"current": 1, "total": 1, "next": None}, "results": [
+        {"title": "The Battle of the Bulge", "original_format": ["web page"], "url": "https://www.loc.gov/collections/x/articles/", "date": "1944"},
+        {"title": "[March 7, 1945], HQ Twelfth Army Group situation map", "original_format": ["map"], "date": "1945-03-07",
+         "url": "https://www.loc.gov/item/2004631895/", "image_url": ["https://tile.loc.gov/storage-services/service/gmd/gmd5/g5701/g5701s/ict21276.gif"], "aka": []},
+        {"title": "[June 6, 1944], HQ Twelfth Army Group situation map", "original_format": ["map"], "date": "1944-06-06",
+         "url": "https://www.loc.gov/item/2004629028/", "image_url": [], "aka": ["http://www.loc.gov/resource/g5701s.ict21001/"]},
+        {"title": "HQ Twelfth Army Group situation map : [Battle of the Bulge]", "original_format": ["map"], "date": "1944-06-06",
+         "url": "https://www.loc.gov/item/2001628569/", "image_url": ["https://www.loc.gov/static/x.jpg"], "aka": []},
+    ]}
+
+    def test_listing_keeps_the_daily_sheets_and_leaves_the_rest_out(self):
+        import json
+        with mock.patch.object(loc_sitmaps, "get", return_value=(json.dumps(self.PAGE).encode(), {})), contextlib.redirect_stdout(io.StringIO()):
+            rows = loc_sitmaps.listing()
+        self.assertEqual([(r["item"], r["date"], r["lccn"]) for r in rows],
+                         [("ict21276", "1945-03-07", "2004631895"), ("ict21001", "1944-06-06", "2004629028")])
+
+    def test_catalogue_round_trip_sorts_by_date_and_keeps_sizes(self):
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(loc_sitmaps, "CATALOGUE", Path(d) / "sitmaps.csv"), \
+                mock.patch.object(loc_sitmaps, "FRONTS", Path(d)):
+            loc_sitmaps.write_catalogue([{"item": "ict21276", "date": "1945-03-07", "lccn": "1", "width": "6670", "height": "5975"},
+                                         {"item": "ict21001", "date": "1944-06-06", "lccn": "2"}])
+            rows = loc_sitmaps.read_catalogue()
+        self.assertEqual([r["item"] for r in rows], ["ict21001", "ict21276"])
+        self.assertEqual((rows[1]["width"], rows[1]["height"], rows[0]["width"]), ("6670", "5975", ""))
+
+    def test_select_a_day_a_run_or_an_item(self):
+        rows = [{"item": f"ict{21276 + i}", "date": f"1945-03-{7 + i:02d}"} for i in range(5)]
+        self.assertEqual([r["date"] for r in loc_sitmaps.select(rows, "1945-03-08")], ["1945-03-08"])
+        self.assertEqual([r["date"] for r in loc_sitmaps.select(rows, "1945-03-08", "1945-03-10")], ["1945-03-08", "1945-03-09", "1945-03-10"])
+        self.assertEqual([r["item"] for r in loc_sitmaps.select(rows, "ict21280")], ["ict21280"])
+        self.assertEqual(loc_sitmaps.select(rows, "1945-04-01"), [])
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,16 +1,21 @@
 # /// script
 # requires-python = ">=3.10,<3.14"
-# dependencies = ["numpy", "scipy", "pillow", "scikit-image"]
+# dependencies = ["numpy", "scipy", "pillow", "scikit-image", "pyyaml"]
 # ///
 """Trace the front line, and place the unit symbols, of a dated situation map (records/fronts/).
 
-The maps (SOURCES.yml `loc-12ag`): HQ Twelfth Army Group's daily situation maps, 1:1,000,000, in the Library of
-Congress (G5701.S7 svar .A4), item ict21269 + the day of March 1945 (G-3 report no. 268 + the day). The skill
-`trace-situation-map` (.claude/skills/) gives the order of work; records/fronts/README.md the files and what was learnt.
+The maps (SOURCES.yml `loc-12ag`): HQ Twelfth Army Group's daily situation maps in the Library of Congress (G5701.S7
+svar .A4), one a day from 6 June 1944 to 26 July 1945, catalogued in records/fronts/sitmaps.csv (tools/loc_sitmaps.py).
+A map is named 12ag-<date>. What is read and decided for it by hand is records/fronts/<map>.yml: its title as read (the
+hour of its situation, the G-3 report), which day's towns its own are matched to, and the boxes, flips and checks its
+trace needed, each with its reason; the tool refuses to trace a day whose title hasn't been read. The skill
+`trace-situation-map` (.claude/skills/) gives the order of work; records/fronts/README.md the files and what was learnt;
+guides/SITUATION-MAPS.md the whole collection and how to work through it.
 
+    uv run tools/trace_front.py 12ag-1945-03-08 --title                       # its title block, from the Library (no scan needed):
+                                                                              #   read it, write records/fronts/<map>.yml
     uv run tools/trace_front.py 12ag-1945-03-08 --fetch                       # the scan (cached, git-ignored)
-    uv run tools/trace_front.py 12ag-1945-03-08 --title                       # its title block: the report and the date
-    uv run tools/trace_front.py 12ag-1945-03-08 --gcps-from 12ag-1945-03-07   # its towns, matched to that day's
+    uv run tools/trace_front.py 12ag-1945-03-08 --gcps-from 12ag-1945-03-07   # its towns, matched to that day's (the YAML's default)
     uv run tools/trace_front.py 12ag-1945-03-08 --overlay                     # trace, and draw it over the scan to check
     uv run tools/trace_front.py 12ag-1945-03-08 --boxes                       # the symbols' boxes, numbered, to read
     uv run tools/trace_front.py 12ag-1945-03-08 --look 4590,2020 4630,1797    # magnified, to read a hard one
@@ -50,7 +55,6 @@ import math
 import re
 import subprocess
 import sys
-import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -68,80 +72,94 @@ KIT = Path(__file__).resolve().parent.parent
 REC = KIT / "records" / "fronts"
 CACHE = KIT / "sources" / "maps" / "loc"
 WORK = KIT / "sources" / "fronts-work"   # the working images and lists, a folder a map (git-ignored)
-TILE = "https://tile.loc.gov/storage-services/service/gmd/gmd5/g5701/g5701s/{}.jp2"   # the scans, without the bot check
 # the kit's units a map's US symbol certainly is: (arm, label) as drawn -> records/army's unit or relation (a German
 # "XIII" or "FIFTEENTH" is the German corps or army, never the US one of that number)
 UNIT_IDS = {("armored", "9"): "9ad", ("", "III"): "iii-corps", ("", "VII"): "vii-corps", ("infantry", "1"): "1st-division",
             ("", "V"): "v-corps", ("", "VIII"): "viii-corps", ("", "XIX"): "xix-corps", ("", "FIRST"): "first-army",
             ("", "NINTH"): "ninth-army", ("", "THIRD"): "third-army"}
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import loc_sitmaps
+import records
+
+
 @dataclass(frozen=True)
 class SitMap:
-    """A map: its scan, citation, date and the hour of its situation, and the front's runs as waypoints on the scan
-    (x, y), each run in order with the enemy's (hatched) side on its left."""
+    """A map: its scan and citation (the catalogue, records/fronts/sitmaps.csv), and what was read and decided for it by
+    hand (records/fronts/<map>.yml): the date and hour of its situation and its title as read on the sheet, which day's
+    towns its own are matched to, the front's runs as waypoints where it is traced that way (7 March), and the boxes,
+    flips and checks its trace needed, each with its reason."""
+    name: str
+    item: str
     scan: str
     cite: str
     date: str
-    as_of: str
-    title: str
-    runs: list[list[tuple[int, int]]]
-    exclude: tuple[tuple[int, int, int, int], ...] = ()   # boxes on the scan whose heavy ink isn't the front (boundaries)
-    flip: tuple[tuple[int, int], ...] = ()                # points on stretches whose ticks don't tell their side, to turn
-    checked: tuple[tuple[int, int], ...] = ()             # and on those found the right way, checked by eye
+    width: int
+    height: int
+    read: bool                                             # the sheet's title has been read: the YAML exists
+    as_of: str = ""
+    title: str = ""
+    report: str = ""
+    gcps_from: str = ""
+    runs: tuple = ()                                       # [[(x, y), ...], ...] on the scan, the enemy's side on the left
+    exclude: tuple = ()                                    # boxes on the scan whose heavy ink isn't the front (boundaries)
+    flip: tuple = ()                                       # points on stretches whose ticks don't tell their side, to turn
+    checked: tuple = ()                                    # and on those found the right way, checked by eye
 
 
-# The later days' fronts, as waypoints on each day's own scan (read on its overlay, 6 Nov 2026); the sheets are ict21269 + the
-# day, G-3 report no. 268 + the day (read on each sheet's title, 6 Nov 2026).
-RUNS: dict[int, list[list[tuple[int, int]]]] = {}
-# their front is the ticked stretches (stretches()), less the heavy lines that aren't the front: the 21st/12th Army Group
-# boundary from Aachen north-east (the same line on every sheet; the sheets' offsets are under 70 px)
-BOUNDARY = ((3700, 1420, 4280, 2000),)
-EXCLUDE: dict[int, tuple[tuple[int, int, int, int], ...]] = {
-    # a blunt dead-end spur toward Zell, at the traced area's southern edge, with no ticks either side: which side is whose
-    # can't be read, so it is left out
-    14: BOUNDARY + ((4630, 2895, 4690, 2950),),
-    15: BOUNDARY + ((4630, 2895, 4690, 2950),),
-}
-# stretches with no ticks of their own to tell by and no line to take a way from (short pieces: a corridor's head, a
-# bend at a junction), each looked at on the scan (6 Nov 2026) against the map's own ticks: turned (`FLIP`) where it was
-# found running the wrong way, confirmed (`CHECKED`) where it was right
-FLIP: dict[int, tuple[tuple[int, int], ...]] = {
-    10: ((5005, 2421),),                   # the Rhine at Neuwied: the US side is south, the 4th Armored's corridor
-    11: ((5012, 2422),),                   # the Rhine by Neuwied: the map ticks its south side (the 4th Armored's)
-    17: ((4963, 2421), (4912, 2438)),      # the same, two pieces
-}
-CHECKED: dict[int, tuple[tuple[int, int], ...]] = {
-    8: ((4557, 2511),),                    # the 11th Armored's corridor head, ticked inside
-    9: ((4769, 2204), (4921, 2444)),       # by Remagen; the 4th Armored's corridor at the Rhine
-    10: ((5094, 2715),),                   # the Rhine south of Boppard
-    11: ((4303, 1436), (4794, 2295)),      # by Düsseldorf; by Linz
-    12: ((4683, 2127),),                   # by Remagen
-    14: ((4619, 2926),),                   # the stub toward Zell
-    16: ((4358, 1578),),                   # by Grevenbroich
-    17: ((5003, 2562), (5050, 2628)),      # Koblenz; Braubach
-}
+def catalogue():
+    """The Library's listing (loc_sitmaps.py list), by the map's name: 12ag-<date> -> its row."""
+    rows = {f"12ag-{r['date']}": r for r in loc_sitmaps.read_catalogue()}
+    if not rows:
+        sys.exit("no catalogue at records/fronts/sitmaps.csv: uv run tools/loc_sitmaps.py list")
+    return rows
 
-# Waypoints read on the overlay (5 Nov 2026).
-MAPS = {
-    "12ag-1945-03-07": SitMap(
-        scan="g5701s-ict21276.jp2",
-        cite="loc-12ag/ict21276",
-        date="1945-03-07",
-        as_of="071200 MAR 1945",
-        title="HQ Twelfth Army Group situation map, to accompany G-3 report no. 275: situation as of 071200 Mar 1945",
-        # one run, north to south (the enemy to the east, on its left): down the Rhine from about Grevenbroich's latitude
-        # past Cologne and Bad Godesberg, out to the point at Remagen and back, south through the Eifel, round Third
-        # Army's salient toward Kaisersesch (its north side out, its south side back), and on south to about 50.05 N.
-        # The towns the fit uses lie from 50.15 to 51.09 N; the ends are just outside that, and say so in the README.
-        runs=[[(4395, 1540), (4510, 1700), (4510, 2070), (4700, 2215), (4530, 2200), (4200, 2345), (4185, 2420),
-                  (4300, 2610), (4255, 2895), (4450, 2725), (4655, 2655), (4450, 2790), (4320, 2950)]],
-    ),
-    **{f"12ag-1945-03-{d:02d}": SitMap(
-        scan=f"g5701s-ict{21269 + d}.jp2", cite=f"loc-12ag/ict{21269 + d}", date=f"1945-03-{d:02d}", as_of=f"{d:02d}1200 MAR 1945",
-        title=f"HQ Twelfth Army Group situation map, to accompany G-3 report no. {268 + d}: situation as of {d:02d}1200 Mar 1945",
-        runs=RUNS.get(d, []), exclude=EXCLUDE.get(d, BOUNDARY), flip=FLIP.get(d, ()),
-        checked=CHECKED.get(d, ())) for d in range(8, 18)},
-}
+
+def sitmap(name):
+    row = catalogue().get(name)
+    if not row:
+        sys.exit(f"{name} is not a day in records/fronts/sitmaps.csv (12ag-YYYY-MM-DD, 1944-06-06 to 1945-07-26)")
+    path = REC / f"{name}.yml"
+    y = records.load_yaml(path) if path.exists() else None
+    if y and y.get("item") != row["item"]:
+        sys.exit(f"{path.name} says item {y.get('item')}, the catalogue {row['item']}: one of them is wrong")
+    y = y or {}
+    pts = lambda key: tuple((int(d["at"][0]), int(d["at"][1])) for d in y.get(key) or [])
+    return SitMap(name=name, item=row["item"], scan=f"g5701s-{row['item']}.jp2", cite=f"loc-12ag/{row['item']}", date=row["date"],
+                  width=int(row.get("width") or 6700), height=int(row.get("height") or 6000), read=bool(y),
+                  as_of=str(y.get("as_of") or ""), title=str(y.get("title") or ""), report=str(y.get("report") or ""),
+                  gcps_from=str(y.get("gcps_from") or ""),
+                  runs=tuple([tuple(p) for p in run] for run in y.get("runs") or []),
+                  exclude=tuple(tuple(int(v) for v in d["box"]) for d in y.get("exclude") or []),
+                  flip=pts("flip"), checked=pts("checked"))
+
+
+def region(M, scan, x, y, w, h, width=None):
+    """A part of the sheet, from the scan when it is here, else from the Library's IIIF service (no scan needed)."""
+    if scan.exists():
+        im = Image.open(scan).convert("RGB").crop((x, y, x + w, y + h))
+        return im.resize((width, int(h * width / w))) if width else im
+    import io
+    body, _ = loc_sitmaps.get(f"{loc_sitmaps.IIIF.format(item=M.item)}/{x},{y},{w},{h}/{f'{width},' if width else 'full'}/0/default.jpg")
+    return Image.open(io.BytesIO(body)).convert("RGB")
+
+
+def skeleton(M):
+    """The YAML a reader writes once the title is read (records/fronts/<map>.yml), to fill in."""
+    return "\n".join([
+        f"# {M.name}: the sheet as read on its title, and the hand decisions its trace needed (tools/trace_front.py;",
+        "# fronts/README.md). The towns are <map>-gcps.csv, the symbols <map>-units.csv; the GeoJSON is generated.",
+        f"item: {M.item}", f"date: {M.date}",
+        "as_of: DD1200 MON 1945          # the situation's day and hour, as the title gives it (or 2400 HRS D MONTH 1944)",
+        "report:                          # the G-3 report's number, where the title gives one",
+        f'title: "HQ Twelfth Army Group situation map, to accompany G-3 report no. NNN: situation as of {M.date}"   # as read',
+        "read: the title on the sheet, <date>",
+        "gcps_from: 12ag-1945-03-07       # the day whose towns this sheet's are matched to (the same base sheet), or gcps_read: by eye",
+        "exclude:   # boxes on the scan (x0, y0, x1, y1) whose heavy ink isn't the front, each with why",
+        "  - {box: [3700, 1420, 4280, 2000], why: \"the 21st/12th Army Group boundary from Aachen north-east (the 1:1,000,000 sheet)\"}",
+        "flip: []   # stretches turned by hand after a look: {at: [x, y], why: ...}",
+        "checked: []   # stretches whose ticks didn't tell, found the right way by eye: {at: [x, y], why: ...}",
+    ])
 
 
 def design(a, b):
@@ -533,45 +551,58 @@ def write_units(map_name, M, spec, boxes_csv):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("map", choices=sorted(MAPS))
+    ap.add_argument("map", help="a day's map, 12ag-YYYY-MM-DD (records/fronts/sitmaps.csv)")
     ap.add_argument("--radius", type=int, default=4, help="opening disk radius in pixels (the front's weight)")
     ap.add_argument("--fetch", action="store_true", help="download the map's scan from the Library's tile server")
     ap.add_argument("--overlay", nargs="?", const="", help="draw the trace over the scan (to the work folder, or a path)")
     ap.add_argument("--crop", type=int, nargs=4, help="the overlay's part of the scan: X Y W H")
-    ap.add_argument("--gcps-from", choices=sorted(MAPS), help="write this map's towns, matched to another map's")
+    ap.add_argument("--gcps-from", nargs="?", const="", metavar="MAP", help="write this map's towns, matched to another map's (the YAML's gcps_from)")
     ap.add_argument("--boxes", action="store_true", help="find and number the symbols' boxes, with a sheet to read them")
-    ap.add_argument("--title", action="store_true", help="the sheet's title block, to read its report number and date")
+    ap.add_argument("--title", nargs="*", type=int, metavar="N", help="the sheet's title block (or the region X Y W H), to read its date and report")
     ap.add_argument("--look", nargs="+", metavar="X,Y", help="magnified crops of the scan round these points")
     ap.add_argument("--units", metavar="SPEC", help="write the units CSV from a reading (see write_units)")
     ap.add_argument("--sides", action="store_true", help="the page's side test (Engage.frontSide) on every town")
     ap.add_argument("--check-units", action="store_true", help="every symbol in the units CSV, magnified with its reading, to check")
     a = ap.parse_args()
-    M = MAPS[a.map]
+    M = sitmap(a.map)
     scan = CACHE / M.scan
     work = WORK / a.map
     work.mkdir(parents=True, exist_ok=True)
     if a.fetch:
-        if scan.exists():
-            print(f"{scan.relative_to(KIT)} is already here ({scan.stat().st_size} bytes)")
-            return
-        CACHE.mkdir(parents=True, exist_ok=True)
-        req = urllib.request.Request(TILE.format(M.cite.split("/")[1]), headers={"User-Agent": "wwii-research-kit"})
-        scan.write_bytes(urllib.request.urlopen(req, timeout=300).read())
-        print(f"wrote {scan.relative_to(KIT)} ({scan.stat().st_size} bytes); read its title on --look 1200,600 to check the date")
+        loc_sitmaps.fetch_item(M.item)
+        print(f"next: --title to read the sheet's date and report, then write records/fronts/{a.map}.yml")
         return
-    if not scan.exists():
-        sys.exit(f"no scan at {scan}: --fetch it")
-    if a.title:
+    if a.title is not None:
+        # the title block: the sheet's top left, where the 1:1,000,000 sheets carry it, scaled to read (another sheet's
+        # title stands elsewhere: give the region); from the Library's IIIF service when the scan isn't here
+        x, y, w, h = a.title if len(a.title) == 4 else (0, 0, int(M.width * 0.6), int(M.height * 0.2))
         out = work / "title.jpg"
-        Image.open(scan).convert("RGB").crop((250, 200, 2300, 1100)).save(out, quality=85)
-        print(f"wrote {out}: the report number and 'SITUATION AS OF' must be {M.title.split(': ')[0][-3:]} and {M.as_of}")
+        region(M, scan, x, y, w, h, width=1600).save(out, quality=85)
+        print(f"wrote {out}: read the situation's date and hour and the report number on it; the catalogue says {M.date}.")
+        if M.read:
+            print(f"records/fronts/{a.map}.yml says: as of {M.as_of}, report {M.report or '?'}. It must agree.")
+        else:
+            print(f"no records/fronts/{a.map}.yml yet. Write it from what the title says, starting from:\n")
+            print(skeleton(M))
         return
     if a.look:
         pts = [tuple(int(v) for v in p.split(",")) for p in a.look]
         out = work / "look.jpg"
-        contact_sheet(np.asarray(Image.open(scan).convert("RGB")), pts, out, half=(90, 60), scale=2.5, cols=3, labels=a.look)
+        if scan.exists():
+            contact_sheet(np.asarray(Image.open(scan).convert("RGB")), pts, out, half=(90, 60), scale=2.5, cols=3, labels=a.look)
+        else:   # each look from the Library's IIIF service
+            tiles = [region(M, scan, x - 90, y - 60, 180, 120, width=450) for x, y in pts]
+            sheet = Image.new("RGB", (3 * 454, ((len(tiles) + 2) // 3) * 304), "white")
+            for i, t in enumerate(tiles):
+                ImageDraw.Draw(t).text((2, 1), a.look[i], fill=(220, 0, 0))
+                sheet.paste(t, ((i % 3) * 454, (i // 3) * 304))
+            sheet.save(out, quality=85)
         print(f"wrote {out}")
         return
+    if not scan.exists():
+        sys.exit(f"no scan at {scan}: --fetch it")
+    if not M.read:
+        sys.exit(f"records/fronts/{a.map}.yml is missing: read the sheet's title (--title) and write it first, so the trace carries the date and hour the sheet gives")
     if a.units:
         write_units(a.map, M, Path(a.units), work / "boxes.csv")
         return
@@ -584,11 +615,18 @@ def main():
         print(f"wrote {out}: {len(rows)} symbols, each tagged with its row, side, echelon, arm and label as recorded (L: listed)")
         return
 
-    if a.gcps_from:
+    if a.gcps_from is not None:
         # the matches are checked against one another: the two printings differ by an affine transform (the scans'
         # placing and the paper), fitted to the matches that agree with it (within 4 px, refitted); a town whose match
         # doesn't agree (the day's overprint over its ring) is placed through the transform instead, and says so
-        src = MAPS[a.gcps_from]
+        a.gcps_from = a.gcps_from or M.gcps_from
+        if not a.gcps_from:
+            sys.exit(f"which day's towns to match to? --gcps-from MAP, or gcps_from in records/fronts/{a.map}.yml")
+        src = sitmap(a.gcps_from)
+        if not (REC / f"{a.gcps_from}-gcps.csv").exists():
+            sys.exit(f"{a.gcps_from} has no towns yet (records/fronts/{a.gcps_from}-gcps.csv): a new base sheet's are read by eye")
+        if not (CACHE / src.scan).exists():
+            sys.exit(f"no scan of {a.gcps_from} at {CACHE / src.scan}: fetch it too (the matching needs both sheets)")
         rows = list(csv.DictReader(open(REC / f"{a.gcps_from}-gcps.csv")))
         base = np.asarray(Image.open(CACHE / src.scan).convert("L"))
         found, (dx, dy) = gcps_from(base, np.asarray(Image.open(scan).convert("L")), rows)

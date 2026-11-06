@@ -4,7 +4,8 @@ A kit for rebuilding WWII ships' and units' movements from their own records. Re
 `guides/METHODS.md` before transcribing anything, `guides/MORNING-REPORTS.md` before
 reading Army morning reports, and `guides/MUSTER-ROLLS.md` before following a Navy shore unit.
 For film of a place and date, follow the skill `find-film` (rules in `records/film/README.md`). For a day's situation map
-(the front and the divisions, `records/fronts/`), follow the skill `trace-situation-map`.
+(the front and the divisions, `records/fronts/`), follow the skill `trace-situation-map`; for many days of the Library's
+collection at once, `guides/SITUATION-MAPS.md` (the catalogue is `tools/loc_sitmaps.py`, one day a reader agent).
 
 ## The rule: cite every source
 
@@ -24,7 +25,7 @@ For film of a place and date, follow the skill `find-film` (rules in `records/fi
     positions.csv; `guides/ENGAGEMENTS.md`); `convoys/<id>/convoy.md`; `army/`; `seabees/`;
     `silhouettes/silhouettes.yml` (recognition silhouettes, each citing its plate).
   - `inventory.yml`: every report, found or not, and how far along it is. Update it with the work.
-  - Generated, never edited: `*.geojson`, `ships.json`, `seafloor.csv`, `weather.csv`,
+  - Generated, never edited: `*.geojson`, `ships.json`, `seafloor.csv`, `weather.csv`, `fronts/sitmaps.csv` (from the Library's API),
     `dives.json`, `engagements/*/engagement.json`, `engagements/index.json`, `convoys/convoys.json`, `silhouettes.json`, `scans.json`, `citations.json`,
     `army/army.json`, `army/seafloor.csv`, `seabees/seabees.json`, `reference/glossary.json`.
 - `tools/`: Python. Every file opens with a PEP 723 header giving the oldest Python it runs on and the packages it

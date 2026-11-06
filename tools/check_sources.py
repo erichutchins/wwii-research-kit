@@ -75,6 +75,7 @@ UNCITED = {
     "seabees/units.csv": "battalion names and outlines, citing the stations' sources in the note",
     "army/routes.csv": "legs the reports don't trace (sea crossings, road moves), drawn as assumed; each note says how and from what",
     "jgrid/keys.csv": "letters worked out from the anchors (anchors.csv), named in the evidence column",
+    "fronts/sitmaps.csv": "the Library's catalogue of the situation maps (SOURCES.yml loc-12ag), written by loc_sitmaps.py",
 }
 
 
