@@ -54,7 +54,7 @@ name whose twenty were read by eye (the March days use `12ag-1945-03-07`, and ke
 The daily sheets are printings of one base map for months at a time, so a day's towns are found by matching the rings
 of a day already read. Match to a day whose towns were **read by eye** on that base sheet: the day's `base` in
 `sitmaps.csv`, and that base's `towns` in `records/fronts/bases.yml` (on 22 December 1944 the sheet's 79 agree 71
-within 4 px, the March twenty 20 of 20). It must report at least 12 towns agreeing; a town off the transform is placed through it and says so. Don't edit the gcps
+within 4 px, the March twenty 20 of 20). It must report at least 12 towns agreeing (or six in ten, for a sheet with few crossings); a town off the transform is placed through it and says so. Don't edit the gcps
 file by hand.
 
 **A base without `towns` in `bases.yml`** (the 1:500,000 and 1:750,000 sheets of June–September 1944, north Germany

@@ -750,7 +750,8 @@ def main():
         if not src_scan.exists():
             sys.exit(f"no scan at {src_scan}: fetch it too (the matching needs both sheets)")
         rows, found, ok, res, pred, (dx, dy) = register(rows, src_scan, np.asarray(Image.open(scan).convert("L")))
-        if ok.sum() < 12 or np.median(res[ok]) > 2:
+        enough = min(12, max(6, int(round(0.6 * len(rows)))))   # twelve of the March twenty; six of a sheet's ten crossings
+        if ok.sum() < enough or np.median(res[ok]) > 2:
             sys.exit(f"the matches don't agree on one transform ({ok.sum()} within 4 px): check the overlay, or is this "
                      f"another base sheet (records/fronts/bases.yml)?")
         print(f"{a.gcps_from} -> {a.map}: sheets offset {dx:+d}, {dy:+d} px; {ok.sum()} of {len(rows)} towns agree "
