@@ -54,7 +54,7 @@
   else Chapter.crumb(id, crumb).then(() => { crumb.hidden = !crumb.innerHTML; }, () => { crumb.hidden = true; });
 
   // ---------- the picker: every engagement, by theatre, in date order
-  const THEATRES = { pacific: "Pacific", mediterranean: "Mediterranean", europe: "Europe" };
+  const THEATRES = { pacific: "Pacific", europe: "Europe", mediterranean: "Mediterranean", atlantic: "Atlantic" };
   const sel = document.getElementById("engagement");
   sel.innerHTML = Object.entries(THEATRES).map(([k, name]) => {
     const xs = index.filter(x => x.theater === k);
@@ -904,8 +904,10 @@
     const us = PARTS.filter(p => !p.opposed && !p.convoy && !p.unit), jp = PARTS.filter(p => p.opposed && !p.convoy);
     const ownName = (D.own || []).map(E.nation).join(" and ") || "US";
     const army = PARTS.filter(p => p.unit), t0 = d3.utcFormat("%Y-%m-%d")(new Date(E.T(D.window?.from || d3.min(D.events, e => e.key)) || 0));
-    const plate = (name, kind, silId, fill, extra = "", cls = "", title = "") => `<div class="plate ${cls}" title="${esc(title)}">${EV.sil(silId, fill, { ftPx: 0.42 })}<div class="nm">${esc(name)}</div><div class="kd">${esc(kind)}</div>${extra}</div>`;
-    const usPlates = us.map(p => plate(p.name + (p.hull ? ` (${p.hull})` : ""), [p.co, p.track ? `record: ${p.track}` : p.note].filter(Boolean).join(" · "), p.sil || EV.category(p.kind), colour(p.id), "", "", EV.silWords(p.sil)));
+    // a plate: the silhouette, the name, the kind, a fate; the pack's plates (one a row, the words beside) crop each
+    // silhouette to its own height (`fit`) so it sits level with its name
+    const plate = (name, kind, silId, fill, extra = "", cls = "", title = "", fit = false) => `<div class="plate ${cls}" title="${esc(title)}">${EV.sil(silId, fill, { ftPx: 0.42, fit })}<div class="words"><div class="nm">${esc(name)}</div><div class="kd">${esc(kind)}</div>${extra}</div></div>`;
+    const usPlates = us.map(p => plate(p.name + (p.hull ? ` (${p.hull})` : ""), [p.co, p.track ? `record: ${p.track}` : p.note].filter(Boolean).join(" · "), p.sil || EV.category(p.kind), colour(p.id), "", "", EV.silWords(p.sil), true));
     const convoyHTML = Object.values(D.convoys).map(c => {
       const route = [c.from, ...(c.via || []), c.to].filter(Boolean).join(" → ");
       const ships = [...c.ships].sort((a, b) => (a.role.startsWith("escort") ? 0 : 1) - (b.role.startsWith("escort") ? 0 : 1));
@@ -1003,7 +1005,7 @@
     document.getElementById("who").innerHTML = PARTS.map(p => {
       const bar = barOf(p);
       const words = p.convoy ? [p.kind, convoyWords(p)] : [p.hull, p.kind === "army" ? "Army unit" : p.kind, p.co, p.basis && p.basis !== "reported" && `${p.basis}: not named by the engagement's own entries`];
-      const sil = p.sil ? EV.sil(p.sil, bar || "var(--ink-3)", { ftPx: 0.42 }) : "";
+      const sil = p.sil ? EV.sil(p.sil, bar || "var(--ink-3)", { ftPx: 0.42, fit: true }) : "";
       const own = journey(p);
       const name = own ? `<a href="${own}" title="${esc(p.name)}: its own page, before and after this">${esc(p.name)}</a>` : esc(p.name);
       return `<div class="subj"><span class="bar${bar ? "" : " dash"}" style="${bar ? `--bar:${bar}` : ""}"></span><span class="n"><b>${name}</b> <i>${esc(words.filter(Boolean).join(" · "))}</i></span>${sil}</div>`;

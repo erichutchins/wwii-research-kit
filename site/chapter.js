@@ -35,12 +35,12 @@ const Chapter = (() => {
       ["silhouettes.html", "Recognition silhouettes", "the ships and aircraft the records name, to their plates"],
       ["dives.html", "A submarine's dives", "BANG's depth through every dive and depth-charge attack"],
       ["lanes.html", "The sea lanes", "the convoys the boats met, on the lanes they sailed"]] },
-    { id: "atlantic", name: "Atlantic", reading: [["zones.html", "Time zones", "the war diary's zone letters, changing with the convoy's longitude"]] },
+    { id: "europe", name: "Europe", reading: [["grids.html", "The Army's map grids", "the grid references in the reports"]] },
     { id: "mediterranean", name: "Mediterranean", reading: [
       ["grids.html", "The Army's map grids", "the grid references in the reports, from Sicily on"],
       ["german.html", "The German Army's reference points", "how the other side's reports in Italy give a position"],
       ["zones.html", "Time zones", "the Army's zone letters beside the Navy's"]] },
-    { id: "europe", name: "Europe", reading: [["grids.html", "The Army's map grids", "the grid references in the reports"]] },
+    { id: "atlantic", name: "Atlantic", reading: [["zones.html", "Time zones", "the war diary's zone letters, changing with the convoy's longitude"]] },
   ];
   const STAGES = [
     { id: "algiers", theatre: "mediterranean", name: "Algiers", where: "Algeria and Tunisia", countries: ["Algeria", "Tunisia", "Morocco"] },

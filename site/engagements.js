@@ -5,7 +5,7 @@
 (async () => {
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const ALL = await fetch(RECORDS + "engagements/index.json").then(r => r.json());
-  const THEATRES = [["pacific", "Pacific"], ["atlantic", "Atlantic"], ["mediterranean", "Mediterranean"], ["europe", "Europe"]];
+  const THEATRES = [["pacific", "Pacific"], ["europe", "Europe"], ["mediterranean", "Mediterranean"], ["atlantic", "Atlantic"]];
   const n = (k, one, many = one + "s") => `${k} ${k === 1 ? one : many}`;
   // the dates as the spine gives them (chapter.js): one day, or the first and the last
   const day = s => Date.parse(String(s).slice(0, 10) + "T00:00Z");

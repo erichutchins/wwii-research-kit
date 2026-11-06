@@ -122,10 +122,13 @@ button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible
 .pack .plates { grid-template-columns: minmax(0, 1fr); }
 .oob .units { list-style: none; padding: 0; margin: 0 0 12px; font-size: 17px; }
 .oob .units li { margin: 4px 0; }
-.plate { display: grid; gap: 3px; align-content: end; }
-.plate .sil { width: 100%; max-width: 170px; height: auto; }
-.pack .plate { grid-template-columns: 170px minmax(0, 1fr); gap: 2px 12px; align-items: end; }
-.pack .plate .sil { grid-row: span 2; }
+/* a row of plates shares its two tracks (subgrid): the silhouettes stand on one waterline, and the words (name, kind,
+   fate) start level under them, a long fate hanging below its own plate without pushing its neighbours down */
+.plate { display: grid; grid-template-rows: subgrid; grid-row: span 2; row-gap: 3px; }
+.plate .sil { width: 100%; max-width: 170px; height: auto; align-self: end; }
+.plate .words { display: grid; gap: 3px; align-content: start; }
+.pack .plate { grid-template-columns: 170px minmax(0, 1fr); grid-template-rows: none; grid-row: auto; gap: 2px 12px; align-items: start; }
+.pack .plate .sil { align-self: start; margin-top: 4px; }
 .plate .nm { font-weight: 600; line-height: 1.25; }
 .plate .kd { color: var(--ink-3); font-size: 14.5px; line-height: 1.3; }
 .plate.secondary .nm { font-weight: 400; font-style: italic; }
@@ -159,7 +162,7 @@ button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible
 .account .subj .bar.dash { background: repeating-linear-gradient(90deg, var(--ink) 0 4px, transparent 4px 7px); }
 .account .subj .n b { font-weight: 700; letter-spacing: .02em; }
 .account .subj .n i { color: var(--ink-3); }
-.account .subj .sil { align-self: center; max-width: 130px; height: auto; }
+.account .subj .sil { align-self: start; margin-top: 2px; max-width: 130px; height: auto; }
 .account #when { margin: 0; }
 .account .k { font-style: italic; color: var(--ink-3); font-size: 14.5px; }
 p.none { margin: 0; font-style: italic; color: var(--ink-3); }

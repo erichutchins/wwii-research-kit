@@ -15,8 +15,8 @@
   const BAR =
     '<a class="home" href="index.html">WWII research kit</a>' +
     '<span class="grp"><a href="engagements.html">Engagements</a></span>' +
-    '<span class="grp"><a href="theatre.html?t=pacific">Pacific</a><a href="theatre.html?t=atlantic">Atlantic</a>' +
-      '<a href="theatre.html?t=mediterranean">Mediterranean</a><a href="theatre.html?t=europe">Europe</a></span>' +
+    '<span class="grp"><a href="theatre.html?t=pacific">Pacific</a><a href="theatre.html?t=europe">Europe</a>' +
+      '<a href="theatre.html?t=mediterranean">Mediterranean</a><a href="theatre.html?t=atlantic">Atlantic</a></span>' +
     '<span class="grp ref"><a href="subjects.html">Subjects</a></span>' +
     '<span class="grp"><a class="lbl" href="index.html#reference">Reading the records</a><a href="zones.html">Time zones</a>' +
       '<span class="sub"><span class="lbl">Grids:</span><a href="jgrid.html">Japanese</a><a href="grids.html">US Army</a>' +

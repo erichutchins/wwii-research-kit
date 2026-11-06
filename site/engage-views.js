@@ -24,10 +24,13 @@ const EV = (() => {
   // A silhouette from the kit's library (silhouettes.js; wait on SILHOUETTES): a ship's own class profile in feet,
   // drawn `ftPx` pixels to the foot so plates compare true size, or else the generic shape for its kind.
   function sil(id, fill, opts = {}) {
-    const { ftPx = 0.38, width = 150, cls = "sil" } = opts;
+    // `fit`: the box ends at the ship's own highest point (a row beside text), not at the shared sky that lines ships up
+    // on one waterline (the order of battle); the scale is the same either way
+    const { ftPx = 0.38, width = 150, cls = "sil", fit = false } = opts;
     const ship = window.SHIPS && SHIPS[id];
     if (ship) {
-      const L = +ship.length, H = Math.max(L * 0.3, 30), w = L * ftPx;
+      const top = fit ? Math.max(...[...ship.d.matchAll(/,(-?[\d.]+)/g)].map(m => -m[1]), 1) + 1 : 0;
+      const L = +ship.length, H = fit ? top : Math.max(L * 0.3, 30), w = L * ftPx;
       return `<svg class="${cls}" viewBox="-2 ${-H} ${L + 4} ${H + 3}" width="${w.toFixed(0)}" height="${(w * (H + 3) / (L + 4)).toFixed(0)}" preserveAspectRatio="xMinYMax meet" aria-hidden="true"><path d="${ship.d}" fill="${fill}"/></svg>`;
     }
     const cat = window.SIL_CATEGORIES && SIL_CATEGORIES.shapes[id in (window.SIL_CATEGORIES?.shapes || {}) ? id : category(id)];

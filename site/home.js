@@ -47,7 +47,7 @@ async function engagements() {
     if (A.getUTCFullYear() === B.getUTCFullYear() && A.getUTCMonth() === B.getUTCMonth()) return `${fmtD(a)}–${fmt(b)}`;
     return A.getUTCFullYear() === B.getUTCFullYear() ? `${fmtDM(a)} – ${fmt(b)}` : `${fmt(a)} – ${fmt(b)}`;
   };
-  const cols = [["pacific", "Pacific"], ["atlantic", "Atlantic"], ["mediterranean", "Mediterranean"], ["europe", "Europe"]]
+  const cols = [["pacific", "Pacific"], ["europe", "Europe"], ["mediterranean", "Mediterranean"], ["atlantic", "Atlantic"]]
     .map(([id, name]) => [name, ALL.filter(e => e.theater === id)]).filter(([, xs]) => xs.length);
   document.getElementById("englist").innerHTML = cols.map(([name, xs]) => `<div><h3>${esc(name)}</h3><ul>${xs.map(e =>
     `<li><span class="dates">${esc(dates(e))}</span><a href="engagement.html?e=${encodeURIComponent(e.id)}">${esc(e.title)}</a></li>`).join("")}</ul></div>`).join("");

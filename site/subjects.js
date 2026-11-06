@@ -32,7 +32,7 @@
   const units = ALL.filter(s => s.kind === "unit");
   if (units.length) {
     out.push(`<h2>Army units</h2><p class="key">Morning reports (NARA RG 64), battalion histories and journals, the ETO order of battle; each row is the unit's record, never a person's.</p>`);
-    for (const th of ["mediterranean", "europe", "home", ""]) {
+    for (const th of ["europe", "mediterranean", "home", ""]) {
       const xs = units.filter(s => s.theatre === th).sort((a, b) => (a.first || "9").localeCompare(b.first || "9") || a.name.localeCompare(b.name));
       if (!xs.length) continue;
       out.push(`<h3>${THEATRE[th]}</h3><div class="ledger-wrap"><table class="ledger"><thead><tr><th>Unit</th><th>What it was</th><th>When</th><th class="num">Stations</th><th>Engagements</th><th>Status</th></tr></thead><tbody>${xs.map(s =>

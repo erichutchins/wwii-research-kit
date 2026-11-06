@@ -255,7 +255,7 @@ Front page                 the engagements (every one, by theatre), the theatres
 │                          wanted; do this yourself
 ├─ Engagements             the way in: every engagement read from both sides, by theatre and in date order, each with
 │                          its lede, its subjects and what its page holds
-├─ Theatre (4)             Pacific · Atlantic · Mediterranean · Europe: its operations in date order (the spine), each
+├─ Theatre (4)             Pacific · Europe · Mediterranean · Atlantic: its operations in date order (the spine), each
 │                          with its engagements; its subjects; its explainers ("reading the records here")
 │   ├─ Operation           what it was for and what it meant, cited; its area and dates; the engagements inside it;
 │   │                      the subjects with stations inside it (context, not participation)
