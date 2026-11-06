@@ -356,6 +356,19 @@ def register(rows, src_scan, other):
                 T = np.linalg.lstsq(A[near], B[near], rcond=None)[0]
             found, _ = gcps_from(base, other, rows, at=A @ T)
             ok, res, T = fit(found)
+    if len(rows) >= 30 and (ok.sum() < min(12, max(6, int(round(0.6 * len(rows))))) or np.median(res[ok]) > 2) if ok.any() else False:
+        # an earlier printing whose paper has warped since (B09, the autumn 1944 printing of B11's plate: 36 of 81 towns
+        # within 4 px of one affine, median 4 px, the rest up to 80 px off, smoothly across the sheet): a second-order
+        # transform, seeded from the affine and each town searched again where it puts it. Only for a sheet of many
+        # towns that the affine fails (the caller's test): a day it serves doesn't move.
+        x, y = A[:, 0], A[:, 1]
+        cx, cy, sc = x.mean(), y.mean(), max(x.std(), y.std())
+        u, v = (x - cx) / sc, (y - cy) / sc
+        A = np.c_[x, y, np.ones(len(x)), u * u * sc, u * v * sc, v * v * sc]
+        T = np.r_[T, np.zeros((3, 2))]
+        for _ in range(3):
+            found, _ = gcps_from(base, other, rows, at=A @ T)
+            ok, res, T = fit(found)
     return rows, found, ok, res, A @ T, (int(dx), int(dy))
 
 
