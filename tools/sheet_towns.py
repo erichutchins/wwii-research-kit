@@ -6,7 +6,8 @@
 across the sheet rather than in the corner the first towns surround (guides/SITUATION-MAPS.md, section 5, B).
 
     uv run tools/sheet_towns.py crops B11 candidates.csv [--with readings.txt]   # a numbered, gridded crop of the sheet round each candidate, to read
-    uv run tools/sheet_towns.py accept B11 readings.txt      # the rings read on them -> records/fronts/towns-B11.csv
+    uv run tools/sheet_towns.py crops B13 --graticule [--step 1] --with seeds.txt   # the same round each whole-degree graticule crossing
+    uv run tools/sheet_towns.py accept B11 readings.txt      # the rings or crossings read on them -> records/fronts/towns-B11.csv
 
 `crops`: the base's record in records/fronts/bases.yml names the day whose scan the towns are read on (`towns_on`) and
 whose towns, read by eye, seed the fit. The sheet is a conformal conic, and a conic fitted to twenty towns in one
@@ -23,9 +24,19 @@ city; a reader does it at a glance. `accept`: the readings, one a line (`12 2037
 draws as an area, or not at all; a later line for the same number replaces an earlier one, so a second look (`crops
 --with readings.txt --only 12,27`, whose predictions are then good to about 10 px) is appended to the file), with the seeds, into records/fronts/towns-<base>.csv (`read` says which), and the
 conic fit's residuals, the towns that disagree most first, for a second look.
+
+Better than towns: **the sheet's graticule**. The 1:1,000,000 sheets print a meridian and a parallel every degree, and
+a crossing is an exact control point with no geocoder's centroid and no name to match. `crops --graticule` makes the
+candidates itself, every crossing (at `--step` degrees) the fit puts on the sheet, named `7E 50N`; the reader reads the
+crossing of the two thin lines. A new base has no fit to start from: its seeds are three or four crossings read by eye
+on the sheet's margins, where the degrees are printed, given in the readings file as `7E 50N 693,5750` (the crossing
+named, then its x,y), and `--with seeds.txt` builds the first fit from them (the cone constant the Europe sheets'
+usual, which the whole sheet's crossings then refine). The 1:1,000,000 plate's towns-B11.csv was read from towns
+before this was seen; the sheet's crossings agreed with that fit within 10 px.
 """
 import argparse
 import csv
+import re
 import sys
 from pathlib import Path
 
@@ -87,16 +98,36 @@ def cmd_crops(a):
     scan = tf.CACHE / M.scan
     if not scan.exists():
         sys.exit(f"no scan of {on} at {scan}: loc_sitmaps.py fetch {M.date}")
-    seeds = list(csv.DictReader(open(tf.REC / f"{on}-gcps.csv")))
-    cands = geocode(list(csv.DictReader(open(a.candidates))))
+    seeds = list(csv.DictReader(open(tf.REC / f"{on}-gcps.csv"))) if (tf.REC / f"{on}-gcps.csv").exists() else []
+    cands = [] if a.graticule else geocode(list(csv.DictReader(open(a.candidates))))
     if getattr(a, "with_", None):
         for v in readings(a.with_):
-            if v[1] != "none":
+            if v[1] == "none":
+                continue
+            x, y = v[1].split(",")
+            if CROSSING.fullmatch(v[0]):
+                lon, lat = crossing_ll(v[0])
+                seeds.append({"town": v[0], "x": x, "y": y, "lat": f"{lat}", "lon": f"{lon}"})
+            else:
                 c = cands[int(v[0]) - 1]
-                seeds.append({"town": c["town"], "x": v[1].split(",")[0], "y": v[1].split(",")[1], "lat": c["lat"], "lon": c["lon"]})
+                seeds.append({"town": c["town"], "x": x, "y": y, "lat": c["lat"], "lon": c["lon"]})
+    if len(seeds) < 3:
+        sys.exit(f"{on} has no towns yet: read three or four graticule crossings by eye on the sheet's margins and give "
+                 f"them with --with (`7E 50N 693,5750` a line)")
     rgb = np.asarray(Image.open(scan).convert("RGB"))
     H, W = rgb.shape[:2]
     fit = tf.Conic(seeds)
+    if a.graticule:
+        # every crossing the fit puts on the sheet, by rows from the north-west
+        ll = fit.to_ll([[0, 0], [W, 0], [0, H], [W, H]])
+        lons = np.arange(np.floor(ll[:, 0].min() / a.step) * a.step, ll[:, 0].max() + a.step, a.step)
+        lats = np.arange(np.ceil(ll[:, 1].max() / a.step) * a.step, ll[:, 1].min() - a.step, -a.step)
+        for lat in lats:
+            for lon in lons:
+                X, Y = fit.to_px([[lon, lat]])[0]
+                if 0 <= X < W and 0 <= Y < H:
+                    name = f"{abs(lon):g}{'W' if lon < 0 else 'E'} {abs(lat):g}{'S' if lat < 0 else 'N'}"
+                    cands.append({"town": name, "lat": f"{lat:g}", "lon": f"{lon:g}", "source": f"loc-12ag/{M.item}", "query": "", "osm": ""})
     corners = fit.to_ll([[0, 0], [W, 0], [0, H], [W, H]])
     print(f"{on}: {len(seeds)} towns seed the conic (rms {fit.rms_px:.1f} px); the sheet's corners by it: "
           + ", ".join(f"{lon:.1f}E {lat:.1f}N" for lon, lat in corners))
@@ -124,14 +155,26 @@ def cmd_crops(a):
 
 
 def readings(path):
-    """The readings file: `n x,y` or `n none` a line, after a `#` a comment; a later line for the same n (a second
-    look) replaces the earlier."""
+    """The readings file: `n x,y` or `n none` a line, or a graticule crossing named by its degrees, `7E 50N x,y`
+    (a seed on a new sheet); after a `#` a comment; a later line for the same n (a second look) replaces the earlier."""
     out = {}
     for ln in Path(path).read_text().splitlines():
         v = ln.split("#")[0].split()
+        if len(v) >= 3 and CROSSING.fullmatch(f"{v[0]} {v[1]}"):
+            v = [f"{v[0]} {v[1]}", *v[2:]]
         if len(v) >= 2:
             out[v[0]] = v
     return list(out.values())
+
+
+CROSSING = re.compile(r"(\d+(?:\.\d+)?)([EW]) (\d+(?:\.\d+)?)([NS])")
+
+
+def crossing_ll(name):
+    """`7E 50N` -> (7.0, 50.0); `0.5W 48.5N` -> (-0.5, 48.5)."""
+    m = CROSSING.fullmatch(name)
+    lon, lat = float(m.group(1)), float(m.group(3))
+    return (-lon if m.group(2) == "W" else lon), (-lat if m.group(4) == "S" else lat)
 
 
 def cmd_accept(a):
@@ -145,7 +188,8 @@ def cmd_accept(a):
         if v[1] == "none":
             continue
         x, y = v[1].split(",")
-        out.append({"town": c["town"], "x": x, "y": y, "read": "by eye on a crop round the conic's prediction", "lat": c["lat"], "lon": c["lon"],
+        what = "graticule crossing" if CROSSING.fullmatch(c["town"]) else "ring"
+        out.append({"town": c["town"], "x": x, "y": y, "read": f"{what} read by eye on a crop round the conic's prediction", "lat": c["lat"], "lon": c["lon"],
                     "source": c["source"], "query": c["query"], "on": on})
     path = tf.REC / f"towns-{a.base}.csv"
     with open(path, "w", newline="", encoding="utf-8") as f:
@@ -164,7 +208,9 @@ def cmd_accept(a):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    p = sub.add_parser("crops"); p.add_argument("base"); p.add_argument("candidates")
+    p = sub.add_parser("crops"); p.add_argument("base"); p.add_argument("candidates", nargs="?", help="town,query a line (not with --graticule)")
+    p.add_argument("--graticule", action="store_true", help="the candidates are the sheet's graticule crossings")
+    p.add_argument("--step", type=float, default=1.0, help="the graticule's spacing, degrees")
     p.add_argument("--with", dest="with_", help="readings already made (accept's form): they join the seeds for the predictions")
     p.add_argument("--only", type=lambda v: {int(x) for x in v.split(",")}, help="crop only these candidates (numbers), for a second look")
     p.set_defaults(fn=cmd_crops)

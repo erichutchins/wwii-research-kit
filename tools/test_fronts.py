@@ -37,6 +37,25 @@ def sheet(n_towns, seed=1, p1=45.0, p2=55.0, lon0=5.0):
     return [{"town": f"t{i}", "x": f"{px[i]:.3f}", "y": f"{py[i]:.3f}", "lon": f"{lon[i]:.6f}", "lat": f"{lat[i]:.6f}"} for i in range(n_towns)]
 
 
+class Crossings(unittest.TestCase):
+    """sheet_towns.py: a graticule crossing named by its degrees, in a readings file and as a point."""
+
+    def test_a_crossing_name_reads_both_ways(self):
+        import sheet_towns as st
+        self.assertEqual(st.crossing_ll("7E 50N"), (7.0, 50.0))
+        self.assertEqual(st.crossing_ll("13.6667E 49N"), (13.6667, 49.0))
+        self.assertEqual(st.crossing_ll("0.5W 48.5N"), (-0.5, 48.5))
+        self.assertIsNone(st.CROSSING.fullmatch("Reims"))
+
+    def test_readings_take_numbers_and_named_crossings_and_keep_the_last(self):
+        import tempfile
+
+        import sheet_towns as st
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f:
+            f.write("# a comment\n12 2037,3966\n7E 50N 693,5750   # a seed\n12 none\n")
+        self.assertEqual(st.readings(f.name), [["12", "none"], ["7E 50N", "693,5750"]])
+
+
 class ConicFit(unittest.TestCase):
     def test_recovers_a_sheet_on_a_known_conic_both_ways(self):
         rows = sheet(40)
