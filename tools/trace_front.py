@@ -662,7 +662,9 @@ def area_of(fit, margin=150):
 
 def write_units(map_name, M, spec, boxes_csv):
     """The units CSV from a reading: lines `n of echelon arm label [list:bridgehead]` (n a box --boxes numbered) or
-    `@x,y of echelon arm label [...]` (read by eye on the overview), `-` for an empty arm; `#` starts a comment."""
+    `@x,y of echelon arm label [...]` (read by eye on the overview), `-` for an empty arm; `#` starts a comment. A last
+    `unit:-` takes away the tie to the kit's units a symbol would get from its label (`unit:<id>` sets one): the
+    reviewer's call where the drawing and the unit disagree, its reason in a comment on the line."""
     det = {r["n"]: (int(r["x"]), int(r["y"])) for r in csv.DictReader(open(boxes_csv))} if boxes_csv.exists() else {}
     rows = []
     for ln in open(spec, encoding="utf-8"):
@@ -670,7 +672,9 @@ def write_units(map_name, M, spec, boxes_csv):
         if not ln:
             continue
         key, of, ech, arm, *label = ln.split()
-        lst = label.pop()[5:] if label and label[-1].startswith("list:") else ""
+        tie = label.pop()[5:] if label and label[-1].startswith("unit:") else None   # unit:- (no tie) or unit:<id>,
+        lst = label.pop()[5:] if label and label[-1].startswith("list:") else ""      # the reviewer's call, said why
+        tie = label.pop()[5:] if tie is None and label and label[-1].startswith("unit:") else tie   # in a comment
         arm = "" if arm == "-" else arm
         text = " ".join(label)
         if key.startswith("@"):
@@ -683,6 +687,8 @@ def write_units(map_name, M, spec, boxes_csv):
         # still that division
         bare = re.sub(r"\s*\((?:-|\+|±|ELMS?)\)\s*$", "", text)
         unit = UNIT_IDS.get((arm, bare), "") if of == "us" else ""
+        if tie is not None:
+            unit = "" if tie == "-" else tie
         rows.append([x, y, of, ech, arm, text, unit, lst, M.cite])
     rows.sort(key=lambda r: (r[1], r[0]))
     out = REC / f"{map_name}-units.csv"
