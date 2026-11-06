@@ -130,14 +130,14 @@
   // at the window's end: every track, mark and place shown, no play button, no lanes, no fading (zoom and pan stay).
   const PLAYS = CLOCKED && IN("records");
   if (PLAYS) useSitmap(sitmapAt(params.get("at") ? E.T(params.get("at")) : t1));
-  // a dated frame has no clock to play; its records depth steps through the day maps instead (`&on=1945-03-13`), the
-  // stations drawn to the map's day
+  // a dated frame has no clock to play; its records depth steps through the day maps instead (`&on=1945-03-13`) on the
+  // clocked frames' bar, a map at a time (drawDays), the stations drawn to the map's day
   const STEPPER = !PLAYS && IN("records") && SITMAPS.length > 1;
   if (STEPPER) useSitmap(SITMAPS.find(S => S.meta.date === params.get("on")) || SITMAPS[0]);
   // the story told in steps sits beside the map on the records depth, with the log behind a tab when the clock plays
   const STEPPED = IN("records") && STEPS.length > 0;
   if (!PLAYS) {
-    document.querySelector(".time").hidden = true;
+    document.querySelector(".time").hidden = !STEPPER;
     document.querySelector(".side").hidden = !STEPPED;
     document.getElementById("action").classList.add(IN("account") ? "account" : "dated");
   }
@@ -200,7 +200,7 @@
     D.positions.length && `<span><svg width="10" height="10" viewBox="-5 -5 10 10"><rect x="-3" y="-3" width="6" height="6" fill="var(--ink-3)"/></svg>A place in the records</span>`,
     D.positions.some(r => r.lat2 != null) && `<span><svg width="16" height="12" viewBox="0 0 16 12"><rect x="1" y="1" width="14" height="10" fill="none" stroke="var(--ink-2)" stroke-width="1.2"/></svg>A grid square the record names (our decoding)</span>`,
     (D.relief || []).length && `<span><svg width="18" height="12" viewBox="0 0 18 12"><rect x="1" y="1" width="16" height="10" fill="var(--land)" stroke="var(--coast)"/></svg>Relief and coast: today's elevation (SRTM, USGS)${RIVERS.length ? "; rivers from Natural Earth" : ""}</span>`,
-    FRONT && `<span>${EV.legendMark.front}<span>The front at ${IN("account") || SITMAPS.length < 2 ? esc(FRONT_HOUR) : `1200 on ${esc(SITMAP_DAYS.slice(0, -1).join(", "))} and ${esc(SITMAP_DAYS[SITMAP_DAYS.length - 1])} ${esc(d3.utcFormat("%B %Y")(new Date(SITMAPS[0].meta.date)))}, ${STEPPER ? "the one chosen on the map" : "the latest at the clock"}`}, as the <a href="${esc(SITMAP.meta.cite.href)}" target="_blank" rel="noopener">12th Army Group's ${SITMAPS.length > 1 && !IN("account") ? "maps" : "map"}</a> drew it (traced, ± about ${Math.max(1, Math.round(SITMAP.meta.fit_km * 2))} km), ticked as the map ticks it, on its own side</span></span>`,
+    FRONT && `<span>${EV.legendMark.front}<span>The front at ${IN("account") || SITMAPS.length < 2 ? esc(FRONT_HOUR) : `1200 on ${esc(SITMAP_DAYS.slice(0, -1).join(", "))} and ${esc(SITMAP_DAYS[SITMAP_DAYS.length - 1])} ${esc(d3.utcFormat("%B %Y")(new Date(SITMAPS[0].meta.date)))}, ${STEPPER ? "the day chosen under the map" : "the latest at the clock"}`}, as the <a href="${esc(SITMAP.meta.cite.href)}" target="_blank" rel="noopener">12th Army Group's ${SITMAPS.length > 1 && !IN("account") ? "maps" : "map"}</a> drew it (traced, ± about ${Math.max(1, Math.round(SITMAP.meta.fit_km * 2))} km), ticked as the map ticks it, on its own side</span></span>`,
     FRONT_UNITS.some(u => !u.opposed) && `<span>${EV.legendMark.unitUs}A US division or corps on that map: in its area, not at a position</span>`,
     FRONT_UNITS.some(u => u.opposed) && `<span>${EV.legendMark.unitEnemy}The enemy as that map placed them (US intelligence)</span>`,
     Object.values(STATIONS).some(rows => rows.length > 1) && `<span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" class="way" stroke="var(--ink-2)"/></svg>A unit's stations, joined straight; lighter in the week before the engagement</span>`,
@@ -299,7 +299,7 @@
   // drawing: its symbols in the order the map lists them, each with its designation as written; a list, not positions
   const overlays = () => {   // the map's own controls over the drawing, in the svg's pixels: the side marks keep clear of them
     const at = svg.node().getBoundingClientRect();
-    return [...document.querySelectorAll(".map-box .sitmap-steps, .map-box .scalebar, .map-box .zoom-btns")].filter(el => !el.hidden)
+    return [...document.querySelectorAll(".map-box .scalebar, .map-box .zoom-btns")].filter(el => !el.hidden)
       .map(el => { const r = el.getBoundingClientRect(); return [r.left - at.left, r.top - at.top, r.right - at.left, r.bottom - at.top]; });
   };
   const LISTED = document.createElement("div");
@@ -401,34 +401,6 @@
       });
 
     });
-  }
-  if (STEPPER) {
-    const box = document.querySelector(".map-box"), bar = document.createElement("div");
-    bar.className = "sitmap-steps";
-    const month = d3.utcFormat("%B")(new Date(SITMAPS[0].meta.date));
-    bar.innerHTML = `<button type="button" class="play" aria-label="Step through the maps"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1,0L9,5L1,10Z" fill="currentColor"/></svg></button>`
-      + `<i>the army group's map of</i> ${SITMAPS.map((S, i) => `<button type="button" data-i="${i}">${esc(SITMAP_DAYS[i])}</button>`).join(" ")} <i>${esc(month)}</i>`;
-    box.append(bar);
-    const mark = () => bar.querySelectorAll("button[data-i]").forEach(b => b.classList.toggle("on", SITMAPS[+b.dataset.i] === SITMAP));
-    const go = i => {
-      switchSitmap(SITMAPS[i]); mark();
-      const q = new URLSearchParams(location.search); q.set("on", SITMAP.meta.date); history.replaceState(null, "", `?${q}`);
-    };
-    let timer = 0;
-    const stop = () => { clearInterval(timer); timer = 0; bar.querySelector(".play").classList.remove("on"); };
-    bar.addEventListener("click", ev => {
-      const b = ev.target.closest("button");
-      if (!b) return;
-      if (b.classList.contains("play")) {
-        if (timer) return stop();
-        let i = SITMAPS.indexOf(SITMAP);
-        if (i === SITMAPS.length - 1) { i = -1; }
-        b.classList.add("on");
-        const next = () => { i++; go(i); if (i >= SITMAPS.length - 1) stop(); };
-        next(); timer = setInterval(next, 1600);
-      } else { stop(); go(+b.dataset.i); }
-    });
-    mark();
   }
   // a land frame (no followed ship or boat: the Army's) in statute miles, as its reports give them, and kilometres; a sea
   // frame in nautical miles
@@ -621,9 +593,11 @@
       gNowName.selectAll("text").data(nows, d => d.p.id).join("text").attr("class", "now-name").text(d => d.p.name)
         .attr("x", d => P(...d.now)[0] + 11).attr("y", d => P(...d.now)[1] - 9);
     }
-    document.getElementById("clock").textContent = clockText(t);
-    document.getElementById("clock-own").textContent = OWN ? `${OWN_NAME[OWN] || OWN} ${clockText(t + E.zoneHours(OWN) * 3600e3)}` : "";
-    document.getElementById("scrub").value = t;
+    if (PLAYS) {
+      document.getElementById("clock").textContent = clockText(t);
+      document.getElementById("clock-own").textContent = OWN ? `${OWN_NAME[OWN] || OWN} ${clockText(t + E.zoneHours(OWN) * 3600e3)}` : "";
+      document.getElementById("scrub").value = t;
+    }
     drawCursor();
     updateLog();
     updateClosing();
@@ -711,6 +685,7 @@
   const lanes = d3.select("#lanes");
   let lx = null;
   function drawLanes() {
+    if (STEPPER) return drawDays();
     if (!PLAYS) return;
     const laneH = 17, top = 4, left = 104;
     lanes.style("height", `${top + LANES.length * laneH + 24}px`);
@@ -739,9 +714,74 @@
     sc.min = t0; sc.max = t1; sc.step = 60000;
     drawCursor();
   }
-  function drawCursor() { if (lx) lanes.select(".cursor").attr("x1", lx(t)).attr("x2", lx(t)); }
-  lanes.on("click", ev => { if (!lx) return; stop(); setTime(+lx.invert(d3.pointer(ev)[0])); });
-  document.getElementById("scrub").addEventListener("input", e => { stop(); setTime(+e.target.value); });
+  function drawCursor() { const at = STEPPER ? SITMAP.ms : t; if (lx) lanes.select(".cursor").attr("x1", lx(at)).attr("x2", lx(at)); }
+  lanes.on("click", ev => {
+    if (!lx) return;
+    if (STEPPER) { const at = +lx.invert(d3.pointer(ev)[0]); stopDays(); goDay(d3.minIndex(SITMAPS, S => Math.abs(S.ms - at))); return; }
+    stop(); setTime(+lx.invert(d3.pointer(ev)[0]));
+  });
+  document.getElementById("scrub").addEventListener("input", e => { if (STEPPER) { stopDays(); goDay(+e.target.value); return; } stop(); setTime(+e.target.value); });
+
+  // ---------- the day maps' timeline (a dated frame's records depth with several situation maps): the clocked frames'
+  // bar, a day at a time. The lanes are the followed units' stations and each side's entries, each at its day (or its
+  // minute where the record gives one); the axis has a tick for each map's day; the cursor is the map shown, at its hour.
+  // The play steps a map at a time (never a glide); the slider and a click on the lanes go to the nearest map.
+  function drawDays() {
+    const laneH = 17, top = 4, dayMs = 86400e3;
+    const ROWS = [...PARTS.filter(p => (STATIONS[p.id] || []).length).map(p => ({ id: p.id, name: p.short || p.name, colour: SUBJECT_COLOUR[p.id] || colour(p.id), stations: STATIONS[p.id] })), ...LANES];
+    lanes.style("height", `${top + ROWS.length * laneH + 24}px`);
+    lanes.selectAll("*").remove();
+    // a unit's name is long ("60th Armored Infantry Battalion"): the lanes start past the longest, up to a third of the bar
+    const w = lanes.node().clientWidth, probe = lanes.selectAll("text.lane-label").data(ROWS).join("text").attr("class", "lane-label").text(L => L.name);
+    const left = Math.max(104, Math.min(w / 3, d3.max(probe.nodes(), n => n.getComputedTextLength()) + 14));
+    const fit = name => { probe.text(name); return probe.node().getComputedTextLength() <= left - 14; };
+    ROWS.forEach(L => { let name = L.name; while (!fit(name) && name.length > 4) name = name.slice(0, -2) + "…"; L.label = name; }); from = E.T(SITMAPS[0].meta.date), to = E.T(SITMAPS[SITMAPS.length - 1].meta.date) + dayMs;
+    lx = d3.scaleUtc().domain([from, to]).range([left, w - 8]);
+    const atDay = e => e.utc ? e.ms : E.T(dayOf(new Date(e.ms))) + dayMs / 2;   // a day's entry at the day's middle
+    lanes.selectAll("*").remove();
+    ROWS.forEach((L, i) => {
+      const y = top + i * laneH + laneH / 2;
+      lanes.append("line").attr("class", "lane-line").attr("x1", left).attr("x2", w - 8).attr("y1", y).attr("y2", y);
+      lanes.append("text").attr("class", "lane-label").attr("x", 0).attr("y", y + 4).text(L.label);
+      if (L.stations) L.stations.map(r => E.T(r.date) + dayMs / 2).filter(x => x >= from && x <= to)
+        .forEach(x => lanes.append("circle").attr("cx", lx(x)).attr("cy", y).attr("r", 3.2).attr("fill", L.colour));
+      else timed.filter(e => laneOf(e) === L.id).map(atDay).filter(x => x >= from && x <= to)
+        .forEach(x => lanes.append("line").attr("x1", lx(x)).attr("x2", lx(x)).attr("y1", y - 4).attr("y2", y + 4).attr("stroke", L.colour === "var(--japan)" ? L.colour : "var(--ink-3)").attr("stroke-width", 1.5));
+    });
+    const axisY = top + ROWS.length * laneH + 4, ax = lanes.append("g").attr("class", "axis"), every = w < 500 ? 3 : 1;
+    SITMAPS.forEach((S, i) => {
+      const x = lx(S.ms);
+      ax.append("line").attr("x1", x).attr("x2", x).attr("y1", top).attr("y2", axisY);
+      if (i % every === 0) ax.append("text").attr("x", x).attr("y", axisY + 12).attr("text-anchor", "middle").text(E.day(S.ms));
+    });
+    lanes.append("line").attr("class", "cursor").attr("y1", 0).attr("y2", axisY);
+    const sc = document.getElementById("scrub");
+    sc.min = 0; sc.max = SITMAPS.length - 1; sc.step = 1;
+    readDay();
+  }
+  // the readout: the map's day and hour as the sheet gives them, and its report
+  function readDay() {
+    document.getElementById("clock").textContent = `${SITMAP.meta.as_of.slice(2, 6)} · ${E.day(SITMAP.ms)}`;
+    document.getElementById("clock-zone").textContent = "the 12th Army Group's situation map";
+    const rep = /G-3 report no\. (\d+)/.exec(SITMAP.meta.title || "");
+    document.getElementById("clock-own").textContent = rep ? `to accompany its G-3 report no. ${rep[1]}` : "";
+    document.getElementById("scrub").value = SITMAPS.indexOf(SITMAP);
+    drawCursor();
+  }
+  function goDay(i) {
+    if (SITMAPS[i] === SITMAP) return;
+    switchSitmap(SITMAPS[i]); readDay();
+    const q = new URLSearchParams(location.search); q.set("on", SITMAP.meta.date); history.replaceState(null, "", `?${q}`);
+  }
+  let dayTimer = 0;
+  function stopDays() { clearInterval(dayTimer); dayTimer = 0; playBtn.textContent = "▶"; playBtn.setAttribute("aria-label", "Play"); }
+  function playDays() {
+    let i = SITMAPS.indexOf(SITMAP);
+    if (i === SITMAPS.length - 1) i = -1;
+    playBtn.textContent = "❚❚"; playBtn.setAttribute("aria-label", "Pause");
+    const next = () => { i++; goDay(i); if (i >= SITMAPS.length - 1) stopDays(); };
+    next(); dayTimer = setInterval(next, 1600);
+  }
 
   // ---------- the chronology, when the frame has no clock to play: Engage's rows and columns, EV's drawing
   function drawChronology() {
@@ -893,7 +933,7 @@
     const tick = now => { if (!playing) return; t += (now - last) * (t1 - t0) / 45000; last = now; if (t >= t1) { setTime(t1); stop(); return; } drawFrame(); raf = requestAnimationFrame(tick); };
     raf = requestAnimationFrame(tick);
   }
-  playBtn.addEventListener("click", () => playing ? stop() : play());
+  playBtn.addEventListener("click", () => STEPPER ? (dayTimer ? stopDays() : playDays()) : playing ? stop() : play());
 
   // ---------- the observer view (observer.js): each attack whose data sheet is transcribed; it lives in the working
   // (the card measures itself when mounted, so it is mounted only where it is shown); picking one moves the clock

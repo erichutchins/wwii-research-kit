@@ -165,8 +165,11 @@ Which leads is decided by the tempo and nothing else:
 - *dated*: Chronology in day columns leads (Algiers' "nights side by side" is the prototype; it becomes a shared view in
   `engage-views.js` and `algiers.html`'s own copy goes); the Map is static with the places and stations, no play button.
   The one exception: a frame with several days' situation maps (`records/fronts/`, Remagen) steps through them on its
-  records depth, a day at a time with a play that steps (never a glide), its subjects' stations drawn to the day shown;
-  the account keeps one map, the first (added 6 Nov 2026, to show the bridgehead growing day by day).
+  records depth, on the clocked frames' own bar under the map (the play button, the readout, a lane per followed unit
+  and per side, the slider), a map at a time: the axis has a tick for each map's day, the cursor is the map shown, the
+  play steps (never a glide), and the slider or a click on the lanes goes to the nearest map. Its subjects' stations are
+  drawn to the day shown; the account keeps one map, the first (added 6 Nov 2026, to show the bridgehead growing day by
+  day; the bar the same as the naval frames' since then).
 - *monthly*: the journey's strip (stages, as `chapter.js` computes them) leads, with the Map under it.
 
 The map keeps its encodings as they are (`guides/ENGAGEMENTS.md`, "Encodings"); they are the model's first implementation

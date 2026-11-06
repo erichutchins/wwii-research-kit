@@ -56,7 +56,7 @@ h3 { font-size: 16px; margin: 0 0 8px; }
 button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible, .row:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
 .card { background: var(--surface); border: 1px solid var(--rule); min-width: 0; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 14px 8px; color: var(--ink-2); font-size: 14.5px; border-bottom: 1px solid var(--rule); }
-.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend > span { display: inline-flex; align-items: center; gap: 6px; }
 .legend svg { overflow: visible; flex: none; }
 .legend .boat { color: var(--ink); font-weight: 600; }
 
@@ -194,14 +194,6 @@ p.none { margin: 0; font-style: italic; color: var(--ink-3); }
 }
 @media (max-width: 480px) { .wrap { padding-inline: 16px; } h1 { font-size: 26px; } .pack .plate { grid-template-columns: 120px minmax(0, 1fr); } }
 
-/* the day maps' stepper (a dated frame's records depth): the days as buttons, the one shown marked, a play that steps */
-.sitmap-steps { position: absolute; top: 10px; left: 10px; z-index: 2; display: flex; align-items: center; gap: 4px; padding: 4px 8px;
-  font: 13px/1.2 var(--serif); color: var(--ink-2); background: color-mix(in srgb, var(--surface) 90%, transparent); border: 1px solid var(--rule); border-radius: 2px; }
-.sitmap-steps button { font: inherit; color: var(--ink-2); background: none; border: 0; padding: 2px 4px; cursor: pointer; border-radius: 2px; }
-.sitmap-steps button:hover, .sitmap-steps button:focus-visible { background: var(--wash); }
-.sitmap-steps button.on { color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
-.sitmap-steps .play { display: inline-flex; align-items: center; padding: 4px 6px; }
-.sitmap-steps .play.on { color: var(--ink); background: var(--wash); }
 /* a situation map's list (the enemy divisions it lists as facing the bridgehead), under the map */
 .sitmap-list { margin: 8px 14px 4px; font-size: 13px; color: var(--ink-2); }
 .sitmap-list p { margin: 0 0 4px; }
