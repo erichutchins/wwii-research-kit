@@ -92,7 +92,8 @@ conductor                                   readers (situation-map-reader, one d
 5 review each report: open the overlay of
   every flip and check, the units sheet
   where symbols were read; send back what's
-  wrong (the reader keeps its context)
+  wrong (the reader keeps its context);
+  check_fronts.py over the run
 6 lint, check_builds, the engagement's page
   on three days of the run, light and dark
 7 commit the run in records/, then the kit
@@ -226,6 +227,27 @@ runs that decide each town, with each one's side and its middle on the scan: the
 reader's rule is to flip or explain it, never to call it an artefact unlooked. The one true artefact was Landau, off
 the corner where the Lauter front meets the Rhine. With the six days reviewed, all six put the same 46 towns on the
 enemy's side.
+
+**The Bulge to the end of January (6 November 2026).** Then every day from 16 December 1944 to 31 January 1945, for the
+family's units in the Ardennes and at Metz: 41 more days, readers five at a time, a new one started as each day was
+reviewed, so five were always running. A reader's day took 12 to 45 tool calls, 40,000 to 90,000 tokens and 4 to 13
+minutes, about 2.7 million tokens for the 41. The review was the conductor's: each day's `--sides` against the
+reviewed days', the front's length, the Walcheren arcs' direction (the enemy north, on Schouwen: they came out reversed
+on two days), the Colmar pocket's extent, a contact sheet of five overlays at a time, and a close crop wherever a town
+was on the wrong side. Ten of the 46 reader days were corrected on review: five with stretches turned the wrong way
+(the Colmar pocket, the Saar toward Bitche, Bisch, the Rhine bank south of Strasbourg, a joint by a boundary in the
+Ardennes), one with the Westwall band's outline taken for front, and four with boundaries still traced as front far
+behind the line, which no town's side showed because the stray ink lay deep in the US rear. Those four were found by
+setting each rear town's distance to the front beside the days either side: a town suddenly 30 km nearer the front is
+a stray stretch. That check, with a town whose side differs from both neighbours' and a front much shorter than both
+neighbours', is `tools/check_fronts.py`; over the 46 days, once corrected, it flags only Haguenau, whose ring sits on
+the Moder line from 22 January. Run it on every run before committing.
+
+What the readers got wrong, so the next run's brief says it: boxes too wide (one hid the Tholen front, another nearly
+the Colmar pocket's west side), a doubtful stretch called a "corner artefact" without the close look, a `checked`
+stretch that was reversed, and boundary names guessed. What they got right without being told: the Rhine where a
+sheet prints it dark, symbol outlines and lettering traced as stubs, the new title form of 25 January with its report
+number.
 
 ## 6. What stays as it is
 

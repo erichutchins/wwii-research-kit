@@ -43,6 +43,8 @@ on the overlay or with `--look`, every symbol on `boxes.jpg` and again on `units
   you can't read. Never fill in a number from another day.
 - Don't edit the tool, an engagement, a guide, a page, or another day's files. Don't commit.
 - Don't get around a bot check; stop and report the address.
+- Keep every `exclude` box tight round what it leaves out, and check the front is unbroken past it: a wide box once hid
+  the Tholen front. Name a boundary in a reason only as the map letters it; otherwise "a boundary".
 - A town on the wrong side in `--sides` is a wrong stretch until a close look shows otherwise: `--sides` names the
   runs that decide it and where they are. Flip or explain each; never report one as an artefact without that look.
 - Time box: about 60 tool calls. If the front is done and the symbols aren't, stop at a whole sheet (`boxes.jpg` read

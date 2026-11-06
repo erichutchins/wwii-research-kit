@@ -183,4 +183,7 @@ the lint and the smoke test must pass. A change in `records/` is public: no rela
 When days are traced in parallel (the agent `situation-map-reader`, one day a job; `guides/SITUATION-MAPS.md`), each
 reader writes only its own day's files (`<map>.yml`, `<map>-gcps.csv`, `<map>-units.csv`, `<map>.geojson`, its work
 folder) and reports back as the agent's definition asks; the session bringing the days together reviews each, enters
-the engagement's `fronts:` and the README's table, and commits. Nobody edits the tool for a day's sake.
+the engagement's `fronts:` and the README's table, and commits. Nobody edits the tool for a day's sake. Before committing a run it runs
+`tools/check_fronts.py FIRST LAST`, which sets each day beside the days either side and names a town whose side
+changed for one day only, a stray stretch far behind the line (a town suddenly much nearer the front) and a front much
+shorter than its neighbours'.
