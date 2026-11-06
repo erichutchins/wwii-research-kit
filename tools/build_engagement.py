@@ -132,6 +132,16 @@ FRUPAC_POS = "The position is read off the map from where the mark sits (about Â
 AT = re.compile(r"(\d{4}-\d{2}(?:-\d{2})?)(?: (\d{4})(?: ([A-Z]{1,2}))?)?")
 
 
+def unplaced(unit, ref):
+    """True if the patrol's positions.csv has the attack `ref` but check_track's load() left it out because its
+    position has an unread figure (a `?`): paired in claims.yml, not drawn."""
+    path = patrol_dir(unit) / "positions.csv"
+    if not path.exists():
+        return False
+    with open(path, newline="", encoding="utf-8") as fh:
+        return any(r.get("source") == "attack" and r.get("ref") == ref for r in csv.DictReader(fh))
+
+
 def num(v):
     try:
         return float(v)
@@ -288,7 +298,7 @@ class Build:
             other, _, ref = str(x["attack"]).rpartition(":")
             arows = rows if not other else load(other)
             a = next((r for r in arows if r["ref"] == ref), None)
-            if a is None:
+            if a is None and not unplaced(other or unit, ref):
                 self.bad(w, f"no attack {ref!r} in {other or unit}'s positions.csv")
             if x.get("record") not in ja:
                 self.bad(w, f"no record {x.get('record')!r} in japanese.yml")

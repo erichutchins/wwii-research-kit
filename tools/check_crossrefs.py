@@ -54,7 +54,12 @@ def pairs(patrol):
         key = other or patrol
         if key not in fixes:
             fixes[key] = {r["ref"]: r for r in load(key)}
-        a, j = fixes[key][ref], ja[x["record"]]
+        j = ja[x["record"]]
+        if ref not in fixes[key]:  # the attack's position isn't readable (a `?` in it): paired, but not placed
+            print(f"{patrol} {x['attack']:<9} (not placed: its position has an unread figure)  {j['id']} "
+                  f"{j.get('ship', ''):<14} {j.get('event', ''):<19} {x['relation']:<9} [{j['source']}]")
+            continue
+        a = fixes[key][ref]
         mins = f"{round((j['utc'] - a['utc']).total_seconds() / 60):+5d} min" if j["utc"] else "        -"
         dist = f"{nm((a['lat'], a['lon']), (j['lat'], j['lon'])):5.1f} nm" if j["lat"] is not None else "       -"
         print(f"{patrol} {x['attack']:<9} {a['utc']:%Y-%m-%dT%H:%MZ}  {j['id']} {j.get('ship', ''):<14} "
