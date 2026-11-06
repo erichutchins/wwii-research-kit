@@ -27,8 +27,9 @@ conic fit's residuals, the towns that disagree most first, for a second look.
 
 Better than towns: **the sheet's graticule**. The 1:1,000,000 sheets print a meridian and a parallel every degree, and
 a crossing is an exact control point with no geocoder's centroid and no name to match. `crops --graticule` makes the
-candidates itself, every crossing (at `--step` degrees) the fit puts on the sheet, named `7E 50N`; the reader reads the
-crossing of the two thin lines. A new base has no fit to start from: its seeds are three or four crossings read by eye
+candidates itself, every crossing (at `--step` degrees) the fit puts on the sheet, named `7E 50N`, and labels each crop
+with the name rather than a number (the numbering changes as the fit moves crossings on and off the sheet; a name
+doesn't); the reader reads the crossing of the two thin lines and writes `7E 50N x,y`. A new base has no fit to start from: its seeds are three or four crossings read by eye
 on the sheet's margins, where the degrees are printed, given in the readings file as `7E 50N 693,5750` (the crossing
 named, then its x,y), and `--with seeds.txt` builds the first fit from them (the cone constant the Europe sheets'
 usual, which the whole sheet's crossings then refine). The 1:1,000,000 plate's towns-B11.csv was read from towns
@@ -100,16 +101,17 @@ def cmd_crops(a):
         sys.exit(f"no scan of {on} at {scan}: loc_sitmaps.py fetch {M.date}")
     seeds = list(csv.DictReader(open(tf.REC / f"{on}-gcps.csv"))) if (tf.REC / f"{on}-gcps.csv").exists() else []
     cands = [] if a.graticule else geocode(list(csv.DictReader(open(a.candidates))))
-    if getattr(a, "with_", None):
-        for v in readings(a.with_):
+    prev = {r["n"]: r for r in csv.DictReader(open(OUT / f"{a.base}-candidates.csv"))} if (OUT / f"{a.base}-candidates.csv").exists() else {}
+    for path in a.with_ or []:
+        for v in readings(path):
             if v[1] == "none":
                 continue
             x, y = v[1].split(",")
             if CROSSING.fullmatch(v[0]):
                 lon, lat = crossing_ll(v[0])
                 seeds.append({"town": v[0], "x": x, "y": y, "lat": f"{lat}", "lon": f"{lon}"})
-            else:
-                c = cands[int(v[0]) - 1]
+            else:   # a number: of the last run's candidates (sheet_towns.py crops numbers them anew each run)
+                c = prev[v[0]] if v[0] in prev else cands[int(v[0]) - 1]
                 seeds.append({"town": c["town"], "x": x, "y": y, "lat": c["lat"], "lon": c["lon"]})
     if len(seeds) < 3:
         sys.exit(f"{on} has no towns yet: read three or four graticule crossings by eye on the sheet's margins and give "
@@ -138,7 +140,7 @@ def cmd_crops(a):
         on_sheet = HALF <= X < W - HALF and HALF <= Y < H - HALF
         rows.append([i, c["town"], X if on_sheet else "", Y if on_sheet else "", c["lat"], c["lon"], c.get("source", ""), c["query"], c.get("osm", "")])
         if on_sheet and (not a.only or i in a.only):
-            tiles.append(crop(rgb, X, Y, f"{i} {c['town']}"))
+            tiles.append(crop(rgb, X, Y, c["town"] if a.graticule else f"{i} {c['town']}"))
     with open(OUT / f"{a.base}-candidates.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, lineterminator="\n")
         w.writerow(["n", "town", "pred_x", "pred_y", "lat", "lon", "source", "query", "osm"])
@@ -173,6 +175,8 @@ CROSSING = re.compile(r"(\d+(?:\.\d+)?)([EW]) (\d+(?:\.\d+)?)([NS])")
 def crossing_ll(name):
     """`7E 50N` -> (7.0, 50.0); `0.5W 48.5N` -> (-0.5, 48.5)."""
     m = CROSSING.fullmatch(name)
+    if m is None:
+        raise ValueError(f"not a crossing's name: {name!r} (7E 50N)")
     lon, lat = float(m.group(1)), float(m.group(3))
     return (-lon if m.group(2) == "W" else lon), (-lat if m.group(4) == "S" else lat)
 
@@ -180,14 +184,20 @@ def crossing_ll(name):
 def cmd_accept(a):
     b = base_record(a.base)
     on = b.get("towns_on") or b["towns"]
-    seeds = list(csv.DictReader(open(tf.REC / f"{on}-gcps.csv")))
+    seeds = list(csv.DictReader(open(tf.REC / f"{on}-gcps.csv"))) if (tf.REC / f"{on}-gcps.csv").exists() else []
     cands = {r["n"]: r for r in csv.DictReader(open(OUT / f"{a.base}-candidates.csv"))}
+    item = tf.sitmap(on).item
     out = [{**r, "on": on} for r in seeds]
     for v in readings(a.readings):
-        c = cands[v[0]]
         if v[1] == "none":
             continue
         x, y = v[1].split(",")
+        if CROSSING.fullmatch(v[0]):   # a crossing read by eye on the sheet's margin, named
+            lon, lat = crossing_ll(v[0])
+            out.append({"town": v[0], "x": x, "y": y, "read": "graticule crossing read by eye on the sheet's margin", "lat": f"{lat:g}", "lon": f"{lon:g}",
+                        "source": f"loc-12ag/{item}", "query": "", "on": on})
+            continue
+        c = cands[v[0]]
         what = "graticule crossing" if CROSSING.fullmatch(c["town"]) else "ring"
         out.append({"town": c["town"], "x": x, "y": y, "read": f"{what} read by eye on a crop round the conic's prediction", "lat": c["lat"], "lon": c["lon"],
                     "source": c["source"], "query": c["query"], "on": on})
@@ -196,6 +206,8 @@ def cmd_accept(a):
         w = csv.DictWriter(f, ["town", "x", "y", "read", "lat", "lon", "source", "query", "on"], lineterminator="\n", extrasaction="ignore")
         w.writeheader()
         w.writerows(out)
+    if len(out) < 4:
+        sys.exit(f"wrote {path}: {len(out)} points, too few to fit")
     fit = tf.make_fit(out)
     res, loo = fit.residuals_km()
     print(f"wrote {path}: {len(out)} towns ({len(seeds)} seeds, {len(out) - len(seeds)} read); conic n {getattr(fit, 'n', 0):.3f}, "
@@ -211,7 +223,7 @@ def main():
     p = sub.add_parser("crops"); p.add_argument("base"); p.add_argument("candidates", nargs="?", help="town,query a line (not with --graticule)")
     p.add_argument("--graticule", action="store_true", help="the candidates are the sheet's graticule crossings")
     p.add_argument("--step", type=float, default=1.0, help="the graticule's spacing, degrees")
-    p.add_argument("--with", dest="with_", help="readings already made (accept's form): they join the seeds for the predictions")
+    p.add_argument("--with", dest="with_", action="append", help="readings already made (accept's form): they join the seeds for the predictions; may repeat")
     p.add_argument("--only", type=lambda v: {int(x) for x in v.split(",")}, help="crop only these candidates (numbers), for a second look")
     p.set_defaults(fn=cmd_crops)
     p = sub.add_parser("accept"); p.add_argument("base"); p.add_argument("readings"); p.set_defaults(fn=cmd_accept)

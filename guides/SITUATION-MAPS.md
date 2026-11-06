@@ -144,17 +144,16 @@ The Library's servers cost patience: a second between requests, and a run's scan
 | Scope | Days | Tool work first | Reader work | Model cost, rough |
 |---|---|---|---|---|
 | **A. Catalogue, sizes, fetch** | 415 | none (done, and `fetch`) | none | nothing: 2.5 GB on disk, about half an hour |
-| **B. The towns of each base sheet** | done for the 1:1,000,000 plate (81 towns, 211 days); left: north Germany in April 1945, the portrait sheet from 19 April, the eight 1944 sheets to 5 September | none: the conic fit, `sheet_towns.py` and the `bases` step are built | one reader per base, two passes of a minute each (the 1:1,000,000 sheet cost one Sonnet reader about 250,000 tokens); the two-day sheets of August 1944 only when an engagement wants them | a few dollars a base |
+| **B. The control points of each base sheet** | done for the 1:1,000,000 plate (81 towns, 211 days), north Germany (26 crossings, 12 days) and the 1:1,400,000 sheet (60 crossings, 31 days; its red-overprinted printing from 20 May, B15, is read from its own scan); left: the eight 1944 sheets to 5 September | none: the conic fit, `sheet_towns.py --graticule` and the `bases` step are built | one reader per base, two passes of about two minutes (about 250,000 tokens a sheet); the two-day sheets of August 1944 only when an engagement wants them | a few dollars a base |
 | **C. Every day's front** | 415 | B | the front job: a reader a day, 15 calls | low hundreds of dollars, a week of five readers at a few hours a day |
 | **D. Symbols where they matter** | the engagements' windows, the Bulge (16 December – 25 January), the Rhine crossings (7–31 March), the landings (6 June – 31 July): about 120 days | C | the symbols job: a reader a day, 40–60 calls | low hundreds of dollars |
 | **E. Symbols everywhere** | the other ~300 days | D | the same | several hundred to a thousand dollars; 20,000 symbols to review |
 
-A is done but for the fetch; B is done for the 1:1,000,000 plate (the 211 days from 6 September 1944 to 6 April
-1945 can be traced across the whole sheet from `towns-B11.csv`), and what remains of it is the other bases' towns, each
-the same job: a candidate list, `sheet_towns.py crops` round a conic seeded by a few rings read by eye (a new sheet has
-no seeds: read three or four first, anywhere on it), a reader's pass or two, `accept`. Do them as their days are wanted:
-north Germany (B13) and the portrait sheet (B14, B15) for the last weeks, the Normandy sheet (B01) for June. Then C as
-the first long run, D by engagement as the kit's
+A is done but for the fetch; B is done for every sheet from 6 September 1944 to the end (the 1:1,000,000 plate from
+its towns, north Germany and the 1:1,400,000 sheets from their graticules), and what remains of it is the 1944 sheets,
+each the same job: `sheet_towns.py crops --graticule` round a conic seeded by three or four crossings read on the
+sheet's margins, a reader's pass or two, `accept`. Do them as their days are wanted: the Normandy sheet (B01) for June,
+the rest of August only for an engagement there. Then C as the first long run, D by engagement as the kit's
 Army units are followed into those days, and E only if a page wants it: a front line on every day is the context the
 engagement pages need; the enemy's divisions on a quiet Tuesday in Lorraine are a catalogue nobody has asked for.
 
@@ -174,8 +173,20 @@ What B needs in the tool, in order:
    the overprint, drawn as an area or off the sheet. With 81 towns the conic fits at 0.72 km rms, 0.75 km leave-one-out,
    1.8 km at worst (Turnhout), over the whole sheet; a day's trace from these covers the sheet. A ring finder by
    template matching was tried first and lost to letters' bowls and road junctions: the reader does it at a glance, in
-   two passes of a minute each. A day takes the conic once it has 30 towns or more (`make_fit`); the March twenty stay
-   for the March days (their GeoJSON must not move).
+   two passes of a minute each. A day takes the conic once it has 30 points or more, or any graticule crossing
+   (`make_fit`); the March twenty stay for the March days (their GeoJSON must not move).
+
+   **Better than towns: the sheet's graticule.** The sheets print a meridian and a parallel every degree, and a
+   crossing is an exact control point: no geocoder's centroid (a city's is a kilometre from its ring), no name to
+   match, nothing to look up. `sheet_towns.py crops --graticule` makes the candidates itself and labels each crop with
+   the crossing's name; a new sheet is seeded by three or four crossings read on its margins, where the degrees are
+   printed, or by a sister sheet's crossings shifted by the two scans' offset (`sitmap_bases.py check` prints it). The
+   first pass from rough seeds reads a dozen crossings (the parallels are faint); the second, from the fit to those,
+   has the crossing under the cross and reads most of the rest. Done this way on 6 November 2026 for the north
+   Germany sheet (B13, `towns-B13.csv`: 26 crossings, 0.50 km rms, 1.1 km at worst, which register on 13 April at 25 of
+   26) and the 1:1,400,000 sheet (B14, `towns-B14.csv`: 60 crossings, 0.82 km rms, 1.8 km at worst, which register on
+   1 May at 57 of 60), each two reader passes of about two minutes. The 1:1,000,000 plate's crossings agreed with its
+   towns' fit within 10 px, so `towns-B11.csv` stands.
 3. Done: `--gcps-from towns-B11.csv` matches the sheet's towns on any day of the plate (22 December 1944: 71 of 79
    within 4 px of one affine transform, the rest placed through it), and the trace covers the sheet.
 4. A `--base` overview in the work folder of each day so a reviewer can see at a glance where the front is on the

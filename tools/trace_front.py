@@ -256,10 +256,16 @@ class Conic:
         return res, np.array(loo)
 
 
+CROSSING = re.compile(r"\d+(?:\.\d+)?[EW] \d+(?:\.\d+)?[NS]")   # a graticule crossing named by its degrees, "7E 50N"
+
+
 def make_fit(gcps):
-    """The fit for a day: the conic once the towns cover a sheet (Conic.MIN or more, as a base's towns-*.csv gives
-    them), the polynomial for the March days' twenty (their GeoJSON must not move)."""
-    return Conic(gcps) if len(gcps) >= Conic.MIN else Fit(gcps)
+    """The fit for a day: the conic once the points cover a sheet (Conic.MIN or more, as a base's towns-*.csv gives
+    them) or are the sheet's own graticule crossings (sheet_towns.py --graticule: the projection is then the frame
+    the points were read in, however few); the polynomial for the March days' twenty (their GeoJSON must not move)."""
+    if len(gcps) >= Conic.MIN or any(CROSSING.fullmatch(r["town"]) for r in gcps):
+        return Conic(gcps)
+    return Fit(gcps)
 
 
 def km(a, b):
@@ -268,10 +274,10 @@ def km(a, b):
     return 6371 * 2 * np.arcsin(np.sqrt(h))
 
 
-def gcps_from(base, other, rows, patch=140, search=60):
+def gcps_from(base, other, rows, patch=140, search=60, at=None):
     """The towns of `rows` (on the scan `base`) found on `other`: the sheets' offset by phase correlation at 1/8 size,
-    then each ring's patch matched near its offset place (a wide patch, so the base map outweighs the day's overprint).
-    Returns the rows with x, y on `other` and the match's score."""
+    then each ring's patch matched near its offset place (a wide patch, so the base map outweighs the day's overprint),
+    or near `at` (a place for each row) when given. Returns the rows with x, y on `other` and the match's score."""
     k = 8
     a, b = base[::k, ::k].astype(float), other[::k, ::k].astype(float)
     h, w = min(a.shape[0], b.shape[0]), min(a.shape[1], b.shape[1])
@@ -280,14 +286,17 @@ def gcps_from(base, other, rows, patch=140, search=60):
     dy, dx = np.unravel_index(np.argmax(np.abs(r)), r.shape)
     dy, dx = (dy - h if dy > h // 2 else dy) * k, (dx - w if dx > w // 2 else dx) * k
     out = []
-    for row in rows:
+    for n, row in enumerate(rows):
         x, y = int(row["x"]), int(row["y"])
         t = base[y - patch:y + patch, x - patch:x + patch].astype(float)
-        X, Y = x + dx, y + dy
-        win = other[Y - patch - search:Y + patch + search, X - patch - search:X + patch + search].astype(float)
+        X, Y = (int(round(at[n][0])), int(round(at[n][1]))) if at is not None else (x + dx, y + dy)
+        win = other[max(0, Y - patch - search):Y + patch + search, max(0, X - patch - search):X + patch + search].astype(float)
+        if win.shape[0] < t.shape[0] or win.shape[1] < t.shape[1]:
+            out.append({**row, "x": X, "y": Y, "score": 0.0})
+            continue
         m = match_template(win, t)
         j, i = np.unravel_index(np.argmax(m), m.shape)
-        out.append({**row, "x": X - search + int(i), "y": Y - search + int(j), "score": float(m.max())})
+        out.append({**row, "x": max(0, X - patch - search) + patch + int(i), "y": max(0, Y - patch - search) + patch + int(j), "score": float(m.max())})
     return out, (int(dx), int(dy))
 
 
@@ -311,15 +320,32 @@ def register(rows, src_scan, other):
     base = np.asarray(Image.open(src_scan).convert("L"))
     found, (dx, dy) = gcps_from(base, other, rows)
     A = np.array([[float(r["x"]), float(r["y"]), 1.0] for r in rows])
-    B = np.array([[r["x"], r["y"]] for r in found], float)
-    ok = np.ones(len(rows), bool)
-    T = np.zeros((3, 2))
-    for _ in range(4):
-        if ok.sum() < 3:
-            break
-        T = np.linalg.lstsq(A[ok], B[ok], rcond=None)[0]
-        res = np.hypot(*(A @ T - B).T)
-        ok = res <= 4
+
+    def fit(found):
+        B = np.array([[r["x"], r["y"]] for r in found], float)
+        ok = np.ones(len(rows), bool)
+        T, res = np.zeros((3, 2)), np.full(len(rows), np.inf)
+        for _ in range(4):
+            if ok.sum() < 3:
+                break
+            T = np.linalg.lstsq(A[ok], B[ok], rcond=None)[0]
+            res = np.hypot(*(A @ T - B).T)
+            ok = res <= 4
+        return ok, res, T
+
+    ok, res, T = fit(found)
+    if ok.sum() < 12 and len(rows) >= 12:
+        # another scanning of the plate (the 1:1,400,000 sheets of April and May 1945 differ by 1.7 % in scale): one
+        # offset doesn't serve the whole sheet, so the transform is fitted loosely to what the offset found, each town
+        # searched again round where it puts it, and the fit tightened. Not done when the offset serves (the March days'
+        # files must not move).
+        for tol in (60, 20):
+            B = np.array([[r["x"], r["y"]] for r in found], float)
+            near = np.hypot(*(A @ T - B).T) <= tol if ok.sum() >= 3 else np.ones(len(rows), bool)
+            if near.sum() >= 3:
+                T = np.linalg.lstsq(A[near], B[near], rcond=None)[0]
+            found, _ = gcps_from(base, other, rows, at=A @ T)
+            ok, res, T = fit(found)
     return rows, found, ok, res, A @ T, (int(dx), int(dy))
 
 
