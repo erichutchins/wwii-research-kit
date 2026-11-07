@@ -16,7 +16,7 @@
 .chron-h b { display: block; font-weight: 600; color: var(--bar, var(--ch-ink)); overflow-wrap: anywhere; }
 .chron-h .chip { font-size: 13px; font-style: italic; color: var(--ch-ink-3); }
 .chron-corner { border-left: 0; font-style: italic; color: var(--ch-ink-3); text-align: right; }
-.chron-d { padding: 8px; border-bottom: 1px solid var(--ch-rule); background: var(--ch-wash); color: var(--ch-ink-3); font-size: 14px; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.chron-d { padding: 8px; border-bottom: 1px solid var(--ch-rule); background: var(--ch-wash); color: var(--ch-ink-3); font-size: 14px; font-variant-numeric: tabular-nums; text-align: right; }   /* wraps: "16 Dec" over "1944" when a frame crosses a year */
 .chron-d small { display: block; font-size: 12.5px; white-space: normal; }
 .chron-c { padding: 3px 10px 5px; border-bottom: 1px solid var(--ch-rule); border-left: 1px solid var(--ch-rule); min-height: 34px; min-width: 0; }
 .chron-c.hold { box-shadow: inset 3px 0 0 var(--bar); }

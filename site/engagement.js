@@ -77,8 +77,10 @@
       .map(f => ({ ...f.properties, lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], opposed: opposedOf(f.properties.of) }));
     S.placed = units.filter(u => !u.list);
     S.listed = units.filter(u => u.list);
-    S.hour = `${S.meta.as_of.slice(2, 6)} on ${d3.utcFormat("%-d %B %Y")(new Date(S.meta.date))}`;
-    S.ms = E.T(`${S.meta.date}T${String(Number(S.meta.as_of.slice(2, 4)) - 1).padStart(2, "0")}:${S.meta.as_of.slice(4, 6)}Z`);
+    // the sheets write their hour two ways: "071200 MAR 1945" (day, hour) and "1200 HRS 16 DECEMBER 1944"
+    S.hhmm = (/^(\d{4}) HRS/.exec(S.meta.as_of) || /^\d{2}(\d{4})/.exec(S.meta.as_of) || [, "1200"])[1];
+    S.hour = `${S.hhmm} on ${d3.utcFormat("%-d %B %Y")(new Date(S.meta.date))}`;
+    S.ms = E.T(`${S.meta.date}T${String(Number(S.hhmm.slice(0, 2)) - 1).padStart(2, "0")}:${S.hhmm.slice(2)}Z`);
   });
   // the sheet drawn now, and what the drawing reads of it
   let SITMAP = null, FRONT = null, FRONT_RUNS = [], FRONT_UNITS = [], FRONT_HOUR = "";
@@ -86,6 +88,16 @@
   const sitmapAt = ms => SITMAPS.reduce((cur, S) => (S.ms <= ms ? S : cur), SITMAPS[0] || null);
   useSitmap(SITMAPS[0] || null);
   const SITMAP_DAYS = SITMAPS.map(S => d3.utcFormat("%-d")(new Date(S.meta.date)));
+  // the sheets' days in words: listed within one month ("7, 8 and 17 March 1945"); across months, the span ("each day
+  // from 16 December 1944 to 3 January 1945", or "on 12 days from ... to ..." when some are missing)
+  const SITMAP_WHEN = (() => {
+    if (SITMAPS.length < 2) return "";
+    const first = new Date(SITMAPS[0].meta.date), last = new Date(SITMAPS[SITMAPS.length - 1].meta.date), dmy = d3.utcFormat("%-d %B %Y");
+    if (first.getUTCMonth() === last.getUTCMonth() && first.getUTCFullYear() === last.getUTCFullYear())
+      return `on ${SITMAP_DAYS.slice(0, -1).join(", ")} and ${SITMAP_DAYS[SITMAP_DAYS.length - 1]} ${d3.utcFormat("%B %Y")(first)}`;
+    const every = Math.round((last - first) / 86400e3) + 1 === SITMAPS.length;
+    return `${every ? "each day" : `on ${SITMAPS.length} days`} from ${dmy(first)} to ${dmy(last)}`;
+  })();
   const STATIONS = D.stations || {};
   const inkOf = x => LIGHTER.has(x.source_kind) ? "var(--ink-3)" : x.opposed ? "var(--japan)" : x.of ? "var(--ink-2)" : "var(--ink-3)";   // no `of`: a place
   const colour = id => byId[id]?.colour ? `var(--c${byId[id].colour})` : byId[id] ? inkOf(byId[id]) : "var(--ink-2)";
@@ -204,7 +216,7 @@
     D.positions.length && `<span><svg width="10" height="10" viewBox="-5 -5 10 10"><rect x="-3" y="-3" width="6" height="6" fill="var(--ink-3)"/></svg>A place in the records</span>`,
     D.positions.some(r => r.lat2 != null) && `<span><svg width="16" height="12" viewBox="0 0 16 12"><rect x="1" y="1" width="14" height="10" fill="none" stroke="var(--ink-2)" stroke-width="1.2"/></svg>A grid square the record names (our decoding)</span>`,
     (D.relief || []).length && `<span><svg width="18" height="12" viewBox="0 0 18 12"><rect x="1" y="1" width="16" height="10" fill="var(--land)" stroke="var(--coast)"/></svg>Relief and coast: today's elevation (SRTM, USGS)${RIVERS.length ? "; rivers from Natural Earth" : ""}</span>`,
-    FRONT && `<span>${EV.legendMark.front}<span>The front at ${SITMAPS.length < 2 ? esc(FRONT_HOUR) : `1200 on ${esc(SITMAP_DAYS.slice(0, -1).join(", "))} and ${esc(SITMAP_DAYS[SITMAP_DAYS.length - 1])} ${esc(d3.utcFormat("%B %Y")(new Date(SITMAPS[0].meta.date)))}, ${STEPPER ? "the day chosen under the map" : "the latest at the clock"}`}, as the <a href="${esc(SITMAP.meta.cite.href)}" target="_blank" rel="noopener">12th Army Group's ${SITMAPS.length > 1 ? "maps" : "map"}</a> drew it (traced, ± about ${Math.max(1, Math.round(SITMAP.meta.fit_km * 2))} km), ticked as the map ticks it, on its own side</span></span>`,
+    FRONT && `<span>${EV.legendMark.front}<span>The front at ${SITMAPS.length < 2 ? esc(FRONT_HOUR) : `1200 ${esc(SITMAP_WHEN)}, ${STEPPER ? "the day chosen under the map" : "the latest at the clock"}`}, as the <a href="${esc(SITMAP.meta.cite.href)}" target="_blank" rel="noopener">12th Army Group's ${SITMAPS.length > 1 ? "maps" : "map"}</a> drew it (traced, ± about ${Math.max(1, Math.round(SITMAP.meta.fit_km * 2))} km), ticked as the map ticks it, on its own side</span></span>`,
     FRONT_UNITS.some(u => !u.opposed) && `<span>${EV.legendMark.unitUs}A US division or corps on that map: in its area, not at a position</span>`,
     FRONT_UNITS.some(u => u.opposed) && `<span>${EV.legendMark.unitEnemy}The enemy as that map placed them (US intelligence)</span>`,
     Object.values(STATIONS).some(rows => rows.length > 1) && `<span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" class="way" stroke="var(--ink-2)"/></svg>A unit's stations, joined straight; lighter in the week before the engagement</span>`,
@@ -316,8 +328,12 @@
     if (!L.length) return;
     const sym = u => { const w = 24 + String(u.label).length * 6.4, el = d3.create("svg").attr("width", w * 1.4).attr("height", 34).attr("viewBox", `-12 -14 ${w} 26`);
       EV.unitSymbol(el.append("g"), u, HATCH); return el.node().outerHTML; };
-    LISTED.innerHTML = `<p><i>Facing the bridgehead, as the map at ${esc(FRONT_HOUR)} lists them</i> (a list beside the bridgehead on the map, not positions):</p>`
-      + `<div class="items">${L.map(u => `<span title="${esc(E.nation(u.of))} ${esc(u.label)}: listed, not placed">${sym(u)}</span>`).join("")}</div>`;
+    // a list the fronts README names has its words; any other (a box or margin note the README doesn't name yet) is
+    // shown together, as listed and not placed, without its working name
+    const items = us => `<div class="items">${us.map(u => `<span title="${esc(E.nation(u.of))} ${esc(u.label)}: listed, not placed">${sym(u)}</span>`).join("")}</div>`;
+    const known = L.filter(u => u.list === "bridgehead"), other = L.filter(u => u.list !== "bridgehead");
+    LISTED.innerHTML = (known.length ? `<p><i>Facing the bridgehead, as the map at ${esc(FRONT_HOUR)} lists them</i> (a list beside the bridgehead on the map, not positions):</p>${items(known)}` : "")
+      + (other.length ? `<p><i>Listed elsewhere on the map at ${esc(FRONT_HOUR)}</i> (in a box or a note, not at a position):</p>${items(other)}` : "");
   }
   const busyPoints = () => [...(FRONT ? FRONT_UNITS.map(u => P(u.lon, u.lat)) : []),
     ...overlays().flatMap(([x0, y0, x1, y1]) => d3.range(x0, x1 + 1, 16).flatMap(x => d3.range(y0, y1 + 1, 16).map(y => [x, y]))), ...Object.values(STATIONS).flat().map(r => P(r.lon, r.lat)),
@@ -770,7 +786,7 @@
   }
   // the readout: the map's day and hour as the sheet gives them, and its report
   function readDay() {
-    document.getElementById("clock").textContent = `${SITMAP.meta.as_of.slice(2, 6)} · ${E.day(SITMAP.ms)}`;
+    document.getElementById("clock").textContent = `${SITMAP.hhmm} · ${E.day(SITMAP.ms)}`;
     document.getElementById("clock-zone").textContent = "the 12th Army Group's situation map";
     const rep = /G-3 report no\. (\d+)/.exec(SITMAP.meta.title || "");
     document.getElementById("clock-own").textContent = rep ? `to accompany its G-3 report no. ${rep[1]}` : "";
@@ -1023,7 +1039,7 @@
       TRACKED.length && "A line between a subject's reported positions is straight, and where it went between them is not recorded.",
       PATH.length > 1 && "The convoy's path, dotted, is computed from where the boats sighted it and where the Japanese record puts it: that is ours.",
       placed && "A faint square is a place we placed, not one the record gives.",
-      FRONT && `The front and the units are the 12th Army Group's map at ${FRONT_HOUR}, traced: the army group's picture of that day, context for the records, not their positions.${SITMAPS.length > 1 ? (STEPPER ? ` The bar under the map steps through its maps of ${SITMAP_DAYS.join(", ")} ${d3.utcFormat("%B")(new Date(SITMAPS[0].meta.date))}, a day at a time.` : " As the clock passes noon, the next day's map takes its place.") : ""}`,
+      FRONT && `The front and the units are the 12th Army Group's map at ${FRONT_HOUR}, traced: the army group's picture of that day, context for the records, not their positions.${SITMAPS.length > 1 ? (STEPPER ? ` The bar under the map steps through its maps, ${SITMAP_WHEN}, a day at a time.` : " As the clock passes noon, the next day's map takes its place.") : ""}`,
       Object.values(STATIONS).some(rows => rows.length > 1) && `A unit's dashed line joins its stations straight: where it went between them is not recorded.${FRONT && (STEPPER || PLAYS) ? " Its stations are drawn to the map's day, so the picture is one moment." : ""}`].filter(Boolean).join(" ");
     document.getElementById("cap").hidden = false;
   }
