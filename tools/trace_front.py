@@ -45,8 +45,9 @@ How it works:
    `unsure` and is turned by hand (`flip`) or confirmed (`checked`) after a look on the overlay.
 3. The units. The symbols in records/fronts/<map>-units.csv, read by eye (--boxes finds most boxes by their edges and
    numbers them; the rest are read on its overview), placed through the fit. A symbol stands in its unit's area; it is
-   not a position, and the page says so. A symbol in the map's list of the divisions facing the bridgehead (`list`) is a
-   list, not a place.
+   not a position, and the page says so. A symbol the map lists or notes rather than places (`list`: the divisions facing
+   the bridgehead, a box of the unlocated, one captioned with a place off the sheet; the words are in records/fronts/
+   README.md) is a list, not a place.
 """
 import argparse
 import csv
@@ -701,7 +702,8 @@ def area_note(fit, area):
 
 
 def write_units(map_name, M, spec, boxes_csv):
-    """The units CSV from a reading: lines `n of echelon arm label [list:bridgehead]` (n a box --boxes numbered) or
+    """The units CSV from a reading: lines `n of echelon arm label [list:<word>]` (n a box --boxes numbered; the words,
+    bridgehead, unlocated, marseilles and the rest, are in records/fronts/README.md) or
     `@x,y of echelon arm label [...]` (read by eye on the overview), `-` for an empty arm; `#` starts a comment. A last
     `unit:-` takes away the tie to the kit's units a symbol would get from its label (`unit:<id>` sets one): the
     reviewer's call where the drawing and the unit disagree, its reason in a comment on the line."""
