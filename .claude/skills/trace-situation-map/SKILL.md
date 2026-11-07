@@ -88,6 +88,12 @@ are magenta. Then read the overlay in parts (`--overlay /tmp/x.jpg --crop X Y W 
 - Stretches that meet two at a time are one line and are turned together by their summed ticks (`line` in the output);
   a fork breaks the chain. A corridor's head is a short heavy arc, often set apart from its sides by the division's own
   symbol, with no ticks: it comes out `unsure`, and is usually ticked inside (the US side) once you look.
+- Only the towns' spread is traced (their longitude/latitude box, widened a little), so ticked front past the outermost
+  towns is silently dropped. An optional `area: [x0, y0, x1, y1]` (scan pixels) in the YAML adds that box to the traced
+  area (it never takes any away; a stretch is kept when its middle falls in it, and the tool prints how far the box
+  extrapolates the conic fit). Days without it are unchanged. It takes in only stretches the heavy-ink mask already
+  finds: a front drawn thinner than the mask's disk (`radius`, default 4) is still missed. Name the gap in a `# Reviewed:`
+  comment, then check the new stretches on an overlay crop and the sides before and after.
 - Every blue line must be front. Across a whole sheet three kinds of heavy ink are not, and each is left out with a box
   in the YAML's `exclude` (a stretch is left out when its middle falls in a box; keep a box off the front's own
   stretches): **the title block's lettering** (top left on the 1:1,000,000 sheet: "SECRET", the situation's date, and

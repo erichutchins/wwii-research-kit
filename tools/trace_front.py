@@ -103,6 +103,7 @@ class SitMap:
     report: str = ""
     gcps_from: str = ""
     radius: int = 0                                        # the front's weight on this sheet, if not the default 4
+    area: tuple = ()                                       # [x0, y0, x1, y1] on the scan: traced as well as the towns' spread
     runs: tuple = ()                                       # [[(x, y), ...], ...] on the scan, the enemy's side on the left
     exclude: tuple = ()                                    # boxes on the scan whose heavy ink isn't the front (boundaries)
     flip: tuple = ()                                       # points on stretches whose ticks don't tell their side, to turn
@@ -131,6 +132,7 @@ def sitmap(name):
                   width=int(row.get("width") or 6700), height=int(row.get("height") or 6000), read=bool(y),
                   as_of=str(y.get("as_of") or ""), title=str(y.get("title") or ""), report=str(y.get("report") or ""),
                   gcps_from=str(y.get("gcps_from") or ""), radius=int(y.get("radius") or 0),
+                  area=tuple(int(v) for v in y.get("area") or ()),
                   runs=tuple([tuple(p) for p in run] for run in y.get("runs") or []),
                   exclude=tuple(tuple(int(v) for v in d["box"]) for d in y.get("exclude") or []),
                   flip=pts("flip"), checked=pts("checked"))
@@ -512,7 +514,10 @@ def stretches(rgb, heavy, fit, M, min_len=25):
         pts = order_run(px + sl[1].start, py + sl[0].start).astype(float)
         mx, my = pts[len(pts) // 2]
         lon, lat = fit.to_ll((mx, my))[0]
-        if not (w <= lon <= e and s_ <= lat <= n_) or any(x0 <= mx <= x1 and y0 <= my <= y1 for x0, y0, x1, y1 in M.exclude):
+        inside = w <= lon <= e and s_ <= lat <= n_
+        if M.area:   # the YAML's `area` adds to the towns' spread (it never takes any away)
+            inside = inside or (M.area[0] <= mx <= M.area[2] and M.area[1] <= my <= M.area[3])
+        if not inside or any(x0 <= mx <= x1 and y0 <= my <= y1 for x0, y0, x1, y1 in M.exclude):
             continue
         L, R = tick_sides(ink, heavy, pts)
         flip = any(np.min(np.hypot(*(pts - np.array(f)).T)) < 8 for f in M.flip)
@@ -670,11 +675,27 @@ def grid_ticks(d, x0, y0, x1, y1):
         d.line([(0, Y - y0), (8, Y - y0)], fill=(200, 0, 0)); d.text((2, Y - y0 + 2), str(Y), fill=(200, 0, 0))
 
 
-def area_of(fit, margin=150):
-    """The towns' spread on the scan, with a margin: the part of the sheet that is traced and read."""
+def area_of(fit, margin=150, extra=()):
+    """The towns' spread on the scan, with a margin: the part of the sheet that is traced and read. `extra` (the YAML's
+    `area`) widens it to take that box in as well."""
     x0, y0 = fit.px.min(0).astype(int) - margin
     x1, y1 = fit.px.max(0).astype(int) + margin
+    if extra:
+        x0, y0, x1, y1 = min(x0, extra[0]), min(y0, extra[1]), max(x1, extra[2]), max(y1, extra[3])
     return int(x0), int(y0), int(x1), int(y1)
+
+
+def area_note(fit, area):
+    """What the fit can promise at the YAML's `area`: how far its corners lie from the nearest town ring, and the fit's
+    own error at the town farthest out (the leave-one-out error is the honest one at an edge)."""
+    cs = np.array([[area[0], area[1]], [area[2], area[1]], [area[0], area[3]], [area[2], area[3]]], float)
+    far = max(float(np.hypot(*(fit.px - c).T).min()) for c in cs)
+    res, loo = fit.residuals_km()
+    hull = fit.px.min(0), fit.px.max(0)
+    out = [bool((c < hull[0]).any() or (c > hull[1]).any()) for c in cs]
+    edge = int(np.argmax(np.hypot(*(fit.px - fit.px.mean(0)).T)))
+    return (f"area {list(area)}: {sum(out)} of 4 corners lie outside the towns' spread (extrapolated), the farthest {far:.0f} px "
+            f"from a ring; the fit at its outermost town ({fit.names[edge]}): {res[edge]:.1f} km, left out {loo[edge]:.1f} km")
 
 
 def write_units(map_name, M, spec, boxes_csv):
@@ -828,9 +849,11 @@ def main():
         print(f"   {n:14s} {r:4.1f} km (left out: {lo:4.1f} km)")
 
     g = np.asarray(Image.open(scan).convert("L"))
+    if M.area:
+        print(area_note(fit, M.area))
     heavy = heavy_ink(g, a.radius or M.radius or 4, min_area=2000 if M.runs else 500)
     if a.boxes:
-        area = area_of(fit)
+        area = area_of(fit, extra=M.area)
         bx = find_boxes(g, heavy, area)
         with open(work / "boxes.csv", "w", newline="") as f:
             w = csv.writer(f, lineterminator="\n")
@@ -947,7 +970,7 @@ def main():
             x, y = int(u["x"]), int(u["y"])
             d.rectangle([x - 5, y - 5, x + 5, y + 5], fill=(200, 0, 200))
             d.text((x + 8, y + 6), f"{u['label']}{' (list)' if u.get('list') else ''}", fill=(200, 0, 200))
-        x, y, w, h = a.crop or (lambda b: (b[0], b[1], b[2] - b[0], b[3] - b[1]))(area_of(fit))
+        x, y, w, h = a.crop or (lambda b: (b[0], b[1], b[2] - b[0], b[3] - b[1]))(area_of(fit, extra=M.area))
         im = im.crop((x, y, x + w, y + h))
         grid_ticks(ImageDraw.Draw(im), x, y, x + w, y + h)
         dest = Path(a.overlay) if a.overlay else work / "overlay.jpg"
