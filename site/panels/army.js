@@ -262,6 +262,8 @@ function render() {
   const all = u.legs.length ? u.legs.flatMap(l => l.coords) : u.pts.map(r => r.lonlat);
   let coords = all.filter(c => c[0] > -30);
   if (coords.length < 2) coords = all;
+  // one station (or several at one place): fit a small box round it, as a single point has no extent
+  if (new Set(coords.map(c => `${c[0]},${c[1]}`)).size < 2) coords = [[coords[0][0] - 0.5, coords[0][1] - 0.5], [coords[0][0] + 0.5, coords[0][1] + 0.5]];
   const [lo0, lo1] = d3.extent(coords, c => c[0]), [la0, la1] = d3.extent(coords, c => c[1]);
   const pad = Math.max(1, (la1 - la0) / 6);
   proj = d3.geoConicConformal().parallels([la0 + pad, la1 - pad > la0 + pad ? la1 - pad : la0 + pad + 2])

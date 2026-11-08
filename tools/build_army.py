@@ -55,12 +55,13 @@ AGREE_KM = 8
 # battery assumed nearby; regt = the regimental headquarters battery's morning report, for a
 # detachment whose own reports are missing; hist = the 894th's printed history; aar = the
 # battalion's symbol on Third Army's antiaircraft situation maps, or its move in the report's
-# text; div = a division's position (or one combat command's); cp = a headquarters' command post, from the ETO
+# text; div = a division's position (or one combat command's; also its symbol on the 12th Army Group's
+# situation map, loc-12ag); cp = a headquarters' command post, from the ETO
 # order of battle: its own position; uaar = the unit's own after action report, as transcribed: its own position
 AAR = r"aar3/p\d{3}"
 PAGE = {"mr": r"rg64-\d+/p\d{4}", "btry": r"ok45th-\d+/p\d{2}", "bn": r"ok45th-\d+/p\d{2}",
         "regt": r"rg64-\d+/p\d{4}", "hist": r"hist894/p\d{2}", "aar": AAR,
-        "div": AAR + r"|gi9ad|wiki9ad|almanac9ad|etoob-\w+/p\d+(?:-\d+)?|rg64-\d+/p\d{4}",
+        "div": AAR + r"|gi9ad|wiki9ad|almanac9ad|etoob-\w+/p\d+(?:-\d+)?|rg64-\d+/p\d{4}|loc-12ag/ict\d+",
         "cp": r"etoob-\w+/p\d+(?:-\d+)?|ok45th-\d+/p\d{2}", "uaar": r"eucmh60aib/\d{4}-\d{2}|ok45th-\d+/p\d{2}"}
 # stations.csv `precision` (optional): how a position was given, when its source doesn't say (README.md)
 PRECISIONS = ("grid-100m", "grid-1km", "town", "area", "division")
