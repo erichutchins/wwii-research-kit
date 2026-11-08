@@ -74,7 +74,8 @@ nothing is redacted.
 The hooks run by themselves once installed (`uv tool install prek`, then `prek install` here and in `records/`;
 `.pre-commit-config.yaml` in each). Before a commit (seconds): ruff and ty on the tools, the lint, the citations, the
 computation's tests. Before a push (minutes), and in the CI: everything, with every build, the land check and every page
-in a browser. A hook that fails is fixed, not skipped.
+in a browser (the CI skips the pages when a push changes documentation alone: `tools/pages_changed.sh`). A hook that
+fails is fixed, not skipped.
 
 Two repositories, three layers. `records/` is its own repository (wwii-unit-records) with its own hooks, which call the
 kit's tools from `../tools/`. A change that touches the records is committed and pushed in `records/` first, then the

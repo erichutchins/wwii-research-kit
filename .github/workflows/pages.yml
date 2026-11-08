@@ -1,6 +1,7 @@
 # Publish the kit to GitHub Pages: the site at /site/, with the records submodule beside it,
 # after the checks the pre-push hook runs (.pre-commit-config.yaml): ruff and ty, the lint, every build (check), and every
-# page (smoke, in four parts at once). Actions are pinned to a commit, with the tag it was beside.
+# page (smoke, in four parts at once; skipped when the push changes documentation alone: tools/pages_changed.sh). Actions
+# are pinned to a commit, with the tag it was beside.
 name: pages
 
 on:
@@ -15,6 +16,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    # Whether this push can change what the pages show. A push of documentation alone (the kit's Markdown, the records'
+    # READMEs) still runs the checks and deploys, but skips the smoke test; a run by hand always has it.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      pages: ${{ steps.diff.outputs.pages }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          submodules: true
+          persist-credentials: false
+      - id: diff
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: tools/pages_changed.sh "$BEFORE" >> "$GITHUB_OUTPUT"
+
   check:
     runs-on: ubuntu-latest
     permissions:
@@ -40,6 +59,8 @@ jobs:
   smoke:
     # Every page loads clean, light and dark, desktop and phone: the views split four ways (smoke.py --shard), each part
     # on its own runner, since one runner takes about ten minutes over them all
+    needs: changes
+    if: needs.changes.outputs.pages == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -64,7 +85,11 @@ jobs:
         run: uv run tools/smoke.py --shard "$SHARD/4"
 
   deploy:
-    needs: [check, smoke]
+    # after the checks, and after the smoke test or its skipping (a skipped job would otherwise skip this one too)
+    needs: [changes, check, smoke]
+    if: >-
+      !cancelled() && needs.changes.result == 'success' && needs.check.result == 'success' &&
+      (needs.smoke.result == 'success' || needs.smoke.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: read
