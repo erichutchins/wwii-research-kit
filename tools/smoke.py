@@ -201,7 +201,15 @@ async def check(browser, base, view, size, scheme, remote):
     try:
         await page.goto(base + view, wait_until="networkidle", timeout=60000)
         await page.wait_for_timeout(400)   # the ResizeObservers redraw a frame after load
-        bad += [f"empty figure: {s}" for s in await page.evaluate(EMPTY_FIGURES)]
+        # under load (several views at once, a slow machine) a figure can draw later than that: look again for up to
+        # 3 s before calling it empty, so a slow frame isn't a failure and a figure that never draws still is
+        empty = await page.evaluate(EMPTY_FIGURES)
+        for _ in range(10):
+            if not empty:
+                break
+            await page.wait_for_timeout(300)
+            empty = await page.evaluate(EMPTY_FIGURES)
+        bad += [f"empty figure: {s}" for s in empty]
     except Exception as e:
         bad.append(f"load: {str(e).splitlines()[0][:300]}")
     await ctx.close()
