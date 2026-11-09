@@ -20,6 +20,8 @@ guides/SITUATION-MAPS.md the whole collection and how to work through it.
     uv run tools/trace_front.py 12ag-1945-03-08 --boxes                       # the symbols' boxes, numbered, to read
     uv run tools/trace_front.py 12ag-1945-03-08 --look 4590,2020 4630,1797    # magnified, to read a hard one
     uv run tools/trace_front.py 12ag-1945-03-08 --units reading.txt           # the units CSV from what was read
+    uv run tools/trace_front.py 12ag-1945-03-08 --units-only                  # after editing the units CSV: its symbols
+                                                                              #   in the GeoJSON, the front kept (no scan)
     uv run tools/trace_front.py 12ag-1945-03-08 --sides                       # the page's side test on every town
     uv run tools/trace_front.py 12ag-1945-03-08                               # records/fronts/<map>.geojson
 
@@ -745,6 +747,19 @@ def write_units(map_name, M, spec, boxes_csv):
           f"tied to the kit's units: {', '.join(f'{r[5]}={r[6]}' for r in rows if r[6]) or 'none'}")
 
 
+def unit_features(map_name, fit, fit_km):
+    """The symbols in records/fronts/<map>-units.csv, placed through the fit, as GeoJSON features in the file's order."""
+    units_csv = REC / f"{map_name}-units.csv"
+    feats = []
+    for u in (list(csv.DictReader(open(units_csv))) if units_csv.exists() else []):
+        lon, lat = fit.to_ll((float(u["x"]), float(u["y"])))[0]
+        feats.append({"type": "Feature", "properties": {"kind": "unit", "of": u["of"], "echelon": u["echelon"], "arm": u["arm"],
+                                                        "label": u["label"], "unit": u.get("unit", ""), "list": u.get("list", ""),
+                                                        **({"doubt": u["doubt"]} if u.get("doubt") else {}), "cite": u["map"], "fit_km": fit_km},
+                      "geometry": {"type": "Point", "coordinates": [round(float(lon), 4), round(float(lat), 4)]}})
+    return feats
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("map", help="a day's map, 12ag-YYYY-MM-DD (records/fronts/sitmaps.csv)")
@@ -761,6 +776,8 @@ def main():
     ap.add_argument("--look", nargs="+", metavar="X,Y", help="magnified crops of the scan round these points")
     ap.add_argument("--units", metavar="SPEC", help="write the units CSV from a reading (see write_units)")
     ap.add_argument("--sides", action="store_true", help="the page's side test (Engage.frontSide) on every town")
+    ap.add_argument("--units-only", action="store_true", help="rewrite only the symbols in the map's GeoJSON from its units CSV "
+                    "(after a change to `unit`, `doubt` or a reading), keeping the traced front; needs no scan")
     ap.add_argument("--check-units", action="store_true", help="every symbol in the units CSV, magnified with its reading, to check")
     a = ap.parse_args()
     M = sitmap(a.map)
@@ -797,6 +814,18 @@ def main():
                 sheet.paste(t, ((i % 3) * 454, (i // 3) * 304))
             sheet.save(out, quality=85)
         print(f"wrote {out}")
+        return
+    if a.units_only:
+        # the front is the scan's and stays as traced; the symbols are the units CSV's, placed through the same fit
+        out = REC / f"{a.map}.geojson"
+        if not out.exists():
+            sys.exit(f"{out.relative_to(KIT)} isn't traced yet: run without --units-only")
+        gj = json.loads(out.read_text())
+        fit = make_fit(list(csv.DictReader(open(REC / f"{a.map}-gcps.csv"))))
+        units = unit_features(a.map, fit, gj["properties"]["fit_km"])
+        gj["features"] = [f for f in gj["features"] if f["properties"].get("kind") != "unit"] + units
+        out.write_text(json.dumps(gj, separators=(",", ":"), ensure_ascii=False) + "\n")
+        print(f"{len(units)} unit symbols -> {out.relative_to(KIT)} (the front as traced)")
         return
     if not scan.exists():
         sys.exit(f"no scan at {scan}: --fetch it")
@@ -915,14 +944,8 @@ def main():
         feats.append({"type": "Feature", "properties": {"kind": "front", "run": k, "how": how, "cite": M.cite,
                                                         "date": M.date, "as_of": M.as_of, "fit_km": fit_km},
                       "geometry": {"type": "LineString", "coordinates": [[round(x, 4), round(y, 4)] for x, y in ll]}})
-    units_csv = REC / f"{a.map}-units.csv"
-    units = list(csv.DictReader(open(units_csv))) if units_csv.exists() else []
-    for u in units:
-        lon, lat = fit.to_ll((float(u["x"]), float(u["y"])))[0]
-        feats.append({"type": "Feature", "properties": {"kind": "unit", "of": u["of"], "echelon": u["echelon"], "arm": u["arm"],
-                                                        "label": u["label"], "unit": u.get("unit", ""), "list": u.get("list", ""),
-                                                        **({"doubt": u["doubt"]} if u.get("doubt") else {}), "cite": u["map"], "fit_km": fit_km},
-                      "geometry": {"type": "Point", "coordinates": [round(float(lon), 4), round(float(lat), 4)]}})
+    units = unit_features(a.map, fit, fit_km)
+    feats += units
     hull = fit.ll
     gj = {"type": "FeatureCollection",
           "properties": {"map": a.map, "cite": M.cite, "date": M.date, "as_of": M.as_of,

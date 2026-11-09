@@ -33,6 +33,8 @@
   };
   const KIND_WORD = { boat: "a submarine", ship: "a ship", unit: "an Army unit", battalion: "a Seabee battalion", convoy: "a convoy", command: "a command" };
   const NATION = { us: "US", jp: "Japanese", de: "German", it: "Italian", uk: "British", fr: "French" };
+  // an Army unit is the US Army's; another nation's division (followed by its symbols on the army group's maps) is a unit
+  const kindWord = S => S.kind === "unit" && S.of && S.of !== "us" ? "a unit" : KIND_WORD[S.kind] || S.kind;
   const fmtDay = d3.utcFormat("%-d %b %Y"), fmtMon = d3.utcFormat("%b %Y"), fmtMonth = d3.utcFormat("%B %Y");
   const T = s => s ? Date.parse(String(s).length > 10 ? s : `${s.slice(0, 10)}T12:00Z`) : NaN;
   const year = s => String(s || "").slice(0, 4);
@@ -71,7 +73,7 @@
     const PANEL = { boat: window.PatrolsPanel, ship: window.PatrolsPanel, unit: window.ArmyPanel, battalion: window.SeabeesPanel, convoy: window.ConvoyPanel }[S.kind];
     host.classList.add({ boat: "p-patrols", ship: "p-patrols", unit: "p-army", battalion: "p-seabees", convoy: "p-convoy", command: "p-command" }[S.kind]);
     if (PANEL && HAS_RECORD) PANEL.mount(host, S, { period: params.get("period"), t: params.get("t"), onState });
-    else if (PANEL) host.innerHTML = `<p class="account-none">No record of its own is entered for this ${esc((KIND_WORD[S.kind] || S.kind).replace(/^an? /, ""))} yet${S.relations.length ? ": it is here for its relations, under Placement and leads" : ""}.</p>`;
+    else if (PANEL) host.innerHTML = `<p class="account-none">No record of its own is entered for this ${esc(kindWord(S).replace(/^an? /, ""))} yet${S.relations.length ? ": it is here for its relations, under Placement and leads" : ""}.</p>`;
     else host.innerHTML = `<p class="account-none">No panel draws a ${esc(KIND_WORD[S.kind] || S.kind)}'s rows yet: ${Object.entries(S.records || {}).map(([k, v]) => `${k}.csv (${v} rows)`).join(", ")} are in <a href="https://github.com/erichutchins/wwii-unit-records/tree/main/commands/comsubpac">the records</a>.</p>`;
   }
 
@@ -194,7 +196,7 @@
 
   // ---------- the depths switch, with each depth's counts (every number is the records' or says it is ours)
   const recs = S.records || {};
-  const recordsLine = S.kind === "unit" ? [n(recs.stations || 0, "station"), recs.actions && n(recs.actions, "action"), recs.ships && n(recs.ships, "crossing"), `${n(new Set(rows.map(r => r.source)).size, "record series")}`].filter(Boolean).join(" · ")
+  const recordsLine = S.kind === "unit" ? [n(recs.stations || 0, "station"), recs.actions && n(recs.actions, "action"), recs.ships && n(recs.ships, "crossing"), `${n(new Set(rows.map(r => r.source)).size, "record series", "record series")}`].filter(Boolean).join(" · ")
     : S.kind === "battalion" ? [n(recs.stations || 0, "station"), recs.parts && n(recs.parts, "part"), recs.voyages && n(recs.voyages, "voyage"), recs.projects && n(recs.projects, "project")].filter(Boolean).join(" · ")
     : S.kind === "convoy" ? [n(recs.ships || 0, "ship"), recs.stops && n(recs.stops, "stop"), recs.sightings && n(recs.sightings, "sighting", "sightings")].filter(Boolean).join(" · ")
     : S.kind === "command" ? Object.entries(recs).map(([k, v]) => `${v} ${k.replace(/_/g, " ")}`).join(" · ")
@@ -324,7 +326,9 @@
     // the lede, computed from the record
     const firstPlace = placedRows[0]?.place || "", lastPlace = placedRows[placedRows.length - 1]?.place || "";
     const seriesWords = [...new Set(rows.map(r => r.source))].map(ledeWords).filter(Boolean);
-    const lede = S.kind === "unit" ? `Where the unit was, day by day, from ${seriesWords.join(", ").replace(/, ([^,]*)$/, " and $1")}${firstPlace && lastPlace ? `: ${firstPlace} to ${lastPlace}` : ""}, ${span(new Date(S.first), new Date(S.last))}. ${n(rows.length, "change of station", "changes of station")}${seaLegs.length ? `, ${n(seaLegs.length, "sea crossing")}` : ""}${stages.filter(s => s.stage).length > 1 ? `, ${n(stages.filter(s => s.stage).length, "country", "countries")} after the Atlantic` : ""}.`
+    // a unit entered for its relations or its symbols on the army group's maps alone has no station yet: say so
+    const lede = S.kind === "unit" && !rows.length ? "No station of its own is entered yet."
+      : S.kind === "unit" ? `Where the unit was, day by day, from ${seriesWords.join(", ").replace(/, ([^,]*)$/, " and $1")}${firstPlace && lastPlace ? `: ${firstPlace} to ${lastPlace}` : ""}, ${span(new Date(S.first), new Date(S.last))}. ${n(rows.length, "change of station", "changes of station")}${seaLegs.length ? `, ${n(seaLegs.length, "sea crossing")}` : ""}${stages.filter(s => s.stage).length > 1 ? `, ${n(stages.filter(s => s.stage).length, "country", "countries")} after the Atlantic` : ""}.`
       : S.kind === "battalion" ? `Where the battalion, and each part of it, was, from ${seriesWords.join(", ").replace(/, ([^,]*)$/, " and $1")}${firstPlace && lastPlace ? `: ${firstPlace} to ${lastPlace}` : ""}, ${span(new Date(S.first), new Date(S.last))}. ${n(rows.length, "station")}, ${n(recs.parts || 0, "part")} that split off and rejoined, ${n((extra.voyages || []).length, "voyage")}.`
       : S.kind === "boat" ? `Every position she reported in ${n(S.periods.length, "war patrol report")}, ${span(new Date(S.first), new Date(S.last))}: ${n(rows.filter(r => !r.offtrack).length, "fix", "fixes")} on the track, ${n(recs.attacks || 0, "attack")}${recs.depths ? `, ${n(recs.depths, "depth entry", "depth entries")}` : ""}${recs.japanese ? `, and the Japanese record of ${n(recs.japanese, "entry", "entries")} beside them` : ""}.`
       : S.kind === "ship" ? `Every position in her war diary, ${span(new Date(S.first), new Date(S.last))}: ${n(rows.filter(r => !r.offtrack).length, "fix", "fixes")} on the track${S.periods[0]?.months?.length ? `; ${n(S.periods[0].months.filter(m => m.status === "mapped" || m.status === "partial").length, "month")} of ${S.periods[0].months.length} in the inventory transcribed` : ""}.`

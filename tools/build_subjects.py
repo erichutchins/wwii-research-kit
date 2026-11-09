@@ -54,6 +54,7 @@ from records import RECORDS, rel
 OUT = RECORDS / "subjects.json"
 # stations.csv sources that give a headquarters' or a division's position, not the unit's own (army/README.md)
 ASSUMED = {"bn", "regt", "hist", "aar", "div"}
+NATIONS = {"us", "jp", "de", "it", "uk", "fr"}   # the codes site/subject.js names (its NATION)
 SOURCE_WORDS = {"mr": "its own morning reports", "btry": "the battery's own position in the battalion's records",
                 "bn": "the battalion command post (the battery assumed nearby)",
                 "regt": "the Regimental HQ Battery's morning reports (the detachment's own missing)",
@@ -261,6 +262,11 @@ class Build:
             p = (plain.get(uid) or {}).get("plain", "")
             if not p:
                 self.bad(where, "no `plain` line in army/units.yml (what it was, in a line, ours)")
+            # its nation, as the records give it: the units.yml `of` (an enemy division followed by its symbols on the
+            # army group's maps, "de"), else the Army's own
+            of = (plain.get(uid) or {}).get("of", "us")
+            if of not in NATIONS:
+                self.bad("army/units.yml", f"{uid}: `of` {of!r} is not one of {sorted(NATIONS)}")
             b = by_unit.get(uid, {"stations": [], "actions": []})
             st = b["stations"]
             placed = [s for s in st if s.get("lat") is not None]
@@ -295,7 +301,7 @@ class Build:
             theatre = "" if not st else "home" if not overseas else ("mediterranean" if sum(1 for _, lat in overseas if lat < 44) * 2 >= len(overseas) else "europe")
             inv_u = ((inv.get("units") or {}).get(uid) or {})
             status = (inv_u.get("record") or {}).get("status", "")
-            out.append({"id": uid, "alias": uid, "kind": "unit", "name": u["name"], "short": u.get("short") or uid, "plain": p, "of": "us",
+            out.append({"id": uid, "alias": uid, "kind": "unit", "name": u["name"], "short": u.get("short") or uid, "plain": p, "of": of,
                         "theatre": theatre, "note": u.get("note", ""), "status": status, "periods": periods, "relations": relations,
                         "engagements": sorted(engs.get(uid, []), key=lambda e: e["from"]), "records": recs,
                         "leads": [ld for ld in leads if uid in ld.get("units", [])], "box": box_of(pts),

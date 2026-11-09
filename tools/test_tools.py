@@ -38,6 +38,7 @@ import jgrid
 import lint
 import loc_sitmaps
 import naval_grid
+import neighbours
 import records
 
 
@@ -948,6 +949,31 @@ class SituationMaps(unittest.TestCase):
             r["base"] = "B11" if r["date"] < "1945-03-10" else "B12"
         self.assertEqual([r["date"] for r in loc_sitmaps.select(rows, "B12")], ["1945-03-10", "1945-03-11"])
         self.assertEqual(loc_sitmaps.select(rows, "1945-04-01"), [])
+
+class Neighbours(unittest.TestCase):
+    """Who was beside and facing a unit, from the situation maps: computed leads."""
+
+    def test_crossing_and_grouping(self):
+        self.assertTrue(neighbours.crosses((0, 0), (2, 0), (1, -1), (1, 1)))
+        self.assertFalse(neighbours.crosses((0, 0), (0.5, 0), (1, -1), (1, 1)))
+        self.assertEqual(neighbours.front_crossings((0, 0), (3, 0), [[(1, -1), (1, 1)], [(2, -1), (2, 1)]]), 2)
+        base = {"unit": "", "of": "de", "echelon": "xx", "friendly": False}
+        self.assertEqual(neighbours.group_key(dict(base, label="11 ?")), neighbours.group_key(dict(base, label="11")))
+        self.assertEqual(neighbours.group_key(dict(base, unit="9ad", label="9(-)")), "9ad")
+
+    def test_chenogne(self):
+        """Task Force Collins at Chenogne, 30 Dec 1944: measured from the battalion's own station, the 11th Armored beside
+        it, the enemy's "3" (Cole: the 3d Panzer Grenadier Division) across the line, its own division drawn far west."""
+        out = neighbours.run("60aib", date(1944, 12, 30), date(1944, 12, 30), 20)
+        d = out["days"][0]
+        self.assertIn("60aib's station, Chenogne", d["anchor"])
+        self.assertTrue(any(n["unit"] == "11th-armd-div" and n["friendly"] for n in d["near"]))
+        three = [n for n in d["near"] if n["label"] == "3" and not n["friendly"]]
+        self.assertTrue(three and three[0]["across"] and three[0]["km"] < 10)
+        self.assertTrue(d["own"] and d["own"][0]["unit"] == "9ad" and d["own"][0]["km"] > 25)
+        # on the record that day: the battalion under CC A, and CC A attached to the 4th Armored (etoob-9AD/p501)
+        self.assertTrue(any(r["unit"] == "9ad-cca" and r["other"] == "4ad" for r in d["record"]))
+
 
 if __name__ == "__main__":
     unittest.main()
