@@ -702,11 +702,11 @@ def area_note(fit, area):
 
 
 def write_units(map_name, M, spec, boxes_csv):
-    """The units CSV from a reading: lines `n of echelon arm label [list:<word>]` (n a box --boxes numbered; the words,
-    bridgehead, unlocated, marseilles and the rest, are in records/fronts/README.md) or
-    `@x,y of echelon arm label [...]` (read by eye on the overview), `-` for an empty arm; `#` starts a comment. A last
-    `unit:-` takes away the tie to the kit's units a symbol would get from its label (`unit:<id>` sets one): the
-    reviewer's call where the drawing and the unit disagree, its reason in a comment on the line."""
+    """The units CSV from a reading: lines `n of echelon arm label [list:<word>] [doubt:<word>]` (n a box --boxes
+    numbered; the list and doubt words, bridgehead, unlocated, enemy-label and the rest, are in records/fronts/README.md)
+    or `@x,y of echelon arm label [...]` (read by eye on the overview), `-` for an empty arm or echelon; `#` starts a
+    comment. A last `unit:-` takes away the tie to the kit's units a symbol would get from its label (`unit:<id>` sets
+    one): the reviewer's call where the drawing and the unit disagree, its reason in a comment on the line."""
     det = {r["n"]: (int(r["x"]), int(r["y"])) for r in csv.DictReader(open(boxes_csv))} if boxes_csv.exists() else {}
     rows = []
     for ln in open(spec, encoding="utf-8"):
@@ -714,10 +714,13 @@ def write_units(map_name, M, spec, boxes_csv):
         if not ln:
             continue
         key, of, ech, arm, *label = ln.split()
+        doubt = next((t[6:] for t in label if t.startswith("doubt:")), "")   # the reading stands; a page says why it may not
+        label = [t for t in label if not t.startswith("doubt:")]
         tie = label.pop()[5:] if label and label[-1].startswith("unit:") else None   # unit:- (no tie) or unit:<id>,
         lst = label.pop()[5:] if label and label[-1].startswith("list:") else ""      # the reviewer's call, said why
         tie = label.pop()[5:] if tie is None and label and label[-1].startswith("unit:") else tie   # in a comment
         arm = "" if arm == "-" else arm
+        ech = "" if ech == "-" else ech
         text = " ".join(label)
         if key.startswith("@"):
             x, y = (int(v) for v in key[1:].split(","))
@@ -731,12 +734,12 @@ def write_units(map_name, M, spec, boxes_csv):
         unit = UNIT_IDS.get((arm, bare), "") if of == "us" else ""
         if tie is not None:
             unit = "" if tie == "-" else tie
-        rows.append([x, y, of, ech, arm, text, unit, lst, M.cite])
+        rows.append([x, y, of, ech, arm, text, unit, lst, doubt, M.cite])
     rows.sort(key=lambda r: (r[1], r[0]))
     out = REC / f"{map_name}-units.csv"
     with open(out, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, lineterminator="\n")
-        w.writerow(["x", "y", "of", "echelon", "arm", "label", "unit", "list", "map"])
+        w.writerow(["x", "y", "of", "echelon", "arm", "label", "unit", "list", "doubt", "map"])
         w.writerows(rows)
     print(f"wrote {out.relative_to(KIT)}: {len(rows)} symbols, {sum(1 for r in rows if r[7])} listed, "
           f"tied to the kit's units: {', '.join(f'{r[5]}={r[6]}' for r in rows if r[6]) or 'none'}")
@@ -917,7 +920,8 @@ def main():
     for u in units:
         lon, lat = fit.to_ll((float(u["x"]), float(u["y"])))[0]
         feats.append({"type": "Feature", "properties": {"kind": "unit", "of": u["of"], "echelon": u["echelon"], "arm": u["arm"],
-                                                        "label": u["label"], "unit": u.get("unit", ""), "list": u.get("list", ""), "cite": u["map"], "fit_km": fit_km},
+                                                        "label": u["label"], "unit": u.get("unit", ""), "list": u.get("list", ""),
+                                                        **({"doubt": u["doubt"]} if u.get("doubt") else {}), "cite": u["map"], "fit_km": fit_km},
                       "geometry": {"type": "Point", "coordinates": [round(float(lon), 4), round(float(lat), 4)]}})
     hull = fit.ll
     gj = {"type": "FeatureCollection",

@@ -147,6 +147,7 @@ hard one with `--look X,Y ...`. Write what you read to `sources/fronts-work/<map
 12 de xx infantry 363          # a hatched (enemy) box with a cross
 21 de xx infantry 272 list:bridgehead   # in the map's list facing the bridgehead: a list, not a place
 @4880,1537 de xxxx - FIFTEENTH # missed by the finder: its centre on the scan; `-` for no arm (a headquarters)
+@5170,5567 us xx infantry 30 SS doubt:enemy-label   # an open box with the enemy's label: as drawn, and flagged
 ```
 
 As written, nothing more:
