@@ -180,3 +180,6 @@ Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page
 - Commit anything under `sources/`, or `.env`.
 - Copy the FRUPAC maps (CC BY-NC-ND): link them.
 - Publish or post anything outside the repository without asking.
+- Mention another project's issues, pull requests or commits in a commit message or a pull request description
+  (`owner/repo#123`, an issues or pull URL): GitHub links the mention back to that project. Say what a workaround does,
+  not whose bug it works around. Another WWII project's research, cited as a source, is the exception.
