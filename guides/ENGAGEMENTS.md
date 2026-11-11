@@ -112,6 +112,12 @@ new format is converted for good: no reader for the old one is kept.
 | US radio intelligence's estimate (a FRUPAC note's mark, read off the map) | a hatched ring in the lighter ink, never solid; its entries chipped *intelligence · US* |
 | Not recorded; an assumed route | dotted |
 | Straight between known points, nothing recorded between | dashed |
+| An aircraft's path, whatever its basis (`routes.yml`, `by: air`); a unit's moves on the ground have none | chevrons along the line, pointing the way it flew; in its group's colour where the route names an `actor`, else its side's ink |
+| An aircraft's course as its form types it (`routes.yml`, `reported`), drawn back from where it was typed | solid, an arrowhead; the length ours |
+| A course as a squadron's sketch map draws it (`sketched`) | long dashes; no arrowhead where the sketch's direction isn't sure |
+| A path no record gives (`inferred`): a straight line between two places | dotted, in the side's ink |
+| A weapon's range as the manual prints it, round where the battery was (`reach.yml`) | a ring in the side's ink, a faint wash; solid if the battery's place and weapon are both its own record's, dashed otherwise; labelled with the weapon and range |
+| A bombing target the record names (`positions.csv`, `kind` `target`) | a ring with a cross, in the ink of the side it belongs to |
 | A ship sunk (the Japanese record) | red ✕ |
 | A ship hit, not sunk | red ring |
 | Attacked, no damage | open ink ring |

@@ -23,6 +23,7 @@ const EV = (() => {
 
   // A silhouette from the kit's library (silhouettes.js; wait on SILHOUETTES): a ship's own class profile in feet,
   // drawn `ftPx` pixels to the foot so plates compare true size, or else the generic shape for its kind.
+  const AC_PX = 2.4;   // an aircraft's profile, pixels to the foot at the order of battle's scale (a B-26, 58 ft: 140 px)
   function sil(id, fill, opts = {}) {
     // `fit`: the box ends at the ship's own highest point (a row beside text), not at the shared sky that lines ships up
     // on one waterline (the order of battle); the scale is the same either way
@@ -32,6 +33,13 @@ const EV = (() => {
       const top = fit ? Math.max(...[...ship.d.matchAll(/,(-?[\d.]+)/g)].map(m => -m[1]), 1) + 1 : 0;
       const L = +ship.length, H = fit ? top : Math.max(L * 0.3, 30), w = L * ftPx;
       return `<svg class="${cls}" viewBox="-2 ${-H} ${L + 4} ${H + 3}" width="${w.toFixed(0)}" height="${(w * (H + 3) / (L + 4)).toFixed(0)}" preserveAspectRatio="xMinYMax meet" aria-hidden="true"><path d="${ship.d}" fill="${fill}"/></svg>`;
+    }
+    // an aircraft traced from its plate: its profile, the aircraft drawn to one scale of their own (AC_PX to the foot), since
+    // at a ship's scale a bomber would be a speck
+    const ac = window.AIRCRAFT && AIRCRAFT[id];
+    if (ac && ac.profile) {
+      const w = (+ac.length || 40) * AC_PX * (ftPx / 0.42), h = w * ac.profile.h / ac.profile.w;
+      return `<svg class="${cls}" viewBox="-1 -1 ${ac.profile.w + 2} ${ac.profile.h + 2}" width="${w.toFixed(0)}" height="${h.toFixed(0)}" preserveAspectRatio="xMinYMax meet" aria-hidden="true"><path d="${ac.profile.d}" fill="${fill}"/></svg>`;
     }
     const cat = window.SIL_CATEGORIES && SIL_CATEGORIES.shapes[id in (window.SIL_CATEGORIES?.shapes || {}) ? id : category(id)];
     return cat ? `<svg class="${cls}" viewBox="0 0 120 24" width="${width}" height="${width / 5}" aria-hidden="true"><path d="${cat}" fill="${fill}"/></svg>` : "";
@@ -54,6 +62,7 @@ const EV = (() => {
       return basis === "representative" ? `${n}: a representative type, not her own plate` :
              basis && basis.startsWith("class, assumed") ? `${n}: her class, assumed (${basis.slice(16)})` : n;
     }
+    if (window.AIRCRAFT && AIRCRAFT[id]) return `${AIRCRAFT[id].name}: traced from its recognition plate, ${AIRCRAFT[id].source}; aircraft to one scale of their own`;
     return "The kind of ship only (no plate in the library yet)";
   }
 

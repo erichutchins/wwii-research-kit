@@ -323,6 +323,54 @@ class LintRunner(LintCase):
 
 # ── the engagement builder ───────────────────────────────────────────────────
 
+class EngagementRoutes(unittest.TestCase):
+    """Build.route: a routes.yml entry -> its points (records/README.md, "An engagement's routes")."""
+
+    def setUp(self):
+        self.b = build_engagement.Build()
+        self.pos = {"x": {"id": "x", "label": "X", "lat": 48.0, "lon": 11.0}, "y": {"id": "y", "label": "Y", "lat": 48.5, "lon": 11.5}}
+
+    def test_a_course_is_drawn_back_from_where_it_was_typed(self):
+        # due south at 180°, 11.057 km: the line starts 0.1° of latitude north of the position and ends on it
+        r = self.b.route({"id": "c", "of": "us", "by": "air", "basis": "reported", "to": "x", "course": 180, "drawn_km": 11.057, "ref": ""}, self.pos, "w")
+        self.assertEqual(r["points"], [[11.0, 48.1], [11.0, 48.0]])
+        self.assertIn("is drawn, not recorded", r["resolved"])
+
+    def test_two_positions_or_a_run_of_points(self):
+        r = self.b.route({"id": "s", "of": "de", "by": "air", "basis": "inferred", "from": "x", "to": "y", "ref": ""}, self.pos, "w")
+        self.assertEqual(r["points"], [[11.0, 48.0], [11.5, 48.5]])
+        r = self.b.route({"id": "k", "of": "us", "by": "ground", "actor": "u1", "basis": "sketched", "arrow": False, "points": [{"lat": 48.2, "lon": 11.1}, "y"], "ref": ""}, self.pos, "w")
+        self.assertEqual((r["points"], r["arrow"], r["by"], r["actor"]), ([[11.1, 48.2], [11.5, 48.5]], False, "ground", "u1"))
+        self.assertEqual([m for m in map(str, self.b.problems) if "no citation" not in m], [])   # (the cases cite nothing)
+
+    def test_a_route_needs_a_basis_a_side_and_a_way_to_its_points(self):
+        self.assertIsNone(self.b.route({"id": "bad", "basis": "guessed"}, self.pos, "w"))
+        msgs = " ".join(m for _, m in self.b.problems) if self.b.problems and isinstance(self.b.problems[0], tuple) else " ".join(map(str, self.b.problems))
+        self.assertIn("basis", msgs)
+        self.assertIn("needs `points`", msgs)
+        self.assertIn("by None", msgs)   # what moved is required: air, ground or sea
+
+
+class EngagementReach(unittest.TestCase):
+    """Build.ring: a reach.yml entry -> its ring (records/README.md, "An engagement's reach")."""
+
+    def setUp(self):
+        self.b = build_engagement.Build()
+        self.pos = {"x": {"id": "x", "label": "X", "lat": 48.0, "lon": 11.0}, "n": {"id": "n", "label": "N", "lat": None, "lon": None}}
+
+    def test_the_range_in_yards_becomes_km_round_the_place(self):
+        # 3,500 yd (FM 4-155's 37 mm) x 0.9144 m = 3.2004 km
+        r = self.b.ring({"id": "d", "of": "us", "at": "x", "weapon": "37 mm", "range_yd": 3500, "basis": "assumed", "ref": ""}, self.pos, "w")
+        self.assertEqual((r["lon"], r["lat"], r["km"], r["basis"]), (11.0, 48.0, 3.2, "assumed"))
+
+    def test_a_ring_needs_a_placed_position_and_a_range(self):
+        self.assertIsNone(self.b.ring({"id": "a", "of": "us", "at": "n", "range_yd": 100, "basis": "assumed"}, self.pos, "w"))
+        self.assertIsNone(self.b.ring({"id": "b", "of": "us", "at": "x", "range_yd": 0, "basis": "guessed"}, self.pos, "w"))
+        msgs = " ".join(map(str, self.b.problems))
+        for want in ("not a placed position", "range in yards", "basis"):
+            self.assertIn(want, msgs)
+
+
 class EngagementTimes(unittest.TestCase):
     """Build.when: an entry's `at` as typed -> (the local time as written, GMT or None, a sort key)."""
 

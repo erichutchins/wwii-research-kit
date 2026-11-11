@@ -192,3 +192,5 @@ p.none { margin: 0; font-style: italic; color: var(--ink-3); }
 .sitmap-list p { margin: 0 0 4px; }
 .sitmap-list .items { display: flex; flex-wrap: wrap; gap: 2px 6px; }
 .sitmap-list[hidden] { display: none; }
+.chevron { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.ring-label { font-size: 10.5px; font-style: italic; fill: var(--ink-2); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }

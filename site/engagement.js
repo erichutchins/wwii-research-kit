@@ -99,6 +99,7 @@
     return `${every ? "each day" : `on ${SITMAPS.length} days`} from ${dmy(first)} to ${dmy(last)}`;
   })();
   const STATIONS = D.stations || {};
+  const ROUTE_DASH = { reported: null, sketched: "7 4", inferred: "1.5 4" };   // routes.yml's line by basis
   const inkOf = x => LIGHTER.has(x.source_kind) ? "var(--ink-3)" : x.opposed ? "var(--japan)" : x.of ? "var(--ink-2)" : "var(--ink-3)";   // no `of`: a place
   const colour = id => byId[id]?.colour ? `var(--c${byId[id].colour})` : byId[id] ? inkOf(byId[id]) : "var(--ink-2)";
   const evColour = e => byId[e.actor] ? colour(e.actor) : inkOf(e);
@@ -123,6 +124,8 @@
   // each followed subject's colour, the same in the who at the top and on the map: the build's, else the chronology's
   // column, else the next free of the three checked ones (a followed unit with no entries of its own, Neuburg's); the
   // other side has none (dashed in the who)
+  // a participant a route names as its actor (routes.yml: the bombers) takes a colour too, so its paths read as its own
+  const ROUTED = new Set((D.routes || []).map(r => r.actor).filter(Boolean));
   const SUBJECT_COLOUR = (() => {
     const colsOf = Object.fromEntries(E.chronologyColumns(D.events, PARTS).filter(c => c.subject && c.participant).map(c => [c.participant, c.colour]));
     const used = new Set(PARTS.map(p => p.colour).filter(Boolean));
@@ -130,7 +133,7 @@
     return Object.fromEntries(PARTS.map(p => {
       if (p.colour) return [p.id, `var(--c${p.colour})`];
       if (colsOf[p.id]) return [p.id, colsOf[p.id]];
-      if (!(p.track || p.unit)) return [p.id, null];
+      if (!(p.track || p.unit || ROUTED.has(p.id))) return [p.id, null];
       while (used.has(slot)) slot++;
       return [p.id, slot <= 3 ? `var(--c${slot++})` : "var(--ink)"];
     }));
@@ -202,7 +205,17 @@
 
   // ---------- legend: only the marks this engagement has
   const has = f => D.events.some(f);
+  const KEY_AIR = c => `<svg width="30" height="10"><line x1="1" y1="5" x2="29" y2="5" stroke="${c}" stroke-width="1.8"/><path class="chevron" d="M8,1L12.5,5L8,9M19,1L23.5,5L19,9" stroke="${c}"/></svg>`;
+  const KEY_GROUND = c => `<svg width="30" height="10"><line x1="1" y1="5" x2="29" y2="5" class="way" stroke="${c}"/><circle cx="15" cy="5" r="3.2" fill="${c}"/></svg>`;
   document.getElementById("legend").innerHTML = [
+    // who is who on the map: our side's followed units and air groups in their colours, the other side in its ink;
+    // a unit's moves on the ground plain, an aircraft's path chevroned
+    ...PARTS.filter(p => !TRACKED.includes(p) && SUBJECT_COLOUR[p.id] && ((STATIONS[p.id] || []).length > 1 || ROUTED.has(p.id))).map(p =>
+      `<span class="boat">${ROUTED.has(p.id) ? KEY_AIR(SUBJECT_COLOUR[p.id]) : KEY_GROUND(SUBJECT_COLOUR[p.id])}${esc(p.name)}${ROUTED.has(p.id) ? ": in the air" : ": on the ground"}</span>`),
+    ...[...new Set((D.routes || []).filter(r => r.opposed && r.by === "air").map(r => r.of))].map(of =>
+      `<span class="boat">${KEY_AIR("var(--japan)")}${esc(E.nation(of))} aircraft</span>`),
+    ...[...new Set(D.positions.filter(r => r.opposed && r.lat != null).map(r => r.of))].map(of =>
+      `<span class="boat"><svg width="10" height="10" viewBox="-5 -5 10 10"><rect x="-3.5" y="-3.5" width="7" height="7" fill="var(--japan)"/></svg>${esc(E.nation(of))}: a place or a unit on the ground (its ink)</span>`),
     ...TRACKED.map(p => `<span class="boat"><svg width="22" height="10"><line x1="1" y1="5" x2="21" y2="5" stroke="${colour(p.id)}" stroke-width="2.5"/></svg>${esc(p.name)}</span>`),
     has(e => e.kind === "attack") && `<span>${EV.legendMark.attack("var(--ink-2)")}Torpedo attack</span>`,
     D.fixes.some(f => f.on_track) && `<span><svg width="10" height="10" viewBox="-5 -5 10 10"><circle r="3.5" fill="var(--ink-2)"/></svg>Reported position</span>`,
@@ -213,12 +226,15 @@
     has(e => e.kind === "contact_report" && e.origin !== "frupac") && `<span><svg width="24" height="10"><line x1="1" y1="5" x2="23" y2="5" class="msg" stroke="var(--ink-2)"/></svg>Contact report, sender to each boat it went to</span>`,
     has(e => e.origin === "frupac" && e.lat != null) && `<span>${EV.legendMark.intel}Estimated by FRUPAC (US radio intelligence; the position read from the map)</span>`,
     D.fixes.some(f => !f.on_track && f.kind !== "ship") && `<span><svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="4.5" fill="none" stroke="var(--ink-2)" stroke-width="1.4" stroke-dasharray="2 2"/></svg>Contradicted in the report</span>`,
+    D.positions.some(r => r.kind === "target") && `<span><svg width="18" height="18" viewBox="-9 -9 18 18"><circle r="5.5" fill="none" stroke="var(--ink-2)" stroke-width="1.4"/><circle r="1.8" fill="var(--ink-2)"/><path d="M-9,0H-4M4,0H9M0,-9V-4M0,4V9" stroke="var(--ink-2)" stroke-width="1.4"/></svg>A bombing target, as the record names it</span>`,
     D.positions.length && `<span><svg width="10" height="10" viewBox="-5 -5 10 10"><rect x="-3" y="-3" width="6" height="6" fill="var(--ink-3)"/></svg>A place in the records</span>`,
-    D.positions.some(r => r.lat2 != null) && `<span><svg width="16" height="12" viewBox="0 0 16 12"><rect x="1" y="1" width="14" height="10" fill="none" stroke="var(--ink-2)" stroke-width="1.2"/></svg>A grid square the record names (our decoding)</span>`,
+    D.positions.some(r => r.lat2 != null) && `<span><svg width="16" height="12" viewBox="0 0 16 12"><rect x="1" y="1" width="14" height="10" fill="none" stroke="var(--ink-2)" stroke-width="1.2"/></svg>A map grid square a report names: the maps were ruled in squares, and a report could give a square, not a point, so the whole square is drawn (our decoding)</span>`,
     (D.relief || []).length && `<span><svg width="18" height="12" viewBox="0 0 18 12"><rect x="1" y="1" width="16" height="10" fill="var(--land)" stroke="var(--coast)"/></svg>Relief and coast: today's elevation (SRTM, USGS)${RIVERS.length ? "; rivers from Natural Earth" : ""}</span>`,
     FRONT && `<span>${EV.legendMark.front}<span>The front at ${SITMAPS.length < 2 ? esc(FRONT_HOUR) : `1200 ${esc(SITMAP_WHEN)}, ${STEPPER ? "the day chosen under the map" : "the latest at the clock"}`}, as the <a href="${esc(SITMAP.meta.cite.href)}" target="_blank" rel="noopener">12th Army Group's ${SITMAPS.length > 1 ? "maps" : "map"}</a> drew it (traced, ± about ${Math.max(1, Math.round(SITMAP.meta.fit_km * 2))} km), ticked as the map ticks it, on its own side</span></span>`,
     FRONT_UNITS.some(u => !u.opposed) && `<span>${EV.legendMark.unitUs}A US division or corps on that map: in its area, not at a position</span>`,
     FRONT_UNITS.some(u => u.opposed) && `<span>${EV.legendMark.unitEnemy}The enemy as that map placed them (US intelligence)</span>`,
+    (D.rings || []).length && `<span><svg width="20" height="14" viewBox="0 0 20 14"><circle cx="10" cy="7" r="6" fill="var(--ink-2)" fill-opacity=".05" stroke="var(--ink-2)" stroke-width="1.2"${(D.rings || []).some(r => r.basis !== "reported") ? ' stroke-dasharray="4 2"' : ""}/></svg>A weapon's reach: its range as the field manual gives it, round where the battery was${(D.rings || []).some(r => r.basis !== "reported") ? " (dashed: the battery's place or its weapon not its own record's)" : ""}</span>`,
+    ...["reported", "sketched", "inferred"].filter(b => (D.routes || []).some(r => r.basis === b)).map(b => `<span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" stroke="var(--ink-2)" stroke-width="${b === "reported" ? 2.2 : 1.6}" stroke-linecap="round"${ROUTE_DASH[b] ? ` stroke-dasharray="${ROUTE_DASH[b]}"` : ""}/></svg>${{ reported: "An aircraft's course as its form types it (the length ours)", sketched: "A course as a squadron's sketch map draws it (traced, ± a few km)", inferred: "<i>A path no record gives: a straight line between two places (ours)</i>" }[b]}</span>`),
     Object.values(STATIONS).some(rows => rows.length > 1) && `<span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" class="way" stroke="var(--ink-2)"/></svg>A unit's stations, joined straight; lighter in the week before the engagement</span>`,
     ROADS && `<span><svg width="22" height="10"><line x1="1" y1="5" x2="21" y2="5" class="road"/></svg>Primary roads of 1942 (OSS Map 967, traced, ± about 4 km)</span>`,
     PATH.length > 1 && `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--ink-3)" stroke-width="1.4" stroke-dasharray="2 4"/></svg><i>The convoy's path as the boats saw it (ours; to the clock)</i></span>`,
@@ -227,7 +243,7 @@
   // ---------- map
   const svg = d3.select("#map");
   const HATCH = EV.hatchDef(svg);   // the intelligence estimates' hatch (inferred, never solid)
-  const gLand = svg.append("g"), gGrat = svg.append("g"), gRelief = svg.append("g"), gFront = svg.append("g"), gWay = svg.append("g"), gPlace = svg.append("g"), gPath = svg.append("g"), gTrk = svg.append("g"), gMsg = svg.append("g"),
+  const gLand = svg.append("g"), gGrat = svg.append("g"), gRelief = svg.append("g"), gFront = svg.append("g"), gWay = svg.append("g"), gRing = svg.append("g"), gRoute = svg.append("g"), gPlace = svg.append("g"), gPath = svg.append("g"), gTrk = svg.append("g"), gMsg = svg.append("g"),
         gNowName = svg.append("g"), gMk = svg.append("g"), gNow = svg.append("g"), gPulse = svg.append("g");
   let proj = null, BASE = null, W = 0, H = 0, quiet = false, t = t1, playing = false, raf = 0, lastT = null;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -429,6 +445,64 @@
   const P = (lon, lat) => proj([lon, lat]);
   if (!D.box) document.querySelector(".map-box").hidden = true;
 
+  // routes.yml: paths through the air as the records give them, each in its side's ink: a course typed on a form (solid,
+  // drawn back from the position it was typed at, for a length that is ours), a squadron's sketch (dashed), a straight
+  // line between two places where no record gives the path (dotted). An arrowhead at the end where the direction is sure.
+  const ROUTE_WORD = { reported: "as the record types it", sketched: "as a sketch map draws it", inferred: "inferred: no record gives the path" };
+  function drawRoutes() {
+    gRoute.selectAll("*").remove();
+    (D.routes || []).forEach(r => {
+      const pts = r.points.map(([lon, lat]) => P(lon, lat)), c = (r.actor && SUBJECT_COLOUR[r.actor]) || inkOf(r);
+      const g = gRoute.append("g").attr("class", "route");
+      // an aircraft's path: chevrons along it, pointing the way it flew, so air reads apart from a unit's moves on the ground
+      if (r.by === "air") airChevrons(g, pts, c, r.arrow);
+      g.append("path").attr("d", d3.line()(pts)).attr("fill", "none").attr("stroke", c).attr("stroke-linecap", "round")
+        .attr("stroke-width", r.basis === "reported" ? 2.2 : 1.6).attr("stroke-dasharray", ROUTE_DASH[r.basis]);
+      if (r.arrow) {
+        const [bx, by] = pts[pts.length - 1], [ax, ay] = pts[pts.length - 2], a = Math.atan2(by - ay, bx - ax) * 180 / Math.PI;
+        g.append("path").attr("d", "M0,0L-8,-4L-8,4Z").attr("fill", c).attr("transform", `translate(${bx.toFixed(1)},${by.toFixed(1)}) rotate(${a.toFixed(1)}) translate(-3,0)`);
+      }
+      g.append("path").attr("d", d3.line()(pts)).attr("fill", "none").attr("stroke", "transparent").attr("stroke-width", 12)
+        .on("mouseenter", ev => EV.showTip(ev, `<div class="v">${esc(r.label)}</div><div class="k">${r.time ? esc(r.time) + " · " : ""}${esc(ROUTE_WORD[r.basis] || r.basis)}</div><div class="m">${esc(r.resolved)}${r.note ? ". " + esc(r.note) : ""}</div><div class="i">${esc(r.source)}</div>`))
+        .on("mousemove", EV.moveTip).on("mouseleave", EV.hideTip)
+        .on("click", () => { if (r.cite && r.cite.href) window.open(r.cite.href, "_blank", "noopener"); });
+    });
+  }
+
+  // chevrons every CHEVRON px along a polyline (clear of an arrowhead at its end), each turned to its segment
+  const CHEVRON = 30;
+  function airChevrons(g, pts, c, arrow) {
+    const segs = d3.pairs(pts).map(([a, b]) => ({ a, b, len: Math.hypot(b[0] - a[0], b[1] - a[1]) })), total = d3.sum(segs, d => d.len);
+    for (let at = CHEVRON / 2; at < total - (arrow ? 16 : 6); at += CHEVRON) {
+      let rest = at, sg = segs[0];
+      for (sg of segs) { if (rest <= sg.len) break; rest -= sg.len; }
+      if (!sg.len) continue;
+      const t = rest / sg.len, x = sg.a[0] + t * (sg.b[0] - sg.a[0]), y = sg.a[1] + t * (sg.b[1] - sg.a[1]);
+      const deg = Math.atan2(sg.b[1] - sg.a[1], sg.b[0] - sg.a[0]) * 180 / Math.PI;
+      g.append("path").attr("class", "chevron").attr("d", "M-3,-4L1.5,0L-3,4").attr("stroke", c)
+        .attr("transform", `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${deg.toFixed(1)})`);
+    }
+  }
+
+  // reach.yml: a weapon's range as the manual gives it, a circle round where the battery was, in the side's ink; dashed
+  // where the battery's place or its weapon is not its own record's (assumed, inferred). Labelled with the weapon and range.
+  function drawRings() {
+    gRing.selectAll("*").remove();
+    const path = d3.geoPath(proj);
+    (D.rings || []).forEach(r => {
+      const c = (r.actor && SUBJECT_COLOUR[r.actor]) || inkOf(r), circle = d3.geoCircle().center([r.lon, r.lat]).radius(r.km / 111.195).precision(2)();
+      const g = gRing.append("g").attr("class", "ring");
+      g.append("path").attr("d", path(circle)).attr("fill", c).attr("fill-opacity", 0.05).attr("stroke", c).attr("stroke-width", 1.2)
+        .attr("stroke-dasharray", r.basis === "reported" ? null : "6 3");
+      // labelled only where the ring is big enough on the screen to carry it (zoomed out, it would sit on the places' names)
+      const [x, y] = P(r.lon, r.lat + r.km / 111.195), [, cy] = P(r.lon, r.lat);
+      if (cy - y >= 34) g.append("text").attr("class", "ring-label").attr("x", x).attr("y", y - 4).attr("text-anchor", "middle").text(`${r.weapon}, ${d3.format(",")(r.range_yd)} yd`);
+      g.append("path").attr("d", path(circle)).attr("fill", "none").attr("stroke", "transparent").attr("stroke-width", 10)
+        .on("mouseenter", ev => EV.showTip(ev, `<div class="v">${esc(r.label)}</div><div class="k">${esc(r.weapon)} · ${d3.format(",")(r.range_yd)} yards (${r.km.toFixed(1)} km) · ${esc(r.basis)}</div><div class="m">${esc(r.note)}</div><div class="i">${esc(r.source)}</div>`))
+        .on("mousemove", EV.moveTip).on("mouseleave", EV.hideTip);
+    });
+  }
+
   function drawStatic() {
     if (!D.box || document.getElementById("action").hidden) return;   // (the questions have no map: nothing to fit)
     const el = svg.node(); W = el.clientWidth; H = el.clientHeight;
@@ -446,6 +520,8 @@
     const inView = ([x, y]) => x > 30 && x < W - 30 && y > 24 && y < H - 24;
     drawFront(inView);
     drawWays();
+    drawRings();
+    drawRoutes();
     drawSides(true);
     gPlace.selectAll("*").remove();
     D.places.filter(p => inView(P(p.lon, p.lat))).forEach(p => gPlace.append("text").attr("class", "place")
@@ -481,8 +557,9 @@
     // a place's label only where it has room: two places a few pixels apart (a bridge and its town) would print over
     // each other, so the second keeps its mark and gives its name on hover
     const taken = [];
-    const room = (d, text) => {
-      const [x, y] = P(d.lon, d.lat), b = [x + 6, y - 16, x + 6 + String(text).length * 6.2, y - 2];
+    // the label as drawn: its own box, so a long italic label isn't guessed short
+    const roomFor = (d, node) => {
+      const bb = node.getBBox(), [x, y] = P(d.lon, d.lat), b = [x + bb.x - 2, y + bb.y - 1, x + bb.x + bb.width + 2, y + bb.y + bb.height + 1];
       if (taken.some(t => b[0] < t[2] && t[0] < b[2] && b[1] < t[3] && t[1] < b[3])) return false;
       taken.push(b); return true;
     };
@@ -512,12 +589,24 @@
         const [x2, y2] = P(d.r.lon2, d.r.lat2).map((v, i) => v - P(d.lon, d.lat)[i]);
         g.append("rect").attr("x", Math.min(0, x2)).attr("y", Math.min(0, y2)).attr("width", Math.abs(x2)).attr("height", Math.abs(y2))
           .attr("fill", HATCH).attr("stroke", inkOf(d.r)).attr("stroke-width", 1).attr("stroke-dasharray", d.r.basis === "probable" ? "4 3" : null);
-        g.append("text").attr("class", "port").attr("x", Math.min(0, x2) + 4).attr("y", Math.min(0, y2) - 5).text(String(d.r.label).split(":")[0]);
+        const tx = g.append("text").attr("class", "port").attr("x", Math.min(0, x2) + 4).attr("y", Math.min(0, y2) - 5).text(String(d.r.label).split(":")[0]);
+        if (!roomFor(d, tx.node())) tx.remove();
+      } else if (d.k === "pos" && d.r.kind === "target") {
+        // a bombing target the record names: a ring and its cross, in the ink of the side it belongs to
+        const c = inkOf(d.r);
+        g.append("circle").attr("r", 7).attr("fill", "var(--surface)").attr("stroke", c).attr("stroke-width", 1.6);
+        g.append("circle").attr("r", 2.2).attr("fill", c);
+        g.append("path").attr("d", "M-10,0H-4M4,0H10M0,-10V-4M0,4V10").attr("stroke", c).attr("stroke-width", 1.6);
+        const tx = g.append("text").attr("class", "port").attr("x", 11).attr("y", -7).text(String(d.r.label).split(":")[0]);
+        if (!roomFor(d, tx.node())) tx.remove();
       } else if (d.k === "pos") {
         g.append("rect").attr("x", -3).attr("y", -3).attr("width", 6).attr("height", 6).attr("fill", inkOf(d.r))
           .attr("fill-opacity", d.r.basis === "assumed" || d.r.basis === "approx" || d.r.basis === "hand-placed" ? 0.35 : 1);
         // few: labelled (many: on hover); a landmark (a 1942 sheet's name) only close in, where the names have room
-        if (D.positions.length <= 15 && !(d.r.kind === "landmark" && view.transform().k < 4) && room(d, d.r.label)) g.append("text").attr("class", "port").attr("x", 6).attr("y", -5).text(d.r.label);
+        if (D.positions.length <= 15 && !(d.r.kind === "landmark" && view.transform().k < 4)) {
+          const tx = g.append("text").attr("class", "port").attr("x", 6).attr("y", -5).text(String(d.r.label).split(":")[0]);
+          if (!roomFor(d, tx.node())) tx.remove();
+        }
       }
       g.append("circle").attr("r", 11).attr("fill", "transparent");
     });
@@ -923,7 +1012,7 @@
     // a plate: the silhouette, the name, the kind, a fate; the pack's plates (one a row, the words beside) crop each
     // silhouette to its own height (`fit`) so it sits level with its name
     const plate = (name, kind, silId, fill, extra = "", cls = "", title = "", fit = false) => `<div class="plate ${cls}" title="${esc(title)}">${EV.sil(silId, fill, { ftPx: 0.42, fit })}<div class="words"><div class="nm">${esc(name)}</div><div class="kd">${esc(kind)}</div>${extra}</div></div>`;
-    const usPlates = us.map(p => plate(p.name + (p.hull ? ` (${p.hull})` : ""), [p.co, p.track ? `record: ${p.track}` : p.note].filter(Boolean).join(" · "), p.sil || EV.category(p.kind), colour(p.id), "", "", EV.silWords(p.sil), true));
+    const usPlates = us.map(p => plate(p.name + (p.hull ? ` (${p.hull})` : ""), [p.co, p.track ? `record: ${p.track}` : p.note].filter(Boolean).join(" · "), p.sil || EV.category(p.kind), SUBJECT_COLOUR[p.id] || colour(p.id), "", "", EV.silWords(p.sil), true));
     const convoyHTML = Object.values(D.convoys).map(c => {
       const route = [c.from, ...(c.via || []), c.to].filter(Boolean).join(" → ");
       const ships = [...c.ships].sort((a, b) => (a.role.startsWith("escort") ? 0 : 1) - (b.role.startsWith("escort") ? 0 : 1));
@@ -934,7 +1023,9 @@
           `${EV.silWords(s.sil, s.sil_basis)}${s.basis === "secondary" ? "; named by a secondary source" : ""}`)).join("")}</div>
         <p class="muted">Silhouettes are drawn to one scale, from the class's own recognition plate where the library has it (hover for which); otherwise the kind of ship only. Italic names come from a secondary source.</p>`;
     }).join("");
-    const jpHTML = jp.length ? `<h3>The target</h3><div class="plates">${jp.map(p => plate(p.name, p.note || p.kind, p.sil || EV.category(p.kind), "var(--ink-3)", "", "", "As the boat identified it")).join("")}</div>` : "";
+    // a boat's target, or else the other side by its nationality as the records give it (German, never a bloc)
+    const boatPage = PARTS.some(p => p.kind === "submarine"), otherName = [...new Set(jp.map(p => E.nation(p.of)).filter(Boolean))].join(" and ") || "The other side";
+    const jpHTML = jp.length ? `<h3>${boatPage ? "The target" : esc(otherName)}</h3><div class="plates">${jp.map(p => plate(p.name, p.note || p.kind, p.sil || EV.category(p.kind), "var(--ink-3)", "", "", boatPage ? "As the boat identified it" : EV.silWords(p.sil), !boatPage)).join("")}</div>` : "";
     const armyHTML = army.length ? `<h3>The units</h3><ul class="units">${army.map(p => `<li><a href="subject.html?s=${encodeURIComponent(p.unit)}&amp;t=${t0}">${esc(p.name)}</a>${p.basis && p.basis !== "reported" ? ` <i>(${esc(p.basis)})</i>` : ""}${p.note ? ` <span class="muted">${esc(p.note)}</span>` : ""}</li>`).join("")}</ul>` : "";
     const usHTML = us.length ? `<h3>${us.length > 1 ? ownName : us[0].kind === "submarine" ? "The boat" : ownName}</h3><div class="plates">${usPlates.join("")}</div>` : "";
     document.getElementById("oob").innerHTML = `<div class="pack">${usHTML}${armyHTML}</div><div>${convoyHTML}${jpHTML}</div>`;

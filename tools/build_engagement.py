@@ -109,6 +109,15 @@ NATION = re.compile(r"[a-z]{2}")   # `of` and `lang`: a two-letter code (us, jp,
 WEIGHTS = {"record", "photo", "recollection", "inference", "secondary"}
 BASIS = {"reported", "derived", "inferred", "assumed", "secondary"}
 # what an entry is; add a word here (and to records/README.md) rather than inventing one in a single file
+# routes.yml: a path's fields, and how it is known: a course or track the record types or draws to scale (reported), a
+# sketch map's line (sketched), or a line between places where the record gives no path (inferred)
+ROUTE = {"id", "label", "of", "actor", "by", "basis", "arrow", "points", "from", "to", "course", "drawn_km", "time", "source", "ref", "note"}
+ROUTE_BASIS = {"reported", "sketched", "inferred"}
+ROUTE_BY = {"air", "ground", "sea"}   # what moved: the page marks an aircraft's path apart from a unit's or a ship's
+# reach.yml: a weapon's range round a position; basis says how much is the record's: the weapon and the place both in the
+# unit's records (reported), the weapon inferred (a sister battery's, say), or the place assumed (near the unit it defended)
+REACH = {"id", "label", "of", "actor", "at", "weapon", "range_yd", "basis", "source", "ref", "note"}
+REACH_BASIS = {"reported", "inferred", "assumed"}
 KINDS = {"position", "sighting", "contact_report", "received", "order", "attack", "hit", "sank", "damage", "miss",
          "rescue", "depth_charge", "air_attack", "status", "loss_list", "weather", "log", "ditched",
          # the Army's and Haynsworth's timelines
@@ -489,6 +498,27 @@ class Build:
         for r in positions.values():
             self.place(r, positions, f"{rel(pos_path)} {r['id']}")
 
+        # routes.yml: paths, each a run of points, a straight line between two of this engagement's positions, or a typed
+        # course drawn back from one (records/README.md, "An engagement's routes")
+        routes = []
+        rt_path = d / "routes.yml"
+        for i, rt in enumerate(records.load_yaml(rt_path) or [] if rt_path.exists() else [], 1):
+            r = self.route(rt, positions, f"{rel(rt_path)} #{i} ({rt.get('id')})")
+            if r and r.get("actor") and r["actor"] not in ids:
+                self.bad(f"{rel(rt_path)} #{i} ({rt.get('id')})", f"actor {r['actor']!r} is not a participant (a route's actor takes its colour)")
+            if r:
+                routes.append({**r, "opposed": opposed(r["of"])})
+
+        # reach.yml: a weapon's range drawn as a ring round where it was (records/README.md, "An engagement's reach")
+        rings = []
+        rc_path = d / "reach.yml"
+        for i, rc in enumerate(records.load_yaml(rc_path) or [] if rc_path.exists() else [], 1):
+            r = self.ring(rc, positions, f"{rel(rc_path)} #{i} ({rc.get('id')})")
+            if r and r.get("actor") and r["actor"] not in ids:
+                self.bad(f"{rel(rc_path)} #{i} ({rc.get('id')})", f"actor {r['actor']!r} is not a participant (a ring's actor takes its colour)")
+            if r:
+                rings.append({**r, "opposed": opposed(r["of"])})
+
         # entries from events.yml
         events = []
         ev_path = d / "events.yml"
@@ -621,7 +651,7 @@ class Build:
                 "places": fm.get("places") or [], "sections": secs, "cites": cites, "box": box,
                 "steps": steps, "relief": relief, "roads": roads, "fronts": fronts, "stations": stations,
                 "tracks": tracks, "fixes": fixes, "events": events, "claims": claims, "pairs": moments,
-                "positions": list(positions.values()), "convoys": conv, "sheets": sheets}
+                "positions": list(positions.values()), **({"routes": routes} if routes else {}), **({"rings": rings} if rings else {}), "convoys": conv, "sheets": sheets}
 
     # ------------------------------------------------------------------ the story's steps and the map's base
     @staticmethod
@@ -774,6 +804,73 @@ class Build:
                            "lat_raw": j.get("lat_raw", ""), "lon_raw": j.get("lon_raw", ""),
                            "original": j.get("original", ""), "lang": "ja" if j.get("original") else "",
                            "translation": j.get("translation", ""), "note": j.get("note", ""), "cite": j["cite"]}}
+
+    def ring(self, rc, positions, where):
+        """A reach.yml entry -> its ring: the place it is drawn round and the range in km (a yard is 0.9144 m), or None."""
+        for k in set(rc) - REACH:
+            self.bad(where, f"unknown field {k!r} (known: {', '.join(sorted(REACH))})")
+        if rc.get("basis") not in REACH_BASIS:
+            self.bad(where, f"basis {rc.get('basis')!r} is not one of {', '.join(sorted(REACH_BASIS))}")
+        self.nation(rc.get("of") or None, "of", where, required=True)
+        at, yd = positions.get(rc.get("at")), num(rc.get("range_yd"))
+        if not at or at.get("lat") is None:
+            self.bad(where, f"`at` {rc.get('at')!r} is not a placed position in positions.csv")
+            return None
+        if yd is None or yd <= 0:
+            self.bad(where, "`range_yd` must be the range in yards, as the manual gives it")
+            return None
+        return {"id": str(rc.get("id") or ""), "label": str(rc.get("label") or ""), "of": rc.get("of") or "",
+                **({"actor": str(rc["actor"])} if rc.get("actor") else {}), "at": rc["at"], "lon": at["lon"], "lat": at["lat"], "range_yd": yd, "km": round(yd * 0.9144 / 1000, 3),
+                "basis": rc.get("basis"), "weapon": str(rc.get("weapon") or ""), "source": str(rc.get("source") or ""),
+                "note": str(rc.get("note") or "").strip(), "cite": self.cite(rc.get("ref"), where)}
+
+    def route(self, rt, positions, where):
+        """A routes.yml entry -> its points: given (each a {lat, lon} or a position id), a straight line between two
+        positions (`from`, `to`: the path between them isn't recorded), or a course as typed drawn back from a position
+        (`to`, `course` in degrees, `drawn_km`: the line's length is ours, not the record's)."""
+        for k in set(rt) - ROUTE:
+            self.bad(where, f"unknown field {k!r} (known: {', '.join(sorted(ROUTE))})")
+        if rt.get("basis") not in ROUTE_BASIS:
+            self.bad(where, f"basis {rt.get('basis')!r} is not one of {', '.join(sorted(ROUTE_BASIS))}")
+        self.nation(rt.get("of") or None, "of", where, required=True)
+        if rt.get("by") not in ROUTE_BY:
+            self.bad(where, f"by {rt.get('by')!r} is not one of {', '.join(sorted(ROUTE_BY))}")
+
+        def at(pid):
+            p = positions.get(pid)
+            if not p or p.get("lat") is None:
+                self.bad(where, f"{pid!r} is not a placed position in positions.csv")
+                return None
+            return [p["lon"], p["lat"]]
+        pts, how = [], ""
+        if rt.get("points"):
+            for q in rt["points"]:
+                if isinstance(q, str):
+                    pts.append(at(q))
+                elif isinstance(q, dict) and num(q.get("lat")) is not None and num(q.get("lon")) is not None:
+                    pts.append([num(q["lon"]), num(q["lat"])])
+                else:
+                    self.bad(where, f"point {q!r} is neither {{lat, lon}} nor a position id")
+            how = "as given"
+        elif rt.get("to") and rt.get("course") is not None:
+            end, course, km = at(rt["to"]), num(rt.get("course")), num(rt.get("drawn_km"))
+            if course is None or km is None:
+                self.bad(where, "a course needs `course` (degrees) and `drawn_km` (the length to draw)")
+            elif end:
+                back = math.radians(course + 180)
+                pts = [[end[0] + km * math.sin(back) / (111.32 * math.cos(math.radians(end[1]))), end[1] + km * math.cos(back) / 110.57], end]
+                how = f"the course as typed, {course:g}°, into {positions[rt['to']].get('label') or rt['to']}; the line's length ({km:g} km) is drawn, not recorded"
+        elif rt.get("from") and rt.get("to"):
+            pts = [at(rt["from"]), at(rt["to"])]
+            how = "straight between two places: the path between them is not recorded"
+        else:
+            self.bad(where, "a route needs `points`, `from` and `to`, or `to` with `course` and `drawn_km`")
+        if len(pts) < 2 or any(q is None for q in pts):
+            return None
+        return {"id": str(rt.get("id") or ""), "label": str(rt.get("label") or ""), "of": rt.get("of") or "",
+                **({"actor": str(rt["actor"])} if rt.get("actor") else {}), "by": rt.get("by"), "basis": rt.get("basis"), "arrow": bool(rt.get("arrow", True)), "time": str(rt.get("time") or ""),
+                "points": [[round(x, 4), round(y, 4)] for x, y in pts], "resolved": how,
+                "source": str(rt.get("source") or ""), "note": str(rt.get("note") or "").strip(), "cite": self.cite(rt.get("ref"), where)}
 
     def place(self, r, positions, where):
         """A positions.csv row -> lat/lon: its own, or bearing and distance from another row."""
