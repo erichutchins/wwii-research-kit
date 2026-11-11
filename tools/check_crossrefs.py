@@ -61,7 +61,8 @@ def pairs(patrol):
             continue
         a = fixes[key][ref]
         mins = f"{round((j['utc'] - a['utc']).total_seconds() / 60):+5d} min" if j["utc"] else "        -"
-        dist = f"{nm((a['lat'], a['lon']), (j['lat'], j['lon'])):5.1f} nm" if j["lat"] is not None else "       -"
+        placed = j["lat"] is not None and j["lon"] is not None  # a record with one unread coordinate has no place
+        dist = f"{nm((a['lat'], a['lon']), (j['lat'], j['lon'])):5.1f} nm" if placed else "       -"
         print(f"{patrol} {x['attack']:<9} {a['utc']:%Y-%m-%dT%H:%MZ}  {j['id']} {j.get('ship', ''):<14} "
               f"{j.get('event', ''):<19} {(format(j['utc'], '%Y-%m-%dT%H:%MZ') if j['utc'] else ''):<17} {mins} {dist}  "
               f"{x['relation']:<9} [{j['source']}]")
