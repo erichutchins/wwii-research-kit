@@ -269,4 +269,16 @@ ok(Q[0].answers[1].mark === "secondary" && Q[0].answers[1].words === "secondary 
 ok(Q[1].answers[0].mark === "inference" && Q[1].answers[0].words === "inference", "board: an inference keeps its own mark");
 ok(E.badge({ weight: "record", source_kind: "" }).mark === "record" && E.badge({ weight: "photo", source_kind: "secondary" }).words === "secondary · as photo", "badge: without a kind the weight; a photo in a later history");
 
+// Depth charges: Cole's similitude in his own units (21,600 psi x (lb^(1/3)/ft)^1.13) agrees with the metric form;
+// 100 kg at 10 m; the sea's pressure at 33 ft is about one atmosphere (14.7 psi), at 450 ft about 200 psi
+near(E.peakPressure(0.45359, 0.3048) * 145.038, 21600, 150, "1 lb of TNT at 1 ft: Cole's 21,600 psi");
+near(E.peakPressure(100, 10), 22.0, 0.3, "100 kg of TNT at 10 m, MPa");
+near(E.seaPressure(33), 14.7, 0.2, "the sea at 33 ft, psi");
+near(E.seaPressure(450), 200, 2, "the sea at 450 ft, psi");
+// Figure 15-2 as read: a Type 2 Mod. 1 (357 lb) against BANG (SS-385, the SS-285 class's rupture curve) and against
+// TINOSA (SS-283, the SS-212 class's deformation curve)
+near(E.hullRange(357, "SS-385").ft, 22.7, 0.1, "357 lb against an SS-285 class hull, ft");
+near(E.hullRange(357, "SS-283").ft, 43.9, 0.2, "357 lb against an SS-212 class hull, ft");
+console.log(E.hullRange(357, "SS-385").curve === "ss285" && E.hullRange(100, "SS-212").curve === "ss212" ? "ok  " : (failed++, "FAIL"), "the class by hull number");
+
 process.exit(failed ? 1 : 0);

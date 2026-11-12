@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>The Torpedo Data Computer: its dials through one attack</title>
+<link rel="stylesheet" href="viz.css">
+<link rel="stylesheet" href="chapter.css">
+<!-- tdc.html?e=<engagement>&boat=<boat's id>&attack=<the sheet's attack, "Attack 1">: the Torpedo Data Computer Mark 3's
+     two faces (tdc.js, drawing only) turned to engage.js's tdcAt for an attack data sheet, second by second (tdc-page.js). -->
+<style>
+  .pickrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 10px 0 6px; }
+  .pickrow label { min-width: 0; max-width: 100%; }
+  .pickrow select { font: inherit; font-size: 15px; display: block; width: 100%; max-width: 40em; }
+  .attacks { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+  .attacks button, .clockrow button { font: inherit; font-size: 15px; padding: 4px 11px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); border-radius: 6px; cursor: pointer; }
+  .attacks button span { color: var(--ink-3); font-family: var(--typed); font-size: 13.5px; }
+  .attacks button[aria-pressed="true"] { background: var(--wash); border-color: var(--ink-3); }
+  .clockrow { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; position: sticky; top: 0; z-index: 2; background: var(--page); padding: 8px 0; border-bottom: 1px solid var(--rule); }
+  .clockrow[hidden] { display: none; }
+  .clockrow #play { width: 36px; height: 36px; border-radius: 50%; padding: 0; }
+  .clockrow input[type=range] { flex: 1; min-width: 200px; accent-color: var(--ink-2); }
+  .clock { font: 700 19px var(--typed); min-width: 11ch; font-variant-numeric: tabular-nums; }
+  .rel { color: var(--ink-3); font-size: 14.5px; }
+  .face { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 18px 26px; align-items: start; margin: 12px 0 8px; }
+  .face.wide { grid-template-columns: minmax(0, 1fr); }
+  @media (max-width: 860px) { .face { grid-template-columns: minmax(0, 1fr); } }
+  ol.legend { list-style: none; padding: 0; margin: 0; }
+  ol.legend li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 2px 10px; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+  ol.legend li > b.n { grid-row: span 3; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); color: var(--surface); font-size: 12px; text-align: center; line-height: 20px; margin-top: 2px; }
+  ol.legend .nm { font-style: italic; }
+  ol.legend .v { font-variant-numeric: tabular-nums; font-weight: 600; }
+  ol.legend .w { color: var(--ink-2); font-size: 14.5px; }
+  .face.wide ol.legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); column-gap: 26px; }
+  .below { color: var(--ink-2); font-size: 14.5px; }
+  .typed { font-family: var(--typed); }
+  /* the Torpedo Data Computer (tdc.js): an instrument, black plates in a bezel, in either mode; the lamps and arrows orange */
+  .tdc { display: block; width: 100%; height: auto; --tdc-ink: #ecebe6; --tdc-lamp: #ff8a3d; }
+  .tdc text { font-family: inherit; }
+  .tdc-bezel { fill: #b9b7b0; stroke: #8d8b85; stroke-width: 2; } .tdc-bolt { fill: #d8d6cf; stroke: #777; }
+  @media (prefers-color-scheme: dark) { .tdc-bezel { fill: #5d5c58; stroke: #43423f; } .tdc-bolt { fill: #9a9893; stroke: #555; } }
+  .tdc-plate { fill: #121212; } .tdc-disc { fill: #1b1b1a; stroke: #3c3c3a; } .tdc-inner { fill: #202020; stroke: #444; } .tdc-glass { fill: rgba(200, 210, 215, .18); stroke: #999; }
+  .tdc-maj { stroke: var(--tdc-ink); stroke-width: 1.3; } .tdc-min { stroke: var(--tdc-ink); stroke-width: .8; opacity: .85; } .tdc-link, .tdc-rule { stroke: var(--tdc-ink); stroke-width: .8; }
+  .tdc-link { stroke-dasharray: 2 3; }
+  .tdc-num { fill: var(--tdc-ink); text-anchor: middle; dominant-baseline: central; }
+  .tdc-title { fill: var(--tdc-ink); font-size: 11.5px; font-style: italic; text-anchor: middle; }
+  .tdc-side { fill: var(--tdc-ink); font-size: 18px; font-style: italic; text-anchor: middle; }
+  .tdc-sp { fill: var(--tdc-ink); font-size: 10px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+  .tdc-index { fill: var(--tdc-lamp); } .tdc-hub { fill: #2a2a29; stroke: #555; stroke-width: 1.5; } .tdc-pin { fill: #777; }
+  .tdc-ship { fill: none; stroke: var(--tdc-ink); stroke-width: 1.4; } .tdc-arm { stroke: var(--tdc-ink); stroke-width: 2.2; }
+  .tdc-x { fill: var(--tdc-lamp); font-size: 15px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+  .tdc-arrow line, .tdc-arrow path { stroke: var(--tdc-lamp); stroke-width: 1.6; } .tdc-arrow path:not([fill]) { fill: var(--tdc-lamp); }
+  .tdc-arrow.aft { opacity: .55; }
+  .tdc-cell { fill: #e9e6dc; stroke: #555; } .tdc-digit { fill: #111; font-size: 14px; text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+  .tdc-socket { fill: #1f1f1e; stroke: #555; stroke-width: 2; } .tdc-lamp { fill: #3a3a38; } .tdc-lamp.on { fill: var(--tdc-lamp); }
+  .tdc-glow { fill: var(--tdc-lamp); opacity: 0; } .tdc-glow.on { opacity: .18; }
+  .tdc .idle { opacity: .45; }
+  .tdc-key circle { fill: #ecebe6; stroke: #121212; stroke-width: 1.5; }
+  .tdc-key text { fill: #121212; font-size: 11.5px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+</style>
+</head>
+<body class="viz-root">
+<div class="doc">
+  <header>
+    <nav class="nav" aria-label="The kit" data-nav></nav>
+    <script src="nav.js"></script>
+    <nav class="crumb" id="crumb" aria-label="Where this is in the kit"><div class="trail"><a href="index.html#reference">Reading the records</a> / <span aria-current="page">The Torpedo Data Computer</span></div></nav>
+    <div>
+      <h1>The Torpedo Data Computer: its dials through one attack</h1>
+      <p class="lede">An attack data sheet types what the fire control party set and fired: own course, the target's
+        course and speed, the range, each torpedo's gyro angle and track. Between the periscope and the tubes stood the
+        Torpedo Data Computer, which kept the target moving on its estimated course and worked out the gyro angle for
+        every torpedo. This page turns a Torpedo Data Computer Mark 3's two faces, after its manual, to the solution the
+        kit computes from a sheet, second by second, and says what each dial shows and where its value comes from. The
+        torpedoes' tracks against the moving ships are on each engagement's page, under "At the periscope"; the
+        triangle the computer solved is on <a href="torpedo.html">Torpedo fire control</a>.</p>
+    </div>
+  </header>
+
+  <h2>What it was</h2>
+  <p>The approach officer could measure the target's bearing, its range and, by eye, its angle on the bow; from a
+    series of these the target's course and speed were worked out <span class="src">(USF 25(A) pp. 37, 49)</span>. The
+    Torpedo Data Computer Mark 3 did that work in two parts: a <b>position keeper</b>, which kept the target's position
+    moving on its estimated course and speed, and an <b>angle solver</b>, which worked the shot
+    <span class="src">(<a href="https://web.archive.org/web/20220522045228/https://maritime.org/doc/tdc/index.htm">OP 1056</a>,
+    Section 1: the position keeper's equations p. 22, the angle solver's p. 29)</span>. "The gyro angle, track angle and
+    torpedo run are continuously being computed … The computed gyro angle is set on the torpedo continuously either
+    automatically or by follow the pointer, spread angles being superimposed as desired"
+    <span class="src">(USF 25(A) p. 50)</span>. "At the beginning of the war most submarines carried the Torpedo Data
+    Computer Mark 3"; the Mark 4 followed, for radar data the Mark 3 "could be only partially utilized" with and for the
+    Mark 18 torpedo <span class="src">(Rowland and Boyd pp. 399-400)</span>. The boats here are taken to have carried a
+    Mark 3 (<i>assumed</i>: no record read names a boat's computer's mark; the Mark 3's manual was issued to boats
+    "SS 167-544 incl." in June 1944, <span class="src">OP 1056 p. 277</span>).</p>
+  <p>The faces below follow the manual's photographs: the Position Keeper (Fig. 98, p. 107) and the Angle Solver
+    (Fig. 102, p. 111), each scale from its appendix (pp. 267-270), what the Target and Own Ship dials read from
+    pp. 72-73, the Distance to Track indicator from Fig. 38 (p. 47). Each dial is an engraved disc turning under a fixed
+    index at its top (p. 111): read every dial at its orange index. The lettering is drawn plainly, in the kit's type: the
+    scans don't show the engraving finely enough to copy.</p>
+
+  <h2>An attack</h2>
+  <div class="pickrow"><label>Engagement <select id="eng"></select></label></div>
+  <div class="attacks" id="attacks" role="group" aria-label="Attack"></div>
+  <p class="below" id="about"></p>
+  <div class="clockrow" id="clockrow">
+    <button id="play" type="button" aria-label="Play">▶</button>
+    <b id="clock" class="clock"></b>
+    <input id="t" type="range" aria-label="Time, seconds from the first torpedo">
+    <span class="rel" id="rel"></span>
+  </div>
+  <p class="below" id="nodraw" hidden></p>
+
+  <div id="faces">
+  <h2>The Position Keeper</h2>
+  <p>The left-hand face: the target's course and speed set in by hand, own course and speed from the ship, and the
+    target's bearing and range kept moving from them. The numbers key the dials to the list.</p>
+  <div class="face">
+    <svg id="tdc-pk" class="tdc" role="img" aria-label="The Torpedo Data Computer's Position Keeper, its dials at this second"></svg>
+    <ol class="legend" id="leg-pk" data-no-gloss></ol>
+  </div>
+
+  <h2>The Angle Solver</h2>
+  <p>The right-hand face: the gyro angle each side's next tube is ordered, its spread offset and the torpedo's run, from
+    the position keeper's bearing and range and the torpedo's speed. The after half is on the left, the forward on the
+    right; the side without a tube to fire on this sheet stands dimmed.</p>
+  <div class="face wide">
+    <svg id="tdc-as" class="tdc" role="img" aria-label="The Torpedo Data Computer's Angle Solver, forward and after, at this second"></svg>
+    <ol class="legend" id="leg-as" data-no-gloss></ol>
+  </div>
+
+  <h2>What is assumed</h2>
+  <p id="assumed"></p>
+  </div>
+
+  <h2>Sources</h2>
+  <ul>
+    <li><i>Torpedo Data Computer Mark 3, Mods. 5 to 12</i>, OP 1056, Bureau of Ordnance, June 1944, prepared by the
+      Arma Corporation (<a href="https://archive.org/details/mechanical-computer-technical-manuals">a complete scan</a>
+      in the Internet Archive; <a href="https://web.archive.org/web/20220522045228/https://maritime.org/doc/tdc/index.htm">maritime.org's edition</a>, archived).</li>
+    <li><i>Current Doctrine, Submarines</i>, USF 25(A), Commander Submarine Force, Pacific Fleet, February 1944, Chapter IV
+      (<a href="https://www.ibiblio.org/hyperwar/USN/ref/SS-Doct/SS-Doct-4.html">HyperWar transcription</a>, printed pages).</li>
+    <li>Buford Rowland and William B. Boyd, <i>U.S. Navy Bureau of Ordnance in World War II</i>, Bureau of Ordnance,
+      1953, pp. 399-400 (<a href="https://books.google.com/books?id=EqNZ5hjPOVMC&amp;pg=PA399">Google Books</a>).</li>
+    <li>Each attack's data sheet, from its boat's war patrol report, cited under the attack above.</li>
+  </ul>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="silhouettes.js"></script>
+<script src="engage.js"></script>
+<script src="engage-views.js"></script>
+<script src="observer.js"></script>
+<script src="tdc.js"></script>
+<script src="tdc-page.js"></script>
+<script src="glossary.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>

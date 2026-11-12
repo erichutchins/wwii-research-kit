@@ -1,4 +1,4 @@
-// The Torpedo Data Computer Mark 3's two faces on engagement.html's observer view, turning with the attack's clock.
+// The Torpedo Data Computer Mark 3's two faces on tdc.html (tdc-page.js), turning with an attack's clock.
 // Drawing only: the values are engage.js's tdcAt. The layout and every dial's name are from OP 1056's photographs
 // (Fig. 98, the Position Keeper, p. 107; Fig. 102, the Angle Solver, p. 111), each scale from its appendix (pp. 267-270),
 // what the Target and Own Ship dials read from pp. 72-73, the Distance to Track indicator from Fig. 38 (p. 47). Each dial is
@@ -84,7 +84,10 @@ const TDC = (() => {
     for (let i = 1; i < ny; i++) for (const x of [17, w - 17]) el(svg, "circle", { cx: x, cy: i * h / ny, r: 4, class: "tdc-bolt" });
   }
 
-  function create(pk, as) {
+  // a numbered key beside a dial, for the page's legend (create's `keys`)
+  const keyAt = (g, x, y, n) => { const k = el(g, "g", { class: "tdc-key" }); el(k, "circle", { cx: x, cy: y, r: 10 }); el(k, "text", { x, y }, n); };
+
+  function create(pk, as, { keys = false } = {}) {
     const set = {};
     // ---- the Position Keeper (Fig. 98): 640 × 800
     pk.setAttribute("viewBox", "0 0 640 800"); pk.innerHTML = ""; bezel(pk, 640, 800);
@@ -141,6 +144,10 @@ const TDC = (() => {
     // own speed: graduated to the ship's log (its numbers here assumed: 0-20 knots)
     set.ownSpeed = dial(g, C[0], R[3], 58, { min: 0, max: 20, perTurn: 24, minor: 0.5, major: 1, label: v => v % 5 ? "" : v, size: 8.5 }, "own speed");
     set.ownCourse = pair(g, C[1], C[2], R[3], 58, "own course");
+    // the keys, in the legend's order: down the left column, then the middle and right, row by row
+    if (keys) [[C[0] - 66, R[0] - 52], [C[0] - 52, R[0] + 92], [C[0] - 30, R[1] + 6], [C[1] - 76, R[0] - 60], [C[1] - 47, R[0] + tR + 18],
+      [dx - 66, dy - 52], [C[1] - 76, oy - 60], [C[2] - 66, oy - 52], [C[0] - 66, R[2] - 52], [C[1] - 66, R[2] - 52],
+      [C[0] - 66, R[3] - 52], [C[1] - 66, R[3] - 52]].forEach(([x, y], i) => keyAt(pk, x, y, i + 1));
 
     // ---- the Angle Solver (Fig. 102): 760 × 520, after and forward
     as.setAttribute("viewBox", "0 0 760 520"); as.innerHTML = ""; bezel(as, 760, 520);
@@ -166,6 +173,9 @@ const TDC = (() => {
     scale(dep, cx, cy, 24, { min: 10, max: 50, perTurn: 60, minor: 5, major: 10, size: 6.5, len: [2, 4] });
     index(g, cx, cy, 46); hub(g, cx, cy, 5);
     el(g, "rect", { x: cx - 42, y: cy + 52, width: 84, height: 16, class: "tdc-plate" }); title(g, cx, cy + 64, "depth-speed");
+    if (keys) [[x0k => x0k + 85 - 64, 110], [x0k => x0k + 170 - 36, 262], [x0k => x0k + 85 + 46, 326], [x0k => x0k + 255 + 46, 326]]
+      .forEach(([fx, y], i) => { for (const x0k of [40, 380]) keyAt(as, fx(x0k), y, i + 1); });
+    if (keys) keyAt(as, cx - 50, cy - 44, 5);
     set.depthSpeed = (kn, ft) => { turn(spd, cx, cy, kn / 40 * 360); turn(dep, cx, cy, clamp(ft, 10, 50) / 60 * 360); };
 
     return {

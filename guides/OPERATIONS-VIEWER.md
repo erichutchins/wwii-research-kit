@@ -183,8 +183,8 @@ The title, the eyebrow (theatre · operation), the lede, the switch. Under it, i
    position). The convoy's observed path is dotted, and its caption says it is a reconstruction.
 3. **The order of battle**, in silhouettes at the library's one scale.
 4. **The story**, the narrative from `engagement.md`.
-5. **The figures**, where the kit's voice leads and is labelled: the periscope and the Torpedo Data Computer, the
-   frame's own panels, *closing in*, each with the assumptions it rests on stated under it.
+5. **The figures**, where the kit's voice leads and is labelled: the periscope and the plot from above (the Torpedo Data
+   Computer for each attack is its own page, `tdc.html`, linked from the figure), the frame's own panels, *closing in*, each with the assumptions it rests on stated under it.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐

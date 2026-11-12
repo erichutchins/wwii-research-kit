@@ -37,6 +37,13 @@
 //   Engage.claimMoments(claims)       the questions the records leave open, each with its answers by source (the Sources view) and
 //                                     merged by their words (the claims board)
 //   Engage.badge(claim)               an answer's badge: its source's kind, and its weight where that differs
+//   Engage.peakPressure(kg, m)        the shock wave's peak pressure in MPa, m metres from kg of TNT (Cole's similitude:
+//                                     52.4 (kg^(1/3)/m)^1.13; for any other explosive, TNT-equivalent assumed)
+//   Engage.seaPressure(ft)            the sea's pressure at a depth in psi above the air's (sea water 1,025 kg/m³)
+//   Engage.DC_SETTINGS                the Japanese depth charges' pistol settings in feet, as War Damage Report 58 gives them
+//   Engage.hullRange(lb, hull)        {ft, what, curve}: War Damage Report 58's figure 15-2 read at a charge of lb TNT for a
+//                                     hull number ("SS-385"): the SS-285 class's rupture distance (OEG) from SS-285 on,
+//                                     the SS-212 class's deformation distance (BuShips 1943) before; shallow submergence only
 //   Engage.frontSide(runs, [lon, lat])   which side of a situation map's front a point lies: 1 on the enemy's (the
 //                                     runs' left, as records/fronts/ stores them), -1 on the map's own, by the nearest leg
 const Engage = (() => {
@@ -578,6 +585,31 @@ const Engage = (() => {
   // side (the sine of the angle) and by its nearness, so a short stretch the point lies along, beyond its end, counts for
   // little. On a plane scaled by the cosine of the latitude (a few hundred km at most). 1 the enemy's side, -1 the map's
   // own, 0 when nothing tells.
+  // ---------- depth charges (site/depthcharge.html; guides/ENGAGEMENTS.md "Computation")
+  // the shock wave's peak pressure, Cole's similitude for TNT (R. H. Cole, Underwater Explosions, 1948): kg of TNT, metres
+  const peakPressure = (kg, m) => 52.4 * Math.pow(Math.cbrt(kg) / m, 1.13);
+  // the sea's own pressure: rho g h, 1,025 kg/m^3, in psi (6,894.76 Pa)
+  const seaPressure = ft => 1025 * 9.80665 * ft * 0.3048 / 6894.76;
+  // the pistols' settings (BuShips War Damage Report 58, para 3-10): the Type 95's (292 ft added later) and the Type 2's
+  const DC_SETTINGS = { "Type 95": [98, 197, 292], "Type 2": [98, 197, 292, 390, 480] };
+  // War Damage Report 58, figure 15-2, "Damaging range curves for U.S. submarines (for shallow submergence condition
+  // only)", read off the plate at every 100 lb (about ± 2 ft; ours): [lb TNT, feet from the pressure hull]
+  const HULL_CURVES = {
+    ss285: { what: "pressure hull rupture, SS-285 (Balao) class (the Operations Evaluation Group's curve)",
+             pts: [[0, 0], [100, 12.5], [200, 17], [300, 21], [400, 24], [500, 27], [550, 28.5]] },
+    ss212: { what: "pressure hull deformation, SS-212 (Gato) class (the Bureau's 1943 curve, the middle of its band)",
+             pts: [[0, 0], [100, 16.5], [200, 27], [300, 38.5], [400, 48], [500, 56.5], [600, 64]] },
+  };
+  function hullRange(lb, hull) {
+    const n = +(/(\d+)/.exec(String(hull || "")) || [])[1];
+    const key = n >= 285 ? "ss285" : "ss212", c = HULL_CURVES[key], p = c.pts;
+    const x = Math.max(0, Math.min(lb, p[p.length - 1][0]));
+    for (let i = 1; i < p.length; i++) if (x <= p[i][0]) {
+      const [a, b] = [p[i - 1], p[i]];
+      return { ft: a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]), what: c.what, curve: key, beyond: lb > p[p.length - 1][0] };
+    }
+    return { ft: p[p.length - 1][1], what: c.what, curve: key, beyond: true };
+  }
   function frontSide(runs, p) {
     const k = Math.cos(p[1] * Math.PI / 180), X = q => [q[0] * k, q[1]], [px, py] = X(p);
     const legs = [];
@@ -592,7 +624,7 @@ const Engage = (() => {
     return Math.sign(legs.filter(l => l.d <= near * 1.5 + 1e-9).reduce((v, l) => v + l.sin / (l.d + 1e-6), 0));
   }
 
-  return { frontSide, zoneHours, toUTC, T, coord, offset, nm, posAt, observedPath, closing, fireControl, apparentSize, sky, localNoon, light, story, hhmm, day,
+  return { peakPressure, seaPressure, DC_SETTINGS, HULL_CURVES, hullRange, frontSide, zoneHours, toUTC, T, coord, offset, nm, posAt, observedPath, closing, fireControl, apparentSize, sky, localNoon, light, story, hhmm, day,
            gyroOf, coursesOf, offsetOf, firingTimes, torpedoKnots, attackSheet, attackAt, tdcAt,
            tempo, chronologyRows, chronologyColumns, recordWords, hitKind, head, nation, sourceKindWord, columnChip,
            apart, pairMoments, claimMoments, badge };

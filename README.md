@@ -84,8 +84,10 @@ The site's explainers show the same things worked through on real entries:
 [time zones](https://erichutchins.github.io/wwii-research-kit/zones.html),
 [the US Army's map grids](https://erichutchins.github.io/wwii-research-kit/grids.html),
 [the Japanese grid](https://erichutchins.github.io/wwii-research-kit/jgrid.html),
-[the German grids](https://erichutchins.github.io/wwii-research-kit/german.html) and
-[torpedo fire control](https://erichutchins.github.io/wwii-research-kit/torpedo.html).
+[the German grids](https://erichutchins.github.io/wwii-research-kit/german.html),
+[torpedo fire control](https://erichutchins.github.io/wwii-research-kit/torpedo.html),
+[the Torpedo Data Computer](https://erichutchins.github.io/wwii-research-kit/tdc.html) and
+[depth charges](https://erichutchins.github.io/wwii-research-kit/depthcharge.html).
 
 ## Made with Claude
 
@@ -113,7 +115,7 @@ records (National Archives microfilm). The transcriptions are a separate reposit
 | <!--n:ships-->23<!--/n--> surface ships | four at length from their war diaries, the rest for one day |
 | <!--n:army_units-->33<!--/n--> Army units | mostly anti-aircraft artillery, station by station |
 | <!--n:battalions-->2<!--/n--> naval construction battalions | from their muster rolls |
-| <!--n:convoys-->11<!--/n--> Japanese convoys, <!--n:engagements-->24<!--/n--> engagements | the other side's own record is entered for <!--n:engagements_other_side-->20<!--/n--> of the engagements; each page says which |
+| <!--n:convoys-->11<!--/n--> Japanese convoys, <!--n:engagements-->25<!--/n--> engagements | the other side's own record is entered for <!--n:engagements_other_side-->21<!--/n--> of the engagements; each page says which |
 | The front in Europe | the daily situation maps from 6 June 1944 |
 
 The selection is not a sample of the war. It began with one submarine and grew along one family's research: the

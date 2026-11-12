@@ -23,8 +23,8 @@ pages read. The fields aren't repeated here: when one is in question, read them 
 
 | Scale | Question | Where |
 |---|---|---|
-| Minutes and miles | What happened in the attack? | `engagement.html`: the map with a time slider, one lane per side, the two-sided log |
-| Days and hundreds of miles | What was the convoy doing, and how did the boats close in? | `engagement.html` "Closing in"; the convoy's subject page: the voyage map and the ships against the days |
+| Minutes and miles | What happened in the attack? | `engagement.html`: the map with a time slider (each boat surfaced or down, the convoy where it was seen, its course at each firing, the depth charges), one lane per side, the two-sided log |
+| Days and hundreds of miles | What was the convoy doing, and how did the boats close in? | `engagement.html`: the overview in the map's corner (the convoy's whole voyage on its lane, a box where the map is), "Closing in"; the convoy's subject page: the voyage map and the ships against the days |
 | Months and an ocean | Where was the war at sea fought, and how did it move? | `lanes.html`: the network, month by month, a voyage's timetable |
 
 ## The rules this rests on
@@ -98,6 +98,7 @@ new format is converted for good: no reader for the old one is kept.
 | Fire control | torpedo course = own course + gyro; track = torpedo course + 180 − target course; lead L: tan L = k·sin TA / (1 + k·cos TA), k = target speed / torpedo speed; angle on the bow = track − L |
 | Apparent size | width = 2·atan(projected length / 2R), projected length = L·\|sin AOB\| + beam·\|cos AOB\|; height = atan(H/R) |
 | An attack on one clock (`attackSheet`, `attackAt`) | seconds from the first torpedo, from `attacks.csv` as typed, with boat and target steady on the sheet's courses and speeds (see "An attack from its sheet", below) |
+| A depth charge's shock (`peakPressure`, `seaPressure`, `DC_SETTINGS`) | peak pressure 52.4 × (kg^⅓ / m)^1.13 MPa for TNT (Cole 1948; another explosive taken as TNT, assumed); the sea's own pressure ρgh, 1,025 kg/m³; the Japanese pistols' settings as War Damage Report 58 gives them (para 3-10: the Type 95's 98, 197, 292 ft, the Type 2's to 480). The damage bands are the Bureau's for 300 lb of TNT against the light-hulled boats (15-12), never a boat's own limit |
 | The Torpedo Data Computer's dials (`tdcAt`) | at second *s*, what a TDC Mark 3 would show on the sheet's solution (see "The Torpedo Data Computer", below) |
 
 **An attack from its sheet.** Each torpedo is fired at its `interval` or `since_first`; a salvo the sheet gives no
@@ -114,7 +115,7 @@ last's), its course and speed; true and relative bearing, range and angle on the
 L; gyro = torpedo course − own heading; the run = R·|sin AOB| / |sin track|; each side's gyro order adds its next
 tube's offset. Tubes 1–6 are forward, 7–10 aft. Parallax, reach and the torpedo's turn are left out, so the forward
 and after solvers order the same angles, as the real machine's did not. That the boat's computer was a Mark 3 is
-assumed. Drawn by `site/tdc.js` after OP 1056 (faces, Figs. 98 and 102; dial readings, pp. 72–73; scales, pp.
+assumed. The dials are on their own page, `site/tdc.html` (`tdc-page.js`; `tdc.html?e=<engagement>&boat=<id>&attack=<Attack 1>`, which the observer view links for its attack): a clock over the attack's seconds, each dial numbered and listed with its value and where it comes from. Drawn by `site/tdc.js` after OP 1056 (faces, Figs. 98 and 102; dial readings, pp. 72–73; scales, pp.
 267–270; distance to track, Fig. 38).
 
 **The observer view's light.** Three choices: *As it was*; *Broad daylight*, the same local date at noon; *Night
@@ -134,6 +135,12 @@ and the sun, the moon and the sky readout stay as computed.
 | US radio intelligence's estimate (a FRUPAC note's mark, read off the map) | a hatched ring in the lighter ink, never solid; its entries chipped *intelligence · US* |
 | Not recorded; an assumed route | dotted |
 | Straight between known points, nothing recorded between | dashed |
+| A boat on the surface, then submerged (her depth log: the build's `dives`) | her track thick, then thin; her dot at the clock filled, then open, its label "down, 60 ft"; a wash behind her lane while she was down |
+| The convoy at the clock, on its observed path | a hatched dot in the other side's ink, with its name (ours) |
+| The convoy's course and speed as a boat's attack sheet types it | an arrow in the other side's ink from her attack position (the target was within the sheet's range), the length an hour's run at the typed speed (ours); shown once the clock passes the firing |
+| Depth charges the boat logged | an eight-rayed burst in the other side's ink, where she was then (straight between her fixes: placed, ours) |
+| The water column (`site/panels/depth.js`, on every engagement whose boat's depth log is transcribed) | her depth against the clock, solid from each log entry to the next, dashed where the log gives no depth (60 ft, assumed); a "passing" entry a point on the way to the depth ordered before it; the counter-attack's entries as rules in the other side's ink, the span her words give ("the next 4½ hours") shaded; the pistols' settings as dashed rules; the layer from her bathythermograph card as two washes (isothermal, then the gradient); the section to scale (one foot across = one foot down), her silhouette keel at the logged depth, an escort's on the surface set to one side (not placed), a charge at each setting straight above her (illustrative: no charge's place is recorded) with the Bureau's rings, the seafloor under her track drawn or, below the figure, said |
+| The convoy's whole voyage, beside the map (the overview, `site/engage-overview.js`) | its lane through `reference/lanes/lanes.yml`, dotted through an assumed waypoint and dashed straight between two ports; ports open rings, dated stops solid dots; a box in ink where the map is, following its zoom; foldable |
 | An aircraft's path, whatever its basis (`routes.yml`, `by: air`); a unit's moves on the ground have none | chevrons along the line, pointing the way it flew; in its group's colour where the route names an `actor`, else its side's ink |
 | An aircraft's course as its form types it (`routes.yml`, `reported`), drawn back from where it was typed | solid, an arrowhead; the length ours |
 | A course as a squadron's sketch map draws it (`sketched`) | long dashes; no arrowhead where the sketch's direction isn't sure |
@@ -184,3 +191,9 @@ hue. Colour follows the boat across every view of a page; text never wears it ex
 
 Open questions about an engagement are in its `claims.yml`, on its page behind *Questions and sources*; what a
 computation leaves out is said beside it above and under the view it affects.
+
+**Counter-attacks are engagements of their own** (`bang-counterattack-1944-09-19` is the first): the hunt after an
+attack, the boat against the escorts that hunted her, with the water column as its figure. The escorts' doctrine is
+from S-24, *Japanese Anti-Submarine Warfare* (pp. 11-15 and 45); each boat's class curve, the water column's inner
+ring, is read off figure 15-2 of War Damage Report 58 into `engage.js`'s `hullRange`. The explainer is
+`site/depthcharge.html`. Not yet read: the Naval Technical Mission's report O-08, *Japanese Depth Charges*.

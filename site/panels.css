@@ -50,3 +50,38 @@
 .panel-card .hp-plate svg { width: 100%; height: auto; }
 .panel-card .nm { font-weight: 650; font-size: 15.5px; }
 .panel-card .kd { font-size: 14.5px; color: var(--ink-3); line-height: 1.35; }
+
+/* the water column (panels/depth.js): the record's marks solid, ours dashed or hatched; the boat in her colour, the
+   other side in ink, red only for a hit (none here) */
+.dp-chart, .dp-water { display: block; width: 100%; }
+.dp-iso { fill: var(--wash); }
+.dp-grad { fill: var(--ink-3); fill-opacity: .08; }
+.dp-setting { stroke: var(--japan); stroke-width: 1; stroke-dasharray: 4 4; opacity: .7; }
+.dp-setting-label { font: 12px var(--typed); fill: var(--ink-2); }
+.dp-depth { fill: none; stroke-width: 2.2; }
+.dp-depth.assumed { stroke-dasharray: 4 3; stroke-width: 1.6; }
+.dp-log { stroke: var(--surface); stroke-width: 1.2; cursor: pointer; }
+.dp-charge line { stroke: var(--japan); stroke-width: 1.4; }
+.dp-charge text { font: 12px var(--serif); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.dp-cursor { stroke: var(--ink-2); stroke-width: 1; }
+.dp-section { margin-top: 10px; }
+.dp-controls { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: 14.5px; color: var(--ink-2); }
+.dp-controls input[type=range] { flex: 1 1 260px; }
+.dp-when { color: var(--ink); font-variant-numeric: tabular-nums; }
+.dp-sea { fill: var(--surface); }
+.dp-surface { stroke: var(--ink-2); stroke-width: 1.4; }
+.dp-floor { fill: var(--land); stroke: var(--coast); }
+.dp-floor-label, .dp-depth-label, .dp-note { font: 12px var(--serif); fill: var(--ink-3); }
+.dp-escort { fill: var(--japan); }
+.dp-boat-label { font: 600 13px var(--serif); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.dp-band { fill: none; stroke: var(--japan); stroke-width: 1; }
+.dp-band.lethal { fill: var(--japan); fill-opacity: .12; }
+.dp-band.serious { stroke-dasharray: 3 2; }
+.dp-band.moderate { stroke-dasharray: 1 3; opacity: .7; }
+.dp-charge-dot { fill: var(--japan); }
+.dp-table { overflow-x: auto; margin-top: 8px; }
+.dp-table table { font-size: 14px; }
+.dp-notes p { font-size: 14.5px; }
+.dp-iso { fill: var(--sea-grid); fill-opacity: .5; }
+.dp-grad { fill: var(--ink-3); fill-opacity: .12; }
+.dp-span { fill: var(--japan); fill-opacity: .07; }

@@ -73,7 +73,8 @@ def theatre_views(page):
 
 # the explainers opened at a value, as the glossary's cards link them (reference/glossary.yml `patterns`, `see`)
 EXPLAINER_VIEWS = ["site/zones.html?zone=K", "site/grids.html?ref=V-044572", "site/jgrid.html?code=メキ三ツ",
-                   "site/german.html?ref=XXIII 97", "site/german.html?ref=CJ 9472", "site/torpedo.html?track=123S&gyro=013"]
+                   "site/german.html?ref=XXIII 97", "site/german.html?ref=CJ 9472", "site/torpedo.html?track=123S&gyro=013",
+                   "site/tdc.html?e=no-91-1944-07-04&boat=seahorse&attack=Attack 3"]
 
 
 def engagement_views(folder, page):

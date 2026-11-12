@@ -45,7 +45,8 @@
   const STEP_LINKS = Object.fromEntries(STEPS.map(st => [st.id, { href: stepHref(st) }]));
   const stepOf = sid => STEPS.find(st => st.id === sid);
   // the frame's own figures (panels.js), after the story
-  const FIGURES = (typeof PANELS === "object" && PANELS[D.id]) || [];
+  const FIGURES = [...((typeof PANELS === "object" && PANELS[D.id]) || []),
+    ...(typeof PANELS_ANY === "object" ? PANELS_ANY.filter(f => f.applies(D)).map(f => f.panel) : [])];
   const PANEL_LIST = IN("page") ? FIGURES : [];
   // the breadcrumb: the theatre, the operation and the engagement before and after (chapter.js); the page opened with
   // no engagement named is the picker, and says so
@@ -202,6 +203,27 @@
   const seen = [...D.fixes.filter(f => f.kind === "ship" && !contradicts(f)).map(f => ({ utc: f.utc, lon: f.lon, lat: f.lat })),
                 ...D.events.filter(e => e.origin === "japanese" && e.lat != null && e.utc).map(e => ({ utc: e.utc, lon: e.lon, lat: e.lat }))];
   const PATH = Object.keys(D.convoys).length ? E.observedPath(seen) : [];
+  // the convoy at the clock: on that path, straight between sightings, never beyond them (ours, hatched)
+  const CONVOY_NAME = Object.values(D.convoys).map(c => c.convoy).join(" / ");
+  const convoyAt = ms => PATH.length > 1 ? E.posAt(PATH, ms) : null;
+  // each boat's depth log as states (the build's `dives`: surfaced or submerged, the depth where logged), so the track
+  // is drawn thick on the surface and thin under it, and the boat's dot is open while she is down
+  const DIVES = D.dives || {};
+  const stateAt = (id, ms) => { let k = null; (DIVES[id] || []).forEach(x => { if (E.T(x.utc) <= ms) k = x; }); return k; };
+  // the convoy's course and speed as each boat's attack sheet types them: the boat's estimate at the moment she fired,
+  // drawn from her attack position (the target was then within the sheet's range of her, a mile or two; the convoy's
+  // computed path can be miles off, as the navigators disagree), or from the path where the attack has no position; the
+  // length an hour's run at the typed speed (ours). The turns between one sheet and the next are the convoy's evasions.
+  const COURSES = Object.entries(D.sheets || {}).flatMap(([who, sh]) => Object.entries(sh).map(([name, a]) => {
+    const r = (a.torpedoes || [])[0] || {}, c = parseFloat(r.target_course), k = parseFloat(r.target_speed);
+    if (!(c >= 0) || !(k > 0) || !r.date || !r.time || !r.zone) return null;
+    let ms; try { ms = E.toUTC(r.date, r.time, r.zone); } catch { return null; }   // a zone the sheet types that isn't a zone letter: off the clock
+    const ev = D.events.find(e => e.kind === "attack" && e.actor === who && e.title === name && e.lat != null);
+    const at = ev ? [ev.lon, ev.lat] : convoyAt(ms);
+    return at && { who, name, course: c, kts: k, ms, at, onPath: !ev, local: `${r.date} ${r.time} ${r.zone}`, cite: a.cite };
+  })).filter(Boolean);
+  // the escorts' depth charges, as the boat logged them, at where she was then (straight between her fixes: placed, ours)
+  const CHARGES = D.events.filter(e => e.kind === "depth_charge" && e.utc && D.tracks[e.actor]).map(e => ({ e, ms: E.T(e.utc), at: E.posAt(D.tracks[e.actor], E.T(e.utc)) })).filter(d => d.at);
 
   // ---------- legend: only the marks this engagement has
   const has = f => D.events.some(f);
@@ -238,13 +260,22 @@
     Object.values(STATIONS).some(rows => rows.length > 1) && `<span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" class="way" stroke="var(--ink-2)"/></svg>A unit's stations, joined straight; lighter in the week before the engagement</span>`,
     ROADS && `<span><svg width="22" height="10"><line x1="1" y1="5" x2="21" y2="5" class="road"/></svg>Primary roads of 1942 (OSS Map 967, traced, ± about 4 km)</span>`,
     PATH.length > 1 && `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--ink-3)" stroke-width="1.4" stroke-dasharray="2 4"/></svg><i>The convoy's path as the boats saw it (ours; to the clock)</i></span>`,
+    PATH.length > 1 && PLAYS && `<span><svg width="16" height="16" viewBox="-8 -8 16 16"><circle r="6" fill="url(#hatch-intel)" stroke="var(--japan)" stroke-width="1.4"/></svg><i>The convoy at the clock, on that path (ours)</i></span>`,
+    COURSES.length && `<span><svg width="26" height="10"><path d="M2,5H23M18,1.5L23,5L18,8.5" fill="none" stroke="var(--japan)" stroke-width="1.5"/></svg>The convoy's course and speed as a boat's attack sheet types it (her estimate as she fired; the length an hour's run, ours)</span>`,
+    Object.keys(DIVES).some(id => D.tracks[id]) && `<span><svg width="30" height="10"><line x1="1" y1="5" x2="13" y2="5" stroke="var(--ink-2)" stroke-width="2"/><line x1="16" y1="5" x2="29" y2="5" stroke="var(--ink-2)" stroke-width="1"/></svg>Surfaced, then submerged (her depth log; her dot open while she was down)</span>`,
+    CHARGES.length && `<span><svg width="16" height="16" viewBox="-8 -8 16 16"><path d="${d3.range(8).map(i => { const a = i * Math.PI / 4, r0 = i % 2 ? 2.5 : 3, r1 = i % 2 ? 5 : 7; return `M${r0 * Math.cos(a)},${r0 * Math.sin(a)}L${r1 * Math.cos(a)},${r1 * Math.sin(a)}`; }).join("")}" stroke="var(--japan)" stroke-width="1.3"/></svg>Depth charges, as the boat logged them, where she was (placed, ours)</span>`,
   ].filter(Boolean).join("");
 
   // ---------- map
   const svg = d3.select("#map");
   const HATCH = EV.hatchDef(svg);   // the intelligence estimates' hatch (inferred, never solid)
-  const gLand = svg.append("g"), gGrat = svg.append("g"), gRelief = svg.append("g"), gFront = svg.append("g"), gWay = svg.append("g"), gRing = svg.append("g"), gRoute = svg.append("g"), gPlace = svg.append("g"), gPath = svg.append("g"), gTrk = svg.append("g"), gMsg = svg.append("g"),
-        gNowName = svg.append("g"), gMk = svg.append("g"), gNow = svg.append("g"), gPulse = svg.append("g");
+  // the overview in the map's corner: the convoy's whole voyage on the lanes of the time, and the box where this map is
+  // (engage-overview.js); only for an engagement that names a convoy with a route
+  const CONVOYS_J = Object.keys(D.convoys).length && D.box ? await fetch(RECORDS + "convoys/convoys.json").then(r => r.json()).catch(() => null) : null;
+  const OVERVIEW = CONVOYS_J ? EngageOverview.draw(document.querySelector(".map-box"), { land: LAND, lanes: CONVOYS_J.lanes,
+    convoys: CONVOYS_J.convoys.filter(c => D.convoys[c.id]), hatch: HATCH }) : null;
+  const gLand = svg.append("g"), gGrat = svg.append("g"), gRelief = svg.append("g"), gFront = svg.append("g"), gWay = svg.append("g"), gRing = svg.append("g"), gRoute = svg.append("g"), gPlace = svg.append("g"), gPath = svg.append("g"), gCourse = svg.append("g"), gCharge = svg.append("g"), gTrk = svg.append("g"), gMsg = svg.append("g"),
+        gNowName = svg.append("g"), gMk = svg.append("g"), gConvoy = svg.append("g"), gNow = svg.append("g"), gPulse = svg.append("g");
   let proj = null, BASE = null, W = 0, H = 0, quiet = false, t = t1, playing = false, raf = 0, lastT = null;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const ZOOM_MAX = STEPS.length ? 48 : 12;   // a step's framing can be a few miles across (Haynsworth's station)
@@ -528,6 +559,31 @@
       .attr("x", P(p.lon, p.lat)[0]).attr("y", P(p.lon, p.lat)[1]).attr("text-anchor", "middle").style("font-size", p.small ? "10px" : null).text(p.name));
     drawPath();
     drawMarks();
+    drawCourses();
+    if (OVERVIEW) { const a = proj.invert([0, H]), b = proj.invert([W, 0]); OVERVIEW.view([[a[0], a[1]], [b[0], b[1]]]); }
+  }
+  // the convoy's course and speed at each attack, as the sheet types it: an arrow in the convoy's ink, from where it was
+  function drawCourses() {
+    const arrow = d => { const [x, y] = P(...d.at), end = E.offset(d.at[0], d.at[1], d.course, d.kts), [x2, y2] = P(...end);
+      const a = Math.atan2(y2 - y, x2 - x), h = 6;
+      return `M${x},${y}L${x2},${y2}M${x2 - h * Math.cos(a - 0.45)},${y2 - h * Math.sin(a - 0.45)}L${x2},${y2}L${x2 - h * Math.cos(a + 0.45)},${y2 - h * Math.sin(a + 0.45)}`; };
+    gCourse.selectAll("g").data(COURSES).join(enter => { const g = enter.append("g").attr("class", "course"); g.append("path").attr("class", "course-halo"); g.append("path").attr("class", "course-line"); g.append("path").attr("class", "course-hit"); return g; })
+      .call(g => g.selectAll("path").attr("d", function () { return arrow(d3.select(this.parentNode).datum()); }))
+      .on("mouseenter", (ev, d) => EV.showTip(ev, `<div class="v">${esc(CONVOY_NAME || "The target")}: course ${esc(String(d.course).padStart(3, "0"))}°, ${esc(d.kts)} knots</div><div class="k">${esc(nameOf(d.who))}'s ${esc(d.name)} sheet, ${esc(d.local)}</div><div class="m">${esc(nameOf(d.who))}'s estimate of the target at the moment of firing, as typed. Drawn from ${d.onPath ? "where the convoy was then, on its path as the boats saw it (the attack has no typed position)" : `${esc(nameOf(d.who))}'s attack position: the target was within the sheet's range of her`}; the length is an hour's run at that speed (ours).</div>`))
+      .on("mousemove", EV.moveTip).on("mouseleave", EV.hideTip)
+      .on("click", (ev, d) => { stop(); setTime(d.ms); highlightRow(d.ms); });
+    gCharge.selectAll("g").data(CHARGES).join(enter => { const g = enter.append("g").attr("class", "charge");
+      g.append("path").attr("d", d3.range(8).map(i => { const a = i * Math.PI / 4, r0 = i % 2 ? 2.5 : 3, r1 = i % 2 ? 6 : 8; return `M${r0 * Math.cos(a)},${r0 * Math.sin(a)}L${r1 * Math.cos(a)},${r1 * Math.sin(a)}`; }).join(""));
+      g.append("circle").attr("r", 9).attr("fill", "transparent"); return g; })
+      .attr("transform", d => `translate(${P(...d.at).map(v => v.toFixed(1))})`)
+      .on("mouseenter", (ev, d) => EV.showTip(ev, `<div class="v">${esc(d.e.title)}</div><div class="k">${esc(d.e.local)}</div><div class="m">${esc(d.e.words || "")}</div><div class="i">The escorts' counter-attack as ${esc(nameOf(d.e.actor))} logged it; drawn where she was then, straight between her fixes (placed, ours)</div>`))
+      .on("mousemove", EV.moveTip).on("mouseleave", EV.hideTip)
+      .on("click", (ev, d) => { stop(); setTime(d.ms); highlightRow(d.ms); });
+    showByClock();
+  }
+  function showByClock() {
+    gCourse.selectAll("g.course").classed("future", d => PLAYS && d.ms > t);
+    gCharge.selectAll("g.charge").classed("future", d => PLAYS && d.ms > t);
   }
 
   // the convoy's observed path, dotted (ours; the legend says so), as far as the clock
@@ -688,11 +744,29 @@
       const rows = [], nows = [];
       TRACKED.forEach(p => {
         const pts = D.tracks[p.id], now = E.posAt(pts, t);
-        const past = pts.filter(q => E.T(q.utc) <= t).map(q => [q.lon, q.lat]), ahead = pts.filter(q => E.T(q.utc) > t).map(q => [q.lon, q.lat]);
-        if (now) { past.push(now); ahead.unshift(now); if (PLAYS) nows.push({ p, now }); }   // the "now" dot is the clock's
-        rows.push({ id: p.id, cls: "past", pts: past }, { id: p.id, cls: "ahead", pts: ahead });
+        // the track cut at the clock and at each change of state in the boat's depth log (thin where she was down)
+        const cuts = [...pts.map(q => E.T(q.utc)), ...(DIVES[p.id] || []).map(x => E.T(x.utc)), ...(now ? [t] : [])]
+          .filter(ms => ms >= E.T(pts[0].utc) && ms <= E.T(pts[pts.length - 1].utc));
+        const times = [...new Set(cuts)].sort((a, b) => a - b);
+        d3.pairs(times).forEach(([a, b]) => {
+          const st = stateAt(p.id, a), under = st && st.state === "submerged";
+          rows.push({ id: p.id, cls: (PLAYS && a >= t ? "ahead" : "past") + (under ? " under" : ""), pts: [E.posAt(pts, a), E.posAt(pts, b)] });
+        });
+        if (now && PLAYS) nows.push({ p, now, st: stateAt(p.id, t) });   // the "now" dot is the clock's
       });
       gTrk.selectAll("path").data(rows).join("path").attr("class", d => "trk " + d.cls).attr("stroke", d => colour(d.id)).attr("d", d => d.pts.length > 1 ? line(d.pts) : null);
+      showByClock();
+      // the convoy where the boats saw it, at the clock: hatched (ours), with its name
+      const cnow = PLAYS ? convoyAt(t) : null;
+      const cg = gConvoy.selectAll("g").data(cnow ? [cnow] : []).join(enter => { const g = enter.append("g").attr("class", "convoy-now");
+        g.append("circle").attr("r", 7).attr("fill", HATCH).attr("stroke", "var(--japan)").attr("stroke-width", 1.4);
+        g.append("text").attr("class", "now-name").attr("x", -10).attr("y", 4).attr("text-anchor", "end").text(CONVOY_NAME);
+        g.append("circle").attr("r", 10).attr("fill", "transparent")
+          .on("mouseenter", ev => EV.showTip(ev, `<div class="v">${esc(CONVOY_NAME)}, at the clock</div><div class="i">Where the convoy was, straight between where the boats sighted it and where the Japanese record puts it: computed, ours, not a record</div>`))
+          .on("mousemove", EV.moveTip).on("mouseleave", EV.hideTip);
+        return g; });
+      cg.attr("transform", d => `translate(${P(...d).map(v => v.toFixed(1))})`);
+      if (OVERVIEW) OVERVIEW.here(cnow);
       gMk.selectAll("g.mk").classed("future", d => PLAYS && d.ms > t);   // no clock: everything is shown
       if (lastT !== null && t !== lastT) fires.filter(f => (f.ms > lastT && f.ms <= t && t - lastT < 3 * 3600e3) || f.ms === t).forEach(pulse);
       lastT = t;
@@ -700,11 +774,15 @@
       const ng = gNow.selectAll("g").data(nows, d => d.p.id).join(enter => {
         const g = enter.append("g");
         g.append("circle").attr("r", 10).attr("fill", d => colour(d.p.id)).attr("opacity", 0.22);
-        g.append("circle").attr("r", 5).attr("fill", d => colour(d.p.id)).attr("stroke", "var(--surface)").attr("stroke-width", 2);
+        g.append("circle").attr("class", "dot").attr("r", 5).attr("stroke-width", 2);
         return g;
       });
+      // open while she is down (her depth log), filled on the surface
+      ng.select("circle.dot").attr("fill", d => d.st && d.st.state === "submerged" ? "var(--surface)" : colour(d.p.id))
+        .attr("stroke", d => d.st && d.st.state === "submerged" ? colour(d.p.id) : "var(--surface)");
       ng.attr("transform", d => `translate(${P(...d.now).map(v => v.toFixed(1))})`);
-      gNowName.selectAll("text").data(nows, d => d.p.id).join("text").attr("class", "now-name").text(d => d.p.name)
+      gNowName.selectAll("text").data(nows, d => d.p.id).join("text").attr("class", "now-name")
+        .text(d => d.p.name + (d.st ? d.st.state === "submerged" ? ` · down${d.st.depth ? ", " + d.st.depth : ""}` : " · surfaced" : ""))
         .attr("x", d => P(...d.now)[0] + 11).attr("y", d => P(...d.now)[1] - 9);
     }
     if (PLAYS) {
@@ -810,6 +888,15 @@
       const y = top + i * laneH + laneH / 2;
       lanes.append("line").attr("class", "lane-line").attr("x1", left).attr("x2", w - 8).attr("y1", y).attr("y2", y);
       lanes.append("text").attr("class", "lane-label").attr("x", 0).attr("y", y + 4).text(L.name.length > 14 ? L.name.slice(0, 13) + "…" : L.name);
+      // the hours she was down, from her depth log: a wash behind her lane
+      (DIVES[L.id] || []).forEach((x, k, all) => {
+        if (x.state !== "submerged") return;
+        let j = k + 1; while (j < all.length && all[j].state === "submerged") j++;
+        if (k > 0 && all[k - 1].state === "submerged") return;   // one wash for a run of depths
+        const a = Math.max(t0, E.T(x.utc)), b = Math.min(t1, j < all.length ? E.T(all[j].utc) : t1);
+        if (b > a) lanes.append("rect").attr("class", "lane-under").attr("x", lx(a)).attr("width", lx(b) - lx(a)).attr("y", y - 6).attr("height", 12)
+          .append("title").text(`${L.name} submerged, ${E.hhmm(a)}–${E.hhmm(b)}Z (her depth log)`);
+      });
       timed.filter(e => laneOf(e) === L.id && e.ms >= t0 && e.ms <= t1).forEach(e => {
         const x = lx(e.ms);
         if (e.kind === "attack") lanes.append("path").attr("d", EV.shape.diamond).attr("transform", `translate(${x},${y}) scale(0.95)`).attr("fill", L.colour);

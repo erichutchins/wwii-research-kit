@@ -182,8 +182,10 @@ rules below are the ones a change most often breaks.
   (`engagement.html`, `subject.html`, `lanes.html`) share `site/engage.css`, whose boat colours were checked with the
   hit red, every pair, both modes; their encodings (solid, outlined, hatched, dotted; red only for hits) are in
   `guides/ENGAGEMENTS.md`, and their computation is `site/engage.js`, never redone in a page. The engagement page's
-  observer view (`site/observer.js`) draws each attack from its sheet with `engage.js`'s `attackSheet` and `attackAt`;
-  beside its periscope, in tabs, the Torpedo Data Computer's faces (`site/tdc.js`, drawing only, the values `tdcAt`'s).
+  observer view (`site/observer.js`) draws each attack from its sheet with `engage.js`'s `attackSheet` and `attackAt`:
+  the periscope and, beside it, the plot from above. The Torpedo Data Computer's faces for the same attack are their own
+  explainer, `tdc.html?e=<engagement>&boat=<id>&attack=<Attack 1>` (`site/tdc-page.js`; `site/tdc.js`, drawing only, the
+  values `tdcAt`'s), linked from the observer view.
 - Verify changes in a browser: light and dark mode, every subject on `subject.html` (a boat, a ship, a unit, a
   battalion, a convoy, its page and its placement), every engagement on `engagement.html` (the page and its questions), no
   console errors.
