@@ -27,7 +27,7 @@ tool's docstring says more than this list; the rules are in `CLAUDE.md`.
 
 | Command | What it does | When |
 |---|---|---|
-| `python3 tools/nara.py find "Bang" \| fetch <id> … \| index` | The National Archives catalog: a boat's war patrol report folders; their scans to `sources/nara/rg367-<id>/`; `records/scans.json`, each page's public URL | Starting a boat; after citing new pages (`index`) |
+| `python3 tools/nara.py find "Bang" \| fetch <id> … \| index` | The National Archives catalog: a boat's war patrol report folders; their scans to `sources/nara/rg38-<id>/`; `records/scans.json`, each page's public URL | Starting a boat; after citing new pages (`index`) |
 | `python3 tools/morning_reports.py serial \| unit \| locate \| changes \| fetch …` | Army morning reports (NARA RG 64): the rolls, a unit's pages, where its station changed, the scans | Following an Army unit (`guides/MORNING-REPORTS.md`) |
 | `uv run tools/crop_pages.py sheet \| halves \| zoom \| heads \| thumbs \| panel …` | Readable crops of a scanned page: a contact sheet of a folder, overlapping halves, a contrast-stretched zoom, a morning report's heading | Before reading any scan (`guides/METHODS.md`) |
 | `python3 tools/jacar.py search \| meta \| fetch …` | JACAR, the Imperial Navy's records: search the catalog, a record's title and pages, its scans to `sources/jacar/<code>/` | Finding the other side of an attack (the skill `find-the-other-side`) |

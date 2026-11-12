@@ -13,7 +13,7 @@ page it came from.
 ## The rule: cite every source
 
 Every value carries the page it was read from, in a short form listed in
-`records/SOURCES.yml` (`rg367-74802746/p05`: National Archives item 74802746, page 5).
+`records/SOURCES.yml` (`rg38-74802746/p05`: National Archives item 74802746, page 5).
 `tools/check_sources.py` fails on any citation that doesn't resolve and any row without one.
 Values are recorded exactly as typed; corrections go beside them with a reason, never over them.
 
@@ -43,7 +43,7 @@ to the archive's own copy.
 
 ```bash
 python3 tools/nara.py find "Wahoo"                  # a submarine's war patrol report folders
-python3 tools/nara.py fetch 74802746                # its scans -> sources/nara/rg367-74802746/
+python3 tools/nara.py fetch 74802746                # its scans -> sources/nara/rg38-74802746/
 uv run tools/crop_pages.py halves 74802746 03 04   # readable halves
 uv run tools/check_track.py bang/1                  # speed-check a transcribed patrol
 uv run tools/check_sources.py                       # every citation resolves

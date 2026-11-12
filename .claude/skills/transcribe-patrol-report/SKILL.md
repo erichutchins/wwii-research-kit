@@ -19,7 +19,7 @@ checklist.
    patrol or date range. Note each folder's catalog ID and dates.
 2. Add the boat to `records/inventory.yml` if it isn't there, every patrol with its status and
    folder (`available` once found).
-3. `python3 tools/nara.py fetch <id>` downloads the scans to `sources/nara/rg367-<id>/` (never
+3. `python3 tools/nara.py fetch <id>` downloads the scans to `sources/nara/rg38-<id>/` (never
    committed), then `python3 tools/nara.py index` adds the pages' public URLs to `records/scans.json`.
 
 ## 2. Find the pages
@@ -33,7 +33,7 @@ end is the density layers. Note which pages hold what.
 - `crop_pages.py halves <id> <pages...>` and read each half. Faded cells: `crop_pages.py zoom`.
 - Write `records/boats/<hull>-<name>/patrol-N/positions.csv` (columns in `records/README.md`):
   date, time, zone letter, latitude and longitude **exactly as typed**, `?` for an illegible
-  character, and the page on every row (`rg367-<id>/pNN`).
+  character, and the page on every row (`rg38-<id>/pNN`).
 - Check each table's header for its zone: tables are often GCT (Z) while the narrative is local.
 - Ship contacts are the **target's** position: `on_track=no`.
 - Never fix while typing. Corrections come later, in the `*_fix` columns.

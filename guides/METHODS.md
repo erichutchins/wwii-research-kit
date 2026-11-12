@@ -22,7 +22,7 @@ which is this method as a checklist.
 
 | Record | Where | Online? | Used |
 |---|---|---|---|
-| **War patrol reports**: the captain's report of each patrol (narrative, contact tables, attack sheets, density layers, weather) | NARA catalog series 305243 "U.S. Submarine War Patrol Reports" (listed under record group 367, "Records of the Office of the Chief of Naval Operations"), microfilm publication **M1752** | Yes, Fold3 scans of the microfilm, about 2460×3217 px per page | **Primary source** |
+| **War patrol reports**: the captain's report of each patrol (narrative, contact tables, attack sheets, density layers, weather) | NARA catalog series 305243 "U.S. Submarine War Patrol Reports" (Record Group 38, "Records of the Office of the Chief of Naval Operations"), microfiche publication **M1752** | Yes, Fold3 scans of the microfilm, about 2460×3217 px per page | **Primary source** |
 | Second copies of the same reports | RG 38 "World War II War Diaries, Other Operational Records and Histories" | Yes | Not yet (a cross-check source for illegible pages) |
 | Muster rolls (crew lists) | RG 24, series 594996 | Yes (Ancestry scans) | No (out of scope for now) |
 | Deck logs (hour-by-hour logbooks) | RG 24, series 594258 "Logbooks of U.S. Navy Ships and Stations" | **Only from 1951 on**; WWII-era submarine deck logs are not digitized | No |
@@ -48,7 +48,7 @@ this:
 
 ```bash
 python3 tools/nara.py find "Bang"                  # list the boat's folders
-python3 tools/nara.py fetch 74802746 74802784 ...  # download scans to sources/nara/rg367-<id>/
+python3 tools/nara.py fetch 74802746 74802784 ...  # download scans to sources/nara/rg38-<id>/
 python3 tools/nara.py index                        # records/scans.json: page -> public URL
 ```
 
@@ -101,7 +101,7 @@ and typed what it saw into CSV, one table at a time.
    Whole pages are too dense to read reliably in one view.
 3. **Transcribe exactly as typed.** Write the date, time, zone letter,
    latitude and longitude as they appear on the page, plus the page number
-   (`rg367-74802746/p16` means `sources/nara/rg367-74802746/p16.jpg`).
+   (`rg38-74802746/p16` means `sources/nara/rg38-74802746/p16.jpg`).
    Mark an unreadable digit with `?`. Never "fix" while typing.
 4. **Check.** Run `uv run tools/check_track.py bang/N`, then resolve every
    flagged leg (see §3).

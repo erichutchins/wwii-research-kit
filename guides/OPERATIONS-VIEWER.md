@@ -355,7 +355,7 @@ researcher's desk at the bottom.
 ### 7.1 Convoy TAMA-17, 29–30 April 1944 (`records/engagements/tama-17-1944-04-29/`)
 
 **What the records are.** Three war patrol reports on three clocks (BANG zone K, PARCHE zone I, TINOSA zone H:
-`rg367-74802746`, `74828582`, `74856363`); the 1st Surface Escort Division's movements table and Nittatsu Maru's
+`rg38-74802746`, `74828582`, `74856363`); the 1st Surface Escort Division's movements table and Nittatsu Maru's
 movement log (JACAR `C08030140600`, `C08050103200`), in Tokyo time; the FRUPAC overlays of 29 and 30 April
 (`metapth1733008`, …; estimated positions, no zone written); combinedfleet.com for the convoy list and the 3–4 May
 sinkings (secondary); JANAC's credit (assessment). Tempo: clocked.

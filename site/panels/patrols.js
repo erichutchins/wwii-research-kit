@@ -723,7 +723,7 @@ function hideTip() { tip.style.display = "none"; }
 
 function openScan(d) {
   const [folder, page] = d.page.split("/");
-  const naId = folder.replace("rg367-", "");
+  const naId = folder.replace(/^rg\d+-/, "");
   const n = parseInt(page.slice(1), 10);
   document.getElementById("scan-title").textContent = `${title(d)}, ${localWhen(d)} · ${SHIP.pageNoun} ${n}`;
   const img = document.getElementById("scan-img");

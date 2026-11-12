@@ -708,7 +708,7 @@ class GlossaryPatterns(unittest.TestCase):
         # a zone pattern is not a grid reference, and a grid pattern is not a time with its zone
         self.assertIsNone(P["zone-time"].search("VT 0893"))
         self.assertIsNone(P["army-grid"].search("2201 I"))
-        for v in ["1944-04-29", "p03", "SS-385", "At 1604 I sighted the convoy", "0603 Hrs", "rg367-74802746/p16"]:
+        for v in ["1944-04-29", "p03", "SS-385", "At 1604 I sighted the convoy", "0603 Hrs", "rg38-74802746/p16"]:
             self.assertIsNone(P["zone-time"].search(v), v)
         for v in ["TF 58", "TG 58.3", "JV 44", "Mk 14", "p03", "SS-385", "CJ 9472", "1944-04-29", "XXIII 97", "123S", "Me 262",
                   "KG 54", "leads L39, L40 and L45", "A 1600 hrs", "A 90 mm gun"]:   # a Luftwaffe wing, the family's leads, prose
@@ -882,7 +882,7 @@ class Subjects(unittest.TestCase):
         w("inventory.yml", "boats:\n  SS-385:\n    folder: boats/ss-385-bang\n    patrols:\n      1: { status: mapped, nara: [74802746], first_fix: 1944-03-30, last_fix: 1944-05-15, files: [positions] }\n"
           "units:\n  67ca-med:\n    record: { status: mapped }\nseabees:\n  20ncb:\n    record: { status: mapped }\ncommands:\n  comsubpac:\n    records:\n      1944-10: { status: transcribed, nara: [139761402] }\n")
         w("boats/ss-385-bang/ship.yml", "name: BANG\nhull: SS-385\nclass: Balao\nkind: submarine\nplain: a fleet submarine of the Balao class\nmax_kts: 20.5\nmap:\n  periods:\n    - { n: 1, name: First War Patrol, dates: 29 Mar – 14 May 1944 }\n")
-        w("boats/ss-385-bang/patrol-1/positions.csv", "source,ref,date,time,zone,lat_raw,lon_raw,page,on_track,note\nnoon,noon,1944-04-29,1200,K,19-26N,118-45E,rg367-74802746/p16,yes,\n")
+        w("boats/ss-385-bang/patrol-1/positions.csv", "source,ref,date,time,zone,lat_raw,lon_raw,page,on_track,note\nnoon,noon,1944-04-29,1200,K,19-26N,118-45E,rg38-74802746/p16,yes,\n")
         w("boats/ss-385-bang/tracks.geojson", '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"kind":"noon","ref":"noon","patrol":1,"on_track":true,"utc":"1944-04-29T02:00Z"},"geometry":{"type":"Point","coordinates":[118.75,19.43]}}]}')
         w("army/units.csv", "unit,name,short,note\n67ca-med,Medical Detachment,Med. Det.,aid men\n9ad,9th Armored Division,9th AD,a division\n")
         w("army/units.yml", "67ca-med:\n  plain: the aid men of a regiment\n9ad:\n  plain: an armored division\n")

@@ -13,7 +13,7 @@
 #   source  where the explanation comes from: one or more citations in a form SOURCES.yml knows, separated by "; ".
 #           The wartime glossaries come first: tm-20-205/n<leaf> (the Army's Dictionary of Terms, 1944),
 #           opnav-29-p1000/<letter> (the Navy's abbreviations), usf-25a/<paragraph> (the submarine doctrine, 1944),
-#           fm-30-30/n<leaf> (the recognition manual). Then a record that shows the thing (rg367-74802746/p21), and a
+#           fm-30-30/n<leaf> (the recognition manual). Then a record that shows the thing (rg38-74802746/p21), and a
 #           web page by its address where nothing wartime was found (marked secondary in `says` where it matters).
 #   see     a kit page that explains more (optional; relative to site/)
 #   unless  phrases that contain the term but mean something else, left unmarked (optional; e.g. "AP Hill" for AP)
@@ -142,7 +142,7 @@ terms:
     says: >-
       A submarine captain's report of one patrol, written up on return, with a narrative, the positions, every attack
       and the depth charges received.
-    source: https://catalog.archives.gov/id/305243; rg367-74802746/p16
+    source: https://catalog.archives.gov/id/305243; rg38-74802746/p16
   - term: war diary
     match: [war diaries]
     says: >-
@@ -288,7 +288,7 @@ terms:
     says: >-
       Target Bearing Transmitter, a sight on the bridge that sent the target's bearing to the TDC, for attacks on the
       surface at night.
-    source: https://maritime.org/doc/tdc/index.htm; rg367-74802746/p21
+    source: https://maritime.org/doc/tdc/index.htm; rg38-74802746/p21
   - term: SJ
     match: [SJ radar]
     says: >-
@@ -303,7 +303,7 @@ terms:
     says: >-
       The depth at which a submarine could look through her periscope: about 60 feet for these boats (SEAHORSE fired at
       58 to 66 feet).
-    source: usf-25a/1221; rg367-74845019/p29
+    source: usf-25a/1221; rg38-74845019/p29
   - term: lifeguard
     match: [lifeguard duty, lifeguard station]
     says: >-

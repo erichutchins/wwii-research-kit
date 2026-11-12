@@ -71,7 +71,7 @@ console.log(ft([0, 8, 16, 24].map(v => ({ time: "2256", since_first: String(v) }
 console.log(ft([0, 8, 8, 8, 0, 8].map(v => ({ time: "0106", interval: String(v) }))) === "0,8,16,24,34?,42" ? "ok  " : (failed++, "FAIL"), "a second salvo with no time: assumed 10 s on");
 console.log(ft([{ time: "1508", since_first: "0" }, { time: "1508", since_first: "8" }, { time: "1509", since_first: "0" }]) === "0,8,60" ? "ok  " : (failed++, "FAIL"), "a second salvo at a later typed minute starts then");
 
-// SEAHORSE's Attack 3 on her sheet (rg367-74845019/p29-30): the target placed from the gyro and track; her narrative
+// SEAHORSE's Attack 3 on her sheet (rg38-74845019/p29-30): the target placed from the gyro and track; her narrative
 // (p09) has the first hit 36 seconds after firing, "a torpedo run of 560 yards"
 const sea3 = [{ time: "2354", tube: "7", own_course: "040", own_speed: "3", own_depth: "64", target_course: "320", target_speed: "7.5", target_range: "595", track: "62S", gyro: "162", power: "---", hit: "Hit", torpedo: "18", interval: "0", spread: "divergent" },
               { time: "2354", tube: "8", own_course: "040", own_speed: "3", own_depth: "64", target_course: "320", target_speed: "7.5", target_range: "595", track: "63S", gyro: "163", power: "---", hit: "Hit", torpedo: "18", interval: "10", spread: "divergent" }];
@@ -92,7 +92,7 @@ console.log(port.targets[0].side === "P" ? "ok  " : (failed++, "FAIL"), "a 50P t
 near(port.targets[0].bearing, 16.8, 0.2, "a port-track target's bearing at firing (46 kn: lead 6.8, aob 43.2P)");
 near(port.torps[0].passed, 0, 0, "the port-track torpedo reaches the hull");
 
-// The Torpedo Data Computer's dials (tdcAt). BANG's first attack, patrol 1 (rg367-74802746/p16): four bow tubes on the
+// The Torpedo Data Computer's dials (tdcAt). BANG's first attack, patrol 1 (rg38-74802746/p16): four bow tubes on the
 // destroyer at 1800 yards with offsets 1½R ½R ½L 1½L, then two at the tanker. At the moment of firing the angle
 // solver's point of aim is attackSheet's (the four aims' middle: gyro 013.4), and its angles must agree with fireControl's
 const bang1 = [["1", "013", "1.5R", "0", "23", "1800", "123S"], ["2", "013", "0.5R", "8", "23", "1800", "123S"], ["3", "013.5", "0.5L", "16", "23", "1800", "123S"],
@@ -218,8 +218,8 @@ const f01 = { id: "F01", event: "torpedoed", ship: "Yashima Maru", relation: "ca
 const f02 = { ...f01, id: "F02", event: "sinking", text: "292215 / YASHIMA @ / 2215/29 IN / DANGER OF / SINKING", lat: null, lon: null, note: "No dot of its own" };
 const tama = {
   participants: [{ id: "bang", name: "BANG", of: "us", track: "ss-385-bang/1", colour: 1, followed: true }],
-  fixes: [{ who: "bang", ref: "Attack 1", utc: "1944-04-29T12:56Z", lat: 19.4333, lon: 118.75, raw: "19-26N 118-45E", local: "1944-04-29 2256 K", on_track: true, assumed: false, fix: "", note: "Torpedo attack No. 1", cite: { ref: "rg367-74802746/p16", href: "#", label: "p. 16", kind: "record", of: "us" } }],
-  sheets: { bang: { "Attack 1": { torpedoes: [{ date: "1944-04-29", time: "2256", zone: "K" }], words: [{ description: "Convoy consisting of at least 12 ships", sunk: "None.", damaged: "One 7000 ton AK probably sunk." }], cite: { ref: "rg367-74802746/p16", href: "#", label: "p. 16", kind: "record", of: "us" } } } },
+  fixes: [{ who: "bang", ref: "Attack 1", utc: "1944-04-29T12:56Z", lat: 19.4333, lon: 118.75, raw: "19-26N 118-45E", local: "1944-04-29 2256 K", on_track: true, assumed: false, fix: "", note: "Torpedo attack No. 1", cite: { ref: "rg38-74802746/p16", href: "#", label: "p. 16", kind: "record", of: "us" } }],
+  sheets: { bang: { "Attack 1": { torpedoes: [{ date: "1944-04-29", time: "2256", zone: "K" }], words: [{ description: "Convoy consisting of at least 12 ships", sunk: "None.", damaged: "One 7000 ton AK probably sunk." }], cite: { ref: "rg38-74802746/p16", href: "#", label: "p. 16", kind: "record", of: "us" } } } },
   events: [
     // the same note as an entry of the engagement (origin frupac): the pair already carries it, so the two-hour rule leaves it alone
     { origin: "frupac", actor: "FRUPAC", about: "Yashima Maru", title: "Yashima Maru", kind: "hit", words: f01.text, local: f01.local, utc: f01.utc, lat: 19.4, lon: 118.7, basis: "assumed", source: "FRUPAC war map, 1944-04-29", source_kind: "intelligence", source_of: "us", frupac: { id: "F01", attack: "Attack 1", relation: "candidate" }, cite: f01.cite },

@@ -276,7 +276,7 @@ const EV = (() => {
   const dayOf = utc => { const ms = Engage.T(utc); return ms == null || Number.isNaN(ms) ? "" : `${Engage.day(ms)} ${new Date(ms).getUTCFullYear()}`; };
   const deg = (v, pos, neg) => `${Math.abs(v).toFixed(3)} ${v >= 0 ? pos : neg}`;
   const short = name => String(name || "").split(",")[0];
-  // the page as cited, with its item ("rg367-74802746/p16 ↗", "jacar:C08050103200 p23 ↗"; a catalogue address by its label)
+  // the page as cited, with its item ("rg38-74802746/p16 ↗", "jacar:C08050103200 p23 ↗"; a catalogue address by its label)
   const pageOf = c => c && c.href ? [c, ...(c.more || [])].map(x => `<a href="${esc(x.href)}" target="_blank" rel="noopener">${esc(/^https?:/.test(x.ref || "") ? x.label || "page" : x.ref || x.label)} ↗</a>`).join(" ") : cite(c);
   function sources(el, m) {
     const parts = [];

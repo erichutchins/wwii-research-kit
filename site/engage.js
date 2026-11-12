@@ -158,8 +158,8 @@ const Engage = (() => {
   const offsetOf = s => { const m = /^\s*(\d+(?:\.\d+)?)\s*([RL]?)\s*$/.exec(s ?? ""); return m ? (m[2] === "L" ? -m[1] : +m[1]) : null; };
   // seconds into the day of a typed time: '2354' or, with seconds, '1616-32'
   const secOf = s => { const m = /^(\d\d)(\d\d)(?:-(\d\d))?$/.exec(s ?? ""); return m ? m[1] * 3600 + m[2] * 60 + (+m[3] || 0) : null; };
-  // Torpedo speeds where the sheet types none. The Mark 18's is ATULE's sheet's "Mk 18 speed 27.7" (rg367-74802211/p33),
-  // which SEAHORSE's narrative bears out (560 yards in 36 seconds, rg367-74845019/p09); the Mark 14's and 23's are
+  // Torpedo speeds where the sheet types none. The Mark 18's is ATULE's sheet's "Mk 18 speed 27.7" (rg38-74802211/p33),
+  // which SEAHORSE's narrative bears out (560 yards in 36 seconds, rg38-74845019/p09); the Mark 14's and 23's are
   // commonly given figures, not yet from a primary source (ENGAGEMENTS.md, "Still to build"). A typed speed is always used.
   const TORPEDO_KNOTS = { "14": { high: 46, low: 31.5 }, "23": { high: 46 }, "18": { high: 27.7 } };
   const YD_S = kn => kn * 2025.37 / 3600;   // knots -> yards a second
@@ -203,7 +203,7 @@ const Engage = (() => {
       return { i, tube: r.tube, row: r, s: tf[i].s, timeAssumed: !!tf[i].assumed, course: own[i] != null && g != null ? norm(own[i] + g) : null,
                knots: sp.knots, speedBasis: sp.basis, offset: offsetOf(r.offset), hitTyped: /hit/i.test(r.hit || ""), target: groups.indexOf(key(r)) };
     });
-    if (torps.some(t => t.speedBasis === "atule")) assumed.push("the Mark 18's speed, 27.7 knots: not typed on this sheet, but on ATULE's (rg367-74802211/p33)");
+    if (torps.some(t => t.speedBasis === "atule")) assumed.push("the Mark 18's speed, 27.7 knots: not typed on this sheet, but on ATULE's (rg38-74802211/p33)");
     if (torps.some(t => t.speedBasis === "assumed")) assumed.push("the Mark 14's and 23's speed, 46 knots at high power and 31.5 at low: not typed on the sheet; secondary figures");
     if (swinging) assumed.push("own course turning evenly between the typed courses while firing");
     assumed.push("each torpedo on its course from the moment it leaves the tube (its straight run and turn onto the gyro angle are left out, so runs come out a few seconds short)",

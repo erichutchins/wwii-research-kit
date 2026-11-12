@@ -5,7 +5,7 @@
 """Cite every source: check that every citation in the records resolves to records/SOURCES.yml.
 
 Each transcribed row names where it came from in a citation column (CITES below): a National
-Archives page (rg367-74802746/p05), a JACAR reference code (jacar:C08030140600), a museum item
+Archives page (rg38-74802746/p05), a JACAR reference code (jacar:C08030140600), a museum item
 (ok45th-17552/p06), a URL... Every citation must match one entry's `match` pattern in SOURCES.yml,
 and every row of a cited file must carry at least one. Files whose rows need no citation of their
 own say why in UNCITED. The `sources:` lists in dives.yml and silhouettes.yml must name SOURCES.yml entries. Every
@@ -128,6 +128,7 @@ def main():
     used, bad, uncited, unknown_files = Counter(), [], defaultdict(int), []
     bad += check_kinds(sources)
     nara = defaultdict(set)   # catalog ID -> cited pages
+    groups = defaultdict(set)  # catalog ID -> the record groups its citations claim (the "rg38-" before it)
     files = sorted(RECORDS.rglob("*.csv")) + sorted(REFERENCE.rglob("*.csv"))
     for path in files:
         k = key(path)
@@ -147,9 +148,7 @@ def main():
                         bad.append(f"{rel(path)}:{n}: {c!r}")
                         continue
                     used[sid] += 1
-                    m = re.match(r"^rg\d+-(\d+)/p(\d+)$", c)
-                    if m:
-                        nara[m[1]].add(int(m[2]))
+                    catalog_item(c, nara, groups)
     # YAML files whose entries cite SOURCES.yml ids in a `sources:` list
     cited = [(p, c) for p in RECORDS.rglob("dives.yml") for c in records.load_yaml(p).get("context", [])]
     sil = RECORDS / "silhouettes" / "silhouettes.yml"
@@ -185,9 +184,7 @@ def main():
                 eb.cited.append(row["map"])
     for c in eb.cited:
         used[resolve(c)] += 1
-        m = re.match(r"^rg\d+-(\d+)/p(\d+)$", c)
-        if m:
-            nara[m[1]].add(int(m[2]))
+        catalog_item(c, nara, groups)
     files += yml
     # the glossary (reference/glossary.yml): every entry cites where its explanation comes from, checked by build_glossary
     import build_glossary
@@ -195,18 +192,14 @@ def main():
     bad += [f"glossary: {p}" for p in gproblems]
     for c in gcited:
         used[resolve(c)] += 1
-        m = re.match(r"^rg\d+-(\d+)/p(\d+)$", c)
-        if m:
-            nara[m[1]].add(int(m[2]))
+        catalog_item(c, nara, groups)
     # the Seabee battalions' projects (records/seabees/projects/*.md), checked by build_seabees.py
     import build_seabees
     sproblems, scited = build_seabees.check_projects()
     bad += [f"seabees projects: {p}" for p in sproblems]
     for c in scited:
         used[resolve(c)] += 1
-        m = re.match(r"^rg\d+-(\d+)/p(\d+)$", c)
-        if m:
-            nara[m[1]].add(int(m[2]))
+        catalog_item(c, nara, groups)
     print(f"{sum(used.values())} citations in {len(files)} files, the engagements and the glossary, {len(nara)} National Archives items")
     for sid, n in used.most_common():
         print(f"  {n:6}  {sid}")
@@ -220,12 +213,34 @@ def main():
     for b in bad:
         print(f"UNRESOLVED: {b}")
 
-    bad_inventory = check_inventory() + check_silhouette_links()
+    bad_inventory = check_inventory() + check_silhouette_links() + check_record_groups(groups)
     for b in bad_inventory:
         print(f"MISMATCH: {b}")
     if "--fetch" in sys.argv:
         fetch_titles(nara)
     sys.exit(1 if bad or uncited or unknown_files or bad_inventory else 0)
+
+
+def catalog_item(cite, nara, groups):
+    """Note a National Archives citation (rg38-74802746/p05): its item's cited pages, and the record group it claims."""
+    m = re.match(r"^rg(\d+)-(\d+)/p(\d+)$", cite)
+    if m:
+        nara[m[2]].add(int(m[3]))
+        groups[m[2]].add(int(m[1]))
+
+
+def check_record_groups(groups):
+    """A citation's prefix is its item's record group as the catalog gives it (citations.json, written by --fetch):
+    rg38- for a war patrol report, never the catalog ID of the record group's own description (367)."""
+    path = RECORDS / "citations.json"
+    known = json.load(open(path)) if path.exists() else {}
+    out = []
+    for na_id, claimed in sorted(groups.items(), key=lambda kv: int(kv[0])):
+        actual = (known.get(na_id) or {}).get("record_group")
+        if actual is not None and claimed != {int(actual)}:
+            out.append(f"catalog item {na_id} is in record group {actual} (citations.json), cited as "
+                       + ", ".join(f"rg{g}-{na_id}" for g in sorted(claimed)))
+    return out
 
 
 def check_silhouette_links():

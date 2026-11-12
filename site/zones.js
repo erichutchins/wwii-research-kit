@@ -240,7 +240,7 @@ function showTip(e, d) {
 }
 function hideTip() { tip.style.display = "none"; }
 
-// "rg367-74802746/p16" -> the catalog viewer on that page
+// "rg38-74802746/p16" -> the catalog viewer on that page
 function openPage(page) {
   const m = /^rg\d+-(\d+)\/p(\d+)$/.exec(page || "");
   if (m) window.open(`https://catalog.archives.gov/id/${m[1]}?objectPage=${+m[2]}`, "_blank", "noopener");

@@ -47,7 +47,7 @@ docstring. Run tools from the kit's folder (the one with `tools/`), as `python3 
    - a sideways panel: `crop_pages.py panel <roll> <page>` (add `ccw` if it comes out upside down), then Read both
      halves (`_a`, `_b`; they overlap by a fifth, so read each line where it is whole). A panel can run over two or
      three pages: read on until the month's last day;
-   - anything else: `crop_pages.py zoom <roll> ...` is for rg367 folders; for rg64 crop with a short Pillow script.
+   - anything else: `crop_pages.py zoom <id> ...` is for the items `nara.py` fetched (`rg38-<id>`); for rg64 crop with a short Pillow script.
    Confirm the unit's name on the page or the month's first page before taking a station as the unit's.
 5. **Write the draft** (below), one row per station **change** (and the first station of each month), then run
    `python3 tools/morning_reports.py checkdraft <draft>` until it reports 0 problems.

@@ -935,7 +935,7 @@ function openScan(e) {
   img.classList.remove("full");
   setScanSrc(img, folder, page);
   img.alt = `Scan of patrol report page ${n}`;
-  document.getElementById("scan-link").href = `https://catalog.archives.gov/id/${folder.replace("rg367-", "")}?objectPage=${n}`;
+  document.getElementById("scan-link").href = `https://catalog.archives.gov/id/${folder.replace(/^rg\d+-/, "")}?objectPage=${n}`;
   hideTip();
   stop();
   document.getElementById("scan").showModal();

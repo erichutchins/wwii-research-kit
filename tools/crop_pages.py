@@ -41,8 +41,16 @@ from records import CACHE
 OUT = Path(os.environ.get("CROP_DIR", "/tmp/bang"))
 
 
+def item(na_id):
+    """A catalog item's cache folder, rg<record group>-<id>, whatever its group (tools/nara.py names it)."""
+    found = sorted((CACHE / "nara").glob(f"rg*-{na_id}"))
+    if not found:
+        raise SystemExit(f"no scans of {na_id} in the cache: python3 tools/nara.py fetch {na_id}")
+    return found[0]
+
+
 def scan(na_id, page):
-    return Image.open(CACHE / "nara" / f"rg367-{na_id}" / f"p{int(page):02d}.jpg")
+    return Image.open(item(na_id) / f"p{int(page):02d}.jpg")
 
 
 def heads(roll, pages, per=6, width=1400, bottom=0.17):
@@ -132,7 +140,7 @@ def halves(na_id, pages):
 
 
 def sheet(na_id, per=24, cols=8, thumb=(330, 430)):
-    pages = sorted((CACHE / "nara" / f"rg367-{na_id}").glob("p*.jpg"))
+    pages = sorted(item(na_id).glob("p*.jpg"))
     for s in range(0, len(pages), per):
         batch = pages[s:s + per]
         rows = (len(batch) + cols - 1) // cols
