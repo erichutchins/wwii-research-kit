@@ -32,7 +32,7 @@
   if (op && op.note) { const el = document.getElementById("note"); el.textContent = op.note; el.hidden = false; }
   const KINDS = [["boat", "boat"], ["ship", "ship"], ["unit", "Army unit"], ["battalion", "Seabee battalion"], ["convoy", "convoy"], ["command", "command"]];
   const kinds = KINDS.map(([k, w]) => { const c = subs.filter(s => s.kind === k).length; return c ? n(c, w) : ""; }).filter(Boolean);
-  document.getElementById("holds").innerHTML = `What the records hold here: ${n(T.engagements.length, "engagement")} read from both sides; ${n(subs.length, "subject")}${kinds.length ? ` (${kinds.join(", ")})` : ""}; ${n(T.campaigns.length, "operation or campaign", "operations and campaigns")} entered with their dates and areas.`;
+  document.getElementById("holds").innerHTML = `What the records hold here: ${Chapter.held(T.engagements)}; ${n(subs.length, "subject")}${kinds.length ? ` (${kinds.join(", ")})` : ""}${T.campaigns.length ? `; ${n(T.campaigns.length, "operation or campaign", "operations and campaigns")} entered with their dates and areas` : ""}.`;
   const secs = (op ? op.sections : []).filter(s => s.heading && s.paras.length);
   if (secs.length) {
     const head = document.getElementById("head");

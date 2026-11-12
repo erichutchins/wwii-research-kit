@@ -448,7 +448,7 @@ function drawMain() {
     if (i % moonStep) return;
     const mg = g.append("g").attr("transform", `translate(${x(t)},${yA0 - 26})`);
     drawMoon(mg, t, 6);
-    mg.append("title").text(`${fmtLocal(t).slice(0, 11)} — ${moonName(t)}, ${Math.round(moonLit(t) * 100)}% lit`);
+    mg.append("title").text(`${fmtLocal(t).slice(0, 11)}: ${moonName(t)}, ${Math.round(moonLit(t) * 100)}% lit`);
   });
   if (dayPx >= 60) days.forEach(t => {
     const a = moonName(t);
@@ -488,7 +488,7 @@ function drawMain() {
     aClip.append("rect").attr("class", "routine").attr("x", x0).attr("width", x1 - x0)
       .attr("y", yA(0)).attr("height", yA(PERISCOPE_FT) - yA(0));
     if (x1 - x0 > 230) aClip.append("text").attr("class", "routine-label").attr("x", x0 + 6).attr("y", yA(PERISCOPE_FT) + 14)
-      .text("Submerged by day — times not logged");
+      .text("Submerged by day: times not logged");
   });
 
   aClip.append("line").attr("class", "test-depth").attr("x1", M.left).attr("x2", W - M.right)
@@ -630,7 +630,7 @@ function drawOverview() {
   ov.append("line").attr("id", "strip-play").attr("class", "strip-play").attr("y1", yOv).attr("y2", yOv + ovH)
     .attr("x1", -10).attr("x2", -10);
   ov.append("text").attr("class", "panel-sub").attr("x", M.left).attr("y", yOv - 5)
-    .text("Whole patrol — drag to choose the span shown above; double-click the chart to reset");
+    .text("Whole patrol: drag to choose the span shown above; double-click the chart to reset");
   brush = d3.brushX().extent([[M.left, yOv], [W - M.right, yOv + ovH]])
     .on("brush end", ev => {
       if (!ev.sourceEvent) return;
@@ -770,7 +770,7 @@ function renderSkyNotes() {
     const pg = el("a", null, `p. ${parseInt(n.page.split("/p")[1], 10)} ↗`);
     pg.href = "#";
     pg.addEventListener("click", ev => { ev.preventDefault(); openScan({ ...n, event: "sky" }); });
-    const q = el("div", null, `${localWhen(n)} — “${n.quote}” `);
+    const q = el("div", null, `${localWhen(n)}: “${n.quote}” `);
     q.append(pg);
     body.append(q, el("div", "sky-calc", `This page computes: ${calc}`));
     row.append(g.node(), body);

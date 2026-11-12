@@ -209,9 +209,18 @@ const Chapter = (() => {
     const follow = [...units, ...boats].join("");
     el.innerHTML = trail([{ href: T.href, text: T.name }, s && { href: theatreHref(T.id, `stage-${s.id}`), text: `${s.n} ${s.name}` },
       e.campaign && { href: e.campaign.href, text: e.campaign.op.short || e.campaign.op.name, dates: opDates(e.campaign) }, e.short || e.title]) + `
-      <div class="seq">${step(prev, "prev")}<span class="what">in date order, every engagement in the ${esc(T.name)}</span>${step(next, "next")}</div>
+      <div class="seq">${step(prev, "prev")}<span class="what">in date order, every engagement in ${T.id === "europe" ? "" : "the "}${esc(T.name)}</span>${step(next, "next")}</div>
       ${follow ? `<table class="follow"><caption>Follow a subject: what its records give before and after this</caption><tbody>${follow}</tbody></table>` : ""}`;
   }
 
-  return { THEATRES, STAGES, load, spineHTML, stageHTML, trail, crumb, theatreHref };
+  // "3 engagements, 2 with the other side's own record": what a list of engagements holds, counted from the index's
+  // `other_side` (entries from the other side's own records), never claimed for an engagement still read from one side
+  function held(engs) {
+    const k = engs.length, both = engs.filter(e => e.other_side).length;
+    if (!k) return "no engagement entered yet";
+    const head = `${k} engagement${k === 1 ? "" : "s"}`;
+    return both === k ? `${head}, ${k === 1 ? "" : "each "}with the other side's own record beside ours`
+      : both ? `${head}, ${both} with the other side's own record beside ours` : `${head}, the other side's own record not found yet`;
+  }
+  return { THEATRES, STAGES, load, spineHTML, stageHTML, trail, crumb, theatreHref, held };
 })();

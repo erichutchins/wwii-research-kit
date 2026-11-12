@@ -20,6 +20,7 @@
   };
   const subjectHref = s => `subject.html?s=${encodeURIComponent(s.id)}${s.period ? `&amp;period=${encodeURIComponent(s.period)}` : ""}`;
   const holds = e => [n(e.entries, "entry", "entries") + (e.languages > 1 ? ` in ${n(e.languages, "language")}` : ""),
+    e.other_side ? `${n(e.other_side, "entry", "entries")} from the other side's own records` : "the other side's own record not found yet",
     e.claims && `${n(e.claims, "question")} the records leave open`, e.fronts && n(e.fronts, "situation map"),
     e.steps && `the story in ${n(e.steps, "step")}`, e.sheets && n(e.sheets, "attack sheet")].filter(Boolean).join(" · ");
   const row = e => `<div class="dates">${esc(dates(e))}</div>
@@ -37,5 +38,6 @@
   }
   document.getElementById("index").innerHTML = out.join("");
   const theatres = new Set(ALL.map(e => e.theater)).size;
-  document.getElementById("count").textContent = `${n(ALL.length, "engagement")} so far, in ${n(theatres, "theatre")}, in date order.`;
+  const both = ALL.filter(e => e.other_side).length;
+  document.getElementById("count").textContent = `${n(ALL.length, "engagement")} so far, in ${n(theatres, "theatre")}, in date order: ${both === ALL.length ? "each" : both} with the other side's own record beside ours${both === ALL.length ? "" : `, ${ALL.length - both} still read from one side`}.`;
 })();

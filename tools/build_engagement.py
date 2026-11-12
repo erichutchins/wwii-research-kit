@@ -1013,6 +1013,10 @@ def build():
                      # for the index page: the lede in plain words, and what the engagement has
                      "lede": plain_lede(e), "entries": len(e["events"]), "claims": len(e["claims"]),
                      "languages": len({x.get("lang") or "en" for x in e["events"]}),
+                     # entries from the other side's own records (a nationality the subjects faced, in a record of its
+                     # own: not our record of them, not a later history): what "read from both sides" has to rest on
+                     "other_side": sum(1 for x in e["events"] if x.get("opposed") and x.get("source_kind") == "record"
+                                       and x.get("source_of") == x.get("of")),
                      "fronts": len(e.get("fronts") or []), "steps": len(e.get("steps") or []), "sheets": sum(len(v) for v in (e.get("sheets") or {}).values()),
                      "outcome": any(s["heading"].lower() == "outcome" for s in e.get("sections") or [])} for e in engs), key=lambda x: x["from"])
     cv = sorted((convoy_summary(c, engs) for c in convoys.values()),

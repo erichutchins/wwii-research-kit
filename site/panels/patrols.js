@@ -684,7 +684,7 @@ function renderLegend() {
     .attr("stroke-width", 1.5).attr("stroke-dasharray", cls === "off" ? "2 2" : null);
   if (state.patrol === null) {
     item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("stroke", "var(--track-other)").attr("stroke-width", 2), "Patrol track");
-    item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("stroke", "var(--series-track)").attr("stroke-width", 3), "Hovered patrol — click to open it");
+    item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("stroke", "var(--series-track)").attr("stroke-width", 3), "The patrol under the pointer: click to open it");
     return;
   }
   item(g => g.append("line").attr("x1", -10).attr("x2", 10).attr("stroke", "var(--series-track)").attr("stroke-width", 2), "Track between fixes");

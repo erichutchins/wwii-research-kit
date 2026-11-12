@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="engage.css">
 <link rel="stylesheet" href="subject.css">
-<!-- The index of every engagement read from both sides (records/engagements/index.json, tools/build_engagement.py), by
+<!-- The index of every engagement (records/engagements/index.json, tools/build_engagement.py), by
      theatre and in date order: each with its dates, its lede in plain words, the subjects in it (each a link to its own
      page) and what its page holds (entries, languages, questions, situation maps, a story in steps, attack sheets). The
      kit's way in: the nav bar's first link (guides/OPERATIONS-VIEWER.md 5.1, 5.3). Each opens engagement.html?e=<id>.
@@ -24,12 +24,14 @@
     <nav class="nav" aria-label="The kit" data-nav></nav>
     <script src="nav.js"></script>
     <nav class="crumb" id="crumb" aria-label="Where this is in the kit"><div class="trail"><span aria-current="page">Engagements</span></div></nav>
-    <div class="eyebrow">Every engagement, read from both sides</div>
+    <div class="eyebrow">Every engagement, and whose records it is read from</div>
     <h1>Engagements</h1>
     <p class="lede">An engagement is two sides meeting at a place and a time: a pack against a convoy, a destroyer against a
       kamikaze strike, an antiaircraft battery against a night raid. Each side kept its own records, in its own form and on
-      its own clock. Each page here puts both on one map and one clock, every mark opening the page it was read from;
-      behind it, the questions the records leave open, answered source by source. <span id="count"></span></p>
+      its own clock. Each page here puts what has been found of both on one map and one clock, every mark opening the page it was read
+      from; behind it, the questions the records leave open, answered source by source. Where the other side's own record
+      has not been found yet, the row says so. The dates at the left are each engagement's window in GMT, so a night action
+      can begin a day before the local date in its title. <span id="count"></span></p>
   </header>
   <div id="index"></div>
 </div>

@@ -33,7 +33,7 @@ async function cards() {
   for (const t of C.theatres) {
     const first = t.op ? t.op.from : d3.min(t.subjects, s => s.first), last = t.op && t.op.to ? t.op.to : t.op ? null : d3.max(t.subjects, s => s.last);
     document.getElementById(`span-${t.id}`).textContent = first ? (last ? `${mon(T0(first))} – ${mon(T0(last))}` : `from ${mon(T0(first))}`) : "";
-    document.getElementById(`holds-${t.id}`).textContent = `${n(t.engagements.length, "engagement")} read from both sides, ${n(t.subjects.length, "subject")}, ${n(t.campaigns.length, "operation")} entered.`;
+    document.getElementById(`holds-${t.id}`).textContent = [Chapter.held(t.engagements), n(t.subjects.length, "subject"), t.campaigns.length && `${n(t.campaigns.length, "operation")} entered`].filter(Boolean).join("; ") + ".";
   }
 }
 
@@ -120,7 +120,7 @@ async function mediterranean() {
   const W = 560, H = 300;
   const proj = d3.geoMercator().fitExtent([[0, 0], [W, H]], { type: "MultiPoint", coordinates: [[a[0], a[1]], [a[2], a[3]]] }).clipExtent([[0, 0], [W, H]]);
   const path = d3.geoPath(proj);
-  const svg = svgIn("#fig-mediterranean", W, H, "The Mediterranean: the operations' areas, hatched, and the engagements read from both sides");
+  const svg = svgIn("#fig-mediterranean", W, H, "The Mediterranean: the operations' areas, hatched, and the engagements");
   svg.append("defs").append("pattern").attr("id", "hatch-home").attr("patternUnits", "userSpaceOnUse").attr("width", 3.5).attr("height", 3.5).attr("patternTransform", "rotate(45)")
     .append("line").attr("x1", 0).attr("y1", 0).attr("x2", 0).attr("y2", 3.5).attr("stroke", "var(--ink-3)").attr("stroke-width", 1);
   svg.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([5, 5])()));
@@ -136,7 +136,7 @@ async function mediterranean() {
     g.append("circle").attr("class", "mark").attr("r", 4.5);
     if (!labelled.some(([lx, ly]) => Math.hypot(lx - x, ly - y) < 14)) { labelled.push([x, y]); g.append("text").attr("class", "lab").attr("x", 8).attr("y", 4).text(e.short || e.title); }
   }
-  d3.select("#fig-mediterranean").append("p").attr("class", "readout").text(`Hatched: the ${T.campaigns.length} operations' areas, drawn by hand (ours). A mark: an engagement read from both sides, at the middle of its box.`);
+  d3.select("#fig-mediterranean").append("p").attr("class", "readout").text(`Hatched: the ${T.campaigns.length} operations' areas, drawn by hand (ours). A mark: an engagement, at the middle of its box.`);
 }
 
 // ── Europe: Neuburg, three records on one five-minute clock ─────────────────────────────────────
@@ -184,7 +184,7 @@ async function wanted() {
   const cs = Object.values(inv.commands?.comsubpac?.records || {}).filter(r => r.status === "available").length;
   if (cs) list.push(`The Submarine Force, Pacific war diary: ${cs} months found and waiting to be transcribed`);
   for (const r of Object.values(inv.ships?.["DE-221"]?.records || {})) if (r.status === "found") list.push(`USS Solar: ${esc(r.note)}`);
-  list.push("The Japanese and German records of the attacks still read from one side only (the Strait of Gibraltar, 17 February 1945; JV 44 on 26 April 1945)");
+  list.push("The other side's own records of the attacks still read from one side only: the German (the Strait of Gibraltar, 17 February 1945; JV 44 on 26 April 1945; Remagen and the Ardennes) and the Japanese (BANG in the Yellow Sea, 10 February 1945)");
   document.getElementById("wanted").innerHTML = list.map(w => `<li>${w}</li>`).join("");
 }
 
