@@ -1,21 +1,25 @@
 # WWII research kit
 
-[![Site](https://img.shields.io/badge/site-erichutchins.github.io-2b6cb0)](https://erichutchins.github.io/wwii-research-kit/)
+[![Site: Charting WWII History](https://img.shields.io/badge/site-Charting%20WWII%20History-2b6cb0)](https://erichutchins.github.io/wwii-research-kit/)
 [![Pages build](https://github.com/erichutchins/wwii-research-kit/actions/workflows/pages.yml/badge.svg)](https://github.com/erichutchins/wwii-research-kit/actions/workflows/pages.yml)
 [![Made with Claude](https://img.shields.io/badge/made%20with-Claude-D97757)](https://claude.com/claude-code)
 [![Code: MIT](https://img.shields.io/badge/code-MIT-blue)](LICENSE)
 [![Records: CC BY 4.0](https://img.shields.io/badge/records-CC%20BY%204.0-lightgrey)](https://github.com/erichutchins/wwii-unit-records/blob/main/LICENSE)
 
 **Where was a ship or a unit of the Second World War, day by day? What did the other side write down about the same
-hours?** This kit answers both from the records each kept at the time, and shows every answer with the scanned page
-it was read from.
+hours?** This kit finds the records each kept at the time, reads them, and charts them: on maps and timelines, every
+mark with the scanned page it was read from. It charts the history; it does not set out to interpret it.
+
+Three names, three things: the **WWII research kit** (this repository: the tools and guides), the
+[**WWII unit records**](https://github.com/erichutchins/wwii-unit-records) (the transcriptions, as data), and
+[***Charting WWII History***](https://erichutchins.github.io/wwii-research-kit/), the site that puts the two together.
 
 [![Convoy TAMA-17, 29–30 April 1944: three US submarines' reported positions and attacks, the Japanese record of the two ships sunk, and the radio-intelligence estimates, on one map and one clock](.github/readme/tama-17.png)](https://erichutchins.github.io/wwii-research-kit/engagement.html?e=tama-17-1944-04-29)
 
 *Convoy TAMA-17 west of Luzon, 29–30 April 1944: three submarines' war patrol reports, the Japanese record of the
 two ships sunk, and US radio intelligence's estimates, on one map and one GMT clock. Each mark opens its page.*
 
-**[Open the site](https://erichutchins.github.io/wwii-research-kit/)** ·
+**[Open *Charting WWII History*](https://erichutchins.github.io/wwii-research-kit/)** ·
 [About, method and limits](https://erichutchins.github.io/wwii-research-kit/about.html) ·
 [Researching a relative](https://erichutchins.github.io/wwii-research-kit/relatives.html) ·
 [The data](https://github.com/erichutchins/wwii-unit-records) ·
@@ -37,8 +41,8 @@ two ships sunk, and US radio intelligence's estimates, on one map and one GMT cl
 
 Claude, Anthropic's AI model, did the reading. Working in [Claude Code](https://claude.com/claude-code) under the
 rules below, it found the records, read every scanned page, transcribed the values, translated the Japanese, German,
-French and Italian, worked out the conversions and placements, and wrote the tools and the pages. One researcher,
-Eric Hutchins, chose what to follow, set the rules, reviewed the results and decided what to publish.
+French and Italian, worked out the conversions and placements, and wrote the tools and the pages. One researcher
+chose what to follow, set the rules, reviewed the results and decided what to publish.
 
 So the kit is built to be checked, not believed. A typed value stands on its citation: one click shows the scan. A
 translation, a computed position or a ranking of explanations is the kit's own work and is labelled derived,
@@ -129,5 +133,6 @@ Code: MIT. The records: CC BY 4.0 (`records/LICENSE`). The original records keep
 source in `records/SOURCES.yml`. Cite the original record for any value you use. To cite the kit or the
 transcription:
 
-> Eric Hutchins, with Claude (Anthropic), *WWII unit records and research kit*,
-> https://erichutchins.github.io/wwii-research-kit/, version of `<the date at the foot of the site's pages>`.
+> Eric Hutchins, with Claude (Anthropic), *Charting WWII History* (site, built with the WWII research kit from the
+> WWII unit records), https://erichutchins.github.io/wwii-research-kit/, version of `<the date at the foot of the
+> site's pages>`.

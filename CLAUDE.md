@@ -187,6 +187,11 @@ rules below are the ones a change most often breaks.
 
 ## Words
 
+- Three names, three things: the *WWII research kit* (this repository: tools and guides), the *WWII unit records*
+  (`records/`: the data), and *Charting WWII History* (the site in `site/`, which puts them together; its masthead, its
+  navigation's home link and its page titles carry that name). The site charts: it finds what the records say and puts
+  it on maps and timelines. It does not set out to analyse or interpret, and no page should read as though it did.
+- The researcher is named in the suggested citation and the licence, nowhere else: the pages are not about the researcher.
 - British spelling in the kit's own prose (theatre, harbour, catalogue), American in proper names and in field names
   and paths as they stand (`theater`, the National Archives *catalog*, European Theater of Operations).
 - Times: GCT where a record is quoted, GMT in the kit's own prose, `utc` only as a computed field's name. A zone is

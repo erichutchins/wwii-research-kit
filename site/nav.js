@@ -13,7 +13,7 @@
 (() => {
   const SITE = new URL(".", document.currentScript.src);
   const BAR =
-    '<a class="home" href="index.html">WWII research kit</a>' +
+    '<a class="home" href="index.html">Charting WWII History</a>' +
     '<span class="grp"><a href="engagements.html">Engagements</a></span>' +
     '<span class="grp"><a href="theatre.html?t=pacific">Pacific</a><a href="theatre.html?t=europe">Europe</a>' +
       '<a href="theatre.html?t=mediterranean">Mediterranean</a><a href="theatre.html?t=atlantic">Atlantic</a></span>' +
