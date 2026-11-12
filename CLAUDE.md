@@ -7,8 +7,8 @@ The guides are indexed in `guides/README.md`. Read `guides/METHODS.md` before tr
 `guides/MORNING-REPORTS.md` before reading Army morning reports, `guides/MUSTER-ROLLS.md` before following a Navy
 shore unit, and `guides/JAPANESE-RECORDS.md` before looking for the Japanese record of an attack.
 For film of a place and date, follow the skill `find-film` (rules in `records/film/README.md`). For a day's situation map
-(the front and the divisions, `records/fronts/`), follow the skill `trace-situation-map`; for many days of the Library's
-collection at once, `guides/SITUATION-MAPS.md` (the catalogue is `tools/loc_sitmaps.py`, one day a reader agent).
+(the front and the divisions, `records/fronts/`), follow the skill `trace-situation-map` (its last section brings a run of days together, one day a reader agent);
+`guides/SITUATION-MAPS.md` is the reference for the collection (the catalogue is `tools/loc_sitmaps.py`).
 
 ## The rule: cite every source
 

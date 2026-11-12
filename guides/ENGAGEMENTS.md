@@ -1,21 +1,23 @@
 # Engagements: two sides, each in its own records, on one map and one clock
 
 An engagement is two sides meeting at a place and a time: a pack against a convoy, a destroyer against a kamikaze
-strike, an antiaircraft battery against a night raid. Each side kept its own records, in its own form and on its own
+strike, an anti-aircraft battery against a night raid. Each side kept its own records, in its own form and on its own
 clock. The kit keeps each record as it is and lets them meet through ids, times and places, never by copying one into
 the other. Every engagement is one folder, `records/engagements/<id>/`, and one page, `site/engagement.html?e=<id>`;
 the index of every one, by theatre, is `site/engagements.html`, the nav bar's first link.
 
-The convoys the boats met have their own records (`records/convoys/<id>/convoy.md`) and pages: `site/subject.html?s=<id>` (the ledger of every convoy is `site/subjects.html`)
-(the ledger, and each convoy's voyage and ships) and `site/lanes.html` (the lanes, month by month, and a voyage as a
-timetable). Haynsworth and Algiers are also told as stories: their `engagement.md` carries the account in steps
-(`[[step:]]` links that set the clock and the map), and their figures are panels after the story (`site/panels/`).
+Each convoy the boats met has its own record (`records/convoys/<id>/convoy.md`) and subject page
+(`site/subject.html?s=<id>`: its voyage and its ships day by day); `site/subjects.html` lists every convoy, and
+`site/lanes.html` shows the lanes month by month, with a voyage as a timetable. Haynsworth and Algiers are also told
+as stories: their `engagement.md` carries the account in steps (`[[step:]]` links that set the clock and the map),
+and their figures are panels after the story (`site/panels/`).
 
-This guide holds the reasons and the method. The schema, every file and every field, is `records/README.md` ("An
-engagement", "A convoy", "A patrol's Japanese record"), and the validator is `tools/build_engagement.py`: it checks
+This guide holds the reasons and the method. The schema, every file and every field, is in the records' own
+documentation (`records/README.md` and the field reference it points to: "An engagement", "A convoy", "A patrol's
+Japanese record"), and the validator is `tools/build_engagement.py`: it checks
 that every participant, convoy, silhouette and position named exists, that every time parses with a zone, that every
 entry and claim is cited in a form `SOURCES.yml` knows and every `[[link]]` resolves, and only then writes the JSON the
-pages read. The fields aren't repeated here: when one is in question, read the README.
+pages read. The fields aren't repeated here: when one is in question, read them there.
 
 ## What a page answers, at three scales
 
@@ -45,12 +47,10 @@ The kit's rules (`CLAUDE.md`, `guides/METHODS.md`) apply throughout. The ones th
 
 ### Formats
 
-Nothing hand-edited with words goes in CSV.
-
 | Format | For | The test |
 |---|---|---|
-| CSV | numbers, dates, codes and short references, one value per cell (`positions.csv`, `depths.csv`, `layers.csv`) | no cell ever needs a quotation mark or a comma |
-| YAML | structured records that carry words: `events.yml`, `claims.yml`, `japanese.yml`, `frupac.yml`, a convoy's `ships:` | several fields per item, and one of them is words |
+| CSV | tables: numbers, dates, codes and short references, one value per cell (`positions.csv`, `depths.csv`, `layers.csv`); RFC 4180, so a cell that carries a note or a quotation is quoted | every row has the same few short fields |
+| YAML | structured records that carry words: `events.yml`, `claims.yml`, `japanese.yml`, `frupac.yml`, a convoy's `ships:` | several fields per item, and one of them is prose |
 | Markdown with YAML front matter | one thing with prose: `engagement.md`, `convoy.md` | someone will read it as text, or edit it on a phone |
 | JSON | generated only (`engagement.json`, `index.json`, `convoys.json`); CI checks it is up to date | if you want to edit it, edit its source |
 
@@ -87,18 +87,40 @@ new format is converted for good: no reader for the old one is kept.
 | What | How |
 |---|---|
 | A position as typed | `DD-MM.mN`; a `lat_fix`/`lon_fix` overrides; `?` in a digit means unreadable, so none |
-| Zone to GMT | Navy letters: A–M (no J) east, +1…+12; N–Y west, −1…−12; Z = 0; the war diaries' half-hour zones. Japanese records are I (+9, Tokyo). Pages show GMT and the record's own time side by side |
+| Zone to GMT | the Navy's zone letters: A–M (no J) for the zones east of Greenwich, one to twelve hours ahead of GMT; N–Y west, one to twelve hours behind; Z = GMT; the war diaries' half-hour zones. The Navy's *zone description* is the number added to local time to get GMT, so it carries the opposite sign: zone I is "−9", nine hours ahead. Japanese records keep Tokyo time, which is zone I. A record's "GCT" is quoted as typed; the pages' own clock is labelled GMT, and each entry shows GMT and the record's time side by side |
 | A bearing and distance | from a known point (`from`, `brg`, `nm` in `positions.csv`), resolved by the build |
 | A track at a moment | straight between the participant's own fixes, never beyond the first or last |
 | A convoy's observed path | where it was seen: the boats' ship contacts (the target's position) and the Japanese record's positions, one point per minute. A sighting the report itself contradicts (its `fix_note` says so) is left out, and listed under the chart |
 | Closing in | each boat's distance from that path, only while both are known; after the last sighting, an attack means "within torpedo range", not a number |
 | Speed along a lane | between a voyage's known points; a slow leg may be an unrecorded stop (a lead) |
 | The sky | sun and moon, bearing, altitude, phase and lit fraction, from SunCalc |
-| The light (`localNoon`, `light`) | daylight from the sun's altitude (none below −6°, full above +6°), the moon adding by its lit fraction and height; how far a ship shows in it is illustrative, not from a source. The observer view's Light choices: *As it was*; *Broad daylight*, the same local date at noon; *Night vision*, the scene as it was with the darkness lifted, drawn in a modern image intensifier's green (rendering only, illustrative, not from a source: the sun, the moon and the sky readout stay as computed) |
+| The light (`localNoon`, `light`) | daylight from the sun's altitude (none below −6°, full above +6°), the moon adding by its lit fraction and height; how far a ship shows in it is illustrative, not from a source (see "The observer view's light", below) |
 | Fire control | torpedo course = own course + gyro; track = torpedo course + 180 − target course; lead L: tan L = k·sin TA / (1 + k·cos TA), k = target speed / torpedo speed; angle on the bow = track − L |
 | Apparent size | width = 2·atan(projected length / 2R), projected length = L·\|sin AOB\| + beam·\|cos AOB\|; height = atan(H/R) |
-| An attack on one clock (`attackSheet`, `attackAt`) | seconds from the first torpedo, from `attacks.csv` as typed: each torpedo fired at its `interval` or `since_first` (a salvo the sheet gives no time for, 10 s after the last: assumed); the point of aim from the torpedoes' courses less each typed `offset` (the middle of the spread where none is typed); the target placed at the sheet's range on the bearing that point of aim and the fire-control angles give; boat and target steady on the sheet's courses and speeds; each torpedo runs to where it first reaches a hull of the target's assumed length, or past it. Torpedo speed: the sheet's where typed; the Mark 18's 27.7 knots from ATULE's sheet; the Mark 14's and 23's secondary. The torpedo's straight run and turn out of the tube are left out, so runs come out a few seconds short (SEAHORSE's Attack 3: 33 s against the narrative's 36) |
-| The Torpedo Data Computer's dials (`tdcAt`) | at second *s*, what a TDC Mark 3 would show on the sheet's solution: own course and speed; the target aimed at (the next torpedo's, else the last's), its course and speed; true and relative bearing, range and angle on the bow (`attackAt`); distance to track = R·\|sin AOB\|; for the point of aim, lead L: sin L = k·sin AOB (the law of sines), torpedo course = bearing + L, gyro = torpedo course − own heading, the track, and the run = R·\|sin AOB\| / \|sin track\|; each side's gyro order adds its next tube's offset. Parallax, reach and turn left out, so the forward and after solvers order the same angles; tubes 1–6 forward, 7–10 aft. Drawn by `site/tdc.js` after OP 1056 (faces Figs. 98 and 102; dial readings pp. 72–73; scales pp. 267–270; distance to track Fig. 38) |
+| An attack on one clock (`attackSheet`, `attackAt`) | seconds from the first torpedo, from `attacks.csv` as typed, with boat and target steady on the sheet's courses and speeds (see "An attack from its sheet", below) |
+| The Torpedo Data Computer's dials (`tdcAt`) | at second *s*, what a TDC Mark 3 would show on the sheet's solution (see "The Torpedo Data Computer", below) |
+
+**An attack from its sheet.** Each torpedo is fired at its `interval` or `since_first`; a salvo the sheet gives no
+time for is put 10 s after the last (assumed). The point of aim is the torpedoes' courses less each typed `offset`,
+or the middle of the spread where none is typed. The target is placed at the sheet's range, on the bearing that point
+of aim and the fire-control angles give. Each torpedo runs to where it first reaches a hull of the target's assumed
+length, or past it. Torpedo speed is the sheet's where typed; the Mark 18's 27.7 knots is from ATULE's sheet; the
+Mark 14's and 23's are from secondary sources. The torpedo's straight run and turn out of the tube are left out, so
+runs come out a few seconds short (SEAHORSE's Attack 3: 33 s against the narrative's 36).
+
+**The Torpedo Data Computer.** The dials show own course and speed; the target aimed at (the next torpedo's, else the
+last's), its course and speed; true and relative bearing, range and angle on the bow (`attackAt`); distance to track
+= R·|sin AOB|. For the point of aim, the lead L is sin L = k·sin AOB (the law of sines); torpedo course = bearing +
+L; gyro = torpedo course − own heading; the run = R·|sin AOB| / |sin track|; each side's gyro order adds its next
+tube's offset. Tubes 1–6 are forward, 7–10 aft. Parallax, reach and the torpedo's turn are left out, so the forward
+and after solvers order the same angles, as the real machine's did not. That the boat's computer was a Mark 3 is
+assumed. Drawn by `site/tdc.js` after OP 1056 (faces, Figs. 98 and 102; dial readings, pp. 72–73; scales, pp.
+267–270; distance to track, Fig. 38).
+
+**The observer view's light.** Three choices: *As it was*; *Broad daylight*, the same local date at noon; *Night
+vision*, the scene as it was with the darkness lifted. The last is drawn in the green of a modern image intensifier,
+which no boat of 1944 carried: it is a rendering to make a night attack legible, labelled illustrative on the page,
+and the sun, the moon and the sky readout stay as computed.
 
 ## How the pages draw it
 
@@ -125,13 +147,13 @@ new format is converted for good: no reader for the old one is kept.
 | A ship sighted | open ring in the boat's colour, at the target's position |
 | A contact report | a ring on the sender's track, and a dotted line to each boat it went to |
 | A time placed by the account's order | the time in italics, and the reason under the entry |
-| The front, as a dated situation map drew it (`records/fronts/`) | a heavy line in the second ink, ticked as the 12th Army Group's maps tick it, on their own side: the staff's record of the day, context for the frame |
+| The front, as a dated situation map drew it (`records/fronts/`) | a heavy line in the second ink, ticked as Twelfth Army Group's maps tick it, on their own side: the staff's record of the day, context for the frame |
 | A situation map's list (the enemy divisions it lists as facing the bridgehead) | under the map, its symbols in the map's order, said to be a list: listed, not placed |
-| Several days' situation maps | the latest at the clock, or, in a dated frame (no clock to play), the day chosen on the bar under the map (the clocked frames' bar, a map at a time: a lane per followed unit's stations and per side's entries, a tick for each map's day, the play stepping through them): a step, never a glide between two maps, the old faded under the new |
+| Several days' situation maps | the latest at the clock; in a dated frame, the day chosen on the bar under the map (a tick for each map's day, play stepping through them). A step, never a glide between two maps, the old faded under the new |
 | A unit on that map | the Army's symbol (FM 21-30): the map's own side an open box, solid; the enemy hatched in the lighter ink (the map's intelligence picture); in its area, not at a position |
-| A followed unit's stations around the window | dots in its colour, joined dashed (straight between stations), lighter in the week before, an arrowhead at the last, no dates on the line (each dot's on hover; the day shown is the map's, or the one chosen on the bar); with a situation map, drawn to the day shown (the clock's, or the bar's), so the picture is one moment |
+| A followed unit's stations around the window | dots in its colour, joined dashed (straight between stations), lighter in the week before, an arrowhead at the last; each dot's date on hover. With a situation map, drawn to the day shown, so the picture is one moment |
 | A symbol that is a followed unit, or its division or command that day (`army/relations.csv`) | ringed in the subject's colour: heavy for the unit itself, light for its division or command |
-| Whose side is whose | each side's 1944–45 vehicle marking (the US star in its circle, the Balkenkreuz) with its name, on its side of the front, in one place for every day's map (it marks a side, not anything at that spot, so it never moves as the days change); not flags (Germany's of 1945 carried the swastika) |
+| Whose side is whose | each side's 1944–45 vehicle marking (the US star in its circle, the Balkenkreuz) with its name, on its side of the front, in one place for every day's map: it marks a side, not anything at that spot. Not flags (Germany's of 1945 carried the swastika) |
 
 **Red is reserved for hits.** It is never a side's or a boat's colour.
 
@@ -160,54 +182,5 @@ hue. Colour follows the boat across every view of a page; text never wears it ex
   ship's own or her class's plate where there is one (the tooltip says which, and whether a type stands for her),
   otherwise the kind of ship.
 
-## Still to build
-
-- **The observer view, further.** Built (`site/observer.js`, the engagement page's "At the periscope"): every attack
-  whose data sheet is transcribed, from the plot above, through the periscope or from the bridge, with the sky and the
-  solution on one clock; the build carries the sheets in `engagement.json`'s `sheets`. Beside the periscope, in tabs, the
-  plot or the Torpedo Data Computer's Position Keeper and Angle Solver (`site/tdc.js`, display only: the dials turn with
-  the clock to `tdcAt`'s values; the boat's computer assumed a Mark 3). Still to do:
-  - the TDC's reach and turning radius (hand-set inputs on the real machine, OP 1056 p. 269) and the periscope-to-tube
-    parallax, so the forward and after solvers differ as they did; the Mark 4's face (OP 1442, not yet found);
-  - the narrative's timed bearings and ranges (`bearings.csv`), so the approach before firing is the record's and not
-    the target held steady on the sheet's course;
-  - TINOSA's own and target courses from her narrative (her report has only the summary table; reading it is a
-    research lead, L73 in the family repository);
-  - the Mark 14's and 23's speeds, and the periscope's fields of view (the *Submarine Periscope Manual*, NAVPERS
-    16165), from primary sources;
-  - the torpedo's straight run and turn out of the tube (USF 25(A)), and each target's own silhouette and size where the
-    Japanese record names the ship;
-  - for Haynsworth, the incoming plane's bearing, elevation and range from her action report and AA report, in the same
-    view from her director.
-- **The lanes from the charts.** Every waypoint in `reference/lanes/lanes.yml` is assumed. The escort divisions'
-  charts draw and name the lanes (馬来直航路, the Malay direct route; the Hainan east route); tracing them would replace
-  the assumptions.
-
-## Open work, by engagement
-
-- **TAMA-17 and TE-04** (`tama-17-1944-04-29`, `te-04-1944-05-03`):
-  1. *Done.* The FRUPAC notes (`ss-385-bang/patrol-1/frupac.yml`, F01–F10) are read into the engagements like the
-     Japanese records: every note inside the window is an entry (`actor: FRUPAC`, `of: us`, its source `intelligence ·
-     US` through the map's citation, `about` the ship it names), and a note tied to an attack joins that attack's pairing
-     as `intelligence` for the Sources view (BANG's Attack 1 beside J03 and F01–F03: 19 min and 4 nm from F01's dot, zone
-     I assumed). Not as a third side with a lane of its own, as first planned: FRUPAC is a source about the convoy, not a
-     participant, so it gets a column in the chronology and the Sources view, chipped *intelligence · US*, and on the map
-     hatched rings in the lighter ink at the positions read off the maps (the inferred encoding, never solid), with their
-     own legend line. The front page's replay lists the records alone. Still open: the museum's full-resolution scans
-     (item 4) would turn the estimated positions into read ones.
-  2. Who sank Kinrei Maru: a Japanese primary record (her movement log, or TE-04's escorts' reports: CD-1, Kazan
-     Maru, Maeshima). The 3–4 May sinking times and attributions are still combinedfleet.com's.
-  3. PARCHE's and TINOSA's depth logs (TINOSA: 55 depth charges on 3–4 May).
-  4. Full-resolution FRUPAC scans from the museum (28 Apr – 5 May 1944, `metapth1733007`–`metapth1733014`, and the
-     April and May summaries), with permission to georeference them.
-- **HI-67, No. 91** (`hi-67-1944-06-29`, `no-91-1944-07-04`): BANG's Patrol 2 narrative isn't read past the tables;
-  HI-67's merchants' dates in the convoy (the escort charts' columns); Sarawak Maru's identity before her silhouette.
-- **No. 3905, TAKA-909** (`no-3905-1944-09-09`, `taka-909-1944-09-19`): neither Japanese record gives a time; a primary
-  record for No. 3905 (Yokosuka) would add one, and its place disagrees with BANG's by about 188 nm.
-- **TAKA-206** (`taka-206-1944-11-22`): BANG's Patrol 4 narrative (folder 74802868, pp. 9–11); who sank Hozan Maru
-  (W-15 logged her torpedoed seven minutes after BANG's Attack 1; the postwar credit is REDFISH's).
-- **The lone tanker, the convoy east of Formosa, the Yellow Sea freighter**: no Japanese record found yet.
-- **The Corzine rescue** (`bang-corzine-1945-04-21`): Ishigaki's own record of the 21 April raid (only Miyako-jima's
-  action summary has been found, context only); BANG's Section U log before 18 April.
-- **Haynsworth, Algiers, Filignano, Venafro, Neuburg**: the open questions are in each `claims.yml` and the research
-  leads that built them.
+Open questions about an engagement are in its `claims.yml`, on its page behind *Questions and sources*; what a
+computation leaves out is said beside it above and under the view it affects.

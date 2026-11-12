@@ -1,17 +1,19 @@
-# The situation maps: the whole collection, and how to work through it
+# The situation maps: the collection, and how a day is traced
 
-HQ Twelfth Army Group drew a situation map every day from the landings to the end of the war in Europe, and the Library
-of Congress holds the run: *World War II Military Situation Maps from 1944 to 1945*, 415 daily sheets from 6 June 1944
-to 26 July 1945 (SOURCES.yml `loc-12ag`; the only day missing is 12 November 1944). Each sheet is the army group's own
-picture of a day: the front line as the staff drew it, its own divisions and corps, and the enemy's as its intelligence
-placed them. For the engagement pages they are context under the records (`records/fronts/README.md`): a symbol stands
-in its unit's area, not at a position, and the line is a drawing at the map's hour, not a survey.
+The Library of Congress holds *World War II Military Situation Maps from 1944 to 1945*: 415 daily sheets from 6 June
+1944 to 26 July 1945, drawn at the headquarters that became Twelfth Army Group (SOURCES.yml `loc-12ag`; the only day
+missing is 12 November 1944). The sheets' own titles name the headquarters: "HQ FUSAG" (First U.S. Army Group) to 15
+July 1944, "Twelfth Army Group" from 16 July. Each sheet is the staff's picture of a day: the front line as it was
+drawn there, its own divisions and corps, and the enemy's as its intelligence placed them. For the engagement pages
+they are context under the records (`records/fronts/README.md`): a symbol stands in its unit's area, not at a
+position, and the line is a drawing at the map's hour, not a survey.
 
-Eleven days are traced (7–17 March 1945, for Remagen), six by a person and the tool together and five by agents from
-the skill `trace-situation-map`. This guide is what the collection is, what processing it means, which parts a tool does
-alone and which need a reader, and how to run readers in parallel at a cost that makes the whole run reasonable. The
-numbers for the collection are from its catalogue (`records/fronts/sitmaps.csv`, `tools/loc_sitmaps.py`) and from
-trials on 6 November 2026; the costs are estimates from the March days, and say so.
+The front is traced on 365 days, every sheet from 6 June 1944 to 7 June 1945 but the double sheet of 10 September
+1944; the unit symbols are read on 98 of them. The 49 sheets from 8 June to 26 July 1945 are not traced: they are
+post-war sheets that draw the line of contact bare, with no ticked front (`records/fronts/README.md`). This guide says what the collection is, what tracing a day means, how a sheet is
+fitted to the ground and how a run of days is checked. The steps for one day are the skill `trace-situation-map`;
+running many days at once with reader agents is in the same skill ("Bringing a run of days together"). The
+collection's numbers are from its catalogue (`records/fronts/sitmaps.csv`, `tools/loc_sitmaps.py`).
 
 ## 1. What the collection is
 
@@ -26,233 +28,101 @@ trials on 6 November 2026; the costs are estimates from the March days, and say 
 | Titles | the wording changes: "SITUATION - 2400 HRS 6 JUNE 1944, HQ FUSAG"; "SITUATION 1200 HRS 22 DECEMBER 1944, TWELFTH ARMY GROUP" (no report number); "TO ACCOMPANY G-3 REPORT NO. 275, SITUATION AS OF 071200 MAR. 1945" |
 | Dates | the catalogue's date is the title's on every sheet checked (eleven in March, one in December, one in June) |
 
-The one fact that makes a long run possible: **the daily sheets are printings of one base map for months at a time**,
-so one day's towns, read by eye once, find themselves on every other day of that base by matching. 7 March 1945's
-twenty towns match 22 December 1944's sheet 20 of 20, median half a pixel. A new base costs one reading of its towns;
-every other day of it costs nothing.
+The fact that makes a long run possible: **the daily sheets are printings of one base map for months at a time**, so
+one day's control points, read by eye once, are found on every other day of that base by matching. 7 March 1945's
+twenty towns match 22 December 1944's sheet 20 of 20, at a median of half a pixel.
 
-## 2. What processing a day means
+## 2. What tracing a day means
 
-Five stages, in order. Three are a tool's alone; two need someone to look.
+Six stages, in order. Three are a tool's alone; three need someone to look.
 
-| Stage | Who | What | Cost |
+| Stage | Who | What |
+|---|---|---|
+| **Catalogue** | tool (`loc_sitmaps.py list`, `sizes`) | the listing and each scan's size into `sitmaps.csv` |
+| **Fetch** | tool (`loc_sitmaps.py fetch`) | the scans into `sources/maps/loc/`, a second apart, resumable: 2.5 GB, about half an hour, once |
+| **Title** | a reader (`trace_front.py --title`, from IIIF, before fetching) | the day's hour and report number read on the sheet; the day's YAML written |
+| **Fit** | tool (`--gcps-from`) on a known base; a reader once per new base (§3) | the sheet fitted to the ground through its base's control points |
+| **Front** | tool (`--overlay --sides`), then a reader | the heavy ink's stretches turned by their ticks; the reader checks the overlay, decides the few stretches the ticks don't settle (`flip`, `checked`, `exclude`, each with its reason) and reruns |
+| **Symbols** | a reader (`--boxes`, `reading.txt`, `--units`, `--check-units`) | every unit symbol read as drawn: 40 to 70 a day on the March 1945 sheets, by far the longest stage |
+
+The front and the symbols are separable: a day can have its line traced and no symbols read, and the page draws what
+it has. Every day's front is traced; the symbols are read where an engagement or a followed unit needs them. A front
+line on every day is the context the engagement pages need; the enemy's divisions on a quiet Tuesday in Lorraine are
+a catalogue nobody has asked for.
+
+## 3. Fitting a sheet to the ground
+
+Each of the fifteen base printings (`records/fronts/bases.yml`) has one file of control points,
+`records/fronts/towns-<base>.csv`, read once. Every base has one but the double sheet of 10 September 1944: two
+plates pasted on one scan, each to be read as its own base from its own margins when that day is wanted.
+
+- **The fit is the sheet's own projection**, a conformal conic with an affine to the scan (`trace_front.Conic`,
+  tested in `test_fronts.py`), not a polynomial, which holds over a few degrees and not over a sheet. A day takes the
+  conic once it has 30 points or any graticule crossing (`make_fit`). The control points must spread over the whole
+  sheet: the tool traces only inside their spread.
+- **Graticule crossings are better control than towns.** The sheets print a meridian and a parallel every degree (every
+  half degree at 1:500,000), and a crossing is an exact point: no geocoder's centroid (a city's is a kilometre from
+  its ring), no name to match. `sheet_towns.py crops --graticule` crops the sheet round the conic's prediction for
+  each crossing, and a reader reads each centre in one or two passes.
+- **A new sheet's first fit comes from its margins**: where each labelled meridian's tick meets the top or bottom neat
+  line and each labelled parallel's the left or right (`1W 2460,330`, `49.5N 60,2210`). `conic_from_lines` solves
+  these as a similarity: a free affine's shear is not pinned by two edges, and put a sheet's far corners degrees out.
+- **A printing scanned differently gets its own file.** The May 1945 printing of the 1:1,400,000 sheet is 1.7 per cent
+  larger on the scan than April's, and April's points register on it at 1 of 13.
+
+How well each base fits (rms over its control points; `bases.yml` carries the caveats):
+
+| Base | Sheet | Control | Fit |
 |---|---|---|---|
-| **Catalogue** | tool (`loc_sitmaps.py list`, `sizes`) | the listing and each scan's size into `sitmaps.csv` | done; minutes to redo |
-| **Fetch** | tool (`loc_sitmaps.py fetch`) | the scans into `sources/maps/loc/`, a second apart, resumable | 2.5 GB, about half an hour, once |
-| **Title** | a reader (`trace_front.py --title`, from IIIF, before fetching) | the day's hour and report read on the sheet; the day's YAML written | one image |
-| **Towns** | tool (`--gcps-from`) on a known base; a reader once per new base | the fit, 20 towns, about half a km | nothing, or an hour once per base |
-| **Front** | tool (`--overlay --sides`), then a reader | the heavy ink's stretches turned by their ticks; the reader checks the overlay, decides the few stretches the ticks don't settle (`flip`, `checked`, `exclude`), reruns | 2–6 images, a few decisions |
-| **Symbols** | a reader (`--boxes`, `reading.txt`, `--units`, `--check-units`) | every unit symbol read as drawn | 40–70 symbols a day on the March sheets: the dear part |
+| B01 | Normandy, 1:500,000 | 34 crossings | 0.14 km |
+| B02 | Brittany, 1:500,000 | 31 crossings | 0.22 km |
+| B03, B04 | the Loire, mid-August 1944 | 10 and 9 crossings | 0.6 and 0.5 km: the sheets' kilometre grid runs 50 to 100 px from the graticule and was taken for it in places |
+| B05–B08 | 22 August – 5 September 1944 | 16, 11, 14 and 13 margin ticks (no graticule is drawn inside the map) | 0.14 to 0.48 km |
+| B09, B11, B12 | north-west Europe, 1:1,000,000: one plate placed three ways on the paper (211 days) | 81 towns (`towns-B11.csv`) | 0.72 km; 0.75 km leave-one-out; 1.8 km at worst (Turnhout) |
+| B13 | north Germany, 1:1,000,000 | 26 crossings | 0.50 km; 1.1 km at worst |
+| B14 | Germany, 1:1,400,000 | 60 crossings | 0.82 km; 1.8 km at worst |
+| B15 | its May 1945 printing | 58 crossings | 0.67 km |
 
-The front and the symbols are separable: a day can have its line traced and no symbols read, and the page draws what it
-has. That is the lever on cost: **trace every day's front; read the symbols where they matter.**
+The plate's towns were geocoded with Nominatim and each ring's centre read on a 20 px grid; the plate's graticule crossings
+agree with that fit within 10 px. The March 1945 days keep their own twenty towns, so their committed GeoJSON does
+not move. The days were grouped into bases by `sitmap_bases.py` (phase correlation of each day's line work at 12.5
+per cent, checked on contact sheets); scan sizes alone don't tell one base from another, since the trims vary from
+day to day.
 
-What the trial on 22 December 1944 taught about the fit: the twenty towns of 7 March box the Remagen country
-(Grevenbroich to the Moselle), and the tool traces only inside the towns' spread. On 22 December the front lay west of
-that box, so only four fragments were found and the side test put every town on the enemy's side, correctly and
-uselessly. For a whole base sheet the towns must spread over the whole sheet, forty or so, and the fit should become
-the sheet's own projection (a conformal conic, as the sheet names it) rather than a polynomial, which is good over a
-few degrees and not over a sheet. That is the first piece of tool work before a long run (§5).
+## 4. What a whole sheet leaves out, and what goes wrong
 
-## 3. The readers
+Three things are boxed out of a trace by hand, each day, with a reason: the title block's lettering, the legend, and
+boundaries drawn heavy with no ticks. The title and the legend are lettered by hand on each sheet and wander a few
+hundred pixels, so neither can be boxed once for a base.
 
-One day is one job. The job is the agent `situation-map-reader` (`.claude/agents/`), which follows the skill, writes
-only its own day's four files and its work folder, and reports back in a fixed shape: the title as read; the towns'
-agreement; every stretch it turned, confirmed or left out, with its reason; the symbols read and the ones it is unsure
-of; what the reviewer should look at first. It never edits the tool, an engagement or a page, and never commits.
+The errors found on review, in the 46 days from 16 December 1944 to 31 January 1945 (ten days corrected):
 
-The day's YAML is what makes parallel work safe. In March the five agents each needed boxes, flips and checks, and the
-tool held them in one dictionary, so each agent reported its points and one person entered them; now each day's
-decisions live in `records/fronts/<map>.yml`, with their reasons, and the tool reads them. Readers touch nothing in
-common.
+- a stretch turned the wrong way: the Colmar pocket's west side, the Saar line toward Bitche, the Rhine bank south of
+  Strasbourg, the Walcheren arcs (five days);
+- the Westwall band's outline taken for front (one day);
+- boundaries traced as front far behind the line, which no town's side showed because the stray ink lay deep in the
+  rear (four days);
+- an `exclude` box drawn too wide, hiding a stretch of front beside the title.
 
-A reader's images are the cost. From the March days, a day's symbols took a reader about 40–60 tool calls and some ten
-to fifteen image reads (the title, the overlay in two or three parts, two sheets of numbered boxes, the overview, a few
-magnified looks, the check sheet); the front alone about 15 calls and four or five images. The tool's images are made
-to be read cheaply: numbered contact sheets rather than the scan, magnified crops of the doubtful places only, and the
-title and any look fetched as a small IIIF crop when the scan isn't needed.
+## 5. Checking a run of days
 
-## 4. The orchestration
+Nothing a reader does is checked by another reader. The checks are the tool's, and the reviewer's eyes on the overlay.
 
-A **conductor** session plans, spawns readers, reviews and commits. Readers run five at a time (the Library's servers
-are shared, and five was the number that worked in March); a run is one base sheet or one month.
-
-```
-conductor                                   readers (situation-map-reader, one day each, five at a time)
-─────────                                   ──────────────────────────────────────────────────────────
-1 status: loc_sitmaps.py status            
-2 fetch the run's scans first (one process,
-  a second apart), so readers never queue
-  on the tile server
-3 confirm the base: sitmaps.csv's `base` and
-  bases.yml's `towns` (sitmap_bases.py check
-  on a base without them); if new, read its
-  towns by eye (one day), commit
-4 for each day in the run  ──────────────▶  title → YAML → towns → front, overlay, sides → [symbols] → report
-5 review each report: open the overlay of
-  every flip and check, the units sheet
-  where symbols were read; send back what's
-  wrong (the reader keeps its context);
-  check_fronts.py over the run
-6 lint, check_builds, the engagement's page
-  on three days of the run, light and dark
-7 commit the run in records/, then the kit
-```
-
-Rules of the road, from March:
-
-- **Fetch before you spawn.** One process fetches the run's scans a second apart; five readers fetching at once is five
-  times the load on a shared server and a 429 for everyone. Readers read titles through IIIF (one small crop) and find
-  the scan already cached.
-- **A reader's doubt is a `flip`/`checked` line with a reason, never a silent choice.** The reviewer reads the reasons,
-  not the whole overlay: the overlay is opened only where a reason is thin or a sides test complains.
-- **A new base sheet stops the run.** The reader says so in its report (the title block or the extent differs, the
-  towns' match fails) and the conductor reads that base's towns before any more days are spawned on it.
-- **Symbols are a scope, not a default.** The job says `front` or `front and symbols`.
-- **Review samples, then reads everything that failed a check.** The tool's checks (the towns' agreement, the
-  `unsure` count, the sides test) are the triage; a day that passes them all gets a look at its overlay's thumbnail and
-  its flips; a day that fails one gets read.
-- **Commit by run, in the records first.** A month of days is one records commit and one kit commit (the pointer, the
-  README's table), after the checks.
-
-The same shape as a Workflow script, for a session that has the Workflow tool:
-
-```js
-export const meta = { name: 'trace-situation-maps', description: 'Trace one run of days, five readers at a time, then review',
-                      phases: [{ title: 'Trace' }, { title: 'Review' }] }
-const DAYS = args.days            // ['12ag-1945-03-18', ...], one base sheet, scans already fetched
-const SCOPE = args.scope || 'front'
-const reports = await pipeline(DAYS,
-  d => agent(`Trace ${d}: towns from ${args.towns}; scope ${SCOPE}. Follow the skill trace-situation-map and report as your definition asks.`,
-             { label: `trace:${d}`, phase: 'Trace', subagent_type: 'situation-map-reader', schema: REPORT_SCHEMA }),
-  r => r.unsure > 0 || r.sides_wrong.length || r.towns_agreeing < 12
-       ? agent(`Review ${r.map}: open its overlay at ${JSON.stringify(r.flips.concat(r.checked))}; say what is wrong, or that it stands.`,
-               { label: `review:${r.map}`, phase: 'Review', schema: VERDICT_SCHEMA })
-       : Promise.resolve({ map: r.map, stands: true, sampled: false }))
-return { reports }
-```
-
-The pipeline reviews each day as it finishes, so a run of thirty days keeps five readers busy and the reviewer never
-waits for the slowest. The concurrency limit is the Library's, not the model's.
-
-## 5. The order of work, and what it costs
-
-Costs are estimates. The March readers were Sonnet-class; a day's symbols cost on the order of a dollar or two in model
-time, a day's front on the order of a quarter to a half; the conductor's review on the order of a half to one per day
-read in full, far less for a day that passes its checks and is sampled. Tool runs are minutes of CPU and no model time.
-The Library's servers cost patience: a second between requests, and a run's scans fetched once.
-
-| Scope | Days | Tool work first | Reader work | Model cost, rough |
-|---|---|---|---|---|
-| **A. Catalogue, sizes, fetch** | 415 | none (done, and `fetch`) | none | nothing: 2.5 GB on disk, about half an hour |
-| **B. The control points of each base sheet** | done for every base but the pasted double sheet of 10 September 1944 (one day): the 1:1,000,000 plate (81 towns, 211 days), north Germany (26 crossings), the 1:1,400,000 sheet and its May printing (60 and 58), the Normandy sheet (34), Brittany (31), the two sheets of mid-August (10 and 9, with a caveat), and the four sheets of late August and early September fitted on their margin ticks (16, 11, 14, 13) | none: the conic fit, `sheet_towns.py --graticule`, the margins solver and the `bases` step are built | one reader per base, one or two passes of a few minutes (about 100,000 to 250,000 tokens a sheet) | a few dollars a base |
-| **C. Every day's front** | 415 | B | the front job: a reader a day, 15 calls | low hundreds of dollars, a week of five readers at a few hours a day |
-| **D. Symbols where they matter** | the engagements' windows, the Bulge (16 December – 25 January), the Rhine crossings (7–31 March), the landings (6 June – 31 July): about 120 days | C | the symbols job: a reader a day, 40–60 calls | low hundreds of dollars |
-| **E. Symbols everywhere** | the other ~300 days | D | the same | several hundred to a thousand dollars; 20,000 symbols to review |
-
-A is done but for the fetch; B is done for every base but the double sheet of 10 September 1944 (two plates pasted on
-one scan, one day: when wanted, each half is read as its own base from its own margins, which
-`sources/fronts-work/bases/B10-margins.txt` holds, and traced apart). Then C as the first long run, D by engagement as the kit's
-Army units are followed into those days, and E only if a page wants it: a front line on every day is the context the
-engagement pages need; the enemy's divisions on a quiet Tuesday in Lorraine are a catalogue nobody has asked for.
-
-What B needs in the tool, in order:
-
-1. Done (6 November 2026): `sitmap_bases.py` fetched each day's overview (IIIF, 12.5 %, 64 MB in all), grouped the
-   days by phase correlation of their line work (each day joins the earlier day it matches best, or starts a base), and
-   wrote each day's base into the catalogue; the fifteen groups were checked on contact sheets and are described in
-   `records/fronts/bases.yml`. `sitmap_bases.py check` then matched 7 March's towns on the first day of each
-   1:1,000,000 group: 20 of 20 on 6 September 1944, 19 of 20 on 21 March 1945, 0 of 20 on 7 April 1945. The scan sizes
-   alone don't tell: the trims vary day to day. The whole step cost one small worker and no reading of the maps.
-2. Done for the 1:1,000,000 plate (6 November 2026): `records/fronts/towns-B11.csv`, 81 towns across the sheet
-   (`tools/sheet_towns.py`). The fit is the sheet's own projection, a conformal conic with an affine to the scan
-   (`trace_front.Conic`, tested in `test_fronts.py`): fitted to the March twenty alone it put a town at the sheet's far
-   edge within 40 px of its ring, so the tool cropped the sheet round the conic's prediction for 103 candidate towns
-   (geocoded with Nominatim) and a reader read each ring's centre off a 20 px grid; 61 were read, the rest were under
-   the overprint, drawn as an area or off the sheet. With 81 towns the conic fits at 0.72 km rms, 0.75 km leave-one-out,
-   1.8 km at worst (Turnhout), over the whole sheet; a day's trace from these covers the sheet. A ring finder by
-   template matching was tried first and lost to letters' bowls and road junctions: the reader does it at a glance, in
-   two passes of a minute each. A day takes the conic once it has 30 points or more, or any graticule crossing
-   (`make_fit`); the March twenty stay for the March days (their GeoJSON must not move).
-
-   **Better than towns: the sheet's graticule.** The sheets print a meridian and a parallel every degree, and a
-   crossing is an exact control point: no geocoder's centroid (a city's is a kilometre from its ring), no name to
-   match, nothing to look up. `sheet_towns.py crops --graticule` makes the candidates itself and labels each crop with
-   the crossing's name; a new sheet is seeded by three or four crossings read on its margins, where the degrees are
-   printed, or by a sister sheet's crossings shifted by the two scans' offset (`sitmap_bases.py check` prints it). The
-   first pass from rough seeds reads a dozen crossings (the parallels are faint); the second, from the fit to those,
-   has the crossing under the cross and reads most of the rest. Done this way on 6 November 2026 for the north
-   Germany sheet (B13, `towns-B13.csv`: 26 crossings, 0.50 km rms, 1.1 km at worst, which register on 13 April at 25 of
-   26) and the 1:1,400,000 sheet (B14, `towns-B14.csv`: 60 crossings, 0.82 km rms, 1.8 km at worst, which register on
-   1 May at 57 of 60), each two reader passes of about two minutes, and for the May printing of the 1:1,400,000 sheet
-   (B15, `towns-B15.csv`: 58 crossings, 0.67 km rms, from one pass seeded by B14's crossings shifted by the scans'
-   offset; B14's own points register on it at only 1 of 13, the May scan being 1.7 per cent larger, which is why a
-   printing scanned differently gets its own file). The 1:1,000,000 plate's crossings agreed with its towns' fit
-   within 10 px, so `towns-B11.csv` stands.
-
-   **The 1944 sheets, the same day, from their margins.** A new sheet's first fit comes from its margins alone: where
-   each labelled meridian's tick meets the top or bottom neat line and each labelled parallel's the left or right
-   (`1W 2460,330`, `49.5N 60,2210` in the readings file), which one reader reads from four margin strips in a few
-   minutes, and `conic_from_lines` solves as a similarity (a free affine's shear is not pinned by two edges and put a
-   sheet's far corners degrees out). The half-degree graticule of the 1:500,000 sheets then read as the others: the
-   Normandy sheet (B01, `towns-B01.csv`, 34 crossings, 0.14 km rms, which register on 1 July at 31 of 34) and Brittany
-   (B02, 31 crossings, 0.22 km rms) in one pass each; the Loire sheets of mid-August (B03, B04) worse, 10 and 9
-   crossings at 0.6 and 0.5 km rms after two passes, because those sheets' kilometre grid is another family of thin
-   straight lines 50 to 100 px from the graticule and the readers took it in places (`bases.yml` says a third pass
-   would tighten them if those eleven days are wanted). The four sheets of 22 August to 5 September (B05 to B08, two
-   of them 1:750,000) draw no graticule inside the map at all, only the ticks on the neat line: they are fitted on the
-   ticks, 16, 11, 14 and 13 of them, each row carrying the coordinate read and the other from the conic solved on the
-   margins and saying so, at 0.14 to 0.48 km rms; they register on another day of each base at 12 of 14 and better.
-3. Done: `--gcps-from towns-B11.csv` matches the sheet's towns on any day of the plate (22 December 1944: 71 of 79
-   within 4 px of one affine transform, the rest placed through it), and the trace covers the sheet.
-4. Done: `--overlay` also writes `overlay-sheet.jpg`, the whole traced area at 1,800 px, read before the overlay's crops.
-
-**C, begun (6 November 2026).** 22 December 1944 was traced by hand across the whole plate first, to settle what a whole
-sheet leaves out: the title block's lettering, the legend, and boundaries drawn heavy with no ticks (eleven boxes that
-day). Neither the title nor the legend can be boxed once for a base: both are lettered by hand on each sheet and wander
-a few hundred pixels, and the title's box must stop short of the Walcheren and Tholen front just under it. Then five
-readers traced 16–20 December, front only. What the first run cost and taught:
-
-| | per day |
-|---|---|
-| reader | 9 to 25 tool calls, 40,000 to 68,000 tokens, 3 to 7 minutes |
-| boxes left out | 2 to 11 |
-| the conductor's review | 3 to 8 looks, one stretch turned in two of the five days |
-
-Every reader came back with the front whole and nothing unsure, and three of the five with a town on the wrong side that
-it put down to the test. Two of those were stretches turned the wrong way (the Colmar pocket's west side on 20 December;
-the Saar line toward Bitche and the Walcheren arc, which its reader had marked `checked`, on 17 December), and one
-reader's title box hid the Tholen front. So the review reads every town on the wrong side, and `--sides` now names the
-runs that decide each town, with each one's side and its middle on the scan: the stretch to turn is named, and the
-reader's rule is to flip or explain it, never to call it an artefact unlooked. The one true artefact was Landau, off
-the corner where the Lauter front meets the Rhine. With the six days reviewed, all six put the same 46 towns on the
-enemy's side.
-
-**The Bulge to the end of January (6 November 2026).** Then every day from 16 December 1944 to 31 January 1945, for the
-family's units in the Ardennes and at Metz: 41 more days, readers five at a time, a new one started as each day was
-reviewed, so five were always running. A reader's day took 12 to 45 tool calls, 40,000 to 90,000 tokens and 4 to 13
-minutes, about 2.7 million tokens for the 41. The review was the conductor's: each day's `--sides` against the
-reviewed days', the front's length, the Walcheren arcs' direction (the enemy north, on Schouwen: they came out reversed
-on two days), the Colmar pocket's extent, a contact sheet of five overlays at a time, and a close crop wherever a town
-was on the wrong side. Ten of the 46 reader days were corrected on review: five with stretches turned the wrong way
-(the Colmar pocket, the Saar toward Bitche, Bisch, the Rhine bank south of Strasbourg, a joint by a boundary in the
-Ardennes), one with the Westwall band's outline taken for front, and four with boundaries still traced as front far
-behind the line, which no town's side showed because the stray ink lay deep in the US rear. Those four were found by
-setting each rear town's distance to the front beside the days either side: a town suddenly 30 km nearer the front is
-a stray stretch. That check, with a town whose side differs from both neighbours' and a front much shorter than both
-neighbours', is `tools/check_fronts.py`; over the 46 days, once corrected, it flags only Haguenau, whose ring sits on
-the Moder line from 22 January. Run it on every run before committing.
-
-What the readers got wrong, so the next run's brief says it: boxes too wide (one hid the Tholen front, another nearly
-the Colmar pocket's west side), a doubtful stretch called a "corner artefact" without the close look, a `checked`
-stretch that was reversed, and boundary names guessed. What they got right without being told: the Rhine where a
-sheet prints it dark, symbol outlines and lettering traced as stubs, the new title form of 25 January with its report
-number.
+- **The towns' agreement**: a day reports at least 12 control points agreeing with its base's.
+- **The sides test** (`--sides`): every town falls on its own side of the front, and the runs that decide each town
+  are named with their place on the scan. A town on the wrong side is a wrong stretch until a close look shows
+  otherwise: of the first three so reported, two were stretches turned the wrong way.
+- **The neighbours** (`tools/check_fronts.py FIRST LAST`): each day set beside the days either side. It names a town
+  whose side differs from both neighbours', a town suddenly much nearer the front (a stray stretch behind the line),
+  and a front much shorter than both neighbours'. Over the 46 days above, once corrected, it flags only Haguenau,
+  whose ring sits on the Moder line from 22 January 1945. Run it on every run before committing.
+- **The review**: a day that passes every check gets a look at its overlay's thumbnail and at each stretch it turned
+  by hand; a day that fails one is read in full.
+- **A new base sheet stops the run** until its control points are read (§3).
 
 ## 6. What stays as it is
 
-The rules in the skill and the README hold at any scale: a tick counted only as the map draws one; the map ticks its
-own side; every blue line must be front; labels as written; a list is a list; every hand decision with its reason; the
-front's `how` on every run and `fit_km` on every feature, so the page can say what is ours. Nothing a reader does is
-checked by another reader: the checks are the tool's (the towns' agreement, the sides test, `unsure`) and the
-reviewer's eyes on the overlay. Repetition isn't corroboration, on a map as in a record.
+The rules in the skill and `records/fronts/README.md` hold at any scale: a tick counted only as the map draws one;
+the map ticks its own side; every blue line must be front; labels as written; a list is a list; every hand decision
+with its reason; the front's `how` on every run and `fit_km` on every feature, so the page can say what is a
+reconstruction. Repetition isn't corroboration, on a map as in a record.

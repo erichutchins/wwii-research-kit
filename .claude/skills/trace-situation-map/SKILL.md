@@ -6,7 +6,8 @@ description: >
   its ticked stretches and check every tick on the overlay, find and read the unit symbols as drawn (the bridgehead list
   as a list), write the units file and the generated GeoJSON, and check the sides. Use when asked to add a day's
   situation map, the front or the divisions on a day, or to extend an engagement's `fronts:`. For many days at once,
-  guides/SITUATION-MAPS.md gives the order of work and the agent orchestration.
+  the last section here gives the order of work with reader agents; guides/SITUATION-MAPS.md says what the collection
+  is and how a run is checked.
 ---
 
 # Tracing a day's situation map
@@ -63,7 +64,7 @@ file by hand.
 has no points to match to (only the double sheet of 10 September 1944 now). Its control points are read once, across
 the sheet, from its own graticule: the degree labels on its margins, where each labelled tick meets the neat line, to
 seed the conic (`1W 2460,330`, `49.5N 60,2210`), then `tools/sheet_towns.py crops --graticule` round the conic's
-prediction for every crossing on the sheet and a reader's pass or two over the crops (`guides/SITUATION-MAPS.md` §5),
+prediction for every crossing on the sheet and a reader's pass or two over the crops (`guides/SITUATION-MAPS.md` §3),
 into `records/fronts/towns-<base>.csv`, and `bases.yml` says so. A sheet that draws no graticule inside the map is
 fitted on its margin ticks (`accept` on the margins file). Crossings spread over
 the sheet, not a corner of it: the trace covers the points' spread and nothing outside it.
@@ -198,3 +199,50 @@ the engagement's `fronts:` and the README's table, and commits. Nobody edits the
 `tools/check_fronts.py FIRST LAST`, which sets each day beside the days either side and names a town whose side
 changed for one day only, a stray stretch far behind the line (a town suddenly much nearer the front) and a front much
 shorter than its neighbours'.
+
+## Bringing a run of days together
+
+One session (the conductor) plans, starts the readers, reviews and commits; a run is one base sheet or one month. What
+a day's stages are and how a run is checked: `guides/SITUATION-MAPS.md` §2 and §5.
+
+1. `loc_sitmaps.py status`, then **fetch the run's scans first**, in one process, a second apart. Five readers fetching
+   at once is five times the load on a shared server and a 429 for everyone; readers read titles through IIIF (one
+   small crop) and find the scan already cached.
+2. Confirm the base: `sitmaps.csv`'s `base` and `bases.yml`'s `towns` (`sitmap_bases.py check` on a base without
+   them). A new base stops the run: read its control points (one reader, §2 above), commit, then go on.
+3. Start a reader for each day (the agent `situation-map-reader`), five at a time, a new one as each day is reviewed.
+   The job says its scope: `front`, or `front and symbols`. Symbols are a scope, not a default.
+4. Review each report. A reader's doubt is a `flip` or `checked` line with a reason, never a silent choice: read the
+   reasons, and open the overlay where a reason is thin, at every flip and check, and wherever `--sides` complains.
+   Send back what is wrong (the reader keeps its context). Where symbols were read, look at the units sheet.
+5. `tools/check_fronts.py FIRST LAST` over the run; the lint; `tools/check_builds.sh`; the engagement's page on three
+   days of the run, light and dark.
+6. Commit the run in `records/` first, then the kit (the pointer, the README's table).
+
+What a reader's day takes, from the runs of December 1944 and January 1945: the front alone, 12 to 45 tool calls and
+4 to 13 minutes, with four or five images read; with the symbols, 40 to 60 calls and ten to fifteen images. The tool's
+images are made to be read cheaply: numbered contact sheets and not the scan, magnified crops of the doubtful places
+only, the title as a small IIIF crop.
+
+What to put in a reader's brief, because readers have got it wrong: keep `exclude` boxes tight (one hid a stretch of
+front beside the title); give a doubtful stretch the close look before calling it an artefact; a `checked` stretch can
+still be reversed; name a boundary only as the map letters it. What they get right untold: the Rhine where a sheet
+prints it dark, symbol outlines and lettering traced as stubs, a new form of title.
+
+For a session that has the Workflow tool, the same shape as a script (the pipeline reviews each day as it finishes; the
+concurrency limit is the Library's, not the model's):
+
+```js
+export const meta = { name: 'trace-situation-maps', description: 'Trace one run of days, five readers at a time, then review',
+                      phases: [{ title: 'Trace' }, { title: 'Review' }] }
+const DAYS = args.days            // ['12ag-1945-03-18', ...], one base sheet, scans already fetched
+const SCOPE = args.scope || 'front'
+const reports = await pipeline(DAYS,
+  d => agent(`Trace ${d}: towns from ${args.towns}; scope ${SCOPE}. Follow the skill trace-situation-map and report as your definition asks.`,
+             { label: `trace:${d}`, phase: 'Trace', subagent_type: 'situation-map-reader', schema: REPORT_SCHEMA }),
+  r => r.unsure > 0 || r.sides_wrong.length || r.towns_agreeing < 12
+       ? agent(`Review ${r.map}: open its overlay at ${JSON.stringify(r.flips.concat(r.checked))}; say what is wrong, or that it stands.`,
+               { label: `review:${r.map}`, phase: 'Review', schema: VERDICT_SCHEMA })
+       : Promise.resolve({ map: r.map, stands: true, sampled: false }))
+return { reports }
+```

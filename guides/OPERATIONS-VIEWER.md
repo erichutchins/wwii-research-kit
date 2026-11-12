@@ -1,211 +1,190 @@
 # The operations viewer: one model for ships, units and the war around them
 
-A design for the pages, written against the records as they stand on 3 November 2026. It reconsiders the mental model
-the site grew up with (a submarine pack against a convoy, replayed on one clock) and proposes the one the records now
-need: subjects and the organizations they belong to; their movements, stations and events; the frames we put round
-them; the sources each claim rests on; and two depths of reading, the page and the questions behind it. Nothing here
-changes a transcription rule. Everything here is checked against two cases: convoy TAMA-17 in the Luzon Strait, 29–30
-April 1944 (three patrol reports, a Japanese escort diary and a ship's movement log, the FRUPAC overlays, two secondary
-sources), and the Medical Detachment, 67th Coast Artillery (AA), from Paterson, New Jersey in September 1942 to
-Hüttenfeld, Germany in May 1945. Four screens of it are drawn, from the records' own values, in `guides/mockups/`
-(open them in a browser; nothing in them is live): the TAMA-17 account and its Sources view for Attack 1, the Medical
-Detachment's account, and Venafro's chronology.
+The specification of the kit's pages: the model they are built on (subjects and the organizations they belong to;
+their movements, stations and events; the frames put round them; the sources each claim rests on), the views of a
+frame, the two depths of reading, the navigation and the visual hierarchy. Read it before adding a page or a view.
+The section numbers are cited from the code (`guides/OPERATIONS-VIEWER.md 2.4`), so they are kept stable.
 
-The rules of `CLAUDE.md`, `guides/METHODS.md` and `guides/ENGAGEMENTS.md` stand throughout: cite every entry, keep each
-record's own structure, compute rather than store, label every assumption, repetition isn't corroboration, no numbers on
-conclusions, name the other side as the records do, and follow units and ships, never people.
+Two cases run through it, and every rule here was checked against both: convoy TAMA-17 in the Luzon Strait, 29–30
+April 1944 (three war patrol reports, a Japanese escort diary and a ship's movement log, the FRUPAC overlays, two
+secondary sources), and the Medical Detachment, 67th Coast Artillery (AA), from Paterson, New Jersey in September
+1942 to Hüttenfeld, Germany in May 1945.
 
-## 1. Where the present model strains
+The rules of `CLAUDE.md`, `guides/METHODS.md` and `guides/ENGAGEMENTS.md` stand throughout: cite every entry, keep
+each record's own structure, compute rather than store, label every assumption, repetition isn't corroboration, no
+numbers on conclusions, name the other side as the records do, and follow units and ships, never people.
+`guides/ENGAGEMENTS.md` owns the map's encodings, the colours and the computation; this guide cites it and does not
+restate them. How the design was reached, and the pages it replaced, is in
+`guides/design-history/2026-11-operations-viewer.md`.
 
-The site has one cross-source page type, the engagement (`engagement.html?e=…`): *two sides meeting at a place and a
-time, each in its own records, on one map and one clock*. It is exactly right for what it was built for. The strain
-shows where the records don't fit that sentence.
+## 1. What the pages have to carry
 
-| Symptom | Where it shows | What it tells us |
-|---|---|---|
-| A clock with nothing to play | Venafro, February 1944: every entry is a day, `placed: seq`; the German reports are "the same day and nearly the same place at most". Remagen, the 9th Armored: division positions by day | The engagement's lead view (map + clock + lanes) assumes a tempo of minutes. Many frames have a tempo of days or months |
-| Hand-built pages beside the generic one | `haynsworth.html` (1,146 lines of its own script), `algiers.html` (479), each with steps, a day-column timeline, scale drawings, an evidence board; `chapter.js` names them as the engagement's "own page" | The generic page has no place for a story told in steps, a chronology in day columns, or a frame-specific working figure, so each one grew a page |
-| Four side-list apps for one idea | `patrols.html`, `army.html`, `seabees.html`, `convoys.html` each draw one subject's own record: a map, a date strip, a list of its entries, a scan viewer. Two families of CSS tokens (`viz.css` `--text-primary`; `engage.css` `--ink`), bridged by `entry.css` | The subject's own page is one page type with record-specific panels, not four |
-| The nav lists a ship | The bar on every page: theatres (Pacific), places (Algiers, Sicily, …), record types (Ship tracks, Army units), one ship (Haynsworth), one view (Dives), and the explainers | There is no navigation model, so the bar is a list of what exists. It can't take a tenth engagement or a second destroyer |
-| `side` does three jobs | `us, jp, allied, axis, de, press, geo`: a nationality, a belligerent, a kind of source (the press), and "a place" | The press is not a side. A newspaper, a radio-intelligence overlay, a postwar assessment and an escort's diary are *kinds of source*, each with its own weight, and the page should show them as such. And a coalition word is vaguer than the records, which always name a navy, a corps, a squadron |
-| The units' names are opaque | "Medical Detachment, 67th CA (AA) / 894th AAA AW Bn", "Btry D, 106th AAA AW Bn (SP)": the designations are the records', and with the family's names kept out of the public repository they are the only names there are | A reader needs to be told, in a line, what each unit was before its designation means anything |
-| The other side's words are typed two ways | A Japanese entry has `original` and `translation`; a German one quotes the original inside `words` with the translation in parentheses | One rule for every language the records speak |
-| The reconstruction sits inside the record | The convoy's observed path, "closing in", the estimated kamikaze path, the periscope view are drawn from the records but are ours; they share the page with the entries as typed | The reader needs to see at a glance which marks are the record's and which are our working. The encodings (solid, hatched, dotted) carry this on the map; the page's structure doesn't yet |
-| Organization lives in three shapes | `army/relations.csv` (part of, attached to, under command, took part), `seabees/parts.csv` (echelons and sections), a convoy's `ships:` list, ComSubPac's task organization | One idea, dated membership of one subject in another, each row cited |
-| Leads live in a README table | `army/README.md` "Leads": statements no cited page supports yet, with what was searched | The same shape as `claims.yml`'s open questions, and the reader never sees them |
+The kit began with one kind of page: a submarine pack against a convoy, replayed on one clock. The records now hold
+five kinds of subject and tempos from minutes to years, and three things follow for every page.
 
-None of these is a defect in the records. They are the signs of a model built for one kind of record now carrying
-five.
+- **A clock is one view's device, not the page's.** A convoy battle is timed to the minute; a battery's month at
+  Venafro is a list of days; a detachment's war is three years of stations.
+- **A source's kind is not a side.** A newspaper, a radio-intelligence overlay, a postwar assessment and an escort's
+  diary are kinds of source, each with its own weight, and the page shows them as such.
+- **The record and the reconstruction are told apart.** The entries as typed and the layers computed from them share
+  a page; the reader sees at a glance which is which, in the type, on the map and in the page's order.
 
 ## 2. The model
 
-Four kinds of thing, each with a word the pages use consistently. The records already hold all four; the change is to
-name them and build the pages on them.
+Four kinds of thing, each with a word the pages use consistently.
 
 ### 2.1 Subjects and organizations
 
 A **subject** is something the records follow: a boat (`boats/ss-385-bang`), a ship (`ships/dd-700-haynsworth`), an
 Army unit (`army/units.csv`: a battery, a company, a detachment, a division), a Seabee battalion or a part of one
-(`seabees/units.csv`, `parts.csv`), a convoy (`convoys/hi-67`), a force or command (`commands/comsubpac`), and the
-other side's as the records name them (Harukaze; 5. Geb.Div.; No. 153 Squadron RAF). Every subject has an id, a name as
-the records give it, a kind, and the records that are its own.
+(`seabees/units.csv`, `parts.csv`), a convoy (`convoys/hi-67`), a command (`commands/comsubpac`). Every subject has
+an id, a name as the records give it, a kind, and the records that are its own. `tools/build_subjects.py` writes them
+all to `records/subjects.json`, the one registry the subject page, the breadcrumb and the lint read. The other side's
+units appear as the records name them (Harukaze; 5. Geb.Div.; No. 153 Squadron RAF).
 
-An **organization** is dated membership of one subject in another, each row cited: Battery D *part of* the 106th AAA AW
-Bn; the 9th Armored *attached to* Third Army from 9 January 1945; BANG *in pack* 17.x with PARCHE and TINOSA; Takegawa
-Maru *in convoy* TAMA-17 as its tenth ship; the Forward Echelon *part of* the 20th NCB from 13 May 1943; the 67th CA
-(AA)'s 2nd Battalion *redesignated* the 894th AAA AW Bn on 20 March 1944. `army/relations.csv` has the shape (unit,
-relation, other, from, to, basis, page, note); the convoy's `ships:`, the battalion's `parts.csv` and ComSubPac's
-`task_organization.csv` say the same thing in their own records and should be read into the same registry by the
-build.
+An **organization** is dated membership of one subject in another, each row cited: Battery D *part of* the 106th AAA
+AW Bn; BANG *in pack* with PARCHE and TINOSA; Takegawa Maru *in convoy* TAMA-17 as its tenth ship; the Forward
+Echelon *part of* the 20th NCB from 13 May 1943; the 67th CA (AA)'s 2nd Battalion *redesignated* the 894th AAA AW Bn
+on 20 March 1944. `army/relations.csv` has the shape (unit, relation, other, from, to, basis, page, note); a convoy's
+`ships:`, a battalion's `parts.csv` and ComSubPac's `task_organization.csv` say the same thing in their own records,
+and the build reads them into one shape.
 
-**People are not subjects here.** The kit's rule stands: the records are the units', no one is followed by name, and
-names the records carry stay as written in the entry that carries them. A family's own site attaches a person to a
-subject by date (`[[who:…]]` in `site/links.js`, `army.html?who=`); the model leaves that seam where it is and puts
-nothing on the kit's side of it. The family site is not built yet; the seam is reserved, not used.
+**People are not subjects.** The records are the units'; no one is followed by name, and names the records carry stay
+as written in the entry that carries them. A family's own site may attach a person to a subject by date on its own
+pages (§10); nothing on the kit's side depends on it.
 
-**Name a unit first by what it was.** With people's names out of the public records, a unit's designation is its only
-name, and "Medical Detachment, 67th CA (AA) / 894th AAA AW Bn" tells a reader nothing. Each subject gets a `plain` line
-in our voice (in `units.csv`, `ship.yml`, `convoy.md`): what kind of thing it was and what it did, in a sentence a reader
-without the Army's vocabulary can follow (*the aid men of an anti-aircraft regiment, a section with each battalion*;
-*a fleet submarine of the Balao class, on her first patrol*; *a Takao–Manila convoy of seventeen ships and escorts*). The
-pages lead with the plain line as the eyebrow and give the designation as the title; lists and breadcrumbs show both.
-The designation stays exactly as the records write it, and a redesignation is an organization row, not a second name.
+**Name a unit first by what it was.** A unit's designation is its only name in these records, and "Medical
+Detachment, 67th CA (AA) / 894th AAA AW Bn" tells most readers nothing. Each subject has a `plain` line in the kit's
+voice (`army/units.yml`, `seabees/units.yml`, `ship.yml`, `convoy.md`, `command.yml`): what kind of thing it was and
+what it did, in a sentence a reader without the Army's vocabulary can follow (*the aid men of an anti-aircraft
+regiment, a section with each battalion*; *a fleet submarine of the Balao class, on her first war patrol*). The pages
+lead with the plain line as the eyebrow and give the designation as the title; lists and breadcrumbs show both. The
+designation stays exactly as the records write it, a redesignation is an organization row and not a second name, and
+a subject without a `plain` line fails the build.
 
 ### 2.2 Movements, stations and events
 
 Everything a record says a subject did is one of three things:
 
-| Primitive | Meaning | Where the records already hold it |
+| Primitive | Meaning | Where the records hold it |
 |---|---|---|
-| **Movement** | from here at one time to there at another | a track's fixes (`positions.csv`, `on_track=yes`), a sea crossing (`army/ships.csv`, `seabees/voyages.csv`, `voyage_positions.csv`), a convoy's `voyage`, a leg the record doesn't trace (`routes.csv`: always assumed) |
-| **Station** | here from one time until the next change | the STATION line (`army/stations.csv`, `seabees/stations.csv`: a row lasts until the next), a boat under refit or in port (ComSubPac's `disposition.csv`), a picket station (`kind: station`), a battery's gun position |
-| **Event** | at a time (or placed), here, something happened | an attack, a hit, a sinking, a depth charging, a sighting, a message sent and received, a raid fired on, a casualty, a communiqué (`events.yml`, `attacks.csv`, `depths.csv`, `army/actions.csv`, `japanese.yml`, `frupac.yml`) |
+| **Movement** | from here at one time to there at another | a track's fixes (`positions.csv`, `on_track=yes`), a sea crossing (`army/ships.csv`, `seabees/voyages.csv`), a convoy's `voyage`, a leg the record doesn't trace (`routes.csv`: always assumed) |
+| **Station** | here from one time until the next change | the STATION line (`army/stations.csv`, `seabees/stations.csv`: a row lasts until the next), a boat in port (ComSubPac's `disposition.csv`), a picket station |
+| **Event** | at a time (or placed), here, something happened | an attack, a hit, a sinking, a depth charging, a sighting, a raid fired on, a casualty, a communiqué (`events.yml`, `attacks.csv`, `depths.csv`, `army/actions.csv`, `japanese.yml`, `frupac.yml`) |
 
-The distinction matters for the pages because each is drawn and read differently: a movement is a line (solid where
-fixed, dashed between fixes, dotted where assumed), a station is a stay (a mark that holds, a bar on a chronology), an
-event is a point in time (a mark, an entry). A unit's war is mostly stations; a patrol is mostly movement; an attack
-is events. The same chronology can hold all three, and the same map.
+Each is drawn and read differently: a movement is a line, a station is a stay (a mark that holds, a bar on a
+chronology), an event is a point in time. A unit's war is mostly stations; a patrol is mostly movement; an attack is
+events. One chronology can hold all three, and one map.
 
 ### 2.3 Frames
 
-A **frame** is what we put round a set of subjects and a span of time to ask a question. There are three, at three
-scales, and the records already have folders for all of them:
+A **frame** is what is put round a set of subjects and a span of time to ask a question. There are three:
 
-| Frame | Question | Scale | Records | Today's page |
+| Frame | Question | Scale | Records | Page |
 |---|---|---|---|---|
-| **Journey** | Where was this subject, and what did it do, in its own record? | a patrol, a voyage, a unit's year, a battalion's war | a boat's `patrol-N/`, a ship's `positions.csv`, a unit's rows in `army/`, a battalion's in `seabees/`, a convoy's `convoy.md` | `patrols.html`, `army.html`, `seabees.html`, `convoys.html` |
-| **Engagement** | What happened when these subjects met, each in its own records? | minutes to a month | `engagements/<id>/` | `engagement.html`, `haynsworth.html`, `algiers.html` |
-| **Operation** | What was the war doing here, and what did it mean? | a campaign, an operation, a phase | `operations/<theater>/<id>.md` | the front page's stages (`chapter.js`); no page of its own |
+| **Journey** | Where was this subject, and what did it do, in its own record? | a patrol, a voyage, a unit's war | a boat's `patrol-N/`, a ship's `positions.csv`, a unit's rows in `army/`, a battalion's in `seabees/`, a `convoy.md` | `subject.html?s=<id>` |
+| **Engagement** | What happened when these subjects met, each in its own records? | minutes to a month | `engagements/<id>/` | `engagement.html?e=<id>` |
+| **Operation** | What was the war doing here, and what did it mean? | a campaign or a phase | `operations/<theater>/<id>.md` | its place on `theatre.html?t=<theater>` |
 
 Frames nest and cross. An engagement lies inside an operation (Venafro inside the Cassino fighting) or between two; a
-journey crosses many engagements and operations (the Medical Detachment's war crosses Torch, Tunisia, Salerno, the
-Winter Line, Dragoon, the Rhineland). The ladder the pages walk is **theatre → operation → engagement → entry**, and
-the thread that crosses it is the **subject**: from any engagement, each subject's journey before and after
-(`chapter.js`'s "Follow a unit" already does this for Europe). An operation is **context, not participation**: a unit
-with stations inside its area and dates is a lead until its own record says it took part (`operations/README.md`).
+journey crosses many of both. The ladder the pages walk is **theatre → operation → engagement → entry**, and the
+thread that crosses it is the **subject**: from any engagement, each subject's own before and after. An operation is
+**context, not participation**: a unit with stations inside its area and dates is a lead until its own record says it
+took part (`records/operations/README.md`).
 
-A frame's **tempo** is derived from its entries, never stored: *clocked* when entries carry times with a zone (one clock
-is meaningful: TAMA-17, Haynsworth); *dated* when they carry days (Venafro, Algiers' three nights, a convoy's voyage);
-*monthly* when a journey spans years (a unit's war). The tempo decides which view leads (§3).
+A frame's **tempo** is derived from its entries and never stored (`Engage.tempo`, tested):
+
+- *clocked* when more than half its entries carry a time with a zone, so that one clock is meaningful (TAMA-17,
+  Haynsworth). More than half, not any: Remagen's corps report times ten entries of twenty-five, and a clock played
+  over it would pass most of the record in silence;
+- *monthly* when the entries span more than about ninety days (a unit's war);
+- *dated* otherwise: the entries carry days (Venafro, Algiers' three nights).
+
+The tempo decides which view leads (§3).
 
 ### 2.4 Sources and voices
 
-Every entry already cites a page in a form `records/SOURCES.yml` knows. The proposal adds **one hand-edited field per
-source entry there** (not per row): what kind of source it is, and whose.
+Every entry cites a page in a form `records/SOURCES.yml` knows. Each source entry there carries two hand-edited
+fields: `kind`, what sort of source it is, and `of`, the nationality of its author. `check_sources.py` fails on a
+source without a kind, and the build tags every entry, claim, station and fix with its source's kind and nationality
+through its citation.
 
-| `kind` | Meaning | Examples in SOURCES.yml |
+| `kind` | Meaning | Examples |
 |---|---|---|
-| `record` | written at the time by the subject or its command | war patrol reports, war diaries, morning reports, muster rolls, the escort divisions' war diaries, XIV Panzer Corps' Tagesmeldungen |
+| `record` | written at the time by the subject or its command | war patrol reports, war diaries, morning reports, muster rolls, the escort divisions' war diaries, XIV Panzer Corps' daily reports |
 | `intelligence` | what one side knew of the other at the time | the FRUPAC overlays |
-| `press` | published at the time | L'Écho d'Alger (`gallica:`), the Allied communiqués, the Italian and German bulletins |
-| `assessment` | an official reckoning after the fact | JANAC |
-| `recollection` | told later by someone who was there | Irons (Haynsworth) |
-| `secondary` | a later history or site, repeating records we haven't seen | combinedfleet.com, Wikipedia, the G.I. Stories booklet |
+| `press` | published at the time | L'Écho d'Alger, the Allied communiqués, the Italian and German bulletins |
+| `assessment` | an official reckoning after the fact | JANAC (the Joint Army–Navy Assessment Committee's 1947 loss list) |
+| `recollection` | told later by someone who was there | a crewman's memoir |
+| `secondary` | a later history or site, repeating records not seen here | combinedfleet.com, Wikipedia, a division's printed booklet |
 | `reference` | not a witness: charts, plates, terrain, grids | ONI 54, the Bezugspunktkarte, ETOPO1 |
-| `derived` | a method, not an outside source (already there) | a grid reference decoded |
+| `derived` | a method, not an outside source | a grid reference decoded |
 
-and `of`: the nationality of the source's author (`us`, `jp`, `de`, `it`, `uk`, `fr`, …), which is what today's `side`
-mostly means. The build then tags every entry, claim, station and fix with its source's kind and nationality through
-its citation. `side` goes altogether: an entry's actor is a subject (whose nationality the registry knows) or a name as
-the record gives it with its nationality beside it, and who faced whom in a frame follows from its subjects.
-`check_sources.py` fails on a source without a kind.
+There is no `side`. An entry's actor is a subject, whose nationality the registry knows, or a name as the record
+gives it with its nationality (`of`) beside it. Who faced whom follows from the frame's subjects; where three
+nationalities meet and nationality alone cannot say, the engagement names `against:` (Algiers: `[de, it]`, so No. 153
+Squadron's record is not coloured as the enemy's). A convoy is not a followed subject on an engagement: it is the
+other side's record, read against the boats' sightings of it.
 
-Not "Axis" and "Allied". They are the period's own words for the coalitions and historians still use them, so they are
-not dated; but they are coalition words, and the records are never that vague: the other side in these records is the
-Imperial Navy's 1st Surface Escort Division, XIV Panzer Corps, Luftflotte 2, an Italian bulletin. The pair is also wrong
-at the edges the records reach: the French at Oran in November 1942, Italy after September 1943. The rule already
-says it: name the other side as the records do. So a nationality, as the record gives it, and never a bloc.
+Not "Axis" and "Allied". They are the period's own words and historians still use them, but they are coalition words,
+and the records are never that vague: the other side here is the Imperial Navy's 1st Surface Escort Division, XIV
+Panzer Corps, Luftflotte 2, an Italian bulletin. The pair is also wrong at the edges the records reach: the French at
+Oran in November 1942, Italy after September 1943. A nationality, as the record gives it, and never a bloc.
 
-This gives the pages two **voices**, and the type already has them (`CLAUDE.md`, Pages):
+The pages have two **voices**, and the type carries them (`CLAUDE.md`, Pages):
 
-- **The record's voice**: the words as typed, in TT2020 (`.typed`), in the record's own language with our translation
-  beside it. Rule: every entry whose record is not in English has `original`, `lang` and `translation`, as the Japanese
-  entries do now; a German report's words move out of `words` into `original` (`lang: de`), the translation into
-  `translation`. Shippori Mincho for `lang="ja"`; the typed voice for `lang="de"` (the Tagesmeldungen were typed).
-- **Our voice**: the account, the notes, the computed layers, the claims we weigh, in ET Book. Everything in this voice
-  is a **reconstruction**, and the page says so wherever it stands next to a record: the hatching and dashes on the
-  map, *assumed* and *inferred* in the data (`basis`, `placed`), and now a place of its own in the page's structure
-  (§4).
+- **The record's voice**: the words as typed, in the record's own language with the kit's translation beside it.
+  Every entry whose record is not in English has `original`, `lang` and `translation`.
+- **The kit's voice**: the account, the notes, the computed layers, the claims weighed. Everything in this voice is a
+  **reconstruction**, and the page says so wherever it stands next to a record: the hatching and dashes on the map,
+  *assumed* and *inferred* in the data (`basis`, `placed`), and a place of its own in the page's order (§4).
 
 ## 3. Views
 
-Four views of the same frame, each answering a different question. They are complementary. No view is forced into
-synchrony with another: the clock is one view's device, not the page's.
+Four views of one frame, each answering a different question. No view is forced into step with another.
 
-| View | Question | What it is | Tempo it suits |
-|---|---|---|---|
-| **Map** | Where? | the subjects' movements, stations and events on the ground; with a clock when the tempo is clocked (today's engagement map and lanes), without one otherwise (a static map with the marks, a date strip at most) | all |
-| **Chronology** | In what order, by whose account? | a spine of time (hours, days or months, by the tempo), one column per source (or per side when there are many sources, each side opening into its sources), every entry at its time; `placed: seq` entries in italics; stations as bars, events as marks, movements as arrows between stations | all; it is the lead view for dated and monthly frames |
-| **Sources** | What does each source actually say, and where do they disagree? | for a moment or a question: the entries from each source side by side, as typed and as placed by us, with the minutes and miles between them computed on the page (`check_crossrefs.py`'s arithmetic, moved into `engage.js`); under it the claims board, each answer with its source's kind | all |
-| **Story** | What do we make of it? | the account in our voice, in steps that set the other views (a paragraph can carry a step, as `events.yml`'s `step` does for Haynsworth and Algiers), with the figures a frame has (scale drawings, an estimated path, the periscope, the dive profile) | all |
+| View | Question | What it is |
+|---|---|---|
+| **Map** | Where? | the subjects' movements, stations and events on the ground; with a clock and lanes when the tempo is clocked, static otherwise |
+| **Chronology** | In what order, by whose account? | a spine of hours, days or months (by the tempo), one column per source, every entry at its time; an entry placed by the order of the account (`placed: seq`) says so; stations as bars, events as marks (`EV.chronology`, `site/chron.css`) |
+| **Sources** | What does each source say, and where do they disagree? | for one moment or question: the entries from each source side by side, as typed and as placed, with the minutes and miles between them computed on the page (`Engage.apart`); under it the claims board, each answer badged with its source's kind (`EV.sources`) |
+| **Story** | What is made of it? | the account in the kit's voice. A paragraph may carry a step (`[[step:id|words]]`), a step being the entries that name it; a step link sets the map, the clock and the view. The frame's own figures (scale drawings, an estimated path, the periscope) are panels registered in `site/panels.js` |
 
 Which leads is decided by the tempo and nothing else:
 
-- *clocked*: Map with the clock leads, Chronology beside it (today's two-sided log is the chronology at hour grain).
-- *dated*: Chronology in day columns leads (Algiers' "nights side by side" is the prototype; it becomes a shared view in
-  `engage-views.js` and `algiers.html`'s own copy goes); the Map is static with the places and stations, no play button.
-  The one exception: a frame with several days' situation maps (`records/fronts/`, Remagen) steps through them on its
-  page, on the clocked frames' own bar under the map (the play button, the readout, a lane per followed unit
-  and per side, the slider), a map at a time: the axis has a tick for each map's day, the cursor is the map shown, the
-  play steps (never a glide), and the slider or a click on the lanes goes to the nearest map. Its subjects' stations are
-  drawn to the day shown (added 6 Nov 2026, to show the bridgehead growing day by day; the bar the same as the naval
-  frames' since then).
-- *monthly*: the journey's strip (stages, as `chapter.js` computes them) leads, with the Map under it.
+- *clocked*: the map with its clock leads, the two-sided log beside it (the chronology at hour grain).
+- *dated*: the chronology in day columns leads; the map is static, with no play button. The one exception is a frame
+  with several days' situation maps (`fronts:`; Remagen, the Bulge): it steps through them on the clocked frames' own
+  bar, a map at a time. The axis has a tick for each map's day, play steps and never glides, and the subjects'
+  stations are drawn to the day shown.
+- *monthly*: the journey's strip of stages leads, with the map under it.
 
-The map keeps its encodings as they are (`guides/ENGAGEMENTS.md`, "Encodings"); they are the model's first implementation
-and they hold: solid from the record, outlined from a secondary source, hatched inferred, dotted assumed, dashed between
-known points, red only for hits. Colour follows the **followed subject** (at most three, the checked colours), not "the US
-boat": in an Army frame the three colours are three batteries; the other side is ink wherever it appears.
+The map's encodings are `guides/ENGAGEMENTS.md`'s, unchanged. Colour follows the **followed subject** (at most three,
+the checked colours), whatever it is: in an Army frame the three colours are three batteries. The other side is ink
+wherever it appears.
 
 ## 4. Two depths
 
-Progressive disclosure is the page's structure, not an afterthought. Every frame page is one page that reads top to
-bottom, from the records' own summary to the records themselves to our figures, and behind it one more depth, where
-the questions are. The reader goes down by scrolling, and across by one switch. There were three depths once (the
-account, the records, the working, 3 November 2026; §9); the account's first screen and the records' sheet are now
-one page, because the first screen held nothing the sheet didn't and sent the reader on, and *the working* named a
-method where a reader wanted to know what was behind the door.
+Every frame page is one page that reads top to bottom, from the records' own summary to the records themselves to
+the kit's figures, and behind it one more depth, where the questions are. The reader goes down by scrolling and
+across by one switch, which sits under the lede and names each depth by what it holds.
 
-### 4.1 The page (what you see first, and then all of it)
+### 4.1 The page
 
-The title, the eyebrow (theatre · operation), the lede; then the switch, which names the two depths by what they
-hold. Under it, in order:
+The title, the eyebrow (theatre · operation), the lede, the switch. Under it, in order:
 
-1. **The outcome in the records' own terms** beside *who* (the subjects with their silhouettes, each name a link to
-   its own page) and *when* (the span, the clocks). Every number on this screen is the records' or says it is ours.
-   An engagement whose story has no *Outcome* section says so here, instead of inventing one: that is the cue to
-   write it.
+1. **The outcome in the records' own terms**, beside *who* (the subjects with their silhouettes, each name a link to
+   its own page) and *when* (the span, the clocks). Every number here is counted from the frame's own JSON, never
+   written in. An engagement whose story has no *Outcome* section says so instead of inventing one.
 2. **The map**, with its clock and lanes when the tempo is clocked (the clock opens stopped at the window's end, so
-   every track and mark is shown; press play), and the two-sided log beside it; the chronology under it when the
-   frame is dated. A story told in steps sits beside the map as the narrative. Nothing here is ours except the GMT
-   conversion and the placement of each mark, and both say how they were done (the zone letter beside each time;
-   `basis` on each position); the convoy's observed path is dotted and the caption says it is ours.
+   every track and mark is shown), and the two-sided log beside it; the chronology under it when the frame is dated.
+   A story told in steps sits beside the map as the narrative. Nothing here is the kit's except the GMT conversion
+   and the placement of each mark, and both say how they were done (the zone letter beside each time; `basis` on each
+   position). The convoy's observed path is dotted, and its caption says it is a reconstruction.
 3. **The order of battle**, in silhouettes at the library's one scale.
-4. **The story**, the records' narrative from `engagement.md` (its *Outcome* already at the top, its *Sources* behind
-   the switch).
-5. **The figures**, where our voice leads and is labelled: the periscope and the Torpedo Data Computer, the frame's
-   own panels (Haynsworth's frames and the Judy to scale), *closing in*, each with the assumptions it rests on stated
-   under it.
+4. **The story**, the narrative from `engagement.md`.
+5. **The figures**, where the kit's voice leads and is labelled: the periscope and the Torpedo Data Computer, the
+   frame's own panels, *closing in*, each with the assumptions it rests on stated under it.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -228,417 +207,239 @@ hold. Under it, in order:
 └──────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 Questions and sources (behind the switch)
+### 4.2 Questions and sources
 
-What the records leave open: the claims board (`claims.yml`) and the leads (`leads.yml`, §8), each answer badged with
-the kind of evidence it is; the Sources view for each question more than one source speaks to (one moment at a time,
-a column per source, as typed, on its own clock, with the minutes and miles between them computed under it); and
-*how this was read*: the sources' section of `engagement.md`, what is still missing, the explainers for the notations
-the frame uses (§5.4). A question every answer of which comes from one source has nothing to set side by side, so
-the board alone shows it.
+Behind the switch (`?view=questions`): what the records leave open. The claims board (`claims.yml`), each answer
+badged with the kind of evidence it is; the Sources view for each question more than
+one source speaks to; and *how this was read*: the sources' section of `engagement.md`, what is still missing, and
+the explainers for the notations the frame uses (§5.4). A question every answer of which comes from one source has
+nothing to set side by side, so the board alone shows it.
 
-The two depths are one page with two parts (`?view=questions`; the page by default), not two pages: the address of
-an entry (`&at=1944-04-29T13:01Z`) opens the page at that minute, a step's (`&step=s7`) at that step, and a claim's
-opens the questions. The old addresses (`view=account|records|working`) still arrive, on the page or the questions.
-A story page's steps (Haynsworth's, Algiers') are the page's narrative, and the two hand-built pages became two
-engagements with their own figures registered (`site/panels.js`).
+### 4.3 Addresses
 
-On a subject page (§5.2) the second depth is **Placement and leads**: how each position was placed, the speed check,
-the organizations with their pages, the leads, the coverage month by month. Between the two, the subject page has a
-third view, **Engagements**: every engagement the subject was in, as the Engagements index draws one, so that they are
-as easy to find from the subject as the journey and the placement are.
+The two depths are one page with two parts, not two pages. An entry's address (`&at=1944-04-29T13:01Z`) opens the
+page at that minute, a step's (`&step=s7`) at that step, and a claim's opens the questions. Addresses from the earlier
+three-depth design (`view=account|records|working`) still arrive: on the page, or on the second depth for `working`.
+
+A subject page (§5.2) has the same switch with three parts: the page, *Engagements* (`?view=engagements`) and, as its
+second depth, *Placement and leads* (`?view=placement`).
 
 ## 5. Navigation
 
 ### 5.1 The shape of the site
 
 ```
-Front page                 the engagements (every one, by theatre), the theatres, each with its featured frames; what's
-│                          wanted; do this yourself
-├─ Engagements             the way in: every engagement read from both sides, by theatre and in date order, each with
-│                          its lede, its subjects and what its page holds
-├─ Theatre (4)             Pacific · Europe · Mediterranean · Atlantic: its operations in date order (the spine), each
-│                          with its engagements; its subjects; its explainers ("reading the records here")
+Front page                 an index: the engagements by theatre, four theatre cards with one static figure each,
+│                          the explainers, do this yourself, what's wanted
+├─ Engagements             the way in: every engagement by theatre and in date order, each with its lede, its
+│                          subjects and what its page holds (engagements.html)
+├─ Theatre (4)             Pacific · Europe · Mediterranean · Atlantic (theatre.html?t=): its operations in date
+│   │                      order (the spine), each with its engagements; its subjects; its explainers
 │   ├─ Operation           what it was for and what it meant, cited; its area and dates; the engagements inside it;
 │   │                      the subjects with stations inside it (context, not participation)
 │   │   └─ Engagement      the page › questions and sources (§4)
-│   └─ Subject (journey)   the page › placement and leads: the subject's own record, period by period (a patrol, a
-│                          month, a voyage); the engagements it was in as stops; the operations around it as a band
-├─ Reading the records     the explainers: time zones, the three grids, torpedo fire control, silhouettes, the glossary
+│   └─ Subject (journey)   the page › engagements › placement and leads (§5.2)
+├─ Subjects                the index of every subject (subjects.html)
+├─ Reading the records     the explainers: time zones, the grids (Japanese, US Army, German), torpedo fire control,
+│                          silhouettes
 ├─ Researching a relative
-└─ Do this yourself
+└─ About and method        what the kit covers, how it was read, and its limits (about.html)
 ```
 
-Today's `index.html` carries the theatres, the stages, the fleet list and the featured replays on one long page. The
-theatres become pages of their own (`theatre.html?t=pacific`), each built as "Algiers to Germany" is built today
-(`chapter.js`: operations as the spine, engagements under them, subjects' runs through the stages), and the front page
-becomes an index with one featured figure per theatre, static. The Europe chapter's five stages (Algiers, Sicily,
-Italy, France, Germany) are that theatre's own grouping and stay.
+`theatre.html` is one page for the four theatres, built by `site/chapter.js` from the theatre's file in
+`records/operations/<theater>/index.md`: a static map of its records (the operations' hand-drawn areas hatched as
+reconstructions, each engagement a mark, the subjects' tracks faint), the spine, the subjects, what is in the records
+and still to find (`inventory.yml`), and the explainers its records need. A theatre's span is the one the records
+cover, not the war's. The Mediterranean and Europe share five stages (Algiers, Sicily, Italy, France, Germany),
+numbered across the two pages; the Pacific's spine is its engagements alone until an operation of its war is entered.
 
 ### 5.2 One subject page
 
-`subject.html?s=<id>` replaces the four side-list apps. Its page opens on the subject's card: name as the records
-give it, kind, silhouette, its organizations over time (a dated list: part of, attached to, in pack, in convoy), the
-periods of its record (patrols; months; voyages) and how far each is along (`inventory.yml`'s status), and a strip map
-of the whole journey, stage by stage. Under the card, on the same page, the record itself: the map with the date strip
-and the list of its own entries, which is what the four apps drew; a stage row lands on it at that patrol or day. The
-panels that only one kind of record has are shown only when it has them:
+`subject.html?s=<id>` is one journey page for a boat, a ship, a unit, a battalion, a convoy or a command. It opens on
+the subject's card: the plain line as the eyebrow, the designation as the title, its silhouette, its organizations
+over time, the periods of its record (patrols; months; voyages) and a strip map of the whole journey, stage by stage,
+with a coverage bar saying which source gives each stage. A unit's stages follow the countries its stations cross; a
+battalion's are calendar years, since no countries divide the Pacific. Under the card, on the same page, is the record
+itself: the map with the date strip and the list of its own entries, each opening its scan. A stage row lands on it
+at that patrol or day.
+
+The panels that only one kind of record has are modules under `site/panels/`, loaded by record kind:
 
 | Panel | Shown when the subject has |
 |---|---|
-| dives and depth charges (today `dives.html`) | `depths.csv` |
-| attacks from the data sheets, the Japanese record and the FRUPAC notes beside them | `attacks.csv`, `japanese.yml`, `frupac.yml` |
-| sea crossings with the ship, her silhouette and the seafloor under the drawn line (today `army.html` "How they travelled") | `army/ships.csv`, `routes.csv` |
-| the parts and echelons (today `seabees.html`) | `parts.csv` |
-| the ships of the convoy day by day (today `convoys.html`'s roster) | `convoy.md` `ships:` |
-| construction projects | `seabees/projects/` |
+| a boat's patrols or a ship's diary; attacks from the data sheets, with the Japanese record and the FRUPAC notes beside them (`patrols.js`) | `positions.csv`; `attacks.csv`, `japanese.yml`, `frupac.yml` |
+| stations, actions and sea crossings, with the ship, her silhouette and the seafloor under the drawn line (`army.js`) | rows in `army/`; `army/ships.csv`, `routes.csv` |
+| the parts and echelons, and the construction projects (`seabees.js`) | `parts.csv`; `seabees/projects/` |
+| the convoy's voyage and its ships day by day (`convoy.js`) | `convoy.md` `ships:` |
 
-Beside it on the switch, *Engagements* (`?view=engagements`): the engagements the subject was in, in date order, a boat's
-grouped by patrol (with a link to that patrol's record) and anything else's by year. Each is the Engagements index's
-row (its dates, title, the build's lede, the others in it with their pages, what its page holds) with a locator under
-the dates: the engagement's box from the build on the world's land, framed wide enough to say where it is. The
-breadcrumb no longer lists them: with a day in the address (`&t=`) it gives the engagements before and after that day
-and a link to this view.
+BANG's dive profile is its own page (`dives.html`).
 
-Behind the switch, *Placement and leads* (`?view=placement`): the leads and open questions about the subject, the
-placement bases (how many stations are at a town, an offset, a grid reference, a headquarters assumed), the speed
-check's results, the sources' coverage month by month (§7.3).
+*Engagements*: the engagements the subject was in, in date order, a boat's grouped by patrol and anything else's by
+year. Each is the Engagements index's row with a locator under the dates. A unit's "beside it" is by geometry (an
+engagement whose box holds one of its stations inside its window) until a relation names the unit, and the page says
+which it is.
 
-The four apps are the first version of these panels, not wasted work: `patrols.js`, `army.js`, `seabees.js` and
-`convoys.js` each become a panel module the subject page loads by record kind, and the four CSS token sets become one.
+*Placement and leads*: how each position was placed (at a town, by an offset, by a grid reference, assumed with a
+headquarters), the speed check of the legs, the organizations with their pages, the leads and open questions about
+the subject (`army/leads.yml`), and the sources' coverage month by month. Where a file has nothing for the subject,
+the card says so.
 
 ### 5.3 The nav bar and the breadcrumb
 
-The bar on every page is the shape of §5.1 and nothing else: *Engagements* first (the index of every one: the pages
-read from both sides are what a visitor comes for, so they are the first link and the front page's first chapter),
-the four theatres, *Subjects*, *Reading the records*, *Researching a relative*. No ship, no view, no place. It is one
-HTML fragment every page includes (`footer.js` already writes the footer this way), so adding a theatre is one edit.
+The bar on every page is the shape of §5.1 and nothing else: *Engagements* first, the four theatres, *Subjects*,
+*Reading the records*, *Researching a relative*, *About and method*. No ship, no view, no place. Its links live in `site/nav.js` alone,
+which fills the placeholder on each page as the page is parsed, so adding a theatre is one edit.
 
-The breadcrumb does the walking: *Pacific / the Luzon Strait, April–May 1944 / Convoy TAMA-17 / Attack 1*, and on a
-subject page *Subjects / BANG / Patrol 1 / 29 April*. `chapter.js`'s crumb (stage, campaign, the engagement before and
-after, each unit's step before and after) is the breadcrumb for every theatre, not Europe alone: an engagement with no
-operation round it stands between the two nearest, as it does now.
+The breadcrumb does the walking (`Chapter.trail`): *Pacific / the operation / Convoy TAMA-17*, and on a subject page
+*Subjects / BANG / Patrol 1*. The engagement page's crumb adds the engagement before and after in its theatre and
+each followed subject's own before and after. An engagement with no operation round it stands between the two
+nearest.
 
 ### 5.4 The explainers, reached from the notation
 
-The explainers (`zones.html`, `jgrid.html`, `grids.html`, `german.html`, `torpedo.html`, `silhouettes.html`) keep their
-shelf under *Reading the records*. They are also reached from wherever their notation appears: a time with a zone
-letter (`2201 I`) carries a link to the zones page at that letter; a grid reference (`V-044572`, `XXIII 97`, `CJ 9472`)
-to the grid page at that grid; a kana code (`メキ三ツ`) to the Japanese grid page; a track angle or gyro on an attack
-sheet to the torpedo page; a silhouette to its plate. `glossary.js` already marks terms on first use and opens a card
-with the explanation and its source; the notations become glossary patterns (a regular expression and a target per
-notation, in `reference/glossary.yml`), so no page writes the links by hand. Each theatre page lists the explainers its
-records need ("reading the records here", as the stages do now).
+The explainers (`zones.html`, `jgrid.html`, `grids.html`, `german.html`, `torpedo.html`, `silhouettes.html`) have
+their shelf under *Reading the records*, and are also reached from wherever their notation appears. The notations are
+`patterns` in `reference/glossary.yml` (a regular expression and a target each: a zone-lettered time, an Army grid
+reference, a German reference point, a naval square, a kana code, a track angle, a gyro angle), checked by
+`build_glossary.py`. `glossary.js` marks each distinct value once per passage, with a card that links the explainer
+opened at that value, so no page writes the links by hand. The patterns know what is not a notation: `KG 54`,
+`TF 58` and `Mk 14` are not grid references, a convoy's kana name is not a position code, and a lowercase word after
+a zone letter ("At 1604 I sighted") leaves the time unmarked.
 
 ## 6. Visual hierarchy
 
-The type's three voices are the backbone, and the page's order gives them their places: ET Book for the outcome, the
-figures and the questions; TT2020 for every typed word of a record; Shippori Mincho for Japanese. The eye should be able to tell, without
-reading, which words are the record's. No capitals for labels, italics instead.
+The type's three voices and the colours are set out in `CLAUDE.md` (Pages) and `guides/ENGAGEMENTS.md`. The page's
+order gives them their places: the eye should tell, without reading, which words are the record's.
 
 | Element | Treatment |
 |---|---|
-| The frame's title and lede | the largest type on the page, in our voice; the eyebrow above it gives the theatre and operation |
-| The outcome | a short paragraph in our voice, every sentence of which is a record's statement with its citation; never a verdict of ours |
-| A subject | its name as the records give it, in small capitals' place an italic kind, and its silhouette at the library's one scale |
-| An entry | `entry.css`'s block: our time at the left, the record's own time and zone at the right in the typed voice, the words typed, the note in our voice under it, the citation last |
-| An original and its translation | the original first in its own voice and language, the translation under it in ours, a hair smaller |
+| The frame's title and lede | the largest type on the page, in the kit's voice; the eyebrow above gives the theatre and operation |
+| The outcome | a short paragraph, every sentence of which is a record's statement with its citation; never a verdict of the kit's |
+| A subject | its name as the records give it, its kind in italics, its silhouette at the library's one scale |
+| An entry | `entry.css`'s block: GMT at the left, the record's own time and zone at the right in the typed voice, the words typed, the note under it, the citation last |
+| An original and its translation | the original first in its own voice and language, the translation under it, a little smaller |
 | A computed layer | hatched or dotted on the map; in text, an italic *assumed* or *computed* with the assumption under the figure, not in a footnote |
-| The colours | the three checked colours for the followed subjects, ink for everyone else, red for hits only; text never wears a colour except a subject's own label |
-| Depth | the top of the page has no controls; the map has the clock, filters and the scan viewer; the figures have the sliders and the tabs; the questions have the board. A control is a sign the reader has gone down the page |
+| Depth | the top of the page has no controls; the map has the clock, the filters and the scan viewer; the figures have sliders and tabs; the questions have the board. A control is a sign the reader has gone down the page |
 
-A page should read as a well-made entry in a reference work at the top, a chart-room sheet in the middle, and a
+A page should read as a well-made entry in a reference work at the top, a chart-room sheet in the middle and a
 researcher's desk at the bottom.
 
-## 7. The two test cases
+## 7. The two worked cases
 
-### 7.1 Convoy TAMA-17, 29–30 April 1944 (`records/engagements/tama-17-1944-04-29/`)
+### 7.1 Convoy TAMA-17, 29–30 April 1944
 
-**What the records are.** Three war patrol reports on three clocks (BANG zone K, PARCHE zone I, TINOSA zone H:
-`rg38-74802746`, `74828582`, `74856363`); the 1st Surface Escort Division's movements table and Nittatsu Maru's
-movement log (JACAR `C08030140600`, `C08050103200`), in Tokyo time; the FRUPAC overlays of 29 and 30 April
-(`metapth1733008`, …; estimated positions, no zone written); combinedfleet.com for the convoy list and the 3–4 May
-sinkings (secondary); JANAC's credit (assessment). Tempo: clocked.
+`records/engagements/tama-17-1944-04-29/`; `engagement.html?e=tama-17-1944-04-29`.
 
-**The account.** The wireframe in §4.1. The static map shows the three tracks, the convoy's observed path dotted (ours,
-and the caption says so), the two sinkings and the miss. The outcome quotes the loss list and BANG's claim side by
-side in two sentences. The doors: 44 entries from five records in two languages (the three narratives, Nittatsu Maru's
-log and the escort division's diary) and 27 fixes; the questions' three attack–record pairs from BANG's `claims.yml`
-and the four open items that today sit in `guides/ENGAGEMENTS.md`'s "Open work" (this engagement has no `claims.yml`
-of its own, which is what `leads.yml` in §8 is for); the three patrols, the convoy and the lane.
+**The records.** Three war patrol reports on three clocks (BANG zone K, PARCHE zone I, TINOSA zone H:
+`rg38-74802746`, `rg38-74828582`, `rg38-74856363`); the 1st Surface Escort Division's movements table and Nittatsu
+Maru's movement table (JACAR `C08030140600`, `C08050103200`), in Tokyo time; the FRUPAC overlays of 29 and 30 April
+(estimated positions, no zone written); combinedfleet.com for the convoy list (secondary); JANAC's credit
+(assessment). Tempo: clocked.
 
-**The records.** The page as it is today, with two changes. The lanes under the map are per followed subject (the three
-boats) and one for the convoy's record, as now; the log beside it becomes the chronology at hour grain, its columns the
-sources (BANG's narrative, BANG's attack sheets, PARCHE, TINOSA, the escort division, Nittatsu Maru's log), collapsible
-to two sides on a phone. The FRUPAC notes appear here as entries in their own column, kind *intelligence*, their
-positions on the map hatched (estimated from where the pencil mark sits), not as a third side with a lane of its own:
-radio intelligence is a source about the convoy, not a participant.
+**The page.** The wireframe in §4.1: three tracks, the convoy's observed path dotted, the two sinkings and the miss.
+The outcome sets the Japanese loss list and BANG's claim side by side. The lanes under the map are one per followed
+boat and one for the convoy's record. The FRUPAC notes are entries of kind *intelligence*, their positions hatched
+(estimated from where the pencil mark sits on the overlay, zone I assumed and said on each): radio intelligence is a
+source about the convoy, not a participant with a lane of its own.
 
-**The working.** Three figures the frame already has (the periscope and the TDC for each attack with a sheet; *closing
-in*; the sky) stay as they are, under their assumptions. The Sources view, new, is where this frame earns the model:
+**Questions and sources.** The build pairs each attack with the other side's record of it (`pairs`, from the patrol's
+`claims.yml` and `japanese.yml`), and each pairing is a moment in the Sources view:
 
 ```
 Attack 1 · the same minutes, source by source                                   minutes and miles computed here
-┌─────────────────┬───────────────────┬────────────────────┬────────────────────┬──────────────────┬───────────────┐
-│ BANG, sheet 1   │ Nittatsu Maru's   │ Escort division,   │ FRUPAC overlay     │ combinedfleet    │ JANAC         │
-│ record · us     │ log · record · jp │ April table · jp   │ intelligence · us  │ secondary        │ assessment    │
-├─────────────────┼───────────────────┼────────────────────┼────────────────────┼──────────────────┼───────────────┤
-│ 2256 K          │ 二二時〇一分         │ (Harukaze: 敵潜制圧) │ 2215/29            │ 29 Apr 1944      │ 29 Apr 1944   │
-│ = 1256 GMT      │ 2201 I = 1301 GMT │ no time            │ = 1315 GMT, assumed│ no time          │ no time       │
-│ 19-26N 118-45E  │ 北緯一九度二〇分 …   │                    │ 19.4 N 118.7 E     │                  │ 19-26N 118-45E│
-│ as typed        │ 19-20N 118-50E    │                    │ estimated ±0.2°    │                  │ (BANG's)      │
-│ "One 7000 ton AK│ 第十番船竹川丸 …     │                    │ "Yoshima Maru /    │ Takegawa Maru    │ Takegawa Maru │
-│  probably sunk" │ the tenth ship,   │                    │  att. by torp"     │ sunk, BANG       │ 1,930 t, BANG │
-│ Sunk: None.     │ Takegawa Maru,    │                    │                    │                  │ not probable  │
-│                 │ torpedoed         │                    │                    │                  │               │
-│ p16 ↗           │ p23 ↗             │ p15 ↗              │ map ↗              │ ↗                │ 4/p58 ↗       │
-└─────────────────┴───────────────────┴────────────────────┴────────────────────┴──────────────────┴───────────────┘
-Between BANG's sheet and the log: 5 min, 7.6 nm.  Between the sheet and FRUPAC: 19 min, 4 nm (FRUPAC's zone assumed I).
-What the records leave open
- ◼ record      Which ship did Attack 1 hit?  Takegawa Maru (the log, J03)        ◻ intelligence  "Yashima Maru" (F01, F02)
- ◼ assessment  JANAC credits her to BANG     ◇ inference  Yashima may be a misread intercept or another ship (our note)
+┌─────────────────┬───────────────────┬────────────────────┬────────────────────┬──────────────────┐
+│ BANG, sheet 1   │ Nittatsu Maru's   │ Escort division,   │ FRUPAC overlay     │ combinedfleet    │
+│ record · us     │ table · record·jp │ April table · jp   │ intelligence · us  │ secondary        │
+├─────────────────┼───────────────────┼────────────────────┼────────────────────┼──────────────────┤
+│ 2256 K          │ 二二時〇一分         │ (Harukaze: 敵潜制圧) │ 2215/29            │ 29 Apr 1944      │
+│ = 1256 GMT      │ 2201 I = 1301 GMT │ no time            │ = 1315 GMT, assumed│ no time          │
+│ 19-26N 118-45E  │ 19-20N 118-50E    │                    │ 19.4 N 118.7 E     │                  │
+│ "One 7000 ton AK│ the tenth ship,   │                    │ "Yoshima Maru /    │ Takegawa Maru    │
+│  probably sunk" │ Takegawa Maru,    │                    │  att. by torp"     │ sunk, BANG       │
+│ p16 ↗           │ p23 ↗             │ p15 ↗              │ map ↗              │ ↗                │
+└─────────────────┴───────────────────┴────────────────────┴────────────────────┴──────────────────┘
+Between BANG's sheet and the table: 5 min, 7.6 nm.  Between the sheet and FRUPAC: 19 min, 4 nm (FRUPAC's zone assumed I).
 ```
 
-The columns are sources, the chips under each column head its kind and nationality, and the arithmetic (zone to GMT,
-the distance between two positions) is done on the page by `engage.js` and labelled. The claims board under it is
-`claims.yml` as it is, each answer badged by its source's kind instead of its own `weight` where the two agree, and
-`weight` kept where a record is used as a recollection would be. Repetition isn't corroboration: combinedfleet and
-JANAC repeating the loss list show as one column each, and the board counts them once.
+The columns are sources; the chips under each head give its kind and nationality; the arithmetic is done on the page
+by `engage.js` and labelled. The claims board under it is `claims.yml`, each answer badged by its source's kind.
+Repetition isn't corroboration: a secondary source repeating the loss list is one column, and the board merges
+repeated answers and counts them once. A FRUPAC note tied to an attack with no Japanese pairing is an entry and a
+mark but no moment, since moments are pairings.
 
-**The journeys.** From the who's links at the top of the page: BANG's subject page at patrol 1 (`patrols.html?ship=bang&patrol=1` today),
-with her dives and the FRUPAC notes beside each attack; the convoy's page (`convoys.html?c=tama-17` today) with its
-ships day by day; the lane's month (`lanes.html`). The breadcrumb: *Pacific / the Luzon Strait, April–May 1944 /
-TAMA-17*, with TE-04 four days later as the next engagement.
+**The journeys.** From the names at the top of the page: BANG's subject page at patrol 1
+(`subject.html?s=bang&period=1`), the convoy's (`subject.html?s=tama-17`) with its ships day by day, and the lane's
+month (`lanes.html`). The crumb gives TE-04, four days later, as the next engagement.
 
-### 7.2 The Medical Detachment, 67th Coast Artillery (AA), 1942–1945 (`army/units.csv` `67ca-med`)
+### 7.2 The Medical Detachment, 67th Coast Artillery (AA), 1942–1945
 
-**What the records are.** 62 station rows in `army/stations.csv` from 1 September 1942 (Paterson, N.J.) to 14 May
-1945 (Hüttenfeld), from the detachment's morning reports (NARA rolls 792–794) through December 1944, the Regimental
-Headquarters Battery's for the months the detachment's own are missing (`source=regt`, assumed), and the 894th's
-printed history for 1945 (`hist894`, the battalion's position, the detachment assumed with it). Three sea crossings
-in `army/ships.csv` (USS Ancon in UGF-4, January 1943, confirmed; "Ship # 416" to Naples, October 1943, a candidate;
-USS Florence Nightingale to France, September 1944, confirmed), the Atlantic and the train rides as assumed routes
-(`routes.csv`). Its organizations: part of the 67th CA (AA), redesignated the 894th AAA AW Bn on 20 March 1944. Around
-it: the 67th's batteries' engagements at Venafro and Acquafondata (`venafro-1944-02`, batteries E, H and A, not the
-detachment), the operations from Torch to Central Europe (`operations/`), and the leads in `army/README.md`. Tempo:
-monthly.
+`army/units.csv` `67ca-med`; `subject.html?s=67ca-med`.
 
-**The account.** The journey in stages, as `chapter.js` computes them from the stations' countries, with one sentence
-per stage in the records' words and a coverage bar under each saying which source gives the stage:
+**The records.** 62 station rows in `army/stations.csv` from 1 September 1942 (Paterson, N.J.) to 14 May 1945
+(Hüttenfeld): the detachment's own morning reports through December 1944, the Regimental Headquarters Battery's for
+the months its own are missing (`source=regt`, assumed), and the 894th's printed history for 1945 (the battalion's
+position, the detachment assumed with it). Three sea crossings in `army/ships.csv`; the Atlantic and the train rides
+as assumed routes (`routes.csv`). Tempo: monthly.
 
-```
-┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ Mediterranean and Europe · 67th Coast Artillery (AA) → 894th AAA AW Bn                           │
-│ Medical Detachment, 67th CA (AA): Paterson to Hüttenfeld, 1942–1945                              │
-│ Where the detachment was, day by day, from its own morning reports to December 1944 and the      │
-│ battalion's history for 1945. Sixty-two changes of station, three sea crossings, five countries  │
-│ after the Atlantic.                                                                              │
-├──────────────────────────────────────────────────────────────────────────────────────────────────┤
-│  [strip map: five small panels at one scale, the track solid where its own report places it,     │
-│   dashed where assumed, the crossings dotted; one red-free palette: one subject, one colour]     │
-│   1 Home and the Atlantic  2 Algeria and Tunisia  3 Italy        4 France        5 Germany       │
-│   Sep 42 – Jan 43          Jan 43 – Oct 43        Oct 43 – Sep 44  Sep 44 – Apr 45  Apr – May 45 │
-├──────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ 2 Algeria and Tunisia, Jan – Oct 1943                                                            │
-│   "Disembarked at Mers-el-Kebir at 10.00 A.M. Campsite La Senia Airport." (26 Jan 1943)          │
-│   17 stations · the war around it: Torch (ended), Tunisia (12 Nov 42 – 13 May 43): context, not  │
-│   participation · reading the records here: the British North West Africa grid                   │
-│   coverage  ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇  own morning reports  ░░░░  regimental HQ's (assumed)│
-├──────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ The records ›  62 stations · 3 crossings · two record series   The working ›  7 assumed legs     │
-│ Beside it ›  Batteries E and H at Venafro, Feb 1944 (the same battalion, not the detachment)     │
-└──────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
+**The page.** The journey in five stages, with one sentence per stage in the records' words and a coverage bar under
+each: *own morning reports*, *regimental headquarters' (assumed)*, *the battalion's history*. The engagements along
+the way are stops on the strip, and the page is honest about them: Venafro is batteries E, H and A's engagement, the
+detachment's own record for those weeks says only where it was, so the strip marks it *beside it*, not *in it*. The
+operations from Torch to Central Europe are a band under the strip: context, each linking to its place on the theatre
+page. Under the strip, the record: the map with the date strip, the stations as typed with their pages, the crossings
+opened from the station they start at.
 
-The engagements along the way are stops on the strip, and the account is honest about them: Venafro is the batteries'
-engagement, the detachment's own record for those weeks says only where it was, so the strip marks it *beside it*, not
-*in it*. The operations are a band under the strip (context), each a door to its operation page.
+**Placement and leads.** The placement table; the speed check of the legs (a motor convoy's eight miles in an
+afternoon is fine; a station a day's march off the route is a question); the organizations as a dated list with their
+pages; and the coverage month by month, which is the answer to "how is it known where it was in March 1943?" (*the
+regimental headquarters battery's report; the detachment's own are missing; assumed with regimental headquarters*).
 
-**The records.** Today's `army.html` for this unit: the map with the date strip and playback, the list of stations as
-typed with their pages, the crossings opened from the station they start at, and the panels the record has (the
-seafloor under the LST line; the ship's silhouette). The chronology at month grain adds what the map can't show: the
-stations as bars, the crossings as arrows, the redesignation as a mark on the organization row, and a column for each
-source so the hand-over from the morning reports to the history on 1 January 1945 is a visible seam.
+## 8. What the records carry for the pages
 
-**The working.** The placement table (how many stations are placed at a town, an offset, a grid reference, a
-headquarters assumed with the detachment nearby, and which); the leads about the unit, each with what was searched
-and what is still to search (`leads.yml`, §8; today `army/README.md`'s table holds the 9th Armored's, none yet for this
-detachment); the speed check of the legs (a motor convoy's 8 miles in an afternoon is fine; a station a day's march
-off the route is a question); the relations as a dated list with their pages; the coverage month by
-month, which is the honest answer to "how do we know where it was in March 1943?" (*the regimental headquarters
-battery's report; the detachment's own are missing; assumed with regimental headquarters*). Press belongs here too when
-it comes: L'Écho d'Alger on an Oran raid the battery fired on is a `press` column beside the morning report's "Fired on
-hostile targets", and the page says which is which.
+Hand-edited, each checked by a build or the lint:
 
-**The breadcrumb.** *Subjects / Medical Detachment, 67th CA (AA) / Italy, Oct 1943 – Sep 1944 / 17 Oct 1943*, and from
-any station, the operation it sat inside and the engagement nearest in time.
-
-## 8. What changes in the records
-
-Additive, and small; nothing is re-transcribed.
-
-| Change | Where | Why |
+| Field or file | Where | For |
 |---|---|---|
-| `kind` and `of` on every source entry | `records/SOURCES.yml` (99 entries); `check_sources.py` fails on a missing kind | the voices (§2.4): the build tags every row through its citation |
-| `original`, `lang`, `translation` on every entry whose record isn't in English; `words` keeps the translation for a German entry until it is moved | `events.yml` | one rule for every language; the German entries at Venafro and Neuburg move first |
-| `side` retired; an actor's nationality `of` on an entry whose actor isn't a subject | `events.yml`, `build_engagement.py`'s `SIDES` | the press is a source kind; a place is a position; a bloc is vaguer than the record |
-| `plain` on every subject: what it was, in a line, ours | `army/units.csv`, `seabees/units.csv`, `ship.yml`, `convoy.md` | the opaque designations get a name a reader can follow (§2.1) |
-| a relations file beside each dataset read into one registry: `convoys/<id>` ships, `seabees/parts.csv`, ComSubPac's task organization, a pack's boats | the build (`subjects.json`, generated) | organizations (§2.1); the subject page's card |
-| `subjects.json`: every subject across `boats/`, `ships/`, `army/units.csv`, `seabees/units.csv`, `convoys/`, `commands/`, with kind, periods, status and relations | generated by the build; `ships.json` is its first half | one registry for the subject page, the breadcrumb and the lint's deep links |
-| `leads.yml` beside `claims.yml` (and in `army/`, `seabees/`): `statement`, `said_by`, `searched`, `still`, `ref` | hand-edited; the README tables move into it | the working shows them; a lead resolved becomes a row |
-| `operation:` on an engagement, optional | `engagement.md` front matter | only when the geometric placement (`chapter.js`) is wrong |
-| `step` links in prose: `[[step:s3|at 1250 she was hit]]` | `engagement.md`, `links.js` | the story sets the clock; the hand-built pages fold into the generic one |
-| the notations as glossary patterns | `reference/glossary.yml` | the explainers reached from the notation (§5.4) |
+| `kind`, `of` on every source | `records/SOURCES.yml` | the voices (§2.4) |
+| `original`, `lang`, `translation` on every entry not in English | `events.yml`, `japanese.yml` | one rule for every language |
+| `of` on a participant, an entry or a position; `against:` on an engagement where nationality can't say who faced whom | `engagement.md`, `events.yml`, `positions.csv` | no `side` (§2.4) |
+| `plain` on every subject | `army/units.yml`, `seabees/units.yml`, `ship.yml`, `convoy.md`, `command.yml` | the name a reader can follow (§2.1) |
+| the relations of each dataset | `army/relations.csv`, `seabees/parts.csv`, a convoy's `ships:`, ComSubPac's `task_organization.csv` | organizations (§2.1) |
+| `leads.yml`: `statement`, `said_by`, `searched`, `still`, `ref` | `army/leads.yml` | statements about a unit no cited page supports yet, with what was searched; a lead resolved becomes a row |
+| `operation:` on an engagement, optional | `engagement.md` front matter | only when the placement by area and date is wrong |
+| `views`, `steps`; `[[step:id|words]]` in prose | `engagement.md`, `site/links.js` | the story sets the map and the clock (§3) |
+| `fronts:`, `relief:`, `roads:` | `engagement.md` front matter | the situation maps and the ground under a dated frame |
+| the notations as `patterns` | `reference/glossary.yml` | the explainers reached from the notation (§5.4) |
 
-Derived, never stored: a frame's tempo; a subject's stages; which view leads; the minutes and miles between two
-entries; a source's columns; a unit's coverage by month.
+Generated: `subjects.json`, `engagements/*/engagement.json`, `engagements/index.json`, `operations/operations.json`.
 
-## 9. What stays, what goes, and in what order
+Derived on the page, never stored: a frame's tempo; a subject's stages; which view leads; the minutes and miles
+between two entries; a source's columns; a unit's coverage by month.
 
-**Stays, as it is**: the records' folders and every transcription rule; `engage.js` and its tests (the computation, now
-also the cross-reference arithmetic); the observer view and the TDC; *closing in*; the dive profile; the convoys'
-roster and the lanes' timetable; the encodings and the three checked colours; the scan viewer; the glossary; the
-explainers; the Europe chapter's stages.
+## 9. How the pages came to this
 
-**Goes, once replaced** (the kit's rule: a file converted is converted for good): `haynsworth.html` and `algiers.html`
-as pages (their steps and figures become their engagements' story and working); the per-page nav fragment; `viz.css`'s
-token set; `OWN_PAGE` and the Europe-only test in `chapter.js`; `side` and its `SIDES` vocabulary.
-
-Each phase deletes something and ends with the checks green (`lint.py`, `smoke.py`, `check_builds.sh`,
-`test_tools.py`, `engage.test.js`), the lint's REF002 rewritten for the new addresses, and every page looked at in
-light and dark on a desktop and a phone.
-
-| Phase | Build | Delete | Proves |
-|---|---|---|---|
-| 1. One skin | one token set and one nav fragment on every page: the vocabulary defined once in `viz.css`'s header, each page family keeping its own values under the one set of names | the second set of names and every fallback chain (`entry.css`, `glossary.js`); the seventeen copies of the nav | the two page families were one |
-| 2. The depths | the account on `engagement.html` (static map, outcome, doors) with the present page as its records depth, `?view=`; the working gathers the claims, the computed layers, the figures | nothing yet | progressive disclosure on the existing data |
-| 3. Chronology | the day-column chronology as a shared view; tempo derived; the dated frames (Venafro, Algiers, Remagen) lead with it | `algiers.html`'s own timeline | the clock is one view's device |
-| 4. Voices | `kind`/`of` in SOURCES.yml; entries tagged through citations; `original`/`lang`/`translation` for German; the Sources view for TAMA-17 and Algiers | `side` and `SIDES` | sources as columns; press beside the records; the other side named as the records name it |
-| 5. Stories folded in | `[[step:]]`; Haynsworth's and Algiers' figures as working panels of their engagements | `haynsworth.html`, `algiers.html`, `OWN_PAGE` | one engagement page for every tempo and every kind of figure |
-| 6. Subjects | `subjects.json`; `subject.html` with the four apps as panels; relations from every dataset; leads | `patrols.html`, `army.html`, `seabees.html`, `convoys.html` as pages (their scripts live on as panels); the README lead tables | one journey page for a boat, a ship, a unit, a battalion, a convoy |
-| 7. Theatres | `theatre.html` from `chapter.js` for all four; the front page as an index; the breadcrumb everywhere; notations in the glossary | the front page's inline replays and fleet list | the ladder theatre → operation → engagement → entry, and the subject thread across it |
-
-Phases 1–3 need no change to the records. Phase 4 touches `SOURCES.yml` and two engagements' `events.yml`. Phases 6 and
-7 are the large ones and come last, when the earlier phases have shown the model holds on the pages that exist.
-
-**Done** (3 November 2026): phase 1 (`site/nav.js`; one token vocabulary, `site/viz.css`, every page's colours unchanged
-to the pixel) and phase 3 (`Engage.tempo`, `chronologyRows`, `chronologyColumns` in `engage.js`, tested; `EV.chronology`
-in `engage-views.js` with `site/chron.css`; Venafro, Filignano, Remagen and Algiers lead with it on `engagement.html`,
-and `algiers.html`'s own timeline is gone). Two things the data taught: a frame counts as clocked when *more than half*
-its entries carry a time with a zone, not any of them, because Remagen's corps report times ten entries of twenty-five
-and is a dated frame all the same; and the columns group by the record named in each entry's `source` (the text before
-its first comma or colon) until phase 4 gives every source a `kind`, which should replace that heuristic.
-
-**Done** (3 November 2026): phase 2. `engagement.html?e=<id>&view=account|records|working`, the account by default: the
-static map at the window's end with the convoy's observed path drawn dotted as ours, the outcome in the records' words,
-who (colour bar, hull, kind, CO, silhouette), when, and three doors whose counts come from the engagement's own JSON;
-the records depth is the page as it was; the working gathers the periscope and TDC, closing in, the claims and the
-story's sources. `&at=<ISO>` opens the records at a minute. The smoke test opens every engagement at two or three
-depths. What the data taught: six of the hand-built frames have no *Outcome* section yet, so their account says so
-rather than inventing one; and counting "records" from an entry's `source` text is phase 4's heuristic again. Phase 4
-is next, and it is the first to touch the records.
-
-**Done** (6 November 2026): three depths became two (§4). The account's screen and the records' sheet are one page in
-reading order (outcome, who and when; the map; the order of battle; the story; the figures, which moved out of the
-working), and the second depth is named for what it holds: *Questions and sources* on an engagement, *Placement and
-leads* on a subject (whose record now sits under its journey, the stage rows landing on it). The switch sits under
-the lede and says what each depth holds; the doors went with the account. What the data taught: every European
-engagement (Algiers, Filignano, Venafro, Remagen, Neuburg) lacked an *Outcome* section, so the first screen of the
-pages with the situation maps opened on "no outcome yet"; the five are written now, each sentence a record's with its
-citation. And a question every answer of which comes from one source (sixteen of Remagen's) made the Sources view
-repeat the board, so it shows only questions with two or more sources.
-
-**Done** (3 November 2026): phase 4, the records and the build. Every one of the 99 sources in `SOURCES.yml` carries a
-`kind` and most an `of`; `check_sources.py` fails without a kind. `side` is gone: every participant, entry and position
-carries `of`, the nationality as the record gives it, and the build derives `followed` (a participant with a track or a
-unit), `own`, `opposed`, `source_kind` and `source_of`. Twenty-six entries' originals moved out of `words` into
-`original`, `lang` and `translation` (German at Venafro and Filignano; French and Italian at Algiers, translated for the
-first time; Japanese at Haynsworth). What the data taught: a convoy is not a followed subject (it is the other side's
-record, read against the boats' sightings), and nationality alone cannot say who faced whom once three nationalities
-meet, so an engagement may name `against:` (Algiers: `[de, it]`, so No. 153 Squadron's record is not coloured as the
-enemy's); and 46 catalogue-URL citations on Haynsworth and Corzine still resolve to the generic `url` entry, whose kind
-is `secondary`, until they are written in the archive's short form.
-
-**Done** (3 November 2026): phase 4, the pages. The build emits each pairing of an attack with the other side's record
-(`pairs`, from the patrols' `claims.yml` and `japanese.yml`, inside the window); the working depth shows a Sources view
-per moment (a pair on a clocked frame, a claim's question on a dated one) with the rows as typed, in GMT and placed
-marked as ours, and the minutes and miles computed on the page (`Engage.apart`, tested on Attack 1: 5 min, 7.6 nm); the
-claims board badges each answer by its source's kind and merges repeated answers; every chip names a source by kind
-and nationality. What the data taught: TAMA-17's FRUPAC notes, JANAC and combinedfleet are not entries of the
-engagement (frupac.yml isn't built into the JSON; the other two live in notes), so Attack 1's table has two columns
-where the mockup drew six: building `frupac.yml` into the engagement as `intelligence` entries is the next records task,
-and the view already takes them. Phase 5 is next.
-
-**Done** (3 November 2026): the FRUPAC notes. The build reads each tracked boat's `frupac.yml` inside the window into
-intelligence entries (zone I assumed, said on each; the position estimated from the mark on the map, drawn hatched) and
-beside each attack's pairing: 26 entries across nine Pacific engagements. Attack 1 on TAMA-17 now has the five columns
-the mockup drew. A note tied to an attack with no Japanese pairing is an entry and a mark but no moment, since moments
-are pairings.
-
-**Done** (4 November 2026): phase 5. A story's paragraph carries `[[step:id|words]]`, a step being the entries that
-name it, framed by the front matter's `views` and `steps`; on the records depth the story sits beside the map as the
-narrative and each step link sets the clock and the view. Haynsworth's six figures (the five-minute panels, the Judy to
-scale, the estimated path, the damage frames, the task group, the aircraft) are working panels registered in
-`site/panels.js`; Algiers' relief and roads are a map option (`relief:`, `roads:` in the front matter). The two story
-pages are one-line redirects, `OWN_PAGE` is gone, and six engagements' ledes lost the folder notes they carried. What
-didn't fit, and is left: the story pages' bespoke map layers (Haynsworth's picket ring and formation schematic, the
-assumed route and weather ring, the animated day with the other ships' tracks; Algiers' context hatch and the battery's
-reach ring, now prose) have no home on the generic map yet, and would be further panels; and the family repository's
-hook into the Haynsworth page (`HAYNSWORTH_EXTRA`) went with the page, so its own pages need the panel registry
-instead. Phase 6 is next.
-
-**Done** (4 November 2026): phase 6. `tools/build_subjects.py` writes `records/subjects.json`, one entry for each of 86
-subjects (17 boats, 23 ships, 36 Army units, 2 battalions, 7 convoys, the submarine force's headquarters) with its
-plain line, periods, the relations merged from every dataset into one shape, its engagements and which record files it
-has; a subject without a `plain` line fails the build. `subject.html?s=<id>` has the three depths: the account (the
-plain line as the eyebrow, the designation as the title, the organizations, the strip map by stage or patrol, the
-coverage bar, the war around each stage, three doors), the records (the four apps as panels under `site/panels/`), the
-working (placement, the speed check on the page, relations, `army/leads.yml`, coverage). `subjects.html` is the index.
-The four old pages are redirects that carry their parameters across. What the data taught: the 67th CA (AA)'s units
-have no rows in `relations.csv` yet, so the Medical Detachment's organizations card says so instead of the mockup's
-rows (the ORGANIZATION line on its reports is the source to read); a unit's "beside it" is by geometry (an engagement
-whose box holds a station in its window) until a relation names the battalion; a subject's theatre is read from its
-positions; and a battalion's stages are calendar years, since no countries divide the Pacific. Phase 7 is next.
-
-**Done** (4 November 2026): phase 7, the last. `theatre.html?t=pacific|atlantic|mediterranean|europe` is one page for the
-four theatres, built from `chapter.js` generalized to every theatre: the theatre's file in `records/operations`, a static
-map of its records (the operations' hand-drawn areas hatched as ours, each engagement a mark at its box's middle, the
-subjects' tracks faint), the spine of operations and engagements in date order, the subjects here, what is also in the
-records and still to find, and the explainers its records need. The front page is an index: four cards with one static
-figure each, then the shelf and the wanted list; the replay, the three interactive figures, the stages and the "also in"
-lists are gone. The nav bar is §5.3 and nothing else. Every page carries the breadcrumb (`Chapter.trail`), the
-engagement page's walking its own theatre and following a boat as it followed a unit; the subject page's reads
-*Subjects / BANG / Patrol 1* as §5.3 wrote it, and the subject's way up to its theatre is the account's "the war around
-it" rows, each operation linking to its place on the theatre page. The notations are glossary `patterns` (seven: a
-zone-lettered time, an Army grid reference, a German reference point, a naval square, a kana code, a track angle, a
-gyro angle), checked by `build_glossary.py` and tested, each marked once per distinct value with a card that links the
-explainer opened at the value (`zones.html?zone=K`, `grids.html?ref=`, `jgrid.html?code=`, `german.html?ref=`,
-`torpedo.html?track=`; the gyro maps to nothing on the torpedo page, whose target is drawn dead ahead). What the data
-taught: the Pacific and the Atlantic had no theatre file, so each got one whose span is the one the records cover, not
-the war's, with no prose until a source is read for it, and the Pacific's spine is its engagements alone, no operation
-of its war being entered yet; the five stages are shared between the Mediterranean and Europe and numbered across the
-two pages; the records type a zone time both `1500 A` and `1500A`, and a pronoun after a time ("At 1604 I sighted") is
-real, so a lowercase word after the letter leaves it unmarked; the grid pattern had to learn what is not a grid
-reference (`KG 54`, `TF 58`, `JV 44`, `Mk 14`, a lead's `L39`, `A 1600 hrs`), a convoy's kana name (`タマ一七`) is not a
-position code, and the records never write the angle on the bow as a notation, only in words. Left for later: the
-engagement page prints no date beside its times, so the zone card gives the offset, not the GMT, until the page carries
-`data-date` (the hook is in `glossary.js`); and no operation of the Pacific or the Atlantic war is entered.
+The model replaced four separate apps (`patrols.html`, `army.html`, `seabees.html`, `convoys.html`) and two
+hand-built story pages (`haynsworth.html`, `algiers.html`) in seven phases in November 2026: one skin, the depths,
+the chronology, the voices, the stories folded in, the subjects (phase 6, which the panels' comments cite) and the
+theatres. The old addresses are one-line redirects that carry their parameters across, kept so links from outside
+still arrive. The phases, what each deleted and what the records taught along the way are in
+`guides/design-history/2026-11-operations-viewer.md`; the mockups in `guides/mockups/` date from the same design and
+are not live pages.
 
 ## 10. Open questions
 
 - **Colour for more than three followed subjects.** The 62nd CA (AA) has fourteen units with stations around Oran and
-  Algiers in 1942–43. Small multiples (one map per battery at one scale) or a picker, as the rule says; the page's
-  strip map is already small multiples by stage. Which the subject page uses for a battalion with many parts is to be
-  tried on the 62nd and the 20th NCB.
-- **The convoy as a subject with a record of its own against the boats' sightings of it.** The convoy's observed path
-  is computed from the boats' ship contacts and the Japanese positions. On the convoy's own page it is the lead layer
-  and it is ours; the page must say so in its first line.
-- **Operations without a page of their own yet.** The Pacific has none in `operations/`; the lanes' month-by-month view
-  is the nearest thing to the war at sea's own frame, and may be the Pacific theatre page's spine until the operations
-  are written.
-- **The family seam.** A family's site reaches `army.html?who=` today; the subject page must take the same address so
-  the seam holds (`subject.html?s=67ca-med&who=…&t=…`), and the kit's lint must keep refusing a person's name in
-  `records/` (PRV001).
-- **Addresses.** `engagement.html?e=`, `patrols.html?ship=`, `army.html?unit=`, `seabees.html?unit=`, `convoys.html?c=`
-  are linked from outside the kit. Each old address redirects to the new one for good (a one-line page, like the
-  Pages workflow's root), and the lint checks both forms until the old pages are gone.
+  Algiers in 1942–43. Small multiples (one map per battery at one scale) or a picker: to be tried on the 62nd and the
+  20th NCB.
+- **The convoy's own page.** Its observed path is computed from the boats' ship contacts and the Japanese positions.
+  On the convoy's page it is the lead layer and it is a reconstruction; the page must say so in its first line.
+- **Operations of the war at sea.** None is entered for the Pacific or the Atlantic. The lanes' month-by-month view
+  is the nearest thing to that war's own frame.
+- **Dates beside times.** The engagement page prints no date beside its times, so a zone card gives the offset and
+  not the GMT until the page carries `data-date` (the hook is in `glossary.js`).
+- **Map layers the story pages had.** Haynsworth's picket ring, formation schematic and assumed route, and Algiers'
+  reach ring, have no place on the generic map yet; each would be a further panel.
+- **The family seam.** A person is never a subject of the kit. A family's own site attaches one to a subject by date
+  on its own pages: `subject.html` accepts `&who=…&t=…` beside `s=` and ignores `who`, so a family's script may read
+  it there, and `[[who:…]]` in `site/links.js` resolves only on a family's pages. The lint keeps refusing a person's
+  name in `records/` (PRV001).
