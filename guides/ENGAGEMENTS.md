@@ -171,9 +171,12 @@ hue. Colour follows the boat across every view of a page; text never wears it ex
 
 - **The observer view, further.** Built (`site/observer.js`, the engagement page's "At the periscope"): every attack
   whose data sheet is transcribed, from the plot above, through the periscope or from the bridge, with the sky and the
-  solution on one clock; the build carries the sheets in `engagement.json`'s `sheets`. Beside the periscope, in tabs, the
-  plot or the Torpedo Data Computer's Position Keeper and Angle Solver (`site/tdc.js`, display only: the dials turn with
-  the clock to `tdcAt`'s values; the boat's computer assumed a Mark 3). Still to do:
+  solution on one clock; the build carries the sheets in `engagement.json`'s `sheets`. Beside the periscope, the plot
+  from above: the torpedoes' tracks against the moving ships. The Torpedo Data Computer's Position Keeper and Angle
+  Solver are on their own page, `site/tdc.html` (`tdc-page.js`; `tdc.html?e=<engagement>&boat=<id>&attack=<Attack 1>`,
+  which the observer view links for its attack): every engagement's sheets, a clock over the attack's seconds, each dial
+  numbered and listed with its value and where it comes from (`site/tdc.js`, display only: the dials turn to `tdcAt`'s
+  values; the boat's computer assumed a Mark 3). Still to do:
   - the TDC's reach and turning radius (hand-set inputs on the real machine, OP 1056 p. 269) and the periscope-to-tube
     parallax, so the forward and after solvers differ as they did; the Mark 4's face (OP 1442, not yet found);
   - the narrative's timed bearings and ranges (`bearings.csv`), so the approach before firing is the record's and not
@@ -188,10 +191,12 @@ hue. Colour follows the boat across every view of a page; text never wears it ex
     view from her director.
 - **Counter-attacks as engagements of their own** (`bang-counterattack-1944-09-19`, the first): the hunt after an
   attack, the boat against the escorts that hunted her, with the water column as its figure. Still to do: the water
-  column as the lead view of such a frame (it sits with the figures today); the Japanese patterns as the escorts laid
-  them (the Naval Technical Mission's report S-24, *Japanese Anti-Submarine Warfare*, and O-08, *Japanese Depth Charges*,
-  both found as scans, neither read); War Damage Report 58's case narratives (sections IV-XIV) for the cases nearest
-  each of the kit's boats; the Bureau's figure 15-2, the rupture curves for the SS-285 class, read off its plate.
+  column as the lead view of such a frame (it sits with the figures today); the Naval Technical Mission's report O-08,
+  *Japanese Depth Charges* (found, not read). Done 12 Nov 2026: S-24, *Japanese Anti-Submarine Warfare* (the doctrine as
+  the escorts' officers gave it, pp. 11-15 and 45, in the explainer and the counter-attack's story); War Damage Report
+  58's figure 15-2 read off its plate into `engage.js`'s `hullRange` (each boat's class curve is the water column's inner
+  ring), and its Appendix I searched for the kit's boats (BANG is not in the report; APOGON's ramming of 12 July 1944 is,
+  in MOMA-01's story).
   The explainer is `site/depthcharge.html`.
 - **The lanes from the charts.** Every waypoint in `reference/lanes/lanes.yml` is assumed. The escort divisions'
   charts draw and name the lanes (馬来直航路, the Malay direct route; the Hainan east route); tracing them would replace

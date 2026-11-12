@@ -203,7 +203,8 @@ hold. Under it, in order:
 3. **The order of battle**, in silhouettes at the library's one scale.
 4. **The story**, the records' narrative from `engagement.md` (its *Outcome* already at the top, its *Sources* behind
    the switch).
-5. **The figures**, where our voice leads and is labelled: the periscope and the Torpedo Data Computer, the frame's
+5. **The figures**, where our voice leads and is labelled: the periscope and the plot from above (the Torpedo Data
+   Computer for each attack is its own page, `tdc.html`, linked from the figure), the frame's
    own panels (Haynsworth's frames and the Judy to scale), *closing in*, each with the assumptions it rests on stated
    under it.
 

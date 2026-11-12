@@ -2,8 +2,10 @@
 // `sheets`, a patrol's attacks.csv and attack_sheets.yml, built by tools/build_engagement.py). The plot from above,
 // the view through the periscope (or from the bridge, for a surface attack) with the target at its true angular size
 // and angle on the bow, the sky as computed, and the firing solution, all on one clock in seconds from the first
-// torpedo. Beside the periscope, in tabs: the plot, or the Torpedo Data Computer's two faces (tdc.js, its values engage.js's
-// tdcAt). The computation is engage.js's (attackSheet, attackAt, tdcAt, sky); every assumption is listed under the view.
+// torpedo. Beside the periscope, the plot: the torpedo tracks against the moving ships. The Torpedo Data Computer's faces
+// for the same attack are on their own page (tdc.html, tdc-page.js), which reads the attacks and their targets from
+// `attacks` and `targetsOf` here. The computation is engage.js's (attackSheet, attackAt, sky); every assumption is listed
+// under the view.
 // It replaces the family repository's periscope prototype (SEAHORSE's Attack 3), retired 1 Nov 2026.
 const Observer = (() => {
   const E = Engage, esc = s => EV.esc(s);
@@ -23,20 +25,68 @@ const Observer = (() => {
   };
   const LIGHT = { was: "As it was", day: "Broad daylight", night: "Night vision" };
 
-  function mount({ D, colour, nameOf, setPageTime }) {
-    const card = document.getElementById("observer-card");
-    const sheets = D.sheets || {};
+  // an engagement's attacks whose sheets are transcribed, in time order: each with its sheet, its log entry, its time,
+  // the first torpedo to the second where the sheet types it (t0) and the zone its local time is written in
+  function attacks(D) {
     const list = [];
-    for (const [actor, byRef] of Object.entries(sheets))
+    for (const [actor, byRef] of Object.entries(D.sheets || {}))
       for (const [ref, sh] of Object.entries(byRef)) {
         const ev = D.events.find(e => e.kind === "attack" && e.actor === actor && e.title === ref);
-        if (ev) list.push({ actor, ref, sh, ev, ms: E.T(ev.utc) });
+        if (!ev) continue;
+        const ms = E.T(ev.utc), first = sh.torpedoes[0].time.match(/-(\d\d)$/);
+        list.push({ actor, ref, sh, ev, ms, t0: ms + (first ? +first[1] * 1000 : 0), zone: (ev.local.match(/ ([A-Z]{1,2})$/) || [])[1] || "" });
       }
-    list.sort((a, b) => a.ms - b.ms);
+    return list.sort((a, b) => a.ms - b.ms);
+  }
+
+  // an attack's targets, each as drawn: its kind, its class's outline where the engagement names one, its assumed size;
+  // `kind` the sheet's target's kind, `unsure` when several targets' kinds can't be told apart
+  function targetsOf(D, sh) {
+    const words = sh.words[0] || {};
+    let unsure = false;
+    // the target's kind: what the sheet claims it hit or sank names the boat's own target ("One fleet type destroyer"),
+    // where its description may name the whole force; failing those, the description and the target line
+    const claimed = [words.sunk, words.damaged].filter(w => w && !/^none\.?$/i.test(w.trim())).join(" ");
+    const kind0 = claimed && KINDS.some(([, re]) => re.test(claimed)) ? kindOf(claimed) : kindOf([words.description, words.target_line].join(" "));
+    // her class's own outline, where the engagement names a ship of that kind on the other side with one (one only, so
+    // the choice is not ours to make among several); otherwise the generic outline for the kind, at its assumed size
+    const profile = kind => {
+      const own = (D.participants || []).filter(p => p.of !== "us" && p.kind === kind && window.SHIPS && SHIPS[p.sil]);
+      const ship = own.length === 1 ? { who: own[0], sil: SHIPS[own[0].sil] } : null;
+      return { kind, ship, size: ship ? [+ship.sil.length, SIZE[kind][1]] : SIZE[kind] };
+    };
+    // each target its own: a sheet aimed at two (BANG's "Target: DD ... Range: 1800 yds. / AK ... / AO ... Range: 2800
+    // yds.") names each in its target line; the target whose range a segment types takes that segment's kind
+    const segs = String(words.target_line || "").split(/\s\/\s/);
+    // or a description that numbers them ("(1) Medium freighter ... (2) ...", "1 - Large AO ... 2 - Lare AK"): item n is
+    // the target the target line numbers n (its part holding that target's range), else the n-th target fired at
+    const items = [...String(words.description || "").matchAll(/(?:^|\s)(?:\((\d)\)|(\d)\s+-)\s*(.+?)(?=\s(?:\(\d\)|\d\s+-)|$)/g)]
+      .map(m => ({ n: +(m[1] || m[2]), text: m[3] })).filter(x => KINDS.some(([, re]) => re.test(x.text)));
+    const parts = String(words.target_line || "").split(/\((\d)\)/);   // ["...", "1", "28' ... 2600.", "2", "25' ... 3000."]
+    const numbered = T => { for (let i = 1; i < parts.length - 1; i += 2) if (T.range != null && (parts[i + 1].replace(/,/g, "").match(/\d+/g) || []).map(Number).includes(+T.range)) return +parts[i]; return null; };
+    const kindFor = (T, gi, all) => {
+      const seg = segs.find(g => { const m = g.match(/range:?\s*([\d,]+)/i); return m && T.range != null && +m[1].replace(/,/g, "") === +T.range; });
+      if (seg && KINDS.some(([, re]) => re.test(seg))) return kindOf(seg);
+      if (all.length > 1 && items.length === all.length) {
+        const it = items.find(x => x.n === (numbered(T) ?? gi + 1));
+        if (it) return kindOf(it.text);
+      }
+      // several targets, and a claim naming several kinds ("One DD and two AK's") with nothing to say which was which:
+      // the generic merchant, not the first kind named for all of them
+      if (all.length > 1 && new Set(KINDS.filter(([, re]) => re.test(claimed)).map(([k]) => k)).size > 1) { unsure = true; return "cargo"; }
+      return kind0;
+    };
+    const tg = E.attackSheet(sh.torpedoes, {}).targets.map((T, gi, all) => profile(kindFor(T, gi, all)));
+    return { kind: kind0, unsure, tg };
+  }
+
+  function mount({ D, colour, nameOf, setPageTime }) {
+    const card = document.getElementById("observer-card");
+    const list = attacks(D);
     card.hidden = !list.length;
     if (!list.length) return { pick() {} };
 
-    let cur = null, A = null, s = 0, power = "low", light = "was", train = 0, timer = null, aimAt = 0, tab = "plot";
+    let cur = null, A = null, s = 0, power = "low", light = "was", train = 0, timer = null, aimAt = 0;
     const pick = document.getElementById("obs-pick");
     pick.innerHTML = list.map((x, i) => `<button type="button" data-i="${i}" style="--bar:${colour(x.actor)}">${esc(nameOf(x.actor))} · ${esc(x.ref)} <span>${esc(x.ev.local.slice(11))}</span></button>`).join("");
     pick.querySelectorAll("button").forEach(b => b.addEventListener("click", () => choose(+b.dataset.i, true)));
@@ -46,66 +96,13 @@ const Observer = (() => {
     playBtn.addEventListener("click", () => timer ? stop() : play());
     document.getElementById("obs-light").innerHTML = Object.entries(LIGHT).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
     document.getElementById("obs-light").addEventListener("change", e => { light = e.target.value; update(s); });
-    // the tabs beside the periscope: the plot, or the Torpedo Data Computer's Position Keeper or Angle Solver
-    const tdc = TDC.create(document.getElementById("tdc-pk"), document.getElementById("tdc-as"));
-    const TAB_NOTE = { plot: "from above: yards, north up", pk: "Torpedo Data Computer Mark 3 (assumed)", as: "Torpedo Data Computer Mark 3 (assumed)" };
-    const tabs = [...document.querySelectorAll(".obs-tabs button")];
-    tabs.forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
-    function showTab(t) {
-      tab = t;
-      tabs.forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
-      document.getElementById("obs-plot").style.display = t === "plot" ? "" : "none";
-      // (an SVG has no .hidden property: the attribute itself)
-      document.getElementById("tdc-pk").toggleAttribute("hidden", t !== "pk"); document.getElementById("tdc-as").toggleAttribute("hidden", t !== "as");
-      document.getElementById("tdc-note").hidden = t === "plot";
-      document.getElementById("obs-tab-note").textContent = TAB_NOTE[t];
-      if (cur && !A.problems.length) { if (t === "plot") layoutPlot(); update(s); }
-    }
-
     // ---------- choosing an attack
     function choose(i, sync) {
       stop();
       cur = list[i];
       pick.querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-pressed", i === j));
-      const words = cur.sh.words[0] || {};
-      // the target's kind: what the sheet claims it hit or sank names the boat's own target ("One fleet type destroyer"),
-      // where its description may name the whole force; failing those, the description and the target line
-      const claimed = [words.sunk, words.damaged].filter(w => w && !/^none\.?$/i.test(w.trim())).join(" ");
-      cur.kind = claimed && KINDS.some(([, re]) => re.test(claimed)) ? kindOf(claimed) : kindOf([words.description, words.target_line].join(" "));
-      // her class's own outline, where the engagement names a ship of that kind on the other side with one (one only, so
-      // the choice is not ours to make among several); otherwise the generic outline for the kind, at its assumed size
-      const profile = kind => {
-        const own = (D.participants || []).filter(p => p.of !== "us" && p.kind === kind && window.SHIPS && SHIPS[p.sil]);
-        const ship = own.length === 1 ? { who: own[0], sil: SHIPS[own[0].sil] } : null;
-        return { kind, ship, size: ship ? [+ship.sil.length, SIZE[kind][1]] : SIZE[kind] };
-      };
-      // each target its own: a sheet aimed at two (BANG's "Target: DD ... Range: 1800 yds. / AK ... / AO ... Range: 2800
-      // yds.") names each in its target line; the target whose range a segment types takes that segment's kind
-      const segs = String(words.target_line || "").split(/\s\/\s/);
-      // or a description that numbers them ("(1) Medium freighter ... (2) ...", "1 - Large AO ... 2 - Lare AK"): item n is
-      // the target the target line numbers n (its part holding that target's range), else the n-th target fired at
-      const items = [...String(words.description || "").matchAll(/(?:^|\s)(?:\((\d)\)|(\d)\s+-)\s*(.+?)(?=\s(?:\(\d\)|\d\s+-)|$)/g)]
-        .map(m => ({ n: +(m[1] || m[2]), text: m[3] })).filter(x => KINDS.some(([, re]) => re.test(x.text)));
-      const parts = String(words.target_line || "").split(/\((\d)\)/);   // ["...", "1", "28' ... 2600.", "2", "25' ... 3000."]
-      const numbered = T => { for (let i = 1; i < parts.length - 1; i += 2) if (T.range != null && (parts[i + 1].replace(/,/g, "").match(/\d+/g) || []).map(Number).includes(+T.range)) return +parts[i]; return null; };
-      const kindFor = (T, gi, all) => {
-        const seg = segs.find(g => { const m = g.match(/range:?\s*([\d,]+)/i); return m && T.range != null && +m[1].replace(/,/g, "") === +T.range; });
-        if (seg && KINDS.some(([, re]) => re.test(seg))) return kindOf(seg);
-        if (all.length > 1 && items.length === all.length) {
-          const it = items.find(x => x.n === (numbered(T) ?? gi + 1));
-          if (it) return kindOf(it.text);
-        }
-        // several targets, and a claim naming several kinds ("One DD and two AK's") with nothing to say which was which:
-        // the generic merchant, not the first kind named for all of them
-        if (all.length > 1 && new Set(KINDS.filter(([, re]) => re.test(claimed)).map(([k]) => k)).size > 1) { cur.unsure = true; return "cargo"; }
-        return cur.kind;
-      };
-      cur.unsure = false;
-      cur.tg = E.attackSheet(cur.sh.torpedoes, {}).targets.map((T, gi, all) => profile(kindFor(T, gi, all)));
+      Object.assign(cur, targetsOf(D, cur.sh));
       A = E.attackSheet(cur.sh.torpedoes, { sizes: cur.tg.map(t => t.size) });
-      const first = cur.sh.torpedoes[0].time.match(/-(\d\d)$/);
-      cur.t0 = cur.ms + (first ? +first[1] * 1000 : 0);      // the first torpedo, to the second where the sheet types it
-      cur.zone = (cur.ev.local.match(/ ([A-Z]{1,2})$/) || [])[1] || "";
       const view = A.surface ? "bridge" : "periscope";
       if (!FIELDS[view].some(f => f[0] === power)) power = FIELDS[view][0][0];
       document.getElementById("obs-power").innerHTML = FIELDS[view].map(([k, label]) => `<button type="button" data-p="${k}" aria-pressed="${k === power}">${label}</button>`).join("");
@@ -118,8 +115,11 @@ const Observer = (() => {
       const drawable = !A.problems.length;
       card.querySelectorAll(".obs-ctrl, .obs-read, .obs-stage").forEach(el => { el.hidden = !drawable; });
       drawTorpTable(); drawWords();
-      drawTdcNote();
-      if (drawable) { if (tab === "plot") layoutPlot(); update(-60); }
+      // the same attack's Torpedo Data Computer, on its own page
+      const tdcLink = document.getElementById("obs-tdc");
+      tdcLink.href = `tdc.html?e=${encodeURIComponent(D.id)}&boat=${encodeURIComponent(cur.actor)}&attack=${encodeURIComponent(cur.ref)}`;
+      tdcLink.hidden = !drawable;
+      if (drawable) { layoutPlot(); update(-60); }
       if (sync && setPageTime) setPageTime(cur.ms);
     }
 
@@ -129,7 +129,7 @@ const Observer = (() => {
     const P = p => [sx(p[0]), sy(p[1])];
     const gGrid = plot.append("g"), gTrk = plot.append("g"), gLos = plot.append("g"), gTorp = plot.append("g"), gShip = plot.append("g"), gLbl = plot.append("g");
     function layoutPlot() {
-      const W = plot.node().clientWidth, H = Math.round(Math.min(560, Math.max(320, W * 0.9)));
+      const W = plot.node().clientWidth, H = Math.round(Math.min(640, Math.max(340, W)));
       plot.attr("height", H);
       const pts = [[0, 0]];
       for (let t = A.start; t <= A.end; t += 5) {
@@ -362,16 +362,6 @@ const Observer = (() => {
         `<p class="below">From ${esc(nameOf(cur.actor))}'s attack data sheet, as typed: ${EV.cite(cur.sh.cite, "src")}. Computed from it, and assumed: ${list.join("; ")}. A reconstruction, not a photograph: a lead, not a record.</p>`;
     }
 
-    // what the TDC tabs show, and what they assume
-    function drawTdcNote() {
-      const [Lft] = cur.tg[aimAt].size, lowDepth = A.torps.some(t => (parseFloat(t.row.depth_set) || 99) < 10);
-      const list = [`that ${esc(nameOf(cur.actor))}'s computer was a Mark 3 (no record read names its mark; the Mark 3's manual went to boats "SS 167-544 incl.", OP 1056 p. 277)`,
-        "the forward and after angle solvers ordering the same angles (the periscope-to-tube distance, the torpedo's reach and its turn are left out, as in the plot); tubes 1-6 forward, 7-10 aft",
-        `the target's length, ${Lft} ft${Lft < 300 ? " (below the dial's 300 ft, shown at 300)" : ""}`, "the own-speed dial's numbers (the manual says only that it matches the ship's log)",
-        "the time dial started at the start of this view", "the Distance to Track lines read as thousands of yards", ...(lowDepth ? ["a depth set below the dial's 10 feet shown at 10"] : [])];
-      document.getElementById("tdc-note").innerHTML = `The dials of a Torpedo Data Computer Mark 3, after its manual, OP 1056 (the faces Figs. 98 and 102, pp. 107 and 111; what the Target and Own Ship dials read, pp. 72-73; the scales, pp. 267-270; <a href="https://archive.org/details/mechanical-computer-technical-manuals">a scan</a>), turned to the solution computed from the sheet: what the computer would have shown on these figures, not a record of what it did show. Each dial reads at the orange index at its top. Assumed: ${list.join("; ")}.`;
-    }
-
     // ---------- the clock
     function update(sec) {
       s = Math.max(A.start, Math.min(A.end, sec));
@@ -380,8 +370,7 @@ const Observer = (() => {
       const firing = q.torps.length ? q.torps[q.torps.length - 1].t.target : 0;
       if (!train) aimAt = firing;
       const lt = lightAt(cur.t0 + s * 1000);
-      if (tab === "plot") drawPlot(q);
-      else tdc.set(E.tdcAt(A, s), { time: s - A.start, length: cur.tg[aimAt].size[0] });
+      drawPlot(q);
       const { B, fv } = drawScope(q, lt);
       const tg = q.targets[aimAt];
       drawSky(lt, B, tg ? tg.bearing : B, fv);
@@ -396,7 +385,7 @@ const Observer = (() => {
         if (s >= A.end) stop(); });
     }
     let lastW = 0;   // redraw when the card's width changes, not its height (the readout and notes change that)
-    function resize() { const w = card.clientWidth; if (!cur || A.problems.length || w === lastW) return; lastW = w; if (tab === "plot") layoutPlot(); layoutScope(); update(s); }
+    function resize() { const w = card.clientWidth; if (!cur || A.problems.length || w === lastW) return; lastW = w; layoutPlot(); layoutScope(); update(s); }
     layoutScope();
     choose(Math.max(0, list.findIndex(x => !E.attackSheet(x.sh.torpedoes).problems.length)), false);   // the first that can be drawn
     new ResizeObserver(() => resize()).observe(card);
@@ -405,5 +394,5 @@ const Observer = (() => {
       pick(actor, ref) { const i = list.findIndex(x => x.actor === actor && x.ref === ref); if (i >= 0 && list[i] !== cur) choose(i, false); },
     };
   }
-  return { mount };
+  return { mount, attacks, targetsOf };
 })();

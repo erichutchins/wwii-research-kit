@@ -19,6 +19,7 @@ window.DepthPanel = (() => {
   const BANDS = [[25, "lethal", "presumed lethal: rupture almost certain"], [50, "serious", "rupture or marked deformation possible"], [100, "moderate", "moderate to minor damage to equipment and fittings"]];
   // the Type 2's Mod 1 charge, 357 lb (WDR 58, 3-9), taken as TNT (assumed), for the peak pressures
   const CHARGE_LB = 357;
+  let HULL = { ft: 25, curve: "ss212" };   // set per boat in mount()
   // a "passing" entry is a moment on the way to the depth ordered before it: after it she is held at that order
   const depthOf = st => {
     if (!st || st.state === "surfaced") return 0;
@@ -36,6 +37,7 @@ window.DepthPanel = (() => {
       return order ? { ...s, passing: +/(\d+)/.exec(s.depth)[1], goingTo: +/(\d+)/.exec(order.depth)[1] } : s;
     }), water = (D.water || {})[B.id] || { seafloor: [], layers: [] };
     const t0 = E.T(D.window.from), t1 = E.T(D.window.to);
+    HULL = E.hullRange(CHARGE_LB, B.hull);
     const stateAt = ms => { let k = null; states.forEach(s => { if (E.T(s.utc) <= ms) k = s; }); return k; };
     const charges = (D.events || []).filter(e => e.actor === B.id && e.kind === "depth_charge" && e.utc).map(e => ({ e, ms: E.T(e.utc) }));
     // the reading nearest the window's middle; the layer is the record's, its depths as typed
@@ -141,7 +143,9 @@ window.DepthPanel = (() => {
       const nearest = st && st.state === "submerged" ? settings.reduce((a, b) => Math.abs(b - dep) < Math.abs(a - dep) ? b : a) : null;
       settings.forEach(f => {
         const g = svg.append("g").attr("class", "dp-burst").attr("transform", `translate(${X(0)},${Y(f)})`);
-        [...BANDS].reverse().filter(([r]) => r < 100 || f === nearest).forEach(([r, cls]) => g.append("circle").attr("class", `dp-band ${cls}`).attr("r", r * k));
+        // her class's distance for the Type 2's charge (figure 15-2), then the Bureau's outer bands (15-12)
+        [...BANDS].reverse().filter(([r]) => r > 25 && (r < 100 || f === nearest)).forEach(([r, cls]) => g.append("circle").attr("class", `dp-band ${cls}`).attr("r", r * k));
+        g.append("circle").attr("class", "dp-band lethal").attr("r", HULL.ft * k);
         g.append("circle").attr("class", "dp-charge-dot").attr("r", 3);
         g.append("text").attr("class", "dp-setting-label").attr("x", -50 * k - 6).attr("y", 4).attr("text-anchor", "end").text(`${f} ft`);
       });
@@ -159,10 +163,11 @@ window.DepthPanel = (() => {
       // what each setting meant at her depth, if a charge set for it had gone off straight above her
       const kg = CHARGE_LB * 0.45359;
       const rows = settings.map(f => {
-        const dist = Math.abs(dep - f), band = dep ? (BANDS.find(([r]) => dist <= r) || [0, "", "beyond 100 ft: little damage expected"])[2] : "—";
+        const dist = Math.abs(dep - f), band = !dep ? "—" : dist <= HULL.ft ? `within her class's ${HULL.curve === "ss285" ? "rupture" : "deformation"} distance (${Math.round(HULL.ft)} ft)`
+          : (BANDS.find(([r]) => r > 25 && dist <= r) || [0, "", "beyond 100 ft: little damage expected"])[2];
         return `<tr><td class="mono">${f} ft</td><td>${dep ? `${dist} ft ${f < dep ? "above" : f > dep ? "below" : "level"}` : "—"}</td><td>${dep ? `${Math.round(E.peakPressure(kg, Math.max(dist, 3) * FT_M) * 145.04).toLocaleString("en-US")} psi` : "—"}</td><td>${esc(band)}</td></tr>`;
       }).join("");
-      table.html(`<table class="sheet"><thead><tr><th>A charge set for</th><th>from her keel</th><th>peak pressure (computed)</th><th>the Bureau's distance band (300 lb TNT, light hull)</th></tr></thead><tbody>${rows}</tbody></table>`);
+      table.html(`<table class="sheet"><thead><tr><th>A charge set for</th><th>from her keel</th><th>peak pressure (computed)</th><th>the Bureau's distances</th></tr></thead><tbody>${rows}</tbody></table>`);
     }
     function setAt(ms) { at = Math.max(t0, Math.min(t1, ms)); slider.property("value", at); drawChart(); drawSection(); }
     slider.on("input", ev => setAt(+ev.target.value));
@@ -171,13 +176,16 @@ window.DepthPanel = (() => {
     notes.html(`<p class="below">The record's: her depths and her words as she logged them (each mark opens the entry), the
       count of charges where she gave one, the layer (${layerWords}), and the Japanese pistols' settings, ${E.DC_SETTINGS["Type 2"].join(", ")} ft
       for the Type 2 and ${E.DC_SETTINGS["Type 95"].join(", ")} ft for the Type 95 (<a href="https://www.ibiblio.org/hyperwar/USN/rep/WDR/WDR58/WDR58-3.html">War Damage Report 58</a>, para 3-10);
-      the deepest the Type 2 was normally set was 390 ft and the Type 95 could not go below 292 (3-12).</p>
+      the deepest the Type 2 was normally set was 390 ft and the Type 95 could not go below 292 (3-12). The Japanese
+      officers questioned after the war said the same: "Maximum depth setting of charges usually carried was 120 meters
+      and a proportionate number of charges with this setting was included in each pattern" (<a href="https://www.fischer-tropsch.org/primary_documents/gvt_reports/USNAVY/USNTMJ%20Reports/USNTMJ-200I-0244-0309%20Report%20S-24.pdf#page=15">NavTechJap S-24</a>, p. 12).</p>
       <p class="below"><i>Ours, and assumed:</i> her depth held from one log entry to the next; periscope or radar depth, or
       "submerged" with no depth, drawn at ${SHALLOW} ft (dashed); her keel at the logged depth; a charge at each setting
-      straight above her, since where any went off is not recorded; the rings round each, the Bureau's distances for
-      300 lb of TNT against the lighter-hulled boats (lethal within 25 ft, serious to about 50, moderate to minor to 100;
-      <a href="https://www.ibiblio.org/hyperwar/USN/rep/WDR/WDR58/WDR58-15.html">15-12</a>), which ${esc(B.name)}'s heavier
-      hull would have withstood better; the peak pressures for the Type 2's 357 lb charge taken as TNT, from Cole's
+      straight above her, since where any went off is not recorded. The rings round each: the inner, shaded, ${Math.round(HULL.ft)} ft,
+      the Bureau's figure 15-2 read at the Type 2's 357 lb for ${esc(B.name)}'s hull (${esc(B.hull || "")}: ${esc(HULL.what)};
+      read off the plate, about ± 2 ft, and drawn there "for shallow submergence condition only": the distance grows with
+      depth, by how much is not given); the outer two, 50 and 100 ft, the Bureau's bands of serious and of moderate to
+      minor damage (<a href="https://www.ibiblio.org/hyperwar/USN/rep/WDR/WDR58/WDR58-15.html">15-12</a>). The peak pressures for the Type 2's 357 lb charge taken as TNT, from Cole's
       similitude, the distance to her keel, not to her hull. The seafloor is NOAA ETOPO1's under her track, placed as
       the track is. <a href="depthcharge.html">Depth charges</a> explains the rest.</p>`);
     drawChart(); drawSection();

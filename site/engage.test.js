@@ -275,5 +275,10 @@ near(E.peakPressure(0.45359, 0.3048) * 145.038, 21600, 150, "1 lb of TNT at 1 ft
 near(E.peakPressure(100, 10), 22.0, 0.3, "100 kg of TNT at 10 m, MPa");
 near(E.seaPressure(33), 14.7, 0.2, "the sea at 33 ft, psi");
 near(E.seaPressure(450), 200, 2, "the sea at 450 ft, psi");
+// Figure 15-2 as read: a Type 2 Mod. 1 (357 lb) against BANG (SS-385, the SS-285 class's rupture curve) and against
+// TINOSA (SS-283, the SS-212 class's deformation curve)
+near(E.hullRange(357, "SS-385").ft, 22.7, 0.1, "357 lb against an SS-285 class hull, ft");
+near(E.hullRange(357, "SS-283").ft, 43.9, 0.2, "357 lb against an SS-212 class hull, ft");
+console.log(E.hullRange(357, "SS-385").curve === "ss285" && E.hullRange(100, "SS-212").curve === "ss212" ? "ok  " : (failed++, "FAIL"), "the class by hull number");
 
 process.exit(failed ? 1 : 0);

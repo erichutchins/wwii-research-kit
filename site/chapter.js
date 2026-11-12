@@ -32,6 +32,7 @@ const Chapter = (() => {
       ["zones.html", "Time zones", "each boat kept its own zone; the convoys' records kept Tokyo time"],
       ["jgrid.html", "The Japanese Navy's position codes", "the kana grid the other side's records give a position in"],
       ["torpedo.html", "Torpedo fire control", "the attack data sheets' numbers"],
+      ["tdc.html", "The Torpedo Data Computer", "its dials through one attack, from the attack data sheet"],
       ["depthcharge.html", "Depth charges", "the escorts' charges and settings against a boat's depth log"],
       ["silhouettes.html", "Recognition silhouettes", "the ships and aircraft the records name, to their plates"],
       ["dives.html", "A submarine's dives", "BANG's depth through every dive and depth-charge attack"],

@@ -21,7 +21,7 @@
     '<span class="grp"><a class="lbl" href="index.html#reference">Reading the records</a><a href="zones.html">Time zones</a>' +
       '<span class="sub"><span class="lbl">Grids:</span><a href="jgrid.html">Japanese</a><a href="grids.html">US Army</a>' +
         '<a href="german.html">German</a></span>' +
-      '<span class="sub"><span class="lbl">How it worked:</span><a href="torpedo.html">Torpedoes</a><a href="depthcharge.html">Depth charges</a></span>' +
+      '<span class="sub"><span class="lbl">How it worked:</span><a href="torpedo.html">Torpedoes</a><a href="tdc.html">TDC</a><a href="depthcharge.html">Depth charges</a></span>' +
       '<a href="silhouettes.html">Silhouettes</a></span>' +
     '<a href="relatives.html">Researching a relative</a>';
 
