@@ -1,18 +1,24 @@
-# Methods: from a war patrol report's scans to a checked, cited record
+# Method: from scans to a checked, cited record
 
-The method the kit follows for a submarine's war patrol reports: how the records are
-collected, transcribed, checked, enriched with outside data and presented, in the order
-the work is done. USS BANG (SS-385), the first boat transcribed, is the worked example
-throughout: her six patrols are the numbers in the tables below, and every rule here was
-set by a problem one of her pages raised. The same steps apply to any boat, by a person
-or by Claude.
+The method every record in the kit follows: how a unit's or ship's records are collected,
+transcribed, checked, enriched with outside data and analysed, in the order the work is done.
+The worked case throughout is a submarine's war patrol reports, and the boat is USS BANG
+(SS-385), the first transcribed: her six patrols are the numbers in the tables below, and each
+rule here was set by a problem one of her pages raised. The rules of transcription and checking
+(sections 2 and 3) apply to every record. The other record types have guides of their own, which
+give only what differs: a ship's war diary follows this guide; Army morning reports are in
+[MORNING-REPORTS.md](MORNING-REPORTS.md), Navy muster rolls in [MUSTER-ROLLS.md](MUSTER-ROLLS.md),
+the Japanese records of an attack in [JAPANESE-RECORDS.md](JAPANESE-RECORDS.md) and the daily
+situation maps in [SITUATION-MAPS.md](SITUATION-MAPS.md). The index of the guides is
+[README.md](README.md).
 
-Every number on the pages traces back to a specific scanned page, and every correction
-to the 1944–45 originals is recorded next to the value as it was typed.
+Every number on the pages traces back to a specific scanned page, and every correction to the
+1944–45 originals is recorded next to the value as it was typed.
 
-When this was written: October 2026, with Claude (Anthropic) in Claude Code reading the
-page scans and writing the code. Later boats follow the skill `transcribe-patrol-report`,
-which is this method as a checklist.
+Who read the pages: Claude (Anthropic), in Claude Code, read the page scans and wrote the code,
+from October 2026, with a person reviewing. One reader; no page has yet had an independent second
+reading (section 3, "Keeping quality up"). Later boats follow the skill
+`transcribe-patrol-report`, which is this method as a checklist.
 
 ---
 
@@ -22,15 +28,15 @@ which is this method as a checklist.
 
 | Record | Where | Online? | Used |
 |---|---|---|---|
-| **War patrol reports**: the captain's report of each patrol (narrative, contact tables, attack sheets, density layers, weather) | NARA catalog series 305243 "U.S. Submarine War Patrol Reports" (Record Group 38, "Records of the Office of the Chief of Naval Operations"), microfiche publication **M1752** | Yes, Fold3 scans of the microfilm, about 2460×3217 px per page | **Primary source** |
+| **War patrol reports**: the captain's report of each patrol (narrative, contact tables, attack sheets, density layers, weather) | NARA catalog series 305243 "U.S. Submarine War Patrol Reports" (Record Group 38, "Records of the Office of the Chief of Naval Operations"), microfiche publication **M1752** | Yes, Fold3 scans of the microfiche, about 2460×3217 px per page | **Primary source** |
 | Second copies of the same reports | RG 38 "World War II War Diaries, Other Operational Records and Histories" | Yes | Not yet (a cross-check source for illegible pages) |
 | Muster rolls (crew lists) | RG 24, series 594996 | Yes (Ancestry scans) | No (out of scope for now) |
-| Deck logs (hour-by-hour logbooks) | RG 24, series 594258 "Logbooks of U.S. Navy Ships and Stations" | **Only from 1951 on**; WWII-era submarine deck logs are not digitized | No |
+| Deck logs (hour-by-hour logbooks) | RG 24, series 594258 "Logbooks of U.S. Navy Ships and Stations" | For BANG, only from 1951: the series has her logbooks from that year on and none for 1944–45 (catalog searched November 2026). Not checked for other boats | No |
 
-The 2011 file `SS-385_BANG Deck Log.ocr.pdf` (not in the repo) is the
-same war patrol reports, from microfilm reel AR-51-78, not the deck logs.
-Its OCR text was too garbled to use for numbers. The new scans were
-re-read from scratch.
+An older OCR'd PDF of BANG's reports circulates under the name "Deck Log"
+(from microfilm reel AR-51-78). It is the same war patrol reports, not the
+deck logs, and its OCR text is too garbled to use for numbers. The catalog's
+scans were read from scratch.
 
 ### The catalog API
 
@@ -38,13 +44,14 @@ The National Archives catalog's web front end calls an unauthenticated JSON
 endpoint:
 
 ```
-https://catalog.archives.gov/proxy/records/search?naId=<catalog id>
-https://catalog.archives.gov/proxy/records/search?q="USS Bang"&limit=100
+https://catalog.archives.gov/proxy/v3/records/search?naId=<catalog id>
+https://catalog.archives.gov/proxy/v3/records/search?q="USS Bang"&limit=100
 ```
 
 A record's `ancestors` give its record group and series, and its
 `digitalObjects` list every page's public JPG URL. `tools/nara.py` wraps
-this:
+this, and names each item's cache folder by the record group the catalog
+gives (`rg38-<id>` for a war patrol report):
 
 ```bash
 python3 tools/nara.py find "Bang"                  # list the boat's folders
@@ -70,9 +77,9 @@ work repeatable across boats:
 | (C) Weather, (D) Tidal information | Summaries | Context |
 | (E) Navigational aids, (F) Ship contacts | Table: time, **position of the target**, type, range | Positions (marked as the target's, not BANG's) |
 | (G) Aircraft contacts | Table: time, **BANG's position**, plane type, range, BANG's speed and course | Positions |
-| (H) Attack data sheets | One per torpedo attack: time, position, torpedoes, target | Attack positions |
+| (H) Attack data sheets | One per torpedo attack: time, position, torpedoes, target, and the firing solution set on the Torpedo Data Computer (TDC) | Attack positions |
 | (I)–(N) Mines, anti-sub measures, major defects, radio, radar, sound | Text | Radar-intercept logs give positions (Patrols 4–6) |
-| **(O) Density layers** | Bathythermograph table: time, position, isothermal depth and temperature, negative-gradient depth and temperature | Daily positions **and** water temperature by depth |
+| **(O) Density layers** | The table of bathythermograph readings (the instrument that traced water temperature against depth as the boat dived): time, position, isothermal depth and temperature, negative-gradient depth and temperature | Daily positions **and** water temperature by depth |
 | (P)–(R) Health, personnel, miles and fuel | Text and tables | Cross-checks (fuel table has distances) |
 
 Patrol 6 (a different captain) logged a "Posit" (position) every day at noon
@@ -84,10 +91,10 @@ in the narrative instead of a daily density-layer reading.
 
 ### Why not OCR
 
-The 2011 OCR text read 19°26′N as `19-2611`, 119°12′E as `1195-12E`, and
-column alignment was lost entirely. For tables of numbers that is useless.
-Instead **Claude read each page image directly** (Claude can read images)
-and typed what it saw into CSV, one table at a time.
+OCR text of these pages reads 19°26′N as `19-2611` and 119°12′E as
+`1195-12E`, and loses column alignment entirely. For tables of numbers that
+is useless. Each page image is read directly instead, and what it shows is
+typed into CSV, one table at a time. OCR only finds pages.
 
 ### Workflow per patrol
 
@@ -119,20 +126,24 @@ What was transcribed:
 | `records/boats/ss-385-bang/patrol-N/depths.csv` | 408 log entries | Every narrative page: dives, surfacings, depth orders, "passing" depths, depth charges, routine summaries |
 | `records/boats/ss-385-bang/patrol-N/layers.csv` | 83 readings | The density-layer tables |
 
-Column definitions are in [`records/README.md`](README.md).
+Column definitions are in [`records/README.md`](../records/README.md).
 
 ### Conventions that matter
 
 - **Times are kept in the zone the report used.** The reports use US Navy
-  zone letters: Z = GCT (Greenwich), K = −10, I = −9, M = −12, Y = +12,
-  X = +11, W = +10, VW = +9½. Navy "−10" means local time is GCT + 10.
-  Boats changed zone as they moved west, and some tables are in GCT while
-  the narrative is in local time, so every row carries its zone.
-  Conversion to UTC happens in code (`check_track.py`, `ZONES`).
+  zone letters, and the number that goes with a letter is the Navy's *zone
+  description*: the hours to add to local time to get Greenwich time. Zone K
+  is −10 (ten hours ahead of Greenwich), I is −9, M is −12; west of the date
+  line Y is +12, X +11, W +10 and VW +9½; Z is Greenwich itself, which the
+  reports call GCT (Greenwich Civil Time). The kit's own prose says GMT, and
+  the generated files' `utc` columns hold the same instant. Boats changed
+  zone as they moved west, and some tables are in GCT while the narrative is
+  in local time, so every row carries its zone. Conversion happens in code
+  (`check_track.py`, `ZONES`); `site/zones.html` explains the letters.
 - **Ship-contact positions are the target's position**, not the
   submarine's. They are kept for the map but never used for the track.
 - **Port positions** (Pearl Harbor, Midway, Saipan, Guam) aren't in the
-  reports. Standard harbor coordinates are used and the note says so.
+  reports. Standard harbour coordinates are used and the note says so.
   Arrival times not given are set to noon, also noted.
 - **"Passing" depths** ("first depth charges as we passed 350 feet") are
   depths the boat went through, not depths ordered. They're a separate
@@ -146,9 +157,10 @@ Column definitions are in [`records/README.md`](README.md).
 
 ### The speed check
 
-`tools/check_track.py` converts every fix to UTC, sorts them, and flags
-any leg BANG couldn't have sailed: more than 20.5 knots (Balao-class
-surfaced top speed) plus 30 nm for navigational error. Every flagged leg in
+`tools/check_track.py` converts every fix to GMT, sorts them, and flags
+any leg BANG couldn't have sailed: more than 20.5 knots (the `max_kts` in
+her `ship.yml`, set just above the Balao class's surfaced maximum of about
+20.25 knots) plus 30 nm for navigational error. Every flagged leg in
 all six patrols was resolved, with the reasoning recorded:
 
 | Patrol | Problem as typed | Resolution |
@@ -177,137 +189,42 @@ These outside sources agree with the transcription and the code:
 | Patrol 6 "miles steamed" table: Guam→area, area→Saipan, Saipan→Pearl | 1,474 / 1,584 / 3,520 nm | Track: 1,427 / 1,472 / 3,244 nm (3–8% short, as straight lines between noon fixes should be) |
 | Same table, "in area" | 5,555 nm | Track: 1,540 nm. Daily noon fixes miss the back-and-forth patrolling, which is why distance on station is a minimum |
 
+### Keeping quality up
+
+- **The speed check is necessary but not sufficient.** It catches gross typos (a wrong degree, a
+  wrong date) but not a few minutes of latitude. Another boat's report of the same night catches
+  more, and so does the target's own record ([JAPANESE-RECORDS.md](JAPANESE-RECORDS.md)).
+- **Never overwrite a raw value.** Corrections always go in the `*_fix` columns with a reason.
+- **Mark uncertainty.** `?` for an illegible digit, `(time not stated)` in a quote.
+- **A second reader is the check still owed.** The plan: for a sample of each boat's pages (about
+  one in ten), a separate session transcribes them from scratch without seeing the CSV, and every
+  disagreement is settled on the scan. It has not been done yet, and `records/inventory.yml`
+  marks no report `verified`.
+
 ---
 
-## 4. Enriching with outside data
+## 4. Enriching with outside data, and the other side
 
 | Data | Source | Script | Notes |
 |---|---|---|---|
 | Seafloor depth | NOAA **ETOPO1**, 1 arc-minute, via NOAA CoastWatch ERDDAP (`etopo180`) | `fetch_seafloor.py` | Sampled every 2 nm along the track. Fetched as 1°×1° tiles and cached in `sources/etopo1/` (636 tiles, 12 MB) |
 | Weather | **ERA5** reanalysis (ECMWF, 0.25°, hourly, 1940–), via the Open-Meteo archive API | `fetch_weather.py` | Wind, gusts, cloud, rain, air temperature, pressure at the boat's position, 4 positions per day. Cached in `sources/era5/`. The Open-Meteo marine API (waves, sea temperature) has **no** 1940s data |
 | Sun and moon | Computed in the browser (low-precision almanac formulas, about 1°) | `dives.js` | Sunrise/sunset, twilight, moon phase, moonrise/moonset at the interpolated position |
-| Earthquakes | USGS ComCat (includes ISC-GEM), ISC bulletin (FDSN), Taiwan CWA catalog | (one-off search) | Nothing found for the 2 May 1945 rumble. See `records/README.md` for why that's expected |
+| Earthquakes | USGS ComCat (includes ISC-GEM), ISC bulletin (FDSN), Taiwan CWA catalog | (one-off search) | Nothing found for the 2 May 1945 rumble. See `records/boats/ss-385-bang/README.md` for why that's expected |
 
-### The Japanese side
+### The other side's records
 
-The strongest check on an attack sheet is the target's own record. JACAR
-(Japan Center for Asian Historical Records) puts the Defense Ministry's
-Imperial Navy archive online free: war diaries, action reports, convoy
-escort statistics, and the movement logs that masters of navy-controlled
-merchant ships kept. `tools/jacar.py` searches it and downloads a
-record as a PDF of page scans (no text layer).
+The strongest check on an attack sheet is the target's own record. For the Pacific that is the
+Imperial Navy's war diaries, escort reports and ships' movement tables, online through JACAR
+(the Japan Center for Asian Historical Records), read beside the war maps of FRUPAC (Fleet Radio
+Unit, Pacific, the Navy's radio-intelligence unit at Pearl Harbor) and the postwar credits of
+JANAC (the Joint Army-Navy Assessment Committee, 1947). Which records hold what, how to search
+and read them, and where they mislead: [JAPANESE-RECORDS.md](JAPANESE-RECORDS.md). The Japanese
+position codes are in [JAPANESE-GRID.md](JAPANESE-GRID.md); the German ones in
+[NAVAL-GRID.md](NAVAL-GRID.md) and [BEZUGSPUNKTE.md](BEZUGSPUNKTE.md). Putting both sides on one
+map and one clock is [ENGAGEMENTS.md](ENGAGEMENTS.md).
 
-| Record type | What it gives |
-|---|---|
-| Designated-ship movement tables (指定船舶行動表) | One ship's ports, dates and cargo, and for a lost ship, the master's or a survivor's account of the sinking, with time and position |
-| Escort division war diaries (海上護衛隊戦時日誌) | Narrative of the month; a day-by-day chart of each escort's convoy; an attached table listing convoys that met submarines and every ship lost, with tonnage |
-| Guard district war diaries (警備府戦時日誌) | Radio log: air patrols, convoy cover, weather |
-
-How it was done for Patrol 1:
-
-1. Identify the convoy from secondary sources (combinedfleet.com ship
-   records name convoys, escorts and sinking times).
-2. Search JACAR for the escort command's war diary for that month and the
-   ship's movement log (`jacar.py search "日達丸"`). Search reaches OCR
-   text but matches loosely, so check every hit.
-3. Read the page images. Printed pages read well at 110 dpi. Handwritten
-   tables need 200–300 dpi crops, and horizontal text of the period runs
-   right to left (`(七一マタ)` is タマ一七, TAMA-17).
-4. Transcribe into the patrol's `japanese.yml` as written, with a translation and the
-   page, and pair the records with attacks in its `claims.yml`.
-5. `check_crossrefs.py` converts both sides to GMT and reports the gaps.
-
-Patrols 2–4 added two lessons:
-
-- **Which command kept the convoy.** Trunk convoys (HI-, MI-, TAMA-) are in
-  the 1st Surface Escort Division's diary, whose monthly route charts mark
-  each attack with time and position. Local convoys off Formosa and the
-  Nansei Shoto (TAKA-, KATA-) are in the 4th Surface Escort Division's diary
-  and in the war diaries and battle reports (戦闘詳報) of the individual
-  escorts, which log the attack minute by minute. Get the escorts' names
-  from combinedfleet.com, then search JACAR for the ship
-  (`jacar.py search "第三十号海防艦"`). Merchant names written in kana
-  (さらわく丸) are not in JACAR's search text; search for the escort or diary.
-- **Reading without rendering.** If pages can't be rendered locally, read
-  them in JACAR's own viewer, a PDF.js page at
-  `/bundles/apps/pdfjs/web/viewer.html?file=…` (the path is in the iframe on
-  `/das/image/<code>`). Its page numbers are the PDF's, the same as `pNN`.
-
-TINOSA Patrol 3 (October 1943) added more, for a ship with no convoy and no escort:
-
-- **Start with the Navy's daily summary of attacks on shipping.** 大東亜戦争経過概要（護衛対潜関係）
-  (`jacar:C16120655900`, one part a month; October 1943 is `C16120658600`) is a handwritten day-by-day list, Navy-wide, of
-  ships attacked: time, ship, tonnage, speed, place given from a base ("トラックノNW二五〇′"), torpedoes taken, outcome. It
-  says quickly whether an attack was reported at all. It compiles the Combined Fleet's signals, so it repeats the
-  ship's own telegrams and counts once with them. A ship damaged but still steaming may not be in it (TINOSA's 4 October
-  tanker isn't).
-- **How the summary runs, and where it misleads** (the 2026 pass over every patrol's months, lead L98). Two volumes:
-  December 1941 to December 1943 (`C16120655900`) and January 1944 to February 1945 (`C16120658900`), one code a month
-  (June 1944 `C16120659700` to February 1945 `C16120660500`). It **stops at February 1945**: for later attacks, search by
-  command and month. Some months add tables of ships sunk and damaged, with times; these can be filed in the next
-  month's part (June 1944's opens with May's tables), and some months have none.
-  - **A bare tick-and-name line is dated when the loss was reported, not when it happened.** In February 1945 the
-    narrative has "✓大暁丸 沈没" on the 9th; the 1st Escort Fleet's loss table (`C08030142100` p46) has her sunk on the
-    7th at 0450 off Indochina. So a line with no time or place may be days late: never pair it on its date alone. A line
-    that gives its own time and place ("二九 〇二三〇 バーシー海峡E 香取丸 … 被雷沈") carries the event's date; pair that.
-  - **Its silence is not evidence**, in the last months above all: January and February 1945 have nothing in the Yellow
-    Sea, though Kume and Sanuki Maru were sunk there on 28 January (her captain's telegram in the 103rd Squadron's
-    diary, `C08030075600` pp. 13-14). The 1st Escort Fleet's loss tables cover its southern routes only and leave them
-    out too. Say "no entry in the summary", not "nothing sank".
-  - **Its hand writes 9 like an f or a P** (Toyama Maru's "708f" is 7,089 tons): read tonnages with that in mind.
-- **A ship sailing alone is in the diaries of the ships sent to help her.** Kazahaya, an oiler on passage to Truk, has no
-  escort diary, and `jacar.py search "風早"` didn't find her. Her own signals ("three hits, ability to steam doubtful",
-  her list and speed, her positions, the boiler room torpedoed, the time she sank) and the rescue totals are in the
-  telegram log (三、令達報告等) of the 2nd Destroyer Squadron's war diary, whose destroyers were sent out to her
-  (`C08030101300`, pp. 22–29). A telegram log gives each signal's day, sender, addressees, sent and received times
-  and text. Find the day with a contact sheet of the pages, then read the columns at 300–450 dpi.
-- **Search the commands, not only the ship.** JACAR's search text covers only part of a long record. Search the commands
-  that would have handled the event (the base force, the fleet, the squadron that sent help) with the month as the
-  date range (`jacar.py search "第２水雷戦隊" 1943-10 1943-10`), and read the record's contents page first: a fleet's
-  monthly part can hold only its tables of ships' movements (the 4th Fleet's October 1943, `C08030018500`).
-- **Japanese Wikipedia is a finding aid.** Its articles on Imperial Navy ships often quote primary records with the
-  JACAR code and page, and published sources such as 戦史叢書 and the diary of Prince Takamatsu (高松宮日記). Use them to
-  find pages and to read faint characters (罐室被雷, "boiler room torpedoed", on Kazahaya's last telegram), but cite the
-  scan you read, and label anything you haven't read yourself as secondary.
-- **Reference books.** Find a Japanese book's exact title in the National Diet Library's catalogue
-  (`ndlsearch.ndl.go.jp`) and check its digital copy's access: open on the internet, in libraries only, or at the NDL
-  only (`dl.ndl.go.jp/pid/<id>`; the NDL's copy service will send pages). `tools/gbooks.py search` finds Google Books
-  volumes and snippets; a snippet is a lead, not a reading.
-- **Rendering.** `jacar.py fetch` renders pages only when poppler's `pdftoppm` is installed; without it, render the
-  saved PDF with PyMuPDF.
-
-The Imperial Navy kept Tokyo time (zone I, −9). With that assumption,
-Nittatsu Maru's log and BANG's attack sheets agree to 1–7 minutes on four
-attacks; see `records/README.md` for the table. The one large gap (86 minutes,
-Attack 5) is against a secondary source.
-
-US radio intelligence's own picture is in the FRUPAC war maps (National
-Museum of the Pacific War, via the Portal to Texas History). Its search
-pages are behind a bot check, but the catalog is harvestable through the
-library's OAI-PMH feed (`https://texashistory.unt.edu/oai/`, set
-`collection:FRUPAC`); `tools/frupac.py` does that and finds maps by ship
-or date. Read the maps in the site's zoom viewer, which serves full-resolution
-tiles (the page images are too small for the pencil). For each note near one
-of BANG's attacks:
-
-1. Copy the text as written into `frupac.yml`, with the message date-time
-   group, the event time, and the zoom-viewer query that frames it.
-2. Estimate the mark's position: against the printed 1-degree grid where the
-   map has one; on bare tracing overlays, against the red meridian labels
-   (`120`, `130`, …), assumed to sit on 20N. Write it in decimal degrees and treat
-   it as ±0.1–0.3°.
-3. Tie it to an attack with `match`, `candidate` or `context`, and say why.
-   `check_crossrefs.py` prints the gap, reading the note's time as zone I.
-
-The zoom viewer now sits behind a bot check for scripts as well. Find the map with `frupac.py date`, give a person the
-viewer's full address with its `resolution`, `lat` and `lon` query (the viewer's own coordinates, in the full image's
-pixels), and read their full-resolution screenshot. On a bare overlay whose meridian labels are out of frame, place
-marks against two known places in the frame (Truk's dot and Chichi Jima for the October 1943 map). The October 1943 map
-also plots routes from intercepted routing messages: a line labelled with the message's date-time group (`271500`),
-its points numbered by day, ending at the port. Those points are planned positions, not reported ones; a red star on
-one marks an attack on that route.
-
-Limits to keep in mind:
+### Limits to keep in mind
 
 - **ETOPO1 along a straight line between fixes.** The real track wandered,
   especially on station. Near coasts and reefs, the seafloor under the
@@ -317,6 +234,7 @@ Limits to keep in mind:
   captain's notes over both.
 
 ---
+
 
 ## 5. Analysis
 
@@ -348,22 +266,10 @@ Limits to keep in mind:
 
 ## 6. Presenting
 
-Two static pages with no build step: plain HTML plus [D3 v7](https://d3js.org)
-from a CDN. Serve the folder with `python3 tools/serve.py`, which turns
-caching off so edits show on reload.
-
-| Page | What it shows |
-|---|---|
-| `subject.html` + `subject.js` | One page for every subject (a boat, a ship, an Army unit, a Seabee battalion, a convoy) its journey and its record (the maps below, as panels under `site/panels/`) on one page, and placement and leads behind it. `subjects.html` is the index |
-| `panels/patrols.js` | Map of every patrol, playback following the boat, course/speed gauge, patrol log, report-page viewer |
-| `panels/army.js` | Map of one Army unit at a time (`records/army/army.json`): its stations as typed, routes and sea crossings, Battery D's engagements, playback, station log, page viewer |
-| `panels/seabees.js` | Map of one Seabee battalion at a time (`records/seabees/seabees.json`): each part's line and where it was that day, ships along their logged positions, the day's weather, playback, station log, page viewer |
-| `dives.html` + `dives.js` | Dive profile: depth, temperature layers, weather strip, seafloor, moon phases, playback, and a day-and-night chart with one row per day |
-| `zones.html` + `zones.js` | Explainer: the Navy's lettered time zones over the Pacific, every position coloured by its typed zone, one moment on six clocks |
-| `grids.html` + `grids.js` | Explainer (Europe): the five map grids in the Army records, their lettered 100 km squares, a decoder, and every reference checked against its named town |
-| `viz.css` | Shared colour roles, controls, tooltip, scan viewer, explainer layout |
-
-Design rules followed:
+The pages are static HTML and [D3 v7](https://d3js.org), with no build step; serve the folder
+with `python3 tools/serve.py`, which turns caching off so edits show on reload. Which pages there
+are and how they fit together is [OPERATIONS-VIEWER.md](OPERATIONS-VIEWER.md); the engagement
+pages' encodings are in [ENGAGEMENTS.md](ENGAGEMENTS.md). The rules every page follows:
 
 - **Every mark links to its source page.** Click a point or log row to see
   the scan, with a link to the same page in the National Archives catalog.
@@ -379,12 +285,15 @@ Design rules followed:
   panel and scale.
 - **Assumptions are visible.** Hatched = not logged; dashed ring = left off
   the track; tooltips say "assumed".
-- **Deep links.** `subject.html?s=bang&period=2&t=1944-07-04T04:42Z` and the same
-  for `dives.html`. The two pages link to each other at the same moment.
+- **Deep links.** `subject.html?s=bang&period=2&t=1944-07-04T04:42Z`, and the same moment on
+  `dives.html`. Pages link to each other at the moment shown.
 
 ---
 
-## 7. Reproducing everything from scratch
+## 7. Reproducing BANG
+
+The worked case, from nothing. Another boat is the same with its own catalog IDs; the other
+record types' commands are in their guides and in `tools/README.md`.
 
 ```bash
 python3 tools/nara.py fetch 74802746 74802784 74802831 74802868 74802934   # ~577 MB of scans

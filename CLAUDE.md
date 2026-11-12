@@ -1,8 +1,11 @@
 # CLAUDE.md
 
-A kit for rebuilding WWII ships' and units' movements from their own records. Read
-`guides/METHODS.md` before transcribing anything, `guides/MORNING-REPORTS.md` before
-reading Army morning reports, and `guides/MUSTER-ROLLS.md` before following a Navy shore unit.
+A kit for working out where WWII ships and units were, day by day, from their own records, with the other side's
+records beside them. It began with one submarine, USS BANG, and now covers submarines, surface ships, Army units,
+Seabee battalions, convoys and engagements in four theatres; nothing here should assume a submarine or the Pacific.
+The guides are indexed in `guides/README.md`. Read `guides/METHODS.md` before transcribing anything,
+`guides/MORNING-REPORTS.md` before reading Army morning reports, `guides/MUSTER-ROLLS.md` before following a Navy
+shore unit, and `guides/JAPANESE-RECORDS.md` before looking for the Japanese record of an attack.
 For film of a place and date, follow the skill `find-film` (rules in `records/film/README.md`). For a day's situation map
 (the front and the divisions, `records/fronts/`), follow the skill `trace-situation-map`; for many days of the Library's
 collection at once, `guides/SITUATION-MAPS.md` (the catalogue is `tools/loc_sitmaps.py`, one day a reader agent).
@@ -10,7 +13,9 @@ collection at once, `guides/SITUATION-MAPS.md` (the catalogue is `tools/loc_sitm
 ## The rule: cite every source
 
 - Every row carries the page it was read from (`page`, `ref`, `source` or `map`), in a form
-  listed in `records/SOURCES.yml`. A new archive, book or site gets an entry there first.
+  listed in `records/SOURCES.yml`. A new archive, book or site gets an entry there first. A National Archives page is
+  `rg<record group>-<catalog ID>/p<page>`, with the record group the catalog gives the item (`rg38-74802746/p05`;
+  `tools/nara.py` names the cache folder the same way, and the check fails a prefix that disagrees with `citations.json`).
 - Every claim in a note, a guide or a page says where it comes from.
 - `uv run tools/check_sources.py` must pass before a commit (the commit hook runs it). After citing a new National
   Archives item, run it with `--fetch` to add the item's catalog title to `citations.json`.
@@ -18,8 +23,8 @@ collection at once, `guides/SITUATION-MAPS.md` (the catalogue is `tools/loc_sitm
 ## Layout
 
 - `records/`: the data (the wwii-unit-records repository, a submodule). Hand-edited CSV and YAML
-  are the source of truth; fields in `records/README.md`. CSV only for numbers, dates and short codes (no cell
-  ever needs a quote or a comma); anything with words goes in YAML or Markdown with front matter; JSON is generated.
+  are the source of truth; fields in `records/SCHEMA.md`. CSV for tables (RFC 4180: a cell of words, a quote or a
+  note, is quoted); long prose goes in YAML or Markdown with front matter; JSON is generated.
   - `boats/<hull>-<name>/ship.yml` + `patrol-N/` (positions, depths, layers, attacks.csv and attack_sheets.yml,
     japanese.yml, claims.yml, frupac.yml); `ships/<hull>-<name>/`; `engagements/<id>/` (engagement.md, events.yml, claims.yml,
     positions.csv; `guides/ENGAGEMENTS.md`); `convoys/<id>/convoy.md`; `army/`; `seabees/`;
@@ -97,7 +102,7 @@ PRV001 and runs the kit's `smoke.py` over its own pages (`views()` and `run()`).
   engagement and glossary JSON) is committed and up to date, named with its build when it isn't; `scans.json` and the
   downloaded seafloor, weather and relief files are not checked, since they need the network or `sources/`.
 - ruff (`ruff.toml`: defects and orphans, not style) and ty through `tools/typecheck.py`: ty checks a set of files
-  against one environment and doesn't yet read PEP 723 headers for several scripts (astral-sh/ty#691), so this groups
+  against one environment and doesn't yet read PEP 723 headers for several scripts, so this groups
   the files by header, has uv build each group's environment (`uv sync --script`, which honours `requires-python`) and
   runs ty once per group at the header's oldest Python. Nothing is allowed unresolved: an import a header doesn't
   declare fails. A file with no header fails. Findings in the older tools are in `ty-baseline.json` (`--update-baseline`
@@ -127,9 +132,13 @@ those, a `plain` line, `army/units.yml`, `seabees/units.yml`, `army/leads.yml`, 
 
 ## Pages
 
-Where the pages are going (subjects, frames, the two depths; the design, checked against TAMA-17 and the 67th CA (AA)'s
-Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page or a view.
+How the pages are designed (subjects, frames, the two depths, the navigation; checked against TAMA-17 and the 67th
+Coast Artillery (AA)'s Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page or a view. The
+rules below are the ones a change most often breaks.
 
+- A page claims only what its records hold: "read from both sides" only where the other side's record is entered, a
+  count computed from the records and never written into the prose. `about.html` states the kit's coverage, method and
+  limits; keep it true when either changes.
 - Every mark links to its source page (the scan viewer falls back to the archive's URL from
   `records/scans.json`).
 - Silhouettes are data, not drawing code: shapes in `records/silhouettes/silhouettes.yml`; `site/silhouettes.js`
@@ -146,9 +155,10 @@ Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page
   labels: italics instead.
 - Every page has the same navigation bar, at the top of its header: an empty `<nav class="nav" aria-label="The kit"
   data-nav></nav>` followed by `<script src="nav.js"></script>`, which `site/nav.js` fills as the page is parsed (so
-  nothing shifts) and marks the current page on (the query too: `theatre.html?t=pacific`). The bar is the guide's §5.3
-  and nothing else: *Engagements* (`engagements.html`, the index of every one: the way in), the four theatres, *Subjects*,
-  *Reading the records* (the explainers), *Researching a relative*; its links live in `nav.js` alone. Under it, every
+  nothing shifts) and marks the current page on (the query too: `theatre.html?t=pacific`). The bar is the guide's
+  navigation section and nothing else: *Engagements* (`engagements.html`, the index of every one: the way in), the four
+  theatres, *Subjects*, *Reading the records* (the explainers), *Researching a relative*, *About and method*; its links
+  live in `nav.js` alone. Under it, every
   page has the breadcrumb, `<nav class="crumb" id="crumb" aria-label="Where this is in the kit">`, one markup (`chapter.css`'s `.crumb .trail`, written by `Chapter.trail(parts)` or, where it is
   constant, in the page's HTML): *Pacific / the operation / the engagement*, *Subjects / BANG / Patrol 1*, *Reading the
   records / Time zones*. The engagement page's crumb (`Chapter.crumb`) adds the engagement before and after in its
@@ -174,6 +184,22 @@ Medical Detachment): `guides/OPERATIONS-VIEWER.md`. Read it before adding a page
 - Verify changes in a browser: light and dark mode, every subject on `subject.html` (a boat, a ship, a unit, a
   battalion, a convoy, its page and its placement), every engagement on `engagement.html` (the page and its questions), no
   console errors.
+
+## Words
+
+- British spelling in the kit's own prose (theatre, harbour, catalogue), American in proper names and in field names
+  and paths as they stand (`theater`, the National Archives *catalog*, European Theater of Operations).
+- Times: GCT where a record is quoted, GMT in the kit's own prose, `utc` only as a computed field's name. A zone is
+  given as its letter and the Navy's zone description once: zone I (−9: nine hours ahead of GMT).
+- A unit is spelled out on first use in a document (62nd Coast Artillery Regiment (Antiaircraft), then 62nd CA (AA)),
+  with its type (the 106th AAA Automatic Weapons Battalion, not "the 106th AAA"). German and Japanese formations as the
+  cited source spells them, said once.
+- Ships: submarines in capitals as their reports type them (BANG), other ships as USS Haynsworth; Japanese ships in
+  sentence case with macrons (Junyō). "Coordinated attack group" is the Navy's term; "pack" is fine after it.
+- Guides and READMEs state what is so, in the present tense. How a conclusion was reached belongs in the evidence it
+  cites, and how the work went belongs in the commit log: no dated run logs, no "then we found", no first person.
+- Nothing public names the person who prompted a choice, the family repository's lead numbers, or a file only one
+  machine holds.
 
 ## Don't
 

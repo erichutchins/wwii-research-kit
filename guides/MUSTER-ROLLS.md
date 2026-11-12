@@ -1,6 +1,6 @@
 # Navy muster rolls: following a shore unit
 
-How the Seabee battalions in `records/seabees/` were rebuilt, and how to do the next one. The
+How the Seabee battalions in `records/seabees/` were placed, and how to do the next one. The
 rolls were made to account for men, not places, so a battalion's stations come from three kinds of
 evidence put together: the rolls' few place entries, the Bureau of Yards and Docks' log of the
 battalion, and published histories.
@@ -18,10 +18,12 @@ for "<n>th Construction Battalion"), filmed in date order, with OCR. Per quarter
   place sent to or come from;
 - the **recapitulation** (605d): numbers brought forward and carried forward.
 
-`tools/morning_reports.py` works on any catalog file unit: `pages <id> "<text>"` finds pages by
-OCR (a service number, "Navy", "Forwarded", "Hosp"), `text <id> <pages>` prints the OCR, and
-`fetch <id> <pages>` downloads the scans. It caches under `sources/nara/rg64-<id>/`; for a muster
-roll make the folder `rg24-<id>` and link `rg64-<id>` to it, so cache and citations agree.
+`tools/morning_reports.py`, written for the Army's rolls, works on any catalog file unit:
+`pages <id> "<text>"` finds pages by OCR (a service number, "Navy", "Forwarded", "Hosp"),
+`text <id> <pages>` prints the OCR, and `fetch <id> <pages>` downloads the scans. A muster roll
+is cited by its own record group, `rg24-<id>/pNNNN`. The tool's cache folder is still named for
+the Army's group (`sources/nara/rg64-<id>/`), so for a muster roll make the folder `rg24-<id>`
+and link `rg64-<id>` to it: a limit of the tool, not part of the method.
 
 ## Places from the rolls
 

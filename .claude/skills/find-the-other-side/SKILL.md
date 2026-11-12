@@ -11,7 +11,7 @@ description: >
 
 # The other side
 
-Read `guides/METHODS.md` ("The Japanese side") and, for position codes, `guides/JAPANESE-GRID.md`.
+Read `guides/JAPANESE-RECORDS.md` and, for position codes, `guides/JAPANESE-GRID.md`.
 
 ## Steps
 
@@ -28,7 +28,7 @@ Read `guides/METHODS.md` ("The Japanese side") and, for position codes, `guides/
    February 1945, dates a bare loss line when it was reported, not when it happened, and its silence is no evidence);
    for a ship sailing alone, read the telegram log (令達報告等) of the commands sent to help her; and
    search by command and month, since the search text misses much. Japanese Wikipedia often names
-   the JACAR page: a finding aid, not a citation. Details: METHODS.md, "The Japanese side".
+   the JACAR page: a finding aid, not a citation. Details: `guides/JAPANESE-RECORDS.md`.
 3. **Transcribe as written.** `japanese.yml` in the patrol's folder: the original text, an English
    translation beside it, date, time and zone (Tokyo time, zone I, unless the record says
    otherwise), position as given, `source` (`jacar:<code>`) and `page`.

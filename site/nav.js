@@ -2,9 +2,9 @@
 // (<nav class="nav" aria-label="The kit" data-nav></nav>) as the page is parsed, so a page added to the kit is added
 // to the bar here and nowhere else. The link to the page being read is marked aria-current="page" (the stylesheets
 // underline it); a page opened by its address (theatre.html?t=pacific) marks the link with the same query. The bar is
-// the shape of guides/OPERATIONS-VIEWER.md 5.3 and nothing else: the engagements (every one read from both sides, the
+// the shape of guides/OPERATIONS-VIEWER.md 5.3 and nothing else: the engagements (the
 // kit's way in), the four theatres, the subjects (every boat, ship, unit, battalion and convoy, each on its own page),
-// reading the records (the explainers), researching a relative; no ship, no view, no place. The breadcrumb under it
+// reading the records (the explainers), researching a relative, and what the kit is and how far to trust it (about.html); no ship, no view, no place. The breadcrumb under it
 // (chapter.css, Chapter.trail) does the walking.
 // Load it right after the placeholder: it then fills the bar before the rest of the header is parsed, so nothing shifts
 // or flashes. Loaded anywhere else (deferred, or in the head), it fills the bar once the document is parsed.
@@ -23,7 +23,8 @@
         '<a href="german.html">German</a></span>' +
       '<span class="sub"><span class="lbl">How it worked:</span><a href="torpedo.html">Torpedoes</a></span>' +
       '<a href="silhouettes.html">Silhouettes</a></span>' +
-    '<a href="relatives.html">Researching a relative</a>';
+    '<a href="relatives.html">Researching a relative</a>' +
+    '<a href="about.html">About and method</a>';
 
   function fill() {
     const nav = document.querySelector("nav[data-nav]");

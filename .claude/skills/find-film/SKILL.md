@@ -5,7 +5,7 @@ description: >
   records/film/clips.csv: search the US National Archives' moving images and the listed archives' YouTube channels with
   tools/film.py, read each find on its shot list or Signal Corps shot card, date it, label it as the place or as the
   unit's day, cite it, and check it on the theatre's page. Use when asked for film, newsreels or footage of a place or
-  date, or when a research lead (L63 in the family repository) works a theatre's film.
+  date, or when a research lead works a theatre's film.
 ---
 
 # Finding film of a place and day
@@ -47,7 +47,7 @@ python3 tools/film.py meta <video id>                      # description, archiv
 - Only `channels.yml` counts. An `archive` channel's upload is cited `youtube:<id>` with the archive's own number in
   `archive_id`; a `finding-aid` re-upload is traced to the NARA item, and that is what is cited.
 - Read the description's own shot list. Ignore the upload's title, its "on this day" date and any caption added later.
-- A quota or key problem: see the README. A bot check: stop, don't get around it, and give the full URL to Eric.
+- A quota or key problem: see the README. A bot check: stop, don't get around it, and give the full URL to the researcher.
 
 ## 4. Decide each find
 

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>About, method and limits: WWII research kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&family=Special+Elite&display=swap">
+<link rel="stylesheet" href="chapter.css">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="home.css">
+<!-- What a reader needs before trusting a mark: what the kit is, what it covers and why those units, how a value gets
+     from a scan to a page, what each label means, what has not been done, and how to cite it. The counts in the coverage
+     table are filled from records/subjects.json and engagements/index.json by the script at the foot, so they cannot
+     go stale; the words around them are checked by hand. -->
+</head>
+<body>
+<div class="page">
+  <nav class="nav" aria-label="The kit" data-nav></nav>
+  <script src="nav.js"></script>
+  <nav class="crumb" id="crumb" aria-label="Where this is in the kit"><div class="trail"><span aria-current="page">About, method and limits</span></div></nav>
+
+  <header class="mast">
+    <h1>About, method and limits</h1>
+    <p class="lede">What these pages are, which ships and units they cover and why those, how a value gets from a
+      scanned page to a mark on a map, and what has not been done.</p>
+  </header>
+
+  <div class="guide">
+    <h2>What this is</h2>
+    <p>A reconstruction of where some ships and units of the Second World War were, day by day and sometimes minute by
+      minute, from the records they kept at the time: US submarine war patrol reports, ships' war diaries and action
+      reports, Army morning reports and unit histories, Navy muster rolls. Where the other side's record of the same
+      event has been found (the Imperial Japanese Navy's war diaries and escort reports, German corps and army records,
+      the Seekriegsleitung's diary), it is set beside the American one on one map and one clock. Where it has not been
+      found, the page says so.</p>
+    <p>It is two public repositories: the <a href="https://github.com/erichutchins/wwii-unit-records">unit records</a>
+      (the transcriptions, as data) and the <a href="https://github.com/erichutchins/wwii-research-kit">research kit</a>
+      (the tools, the guides and these pages). It is the work of one researcher, not an institution.</p>
+
+    <h2>What it covers, and why these</h2>
+    <p>The selection is not a sample of the war. It began with one submarine, USS BANG (SS-385), and grew along the
+      lines of one family's research: the ships and units its members served in, the boats and ships that worked
+      beside them, and the forces that met them. The records name units and ships only, never the people who prompted
+      the choice. Coverage is therefore deep in a few places and thin in most:</p>
+    <table class="records-table">
+      <thead><tr><th>Subject</th><th>In the records</th><th>How complete</th></tr></thead>
+      <tbody>
+        <tr><td>Submarines</td><td class="where" data-label="In the records"><span data-count="boat">25</span> boats</td><td class="where" data-label="How complete">BANG's six war patrols in full (positions, depths, attacks). The others for one or two patrols each: her coordinated attack groups and the boats whose attacks bear on the same convoys.</td></tr>
+        <tr><td>Surface ships</td><td class="where" data-label="In the records"><span data-count="ship">23</span> ships</td><td class="where" data-label="How complete">Four at length from their war diaries: a destroyer, a destroyer escort, a battleship and an escort carrier. The rest for a few positions on 6 April 1945 only.</td></tr>
+        <tr><td>Army units</td><td class="where" data-label="In the records">Stations for about thirty batteries, companies and detachments</td><td class="where" data-label="How complete">Mostly anti-aircraft artillery, from morning reports (1940–1944 are online; 1945 is thinner) and unit histories. The index of subjects also lists every division read off a situation map, which is a symbol on a map and not a followed unit.</td></tr>
+        <tr><td>Naval construction battalions</td><td class="where" data-label="In the records"><span data-count="battalion">2</span> battalions</td><td class="where" data-label="How complete">From their muster rolls and the war diaries of the commands they served under.</td></tr>
+        <tr><td>Japanese convoys</td><td class="where" data-label="In the records"><span data-count="convoy">11</span> convoys</td><td class="where" data-label="How complete">Those the boats above attacked, from Japanese records and published convoy histories.</td></tr>
+        <tr><td>Engagements</td><td class="where" data-label="In the records"><span data-count="engagement">24</span> engagements</td><td class="where" data-label="How complete">Each page says which sides' records are entered. Several still stand on one side's record alone.</td></tr>
+        <tr><td>The front in Europe</td><td class="where" data-label="In the records">Twelfth Army Group's daily situation maps, 6 June 1944 onward</td><td class="where" data-label="How complete">The front line traced for most days; the unit symbols read for a minority of them. A staff's picture of the day, not the units' own positions.</td></tr>
+      </tbody>
+    </table>
+    <p>The <a href="https://github.com/erichutchins/wwii-unit-records/blob/main/inventory.yml">inventory</a> lists
+      every report looked for, found or not, and how far each has been taken.</p>
+
+    <h2>How a value gets here</h2>
+    <ul>
+      <li><b>Read on the scan.</b> Every value is read from the image of the page. Text recognition is used to find
+        pages, never as a value.</li>
+      <li><b>As typed.</b> Dates, times, zone letters and coordinates are recorded exactly as the page has them, with
+        <span class="typed">?</span> for an illegible character. A correction goes in a separate field beside the typed
+        value, with its reason; the typed value is never overwritten.</li>
+      <li><b>Cited to the page.</b> Every row carries the page it was read from, and every mark on these pages opens
+        that page. A National Archives citation reads <span class="typed">rg38-74802746/p05</span>: Record Group 38,
+        catalog item 74802746, the item's fifth page. Secondary works and websites are cited by page or address, and
+        are labelled as secondary.</li>
+      <li><b>Checked by arithmetic.</b> A track is tested for legs no ship could have run, a position for falling on
+        land, an attack sheet against its own triangle. A failure is resolved on the scan, or left visible.</li>
+    </ul>
+
+    <h2>What the labels mean</h2>
+    <table class="records-table">
+      <thead><tr><th>Label</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>reported</td><td class="where" data-label="Meaning">The record states it: a typed position, a logged time.</td></tr>
+        <tr><td>derived</td><td class="where" data-label="Meaning">Computed from reported values by a stated rule: a clock time converted between zones, a grid reference converted to latitude and longitude, a distance between two tracks.</td></tr>
+        <tr><td>inferred</td><td class="where" data-label="Meaning">A conclusion the kit draws from the records, with its reasons given and the alternatives named.</td></tr>
+        <tr><td>assumed</td><td class="where" data-label="Meaning">Supplied to make a drawing possible where the record is silent: a straight line between two reported positions, a town's centre for a unit "near" it. Hatched or dashed on the maps.</td></tr>
+      </tbody>
+    </table>
+    <p>Sources are labelled by kind as well: a unit's own record, intelligence, press, a post-war assessment, a
+      recollection, a secondary work. Two tellings that go back to one source count once. Conclusions are given in
+      words, ranked with the reasons for and against, never as a score. A unit's presence in an area or under a
+      command is context: it does not mean the unit, still less any one man, took part.</p>
+
+    <h2>What has not been done</h2>
+    <ul>
+      <li><b>No second reading.</b> The transcriptions were made by one researcher working with an AI agent (Claude
+        Code), which read many of the scans under the rules above; rows were then checked by the arithmetic tests and
+        by review, not by an independent second reader. Expect transcription errors, and please
+        <a href="index.html#yourself">report them</a>.</li>
+      <li><b>Translations are the kit's own.</b> Japanese and German entries are given in the original with a
+        translation beside them. The translations were made the same way and have not been checked by a specialist.</li>
+      <li><b>The grids are partly rebuilt.</b> The Japanese kana grid and the German reference systems are
+        reconstructed from positions known some other way. Each explainer says which keys are established, which are
+        probable and which are unknown, and how far a decoded position can be trusted.</li>
+      <li><b>Weather, seafloor and relief are modern.</b> The weather is a reanalysis (ERA5), the depths and terrain
+        are present-day surveys. They are context, labelled as such, and no ship's log.</li>
+      <li><b>Absence is not evidence.</b> "No entry found" means the records searched, which each page names, held
+        none. It does not mean nothing happened.</li>
+    </ul>
+
+    <h2>How to cite</h2>
+    <p>Cite the original record for any value you use: each mark gives its archive, item and page. To cite the
+      transcription or a page, give the repository and the version, which the foot of every page of the published site
+      carries:</p>
+    <p class="typed">Eric Hutchins, WWII unit records and research kit, https://erichutchins.github.io/wwii-research-kit/
+      (version of [date at the foot of the page]).</p>
+    <p>The records are licensed CC BY 4.0 and the kit's code MIT. The original records keep their own terms, listed
+      source by source in
+      <a href="https://github.com/erichutchins/wwii-unit-records/blob/main/SOURCES.yml">SOURCES.yml</a>, the kit's
+      bibliography.</p>
+  </div>
+  <div class="end"></div>
+</div>
+<script src="config.js"></script>
+<script>
+// The counts in the coverage table, from the records, so the table cannot go stale. The words stay as written if a file
+// fails to load.
+(async () => {
+  const set = (k, n) => { for (const el of document.querySelectorAll(`[data-count="${k}"]`)) if (n) el.textContent = n; };
+  const base = typeof RECORDS === "string" ? RECORDS : "../records/";
+  try {
+    const s = await fetch(base + "subjects.json").then(r => r.json());
+    const list = Array.isArray(s) ? s : (s.subjects || Object.values(s));
+    const by = {};
+    for (const x of list) by[x.kind] = (by[x.kind] || 0) + 1;
+    for (const k of ["boat", "ship", "battalion", "convoy"]) set(k, by[k]);
+  } catch (e) { /* the written counts stand */ }
+  try {
+    const e = await fetch(base + "engagements/index.json").then(r => r.json());
+    set("engagement", (Array.isArray(e) ? e : e.engagements || []).length);
+  } catch (e) { /* the written counts stand */ }
+})();
+</script>
+<script src="glossary.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>
