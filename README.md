@@ -37,6 +37,56 @@ two ships sunk, and US radio intelligence's estimates, on one map and one GMT cl
 - **Do it for your own ship or unit.** The tools find and download the scans, check a transcription by arithmetic,
   and build the pages. The guides say how each archive works.
 
+## The sources, and how to read them
+
+Most of what the kit does is reading. Each kind of record has a guide that says where it is held, how to get at it
+without a reading room, how it is laid out, and where it misleads. All of these are free to read online.
+
+| The record | What it gives you | Where it is | The guide |
+|---|---|---|---|
+| **US submarine war patrol reports** | Every position, contact, attack and dive of a patrol, with the attack data sheets | National Archives catalog, Record Group 38, [series 305243](https://catalog.archives.gov/id/305243) | [METHODS](guides/METHODS.md) |
+| **Ships' and commands' war diaries** | A ship's day: positions at 0800, 1200 and 2000, her task group, what she did | National Archives catalog, RG 38, [series 4697018](https://catalog.archives.gov/id/4697018) | [METHODS](guides/METHODS.md) |
+| **Army morning reports** | A company's or battery's station on every day it moved, 1940–1944 | National Archives catalog, RG 64, [series 85713825](https://catalog.archives.gov/id/85713825): microfilm rolls with searchable text | [MORNING-REPORTS](guides/MORNING-REPORTS.md) |
+| **Navy muster rolls** | A shore unit, such as a Seabee battalion, through its men's transfers | National Archives catalog, RG 24, [series 594996](https://catalog.archives.gov/id/594996) | [MUSTER-ROLLS](guides/MUSTER-ROLLS.md) |
+| **Imperial Japanese Navy records** | The target's own account: escort commands' war diaries, battle reports, telegram logs, and the movement tables of navy-controlled merchant ships | [JACAR](https://www.jacar.archives.go.jp/), the Japan Center for Asian Historical Records | [JAPANESE-RECORDS](guides/JAPANESE-RECORDS.md) |
+| **FRUPAC war maps** | US radio intelligence's picture of the same day: where Fleet Radio Unit, Pacific placed Japanese convoys and ships | [Portal to Texas History](https://texashistory.unt.edu/explore/collections/FRUPAC/) (linked, never copied) | [JAPANESE-RECORDS](guides/JAPANESE-RECORDS.md) |
+| **German army and navy records** | Corps and army war diaries and their daily reports in Italy; the Naval Staff's operation charts | National Archives microfilm [T-312](https://catalog.archives.gov/id/12007587), [T-314](https://catalog.archives.gov/id/12004195) and T-1022, RG 242 | [BEZUGSPUNKTE](guides/BEZUGSPUNKTE.md), [NAVAL-GRID](guides/NAVAL-GRID.md) |
+| **Twelfth Army Group situation maps** | The front and every division on it, one sheet a day from 6 June 1944 | [Library of Congress](https://www.loc.gov/collections/world-war-ii-maps-military-situation-maps-from-1944-to-1945/), any region of any sheet by IIIF | [SITUATION-MAPS](guides/SITUATION-MAPS.md) |
+| **Unit histories and after action reports** | What a unit wrote about itself, where the daily records stop | Google Books in full view; division museums' collections | [GOOGLEBOOKS](guides/GOOGLEBOOKS.md) |
+
+The bibliography, with every source's holder, terms and citation form, is
+[`records/SOURCES.yml`](https://github.com/erichutchins/wwii-unit-records/blob/main/SOURCES.yml).
+
+### Worked out along the way
+
+Some of the records could not be placed on a map until their notation was understood. These are the parts of the kit
+most likely to help someone else, and each says plainly what is established, what is probable and what is still open.
+
+- **The Imperial Navy's kana position codes** (「メキ三ツ」). No code table has been found. The keys for October 1944
+  and April 1945 are rebuilt letter by letter from positions known some other way: an air group's own track charts, a
+  conversion printed in the official war history, an order of May 1942.
+  [JAPANESE-GRID](guides/JAPANESE-GRID.md), `tools/jgrid.py`.
+- **The German Army's reference points in Italy** ("XXIII 68" is Caira, north of Cassino). Tenth Army's reports give
+  places as a block and a point number on a secret overlay map. Three editions of that map are on the microfilm, and
+  their points are keyed from it. [BEZUGSPUNKTE](guides/BEZUGSPUNKTE.md), `tools/bezugspunkt.py`.
+- **The Kriegsmarine's naval squares in the Mediterranean** ("CJ 9472"), read off the Naval Staff's wartime charts
+  and tested against places the war diary names. [NAVAL-GRID](guides/NAVAL-GRID.md), `tools/naval_grid.py`.
+- **Finding the Japanese record of a US attack.** Which command's diary holds it, why a ship is filed under the
+  command that received her signal, why a daily summary's silence proves nothing, and how a time in Tokyo's zone
+  meets one in the submarine's. [JAPANESE-RECORDS](guides/JAPANESE-RECORDS.md).
+- **Reading a morning report roll without a reading room.** The catalog's text search finds a unit's pages among
+  thousands; the station is then read on the scan. [MORNING-REPORTS](guides/MORNING-REPORTS.md),
+  `tools/morning_reports.py`.
+- **A front line from a scanned map.** A sheet is fitted to the ground by its towns, the front traced by its ticked
+  stretches, and the unit symbols read as drawn. [SITUATION-MAPS](guides/SITUATION-MAPS.md).
+
+The site's explainers show the same things worked through on real entries:
+[time zones](https://erichutchins.github.io/wwii-research-kit/zones.html),
+[the US Army's map grids](https://erichutchins.github.io/wwii-research-kit/grids.html),
+[the Japanese grid](https://erichutchins.github.io/wwii-research-kit/jgrid.html),
+[the German grids](https://erichutchins.github.io/wwii-research-kit/german.html) and
+[torpedo fire control](https://erichutchins.github.io/wwii-research-kit/torpedo.html).
+
 ## Made with Claude
 
 Claude, Anthropic's AI model, did the reading. Working in [Claude Code](https://claude.com/claude-code) under the
@@ -59,16 +109,17 @@ records (National Archives microfilm). The transcriptions are a separate reposit
 
 | | |
 |---|---|
-| 25 submarines | USS BANG (SS-385) for all six war patrols; the others for one or two patrols each |
-| 23 surface ships | four at length from their war diaries, the rest for one day |
-| About thirty Army units | mostly anti-aircraft artillery, station by station |
-| 2 naval construction battalions | from their muster rolls |
-| 11 Japanese convoys, 24 engagements | each engagement page says which sides' records are entered |
+| <!--n:boats-->25<!--/n--> submarines | USS BANG (SS-385) for all six war patrols; the others for one or two patrols each |
+| <!--n:ships-->23<!--/n--> surface ships | four at length from their war diaries, the rest for one day |
+| <!--n:army_units-->33<!--/n--> Army units | mostly anti-aircraft artillery, station by station |
+| <!--n:battalions-->2<!--/n--> naval construction battalions | from their muster rolls |
+| <!--n:convoys-->11<!--/n--> Japanese convoys, <!--n:engagements-->24<!--/n--> engagements | the other side's own record is entered for <!--n:engagements_other_side-->20<!--/n--> of the engagements; each page says which |
 | The front in Europe | the daily situation maps from 6 June 1944 |
 
 The selection is not a sample of the war. It began with one submarine and grew along one family's research: the
 units its members served in, those beside them and those that met them. The records name units and ships, never
-those people. `records/inventory.yml` lists every report looked for, found or not.
+those people. `records/inventory.yml` lists every report looked for, found or not. The numbers above are counted from the records
+by `tools/readme_counts.py`, and the build check fails if they drift.
 
 ## The rules
 

@@ -55,6 +55,7 @@ fresh "silhouettes/silhouettes.json (build_silhouettes.py)" silhouettes/silhouet
 uv run --quiet tools/build_engagement.py check
 uv run --quiet tools/build_subjects.py check
 uv run --quiet tools/build_glossary.py check
+python3 tools/readme_counts.py check
 
 out=$(uv run --quiet tools/check_attacks.py 2>&1) || { echo "$out"; exit 1; }; echo "$out" | tail -1
 node site/engage.test.js > /dev/null
