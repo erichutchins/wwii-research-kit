@@ -234,7 +234,7 @@ def main(argv=None):
     a = ap.parse_args(argv)
     out = run(a.unit, date.fromisoformat(a.start), date.fromisoformat(a.end), a.radius)
     if not any(d["read"] for d in out["days"]):
-        sys.exit(f"no day from {a.start} to {a.end} has its symbols read (records/fronts/TODO.md)")
+        sys.exit(f"no day from {a.start} to {a.end} has its symbols read (records/fronts/README.md, Known gaps)")
     print(json.dumps(out, ensure_ascii=False, indent=1) if a.json else words(out))
 
 
