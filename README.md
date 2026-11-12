@@ -1,10 +1,49 @@
 # WWII research kit
 
-Tools, guides and pages for working out where a ship or unit of the Second World War was, day by day, from the
-records it kept at the time, and for setting the other side's record of the same hours beside it.
+[![Site](https://img.shields.io/badge/site-erichutchins.github.io-2b6cb0)](https://erichutchins.github.io/wwii-research-kit/)
+[![Pages build](https://github.com/erichutchins/wwii-research-kit/actions/workflows/pages.yml/badge.svg)](https://github.com/erichutchins/wwii-research-kit/actions/workflows/pages.yml)
+[![Made with Claude](https://img.shields.io/badge/made%20with-Claude-D97757)](https://claude.com/claude-code)
+[![Code: MIT](https://img.shields.io/badge/code-MIT-blue)](LICENSE)
+[![Records: CC BY 4.0](https://img.shields.io/badge/records-CC%20BY%204.0-lightgrey)](https://github.com/erichutchins/wwii-unit-records/blob/main/LICENSE)
 
-**Site:** <https://erichutchins.github.io/wwii-research-kit/>. Start with
-[About, method and limits](https://erichutchins.github.io/wwii-research-kit/about.html).
+**Where was a ship or a unit of the Second World War, day by day? What did the other side write down about the same
+hours?** This kit answers both from the records each kept at the time, and shows every answer with the scanned page
+it was read from.
+
+[![Convoy TAMA-17, 29–30 April 1944: three US submarines' reported positions and attacks, the Japanese record of the two ships sunk, and the radio-intelligence estimates, on one map and one clock](.github/readme/tama-17.png)](https://erichutchins.github.io/wwii-research-kit/engagement.html?e=tama-17-1944-04-29)
+
+*Convoy TAMA-17 west of Luzon, 29–30 April 1944: three submarines' war patrol reports, the Japanese record of the
+two ships sunk, and US radio intelligence's estimates, on one map and one GMT clock. Each mark opens its page.*
+
+**[Open the site](https://erichutchins.github.io/wwii-research-kit/)** ·
+[About, method and limits](https://erichutchins.github.io/wwii-research-kit/about.html) ·
+[Researching a relative](https://erichutchins.github.io/wwii-research-kit/relatives.html) ·
+[The data](https://github.com/erichutchins/wwii-unit-records) ·
+[The guides](guides/README.md)
+
+## What you can do with it
+
+- **Follow a ship or unit.** A submarine's six war patrols position by position, a destroyer's war diary, an
+  anti-aircraft battery's stations from its morning reports, a Seabee battalion from its muster rolls.
+- **Read an engagement from both sides.** A convoy battle from the submarines' reports and the escorts' diaries; a
+  kamikaze attack from the destroyer's action report and the air group's records; five minutes over Bavaria from
+  three records that never mention each other.
+- **Decode the records' notations.** The Imperial Navy's kana position grid, the Kriegsmarine's naval squares, the
+  German Army's reference points, six US Army map grids, zone-lettered times, a torpedo attack data sheet.
+- **Do it for your own ship or unit.** The tools find and download the scans, check a transcription by arithmetic,
+  and build the pages. The guides say how each archive works.
+
+## Made with Claude
+
+Claude, Anthropic's AI model, did the reading. Working in [Claude Code](https://claude.com/claude-code) under the
+rules below, it found the records, read every scanned page, transcribed the values, translated the Japanese, German,
+French and Italian, worked out the conversions and placements, and wrote the tools and the pages. One researcher,
+Eric Hutchins, chose what to follow, set the rules, reviewed the results and decided what to publish.
+
+So the kit is built to be checked, not believed. A typed value stands on its citation: one click shows the scan. A
+translation, a computed position or a ranking of explanations is the kit's own work and is labelled derived,
+inferred or assumed. No row has had an independent second reading yet. `CLAUDE.md` and `.claude/skills/` are the
+instructions Claude works from, and they are part of the method: read them as you would a lab protocol.
 
 ## What it covers
 
@@ -36,8 +75,8 @@ those people. `records/inventory.yml` lists every report looked for, found or no
 2. **Record what was typed.** Values are read on the scan image, never taken from text recognition, and recorded
    exactly as typed. A correction goes beside the typed value with its reason, never over it.
 3. **Label what isn't reported.** Every value is reported, derived, inferred or assumed, in the data and on the page.
-4. **Name the limits.** One researcher working with an AI agent read these pages; there has been no independent
-   second reading. Absence from the records searched is not evidence of absence.
+4. **Name the limits.** Claude read these pages once; there has been no independent second reading, and no
+   translator has checked the translations. Absence from the records searched is not evidence of absence.
 
 ## What's here
 
@@ -87,5 +126,8 @@ and the kit then records the new version; `CLAUDE.md` has the checks that run be
 ## Licence and citation
 
 Code: MIT. The records: CC BY 4.0 (`records/LICENSE`). The original records keep their own terms, listed source by
-source in `records/SOURCES.yml`. To cite: the original record for any value, and for the transcription, Eric
-Hutchins, *WWII unit records and research kit*, the site's address and the version date at the foot of its pages.
+source in `records/SOURCES.yml`. Cite the original record for any value you use. To cite the kit or the
+transcription:
+
+> Eric Hutchins, with Claude (Anthropic), *WWII unit records and research kit*,
+> https://erichutchins.github.io/wwii-research-kit/, version of `<the date at the foot of the site's pages>`.
