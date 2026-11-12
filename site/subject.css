@@ -336,7 +336,16 @@ a.spanel:hover { background: var(--wash); }
 .engs .eng .with { margin-top: 5px; font-size: 14.5px; color: var(--ink-3); }
 .engs .eng .with a { color: var(--ink-2); text-decoration-color: var(--rule); }
 .engs .eng .with a:hover { color: var(--ink); text-decoration-color: currentColor; }
+/* the subject's Engagements view: the index's rows, each with a locator of its box under the dates */
+.engs .dates .loc { display: block; width: 150px; height: auto; margin-top: 8px; }
+.engs .loc .sea { fill: var(--wash); }
+.engs .loc .land { fill: var(--ink-3); opacity: .3; stroke: none; }
+.engs .loc .box { fill: none; stroke: var(--c2); stroke-width: 1.6; }
+.engs .loc .dot { fill: var(--c2); }
+.engs .eng .as { font-size: 15px; color: var(--ink-3); }
+.engs-view h2.sec:first-child { margin-top: 18px; }
 @media (max-width: 640px) { .engs { grid-template-columns: minmax(0, 1fr); gap: 4px 0; } .engs .dates { padding-top: 10px; } .engs .eng { margin-bottom: 12px; } }
+@media (max-width: 640px) { .engs .dates .loc { width: 120px; } }
 
 /* the subjects index (subjects.html): a table per kind; the convoys' ledger with its symbols */
 .index h2 { font-size: 24px; font-weight: 400; font-style: normal; color: var(--ink); margin: 24px 0 6px; padding: 0; }

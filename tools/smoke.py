@@ -99,7 +99,8 @@ WORKED = ("67ca-med", "ss-385-bang", "20ncb", "tama-17", "dd-700-haynsworth")
 
 def subject_views(path, page):
     """Each subject's page (subject.html?s=<id>: its journey, and its record under it), a boat's at each patrol too, from
-    subjects.json; the walked-through subjects at their placement (view=placement) as well, and one at each old address
+    subjects.json; every subject with an engagement at its Engagements view (view=engagements), the walked-through
+    subjects at their placement (view=placement) as well, and one at each old address
     (view=account, records, working), which must still arrive."""
     out = []
     for s in load(path):
@@ -108,6 +109,8 @@ def subject_views(path, page):
             out += [f"{page}?s={s['id']}&period={p['n']}" for p in s["periods"]]
         if s["id"] in WORKED:
             out.append(f"{page}?s={s['id']}&view=placement")
+        if s.get("engagements"):
+            out.append(f"{page}?s={s['id']}&view=engagements")
     out += [f"{page}?s=67ca-med&view=records", f"{page}?s=67ca-med&view=working", f"{page}?s=ss-385-bang&period=2&view=account"]
     return out
 

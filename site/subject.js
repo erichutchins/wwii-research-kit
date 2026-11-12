@@ -1,5 +1,6 @@
-// subject.html?s=<id>[&view=placement]: one journey page for every subject the records follow (a boat, a ship, an Army
-// unit, a Seabee battalion, a convoy, a command), at two depths (guides/OPERATIONS-VIEWER.md 4, 5.2, 7.2).
+// subject.html?s=<id>[&view=engagements|placement]: one journey page for every subject the records follow (a boat, a
+// ship, an Army unit, a Seabee battalion, a convoy, a command), in three views: the page, its engagements, and how it
+// was placed (guides/OPERATIONS-VIEWER.md 4, 5.2, 7.2).
 // Reads records/subjects.json (tools/build_subjects.py: the registry of every subject, with its plain line, periods,
 // organizations, engagements and record counts), and for the depths the subject's own built records (ships.json and its
 // track GeoJSON, army/army.json, seabees/seabees.json, convoys/convoys.json), operations/operations.json for the war
@@ -12,6 +13,7 @@
 //   was in); then the record itself, today's app for its kind as a panel (site/panels/*.js): the map with the date
 //   strip and the entries list, the scan dialog shared (#scan), &period= (a patrol) and &t= (a day or a minute) carried
 //   in the address; a stage row's link lands on it (#records) at that period or day.
+//   Engagements (view=engagements): the engagements it was in, as the Engagements index draws them, with a locator each.
 //   Placement and leads (view=placement): how each station was placed, the speed check of the legs (computed here from
 //   the fixes), the relations with their pages, the leads, the coverage by month. The old addresses
 //   (view=account|records|working) open the page or the placement.
@@ -22,12 +24,12 @@
   const ALL = await fetch(RECORDS + "subjects.json").then(r => r.json());
   const want = params.get("s");
   const S = ALL.find(x => x.id === want || x.alias === want) || ALL.find(x => x.id === "ss-385-bang") || ALL[0];
-  // the two depths: the page, and how it was placed; the old three-depth addresses still arrive
-  const VIEW = ["placement", "working"].includes(params.get("view")) ? "placement" : "page";
+  // the views: the page, the engagements it was in, and how it was placed; the old three-depth addresses still arrive
+  const VIEW = ["placement", "working"].includes(params.get("view")) ? "placement" : params.get("view") === "engagements" ? "engagements" : "page";
   const IN = v => VIEW === v;
   const address = (view, extra = {}) => {
     const q = new URLSearchParams({ s: S.alias || S.id });
-    if (view === "placement") q.set("view", view);
+    if (view !== "page") q.set("view", view);
     for (const [k, v] of Object.entries(extra)) if (v != null && v !== "") q.set(k, v);
     return `?${q}`;
   };
@@ -54,7 +56,7 @@
   };
 
   // ---------- header: the plain line first, then the designation; the lede comes with the data
-  document.title = IN("placement") ? `${S.short || S.name} · placement and leads` : S.short || S.name;
+  document.title = IN("placement") ? `${S.short || S.name} · placement and leads` : IN("engagements") ? `${S.short || S.name} · engagements` : S.short || S.name;
   document.getElementById("eyebrow").textContent = [S.plain, NATION[S.of] || S.of, years].filter(Boolean).join(" · ");
   document.getElementById("title").innerHTML = esc(S.name) + (S.name_ja ? ` <span lang="ja" data-tr="Convoy ${esc(S.short)}, as the Japanese records write it">${esc(S.name_ja)}</span>` : "");
   const sources = S.kind === "boat" ? "ship.yml" : S.kind === "ship" ? "ship.yml" : S.kind === "unit" ? "army/units.yml" : S.kind === "battalion" ? "seabees/units.yml" : S.kind === "convoy" ? "convoy.md" : "command.yml";
@@ -205,7 +207,11 @@
     (S.kind === "unit" || S.kind === "battalion") && "the coverage", S.kind !== "convoy" && S.kind !== "command" && "the speed check", S.leads.length && n(S.leads.length, "lead")].filter(Boolean).join(" · ");
   const stagesWord = S.kind === "boat" ? n(stages.length, "patrol") : S.kind === "ship" ? "one record" : S.kind === "convoy" ? "one voyage" : n(stages.length, "stage");
   const KIND_TAB = { boat: "The boat", ship: "The ship", unit: "The unit", battalion: "The battalion", convoy: "The convoy", command: "The command" };
+  const ENGS = S.engagements || [];
+  const engLine = ENGS.length ? [n(ENGS.length, "engagement"), S.kind === "boat" && `in ${n(new Set(ENGS.map(e => e.period).filter(Boolean)).size, "patrol")}`,
+    "each read from both sides"].filter(Boolean).join(" · ") : "none entered yet";
   document.getElementById("depths").innerHTML = [["page", KIND_TAB[S.kind] || "The subject", `the journey in ${stagesWord} · ${recordsLine || "nothing drawn yet"}`],
+    ["engagements", S.kind === "convoy" ? "Where the boats met it" : "Engagements", engLine],
     ["placement", "Placement and leads", workingLine || "nothing to show yet"]]
     .map(([v, name, line]) => `<a href="${esc(address(v, { period: params.get("period"), t: params.get("t") }))}"${IN(v) ? ' aria-current="page"' : ""}>${name}<small>${esc(line)}</small></a>`).join("");
 
@@ -222,9 +228,79 @@
   const engs = S.engagements || [];
   const tNow = params.get("t") ? T(params.get("t")) : null;
   const before = tNow == null ? null : engs.filter(e => T(e.to || e.from) < tNow).pop(), after = tNow == null ? null : engs.find(e => T(e.from) > tNow);
-  const seq = engs.length ? `<div class="seq">${tNow != null ? (before ? `<a rel="prev" href="engagement.html?e=${esc(before.id)}">← ${esc(before.short || before.title)}</a>` : `<span class="none">← nothing before in the engagements</span>`) : ""}<span class="what">${S.kind === "boat" || S.kind === "ship" ? "the engagements she was in" : S.kind === "convoy" ? "where the boats met it" : "the engagements it was in"}: ${engs.map(e => `<a href="engagement.html?e=${esc(e.id)}">${esc(e.short || e.title)}</a>${e.period && S.kind === "boat" ? ` <span class="dates">(patrol ${esc(e.period)})</span>` : ""}`).join(", ")}</span>${tNow != null ? (after ? `<a rel="next" href="engagement.html?e=${esc(after.id)}">${esc(after.short || after.title)} →</a>` : `<span class="none">nothing after in the engagements →</span>`) : ""}</div>` : "";
+  // with a day in the address, the engagements before and after it, and the view that lists them all; without one,
+  // the Engagements view is the list
+  const what = S.kind === "convoy" ? "where the boats met it" : "every engagement";
+  const seq = engs.length && tNow != null ? `<div class="seq">${before ? `<a rel="prev" href="engagement.html?e=${esc(before.id)}">← ${esc(before.short || before.title)}</a>` : `<span class="none">← nothing before in the engagements</span>`}<span class="what"><a href="${esc(address("engagements"))}">${what} (${engs.length})</a></span>${after ? `<a rel="next" href="engagement.html?e=${esc(after.id)}">${esc(after.short || after.title)} →</a>` : `<span class="none">nothing after in the engagements →</span>`}</div>` : "";
   crumbEl.innerHTML = trail + seq;
   crumbEl.hidden = false;
+
+  // ---------- the engagements view: every engagement the subject was in, as the Engagements index draws one (its dates,
+  // its title, the build's lede, the others in it, what its page holds), with a locator map of its box under the
+  // dates; a boat's grouped by patrol, anything else's by year (guides/OPERATIONS-VIEWER.md 5.2)
+  if (IN("engagements")) {
+    const host = document.getElementById("engs");
+    host.hidden = false;
+    document.getElementById("lede").textContent = engs.length
+      ? `${S.kind === "boat" || S.kind === "ship" ? "The engagements she was in" : S.kind === "convoy" ? "Where the boats met it" : "The engagements it was in"}, in date order. Each one opens on its own page, where ${S.kind === "convoy" ? "the boats' records and the convoy's" : "this record and the other side's"} are set side by side, minute by minute where they allow.`
+      : `No engagement is entered for this ${kindWord(S).replace(/^an? /, "")} yet.`;
+    const [LAND, index] = await Promise.all([WORLD, INDEX]);
+    const byEng = Object.fromEntries(index.map(e => [e.id, e]));
+    const day = s => Date.parse(String(s).slice(0, 10) + "T00:00Z");
+    const fmtDM = d3.utcFormat("%-d %b"), fmtD = d3.utcFormat("%-d");
+    const dates = e => {
+      const a = day(e.from), b = day(e.to || e.from);
+      if (a === b) return fmtDay(a);
+      const A = new Date(a), B = new Date(b);
+      if (A.getUTCFullYear() === B.getUTCFullYear() && A.getUTCMonth() === B.getUTCMonth()) return `${fmtD(a)}–${fmtDay(b)}`;
+      return A.getUTCFullYear() === B.getUTCFullYear() ? `${fmtDM(a)} – ${fmtDay(b)}` : `${fmtDay(a)} – ${fmtDay(b)}`;
+    };
+    const holds = e => [n(e.entries, "entry", "entries") + (e.languages > 1 ? ` in ${n(e.languages, "language")}` : ""),
+      e.claims && `${n(e.claims, "question")} the records leave open`, e.fronts && n(e.fronts, "situation map"),
+      e.steps && `the story in ${n(e.steps, "step")}`, e.sheets && n(e.sheets, "attack sheet")].filter(Boolean).join(" · ");
+    // the locator: the engagement's box (its entries' extent, from the build) drawn on land, framed wide enough to say
+    // where in the world it is
+    const locator = e => {
+      if (!e.box || !LAND) return "";
+      const [w, s0, east, nn] = e.box, cx = (w + east) / 2, cy = (s0 + nn) / 2;
+      const half = Math.max(east - w, nn - s0, e.theater === "pacific" || e.theater === "atlantic" ? 14 : 9);
+      const frame = { type: "MultiPoint", coordinates: [[cx - half, cy - half * 0.7], [cx + half, cy + half * 0.7]] };
+      const W = 150, H = 104;
+      // clipped to the frame, so that each locator carries only its own piece of the coastlines
+      const proj = d3.geoMercator().fitExtent([[2, 2], [W - 2, H - 2]], frame).clipExtent([[-4, -4], [W + 4, H + 4]]), path = d3.geoPath(proj).digits(1);
+      const ring = { type: "Polygon", coordinates: [[[w, s0], [east, s0], [east, nn], [w, nn], [w, s0]]] };
+      const [x, y] = proj([cx, cy]);
+      return `<svg class="loc" viewBox="0 0 ${W} ${H}" role="img" aria-label="Where: ${esc(e.title)}"><defs><clipPath id="lc-${esc(e.id)}"><rect width="${W}" height="${H}" rx="4"/></clipPath></defs>
+        <g clip-path="url(#lc-${esc(e.id)})"><rect class="sea" width="${W}" height="${H}"/><path class="land" d="${path(LAND)}"/>
+        <path class="box" d="${path(ring)}"/><circle class="dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3"/></g></svg>`;
+    };
+    const others = (e, x) => {
+      const subs = (x.subjects || []).filter(s => s.id !== S.id && s.id !== S.alias);
+      const names = new Set((x.subjects || []).map(s => s.name));
+      const rest = (x.participants || []).filter(p => !names.has(p) && p !== S.name && p !== S.short);
+      return [...subs.map(s => `<a href="subject.html?s=${encodeURIComponent(s.id)}${s.period ? `&amp;period=${encodeURIComponent(s.period)}` : ""}">${esc(s.name)}</a>`), ...rest.map(esc)];
+    };
+    const row = e => {
+      const x = { ...e, ...(byEng[e.id] || {}) };
+      const w = others(e, x);
+      const as = e.as && e.as !== S.name && e.as !== S.short ? ` <span class="as">as ${esc(e.as)}</span>` : "";
+      return `<div class="dates">${esc(dates(x))}${locator(x)}</div>
+        <div class="eng">
+          <h3><a href="engagement.html?e=${encodeURIComponent(e.id)}">${esc(x.title)}</a>${as}</h3>
+          ${x.lede ? `<p>${esc(x.lede)}</p>` : ""}
+          <div class="with">${w.length ? `<i>with</i> ${w.join(", ")}` : ""}${w.length && x.entries != null ? " · " : ""}${x.entries != null ? esc(holds(x)) : ""}</div>
+        </div>`;
+    };
+    const groups = S.kind === "boat"
+      ? d3.groups(engs, e => e.period ?? "").map(([p, xs]) => {
+          const per = S.periods.find(q => String(q.n) === String(p));
+          return [p !== "" ? `Patrol ${p}` : "Other", per ? span(new Date(T(per.from)), new Date(T(per.to))) : "", xs, p !== "" ? address("page", { period: p }) : null];
+        })
+      : d3.groups(engs, e => year(e.from)).map(([y, xs]) => [y, "", xs, null]);
+    host.innerHTML = engs.length ? groups.map(([h, sub, xs, href]) =>
+      `<h2 class="sec">${esc(h)} <span>${sub ? esc(sub) + " · " : ""}${n(xs.length, "engagement")}${href ? ` · <a href="${esc(href)}#records">the patrol's record</a>` : ""}</span></h2>
+      <div class="engs">${xs.map(row).join("")}</div>`).join("") : "";
+  }
 
   // ---------- the strip map: one small panel per stage, all drawn the same way
   const strokeFor = { own: { dash: null, w: 2 }, assumed: { dash: "5 4", w: 2 }, rail: { dash: "10 3 2 3", w: 2 }, sea: { dash: "2 4", w: 1.4 } };

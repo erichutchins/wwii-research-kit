@@ -244,7 +244,9 @@ A story page's steps (Haynsworth's, Algiers') are the page's narrative, and the 
 engagements with their own figures registered (`site/panels.js`).
 
 On a subject page (§5.2) the second depth is **Placement and leads**: how each position was placed, the speed check,
-the organizations with their pages, the leads, the coverage month by month.
+the organizations with their pages, the leads, the coverage month by month. Between the two, the subject page has a
+third view, **Engagements**: every engagement the subject was in, as the Engagements index draws one, so that they are
+as easy to find from the subject as the journey and the placement are.
 
 ## 5. Navigation
 
@@ -290,6 +292,13 @@ panels that only one kind of record has are shown only when it has them:
 | the parts and echelons (today `seabees.html`) | `parts.csv` |
 | the ships of the convoy day by day (today `convoys.html`'s roster) | `convoy.md` `ships:` |
 | construction projects | `seabees/projects/` |
+
+Beside it on the switch, *Engagements* (`?view=engagements`): the engagements the subject was in, in date order, a boat's
+grouped by patrol (with a link to that patrol's record) and anything else's by year. Each is the Engagements index's
+row (its dates, title, the build's lede, the others in it with their pages, what its page holds) with a locator under
+the dates: the engagement's box from the build on the world's land, framed wide enough to say where it is. The
+breadcrumb no longer lists them: with a day in the address (`&t=`) it gives the engagements before and after that day
+and a link to this view.
 
 Behind the switch, *Placement and leads* (`?view=placement`): the leads and open questions about the subject, the
 placement bases (how many stations are at a town, an offset, a grid reference, a headquarters assumed), the speed
