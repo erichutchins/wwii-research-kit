@@ -26,6 +26,12 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: readme-counts
+        name: "the README's tallies, counted from the records; a stale one is rewritten, to stage and commit again"
+        entry: python3 tools/readme_counts.py README.md
+        language: system
+        pass_filenames: false
+        always_run: true
       - id: check-sources
         name: "every citation resolves"
         entry: uv run --quiet tools/check_sources.py

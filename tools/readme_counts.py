@@ -8,9 +8,13 @@ A count a README prints is wrapped in a marker a reader never sees:
 
     <!--n:boats-->25<!--/n--> submarines
 
-  python3 tools/readme_counts.py          rewrite every marked number in README.md and records/README.md
-  python3 tools/readme_counts.py check    exit 1 if a marked number disagrees with the records (check_builds.sh)
-  python3 tools/readme_counts.py list     the counts, by name
+  python3 tools/readme_counts.py [FILE ...]         rewrite every marked number (both READMEs, or the files named)
+  python3 tools/readme_counts.py check [FILE ...]   exit 1 if a marked number disagrees with the records
+  python3 tools/readme_counts.py list               the counts, by name
+
+Each repository's commit hook runs it on its own README (the kit's on README.md, the records' on its README.md as
+../tools/readme_counts.py README.md), so a commit that changes a count rewrites the number: prek then stops the commit
+for the rewritten file to be staged. check_builds.sh runs `check` on both before a push and in the CI.
 
 The counts:
   boats, ships, battalions, convoys   subjects.json, by kind
@@ -59,14 +63,16 @@ def counts():
 
 
 def main():
-    cmd = sys.argv[1] if len(sys.argv) > 1 else ""
+    args = sys.argv[1:]
+    cmd = args.pop(0) if args and args[0] in ("check", "list") else ""
+    files = [Path(a).resolve() for a in args] or FILES
     have = counts()
     if cmd == "list":
         for k, v in have.items():
             print(f"{k:28}{v}")
         return
     bad = []
-    for path in FILES:
+    for path in files:
         text = path.read_text(encoding="utf-8")
 
         def fill(m, path=path):
@@ -84,7 +90,7 @@ def main():
     if cmd == "check" and bad or unknown:
         print("\n".join(bad))
         sys.exit("the READMEs' counts are out of date: python3 tools/readme_counts.py" if not unknown else 1)
-    print(f"{sum(len(MARK.findall(p.read_text(encoding='utf-8'))) for p in FILES)} counts in the READMEs"
+    print(f"{sum(len(MARK.findall(p.read_text(encoding='utf-8'))) for p in files)} counts"
           + ("" if cmd == "check" else f", {len(bad)} rewritten"))
 
 

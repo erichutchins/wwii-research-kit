@@ -130,7 +130,8 @@ After editing any CSV: `check_track.py all --geojson`, `build_dives.py`, `check_
 any track, `build_engagement.py`; after `reference/glossary.yml` or `records/SOURCES.yml`, `build_glossary.py`; after any of
 those, a `plain` line, `army/units.yml`, `seabees/units.yml`, `army/leads.yml`, `relations.csv` or `parts.csv`, `build_subjects.py`.
 A count in a README is never typed by hand: it is marked `<!--n:boats-->25<!--/n-->` and filled by `readme_counts.py`
-(`list` names the counts); the build check fails when one is out of date. The about page counts in the browser.
+(`list` names the counts). The commit hook in each repository rewrites a stale number in its own README and stops
+the commit for it to be staged; the build check fails when one is out of date. The about page counts in the browser.
 
 ## Pages
 
