@@ -4,6 +4,9 @@
 // silhouettes (silhouettes.js, loaded by then). A panel's module lives under site/panels/ and is loaded by
 // engagement.html before this registry; an engagement with no entry here has no figures of its own. The styles are
 // panels.css, scoped under .panel-card.
+// Figures any engagement can have, each mounted where its `applies(D)` says so, after the engagement's own: the water
+// column (panels/depth.js) wherever a boat's depth log is transcribed.
+const PANELS_ANY = [window.DepthPanel].filter(Boolean);
 const PANELS = {
   "haynsworth-1945-04-06": window.HaynsworthPanels || [],
 };

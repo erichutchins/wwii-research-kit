@@ -37,6 +37,10 @@
 //   Engage.claimMoments(claims)       the questions the records leave open, each with its answers by source (the Sources view) and
 //                                     merged by their words (the claims board)
 //   Engage.badge(claim)               an answer's badge: its source's kind, and its weight where that differs
+//   Engage.peakPressure(kg, m)        the shock wave's peak pressure in MPa, m metres from kg of TNT (Cole's similitude:
+//                                     52.4 (kg^(1/3)/m)^1.13; for any other explosive, TNT-equivalent assumed)
+//   Engage.seaPressure(ft)            the sea's pressure at a depth in psi above the air's (sea water 1,025 kg/m³)
+//   Engage.DC_SETTINGS                the Japanese depth charges' pistol settings in feet, as War Damage Report 58 gives them
 //   Engage.frontSide(runs, [lon, lat])   which side of a situation map's front a point lies: 1 on the enemy's (the
 //                                     runs' left, as records/fronts/ stores them), -1 on the map's own, by the nearest leg
 const Engage = (() => {
@@ -578,6 +582,13 @@ const Engage = (() => {
   // side (the sine of the angle) and by its nearness, so a short stretch the point lies along, beyond its end, counts for
   // little. On a plane scaled by the cosine of the latitude (a few hundred km at most). 1 the enemy's side, -1 the map's
   // own, 0 when nothing tells.
+  // ---------- depth charges (site/depthcharge.html; guides/ENGAGEMENTS.md "Computation")
+  // the shock wave's peak pressure, Cole's similitude for TNT (R. H. Cole, Underwater Explosions, 1948): kg of TNT, metres
+  const peakPressure = (kg, m) => 52.4 * Math.pow(Math.cbrt(kg) / m, 1.13);
+  // the sea's own pressure: rho g h, 1,025 kg/m^3, in psi (6,894.76 Pa)
+  const seaPressure = ft => 1025 * 9.80665 * ft * 0.3048 / 6894.76;
+  // the pistols' settings (BuShips War Damage Report 58, para 3-10): the Type 95's (292 ft added later) and the Type 2's
+  const DC_SETTINGS = { "Type 95": [98, 197, 292], "Type 2": [98, 197, 292, 390, 480] };
   function frontSide(runs, p) {
     const k = Math.cos(p[1] * Math.PI / 180), X = q => [q[0] * k, q[1]], [px, py] = X(p);
     const legs = [];
@@ -592,7 +603,7 @@ const Engage = (() => {
     return Math.sign(legs.filter(l => l.d <= near * 1.5 + 1e-9).reduce((v, l) => v + l.sin / (l.d + 1e-6), 0));
   }
 
-  return { frontSide, zoneHours, toUTC, T, coord, offset, nm, posAt, observedPath, closing, fireControl, apparentSize, sky, localNoon, light, story, hhmm, day,
+  return { peakPressure, seaPressure, DC_SETTINGS, frontSide, zoneHours, toUTC, T, coord, offset, nm, posAt, observedPath, closing, fireControl, apparentSize, sky, localNoon, light, story, hhmm, day,
            gyroOf, coursesOf, offsetOf, firingTimes, torpedoKnots, attackSheet, attackAt, tdcAt,
            tempo, chronologyRows, chronologyColumns, recordWords, hitKind, head, nation, sourceKindWord, columnChip,
            apart, pairMoments, claimMoments, badge };

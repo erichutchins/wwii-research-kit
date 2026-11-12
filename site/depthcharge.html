@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Depth charges: what a counter-attack was, in the water</title>
+<link rel="stylesheet" href="viz.css">
+<link rel="stylesheet" href="chapter.css">
+<style>
+  .fig { margin: 14px 0 6px; border: 1px solid var(--rule); border-radius: 3px; background: var(--surface); padding: 10px 12px; }
+  .fig svg { display: block; width: 100%; }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px 20px; padding: 4px 0 8px; }
+  .controls label { display: block; color: var(--ink-2); font-size: 14.5px; }
+  .controls output { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+  .controls input[type=range] { width: 100%; accent-color: var(--series-track); }
+  .readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 18px; padding: 8px 0 4px; }
+  .readout div { border-left: 2px solid var(--rule); padding-left: 10px; }
+  .readout b { display: block; font-size: 19px; font-variant-numeric: tabular-nums; }
+  .readout i { color: var(--ink-2); font-size: 14px; }
+  .below { color: var(--ink-2); font-size: 14.5px; }
+  .sea { fill: var(--surface); }
+  .surface { stroke: var(--ink-2); stroke-width: 1.4; }
+  .floor { fill: var(--land); stroke: var(--coast); }
+  .setting { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 4 4; opacity: .7; }
+  .setting.off { opacity: .18; }
+  .lbl { font: 12px var(--typed); fill: var(--ink-2); }
+  .note { font: 12.5px var(--serif); fill: var(--ink-3); }
+  .boat { fill: var(--series-track); }
+  .boat-lbl { font: 600 13px var(--serif); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  .band { fill: none; stroke: var(--ink); stroke-width: 1; }
+  .band.lethal { fill: var(--ink); fill-opacity: .12; }
+  .band.serious { stroke-dasharray: 3 2; }
+  .band.moderate { stroke-dasharray: 1 3; opacity: .7; }
+  .dc { fill: var(--ink); }
+  .wave { fill: none; stroke: var(--ink); stroke-width: 1.6; }
+  .wave.surf { stroke-dasharray: 5 4; opacity: .7; }
+  .wave.bot { stroke-dasharray: 1.5 3; }
+  .curve { fill: none; stroke-width: 2; }
+  .zone { fill: var(--ink); }
+  .axis text { font: 11.5px var(--typed); fill: var(--ink-2); }
+  .axis line, .axis path { stroke: var(--rule); }
+  table.dc-table td, table.dc-table th { font-variant-numeric: tabular-nums; padding: 3px 10px 3px 0; text-align: left; vertical-align: top; }
+  .tblwrap { overflow-x: auto; }
+  button.play { font: 15px var(--serif); padding: 3px 12px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); border-radius: 3px; cursor: pointer; }
+</style>
+</head>
+<body class="viz-root">
+<div class="doc">
+  <header>
+    <nav class="nav" aria-label="The kit" data-nav></nav>
+    <script src="nav.js"></script>
+    <nav class="crumb" id="crumb" aria-label="Where this is in the kit"><div class="trail"><a href="index.html#reference">Reading the records</a> / <span aria-current="page">Depth charges</span></div></nav>
+    <div>
+      <h1>Depth charges: what a counter-attack was, in the water</h1>
+      <p class="lede">A war patrol report's depth log says how deep the boat was, how many charges she counted and how
+        close they sounded: "about 80 charges in patterns of 3 6 or 9", "directly above", "two depth charges set shallow
+        exploded directly over head as we passed 300 ft." This page sets those words in the water: the charges the
+        Japanese escorts carried and the depths their pistols could be set for, the shock wave and what the surface and
+        the seafloor did to it, the sea's own weight on the hull, and what the Bureau of Ships concluded after the war
+        about distance and damage.</p>
+    </div>
+  </header>
+
+  <h2>The charges and their settings</h2>
+  <p>Two types were in general use by the Japanese escorts, "both … almost exact copies of early British models of
+    obsolete design": the Type 95 and the Type 2, adopted in 1942 (War Damage Report 58, paragraph 3-9). Each was a
+    drum about 17½ inches across and 30½ inches long, filled as follows:</p>
+  <div class="tblwrap"><table class="dc-table">
+    <thead><tr><th>Charge</th><th>Explosive</th><th>Pistol settings, feet</th></tr></thead>
+    <tbody>
+      <tr><td>Type 95, Mod. 0</td><td>220 lb, Type 88</td><td rowspan="3">98, 98 with parachute, 197; 292 added later (3-10)</td></tr>
+      <tr><td>Type 95, Mod. 1</td><td>325 lb, Type 97 or 98</td></tr>
+      <tr><td>Type 95, Mod. 2</td><td>242 lb, Type 1</td></tr>
+      <tr><td>Type 2, Mod. 1</td><td>357 lb, Type 97 or 98</td><td rowspan="2">98, 197, 292, 390, 480 (3-10)</td></tr>
+      <tr><td>Type 2, Mod. 2</td><td>242 lb, Type 1</td></tr>
+    </tbody></table></div>
+  <p>The pistol fired when sea water, let in through a small hole, filled an inner cylinder: "the smaller the inlet,
+    the deeper the setting", and no other depths could be chosen (3-10). The deepest the Type 95 could be set "is
+    believed to have been 292 feet and the maximum setting normally used for the Type 2 charge was 390 feet"; boats
+    "reported only a few cases where depth charges were set for depth in excess of 400 feet" (3-12). How far a charge
+    went off from its setting is not known: "No data are available" (3-11). A kaibokan "could carry as many as 300 and
+    [was] usually fitted with twelve single depth charge throwers, six to a side, and one stern rack"; a fleet destroyer
+    carried about 30 (3-8). The Bureau's verdict: "The Japanese failed to achieve optimum use of their principal
+    anti-submarine weapon, the depth charge, simply by repeatedly setting their pistols too shallow" (3-22).</p>
+
+  <h2>The settings against a boat's depth</h2>
+  <p>A Balao-class boat to scale beside the settings. Move her down: the deeper she went, the fewer settings could
+    reach her. Each charge is drawn straight above her, which is the worst case; where any one charge went off is never
+    recorded.</p>
+  <div class="fig" id="ladder-fig">
+    <div class="controls">
+      <label>Her depth (keel) <output id="ladder-depth-out"></output><input id="ladder-depth" type="range" min="0" max="600" step="10" value="450"></label>
+      <label>The pistol <select id="ladder-type"><option value="Type 2">Type 2 (98–480 ft)</option><option value="Type 95">Type 95 (98–292 ft)</option></select></label>
+    </div>
+    <svg id="ladder" role="img" aria-label="The depth charge settings against a submarine's depth, to scale"></svg>
+    <div class="tblwrap" id="ladder-table"></div>
+    <p class="below">The rings: the Bureau's distances for 300 lb of TNT against the older, lighter-hulled boats
+      (SS-284 and earlier): "almost certainly … pressure hull rupture and therefore presumed lethal damage" within 25 ft;
+      "rupture or marked permanent deformation … and/or serious damage to vital machinery" between 25 and 50; "moderate
+      to minor damage to equipment and fittings … from 50 to 100 feet and beyond" (15-12). The Balao's heavier hull
+      (SS-285 on) was stronger, so the rings are the scale of the danger, not her limits. Peak pressures: computed for
+      the charge's weight taken as TNT (assumed), Cole's similitude, below.</p>
+  </div>
+
+  <h2>The shock wave, the surface and the seafloor</h2>
+  <p>A charge's explosion sends a pressure wave out at the speed of sound in sea water, about 4,900 feet a second, so
+    it crosses a hundred feet in a fiftieth of a second. Where it meets the surface it comes back as a tension wave,
+    which can "very materially diminish the main pressure pulse" at a target near a shallow detonation; where it meets
+    a hard bottom it comes back as pressure, and "will theoretically be doubled for charges which are detonated on a
+    perfectly rigid surface", which "would appear to operate in favor of anti-submarine forces attacking a target
+    running" close over it (War Damage Report 58, section XV). Play the wave slowed down; change the setting, her depth
+    and the depth of the sea.</p>
+  <div class="fig" id="wave-fig">
+    <div class="controls">
+      <label>The charge's setting <output id="w-set-out"></output><input id="w-set" type="range" min="0" max="4" step="1" value="3"></label>
+      <label>Her depth (keel) <output id="w-boat-out"></output><input id="w-boat" type="range" min="60" max="600" step="10" value="450"></label>
+      <label>The seafloor <output id="w-floor-out"></output><input id="w-floor" type="range" min="150" max="1200" step="10" value="1200"></label>
+      <label>Across from her <output id="w-x-out"></output><input id="w-x" type="range" min="0" max="300" step="10" value="40"></label>
+    </div>
+    <button type="button" class="play" id="w-play">▶ Play, slowed 400 times</button>
+    <svg id="wave" role="img" aria-label="A depth charge's shock wave and its reflections from the surface and the seafloor"></svg>
+    <div class="readout" id="w-read"></div>
+    <p class="below">Drawn: the direct wave (solid), the surface's reflection (dashed: a tension wave, which water can
+      carry only so far before it cavitates), the seafloor's (dotted), each from its mirror image of the charge, as the
+      ray paths go. Arrival times are distance over 4,900 ft/s (ours). The seafloor's strength depends on what it is,
+      rock or sand or mud; the Bureau gives the upper limit (doubled, on a perfectly rigid surface), not a value.</p>
+  </div>
+
+  <h2>How fast the pressure falls off</h2>
+  <p>The peak pressure of the shock wave falls a little faster than the distance grows. The standard similitude
+    for TNT (R. H. Cole, <i>Underwater Explosions</i>, 1948), in his units: P = 21,600 × (W<sup>1/3</sup> / R)<sup>1.13</sup>
+    pounds per square inch, for W pounds at R feet. The Japanese explosives were not TNT; taking them as TNT is an
+    assumption. Against it, the sea's own pressure on the hull: about 0.445 psi for every foot of depth, 200 psi at
+    450 ft.</p>
+  <div class="fig" id="curve-fig">
+    <svg id="curve" role="img" aria-label="Peak pressure against distance for the Japanese depth charges"></svg>
+    <p class="below">Computed. The shaded bands are the Bureau's distances for 300 lb of TNT against a light hull, for
+      comparison: within 25 ft, 25 to 50, 50 to 100. Peak pressure alone does not decide damage: how long the pulse
+      lasts, the gas bubble's later pulses (worst when "the charge is detonated below the hull"), where it strikes and
+      the boat's own depth all count. The Bureau itself warned that "present experimental and theoretical knowledge is
+      still not sufficient to compute accurate damage versus distance relationships" (15-11).</p>
+  </div>
+
+  <h2>Deeper was safer from the settings, and more dangerous at any one distance</h2>
+  <p>The sea's weight is already on the hull before a charge goes off, and the shock adds to it. In model tests of the
+    SS-285 class, "the lethal distance of a given weight of explosive was observed to increase rapidly with depth": the
+    distance at which the model cylinder collapsed "was two and one-half times greater at 673 feet than at 200 feet"
+    (15-14). Close charges also moved the boat: BALAO was "forced down from 390 foot depth to 590 foot depth by a series
+    of close depth charge detonations, each … causing the boat to increase depth by about 20 or 30 feet" (section XV).
+    The gas bubble that follows the shock reaches a radius of about 20 to 25 ft at periscope depth for an average
+    charge of 300 to 600 lb, and about 12 to 15 ft at 300 ft (15-20).</p>
+
+  <h2>Patterns, and what a log can say</h2>
+  <p>The escorts dropped charges from the stern rack and fired them from throwers to either side, in patterns; "a
+    proportionate number of charges with these maximum settings were usually included in each attack pattern" (3-12).
+    BANG's report of 19 September 1944 gives the patterns as the boat heard them, "patterns of 3 6 or 9"; no Japanese
+    record found gives the pattern a ship laid. A log can give the count, the time, the boat's depth and how the charges
+    sounded and shook her; it cannot give where they went off. The Bureau quotes the boats' own words: "first a
+    detonator click … and then bang!"; "a deep rumble increasing to the final boom"; "two pings on the hull which
+    sounded as though two small nuts had been dropped" (section XV), and notes that the pistols had no mechanism to
+    make a click. Damage says more than sound: a boat that came through undamaged was outside the lethal distance of
+    every charge, and the damage she did take shows how near the nearest came.</p>
+  <p>In the records: the water column of <a href="engagement.html?e=bang-counterattack-1944-09-19">BANG's counter-attack
+    of 19 September 1944</a>, and every engagement whose boat's depth log is transcribed; <a href="dives.html">BANG's
+    dives</a> through every patrol.</p>
+
+  <h2>Sources</h2>
+  <ul>
+    <li><i>Submarine Report: Depth Charge, Bomb, Mine, Torpedo and Gunfire Damage Including Losses in Action, 7 December
+      1941 to 15 August 1945</i> (War Damage Report No. 58), Preliminary Design Branch, Bureau of Ships, 1 January 1949:
+      <a href="https://www.ibiblio.org/hyperwar/USN/rep/WDR/WDR58/WDR58-3.html">section III</a> (the Japanese weapons,
+      paragraphs 3-8 to 3-22) and <a href="https://www.ibiblio.org/hyperwar/USN/rep/WDR/WDR58/WDR58-15.html">section XV</a>
+      (the phenomena of underwater explosions and damage at distance, 15-11 to 15-20), HyperWar's transcription. An
+      assessment after the war, from the boats' reports.</li>
+    <li>R. H. Cole, <i>Underwater Explosions</i>, Princeton University Press, 1948: the similitude for the peak pressure,
+      as generally quoted (the page not yet checked against the book).</li>
+    <li>US Naval Technical Mission to Japan, <i>Japanese Depth Charges</i>, Report O-08, 16 December 1945
+      (<a href="https://www.fischer-tropsch.org/primary_documents/gvt_reports/USNAVY/USNTMJ%20Reports/USNTMJ-200E-0023-0034%20Report%200-08.pdf">scan</a>):
+      found, not yet read page by page; and Report S-24, <i>Japanese Anti-Submarine Warfare</i>
+      (<a href="https://www.fischer-tropsch.org/primary_documents/gvt_reports/USNAVY/USNTMJ%20Reports/USNTMJ-200I-0244-0309%20Report%20S-24.pdf">scan</a>),
+      the place to look for the patterns as the Japanese laid them.</li>
+    <li>BALAO class: ONI 222-US, 1 September 1945, p. 109 (the silhouette, <a href="silhouettes.html">the kit's library</a>).</li>
+  </ul>
+</div>
+
+<div id="tip" role="tooltip"></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="silhouettes.js"></script>
+<script src="engage.js"></script>
+<script src="depthcharge.js"></script>
+<script src="glossary.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>

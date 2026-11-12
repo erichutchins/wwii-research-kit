@@ -576,7 +576,7 @@ class Build:
                 e["outside"] = bool(e["utc"]) and not start <= parse_iso(e["utc"]) <= end
 
         # each participant's own record, inside the window
-        tracks, fixes, seen_ja, japanese, pairs, sheets, notes = {}, [], set(), [], [], {}, []
+        tracks, fixes, seen_ja, japanese, pairs, sheets, notes, dives, water = {}, [], set(), [], [], {}, [], {}, {}
         for p in parts:
             if not p.get("track") or not start:
                 continue
@@ -590,6 +590,10 @@ class Build:
             if p.get("kind") == "submarine":
                 fixes += [self.fix(p, r) for r in inside]
                 events += self.depths(p, start, end)
+                st = self.dive_states(p, start, end)
+                if st:
+                    dives[p["id"]] = st
+                    water[p["id"]] = self.water(p, start, end)
                 sh = self.sheets(p, {r["ref"] for r in inside if r["source"] == "attack"})
                 if sh:
                     sheets[p["id"]] = sh
@@ -650,7 +654,7 @@ class Build:
                 "participants": parts, "own": own, "against": against,
                 "places": fm.get("places") or [], "sections": secs, "cites": cites, "box": box,
                 "steps": steps, "relief": relief, "roads": roads, "fronts": fronts, "stations": stations,
-                "tracks": tracks, "fixes": fixes, "events": events, "claims": claims, "pairs": moments,
+                "tracks": tracks, "dives": dives, "water": water, "fixes": fixes, "events": events, "claims": claims, "pairs": moments,
                 "positions": list(positions.values()), **({"routes": routes} if routes else {}), **({"rings": rings} if rings else {}), "convoys": conv, "sheets": sheets}
 
     # ------------------------------------------------------------------ the story's steps and the map's base
@@ -920,14 +924,58 @@ class Build:
                 continue
             t = datetime.strptime(f"{r['date']} {r['time']}", "%Y-%m-%d %H%M") - timedelta(hours=ZONES[r["zone"]])
             deep = r["event"] == "depth" and r["depth_ft"] and int(r["depth_ft"]) >= 300
+            # a row that counts charges is the counter-attack, whatever the depth it also logs (BANG's 80 of 19 September
+            # are typed on her depth order's row)
+            counted = bool(r["charges"]) and r["event"] in ("depth", "passing")
             if start <= t <= end and (r["event"] in ("charges", "passing") or deep):
                 title = {"charges": "Depth charges", "passing": f"Passing {r['depth_ft']} ft", "depth": f"Ordered {r['depth_ft']} ft"}[r["event"]]
+                if counted and r["event"] == "depth":
+                    title = f"Depth charges, at {r['depth_ft']} ft"
                 out.append({"origin": "depths", "of": p.get("of", ""), "actor": p["id"],
-                            "kind": "depth_charge" if r["event"] == "charges" else "status",
+                            "kind": "depth_charge" if r["event"] == "charges" or counted else "status",
                             "title": title + (f" ({r['charges']})" if r["charges"] else ""), "words": r["quote"],
                             "local": f"{r['date']} {r['time']} {r['zone']}", "utc": iso(t), "key": iso(t),
                             "cite": self.cite(r["page"], f"{p['track']} depths {r['date']} {r['time']}")})
         return out
+
+    def dive_states(self, p, start, end):
+        """A boat's depth log as states, where transcribed: surfaced or submerged (with the depth when the log gives one),
+        each from the logged time until the next, the window opening on the last state before it."""
+        path = patrol_dir(p["track"]) / "depths.csv"
+        out = []
+        for r in csv.DictReader(open(path, encoding="utf-8")) if path.exists() else []:
+            if not r["time"] or r["event"] not in ("dive", "surface", "radar_depth", "periscope", "depth", "passing"):
+                continue
+            t = datetime.strptime(f"{r['date']} {r['time']}", "%Y-%m-%d %H%M") - timedelta(hours=ZONES[r["zone"]])
+            depth = {"depth": f"{r['depth_ft']} ft", "passing": f"passing {r['depth_ft']} ft"}.get(r["event"]) or {"radar_depth": "radar depth", "periscope": "periscope depth"}.get(r["event"], "")
+            state = {"utc": iso(t), "state": "surfaced" if r["event"] == "surface" else "submerged", "depth": depth,
+                     "charges": r["charges"], "proximity": r["proximity"], "words": r["quote"], "local": f"{r['date']} {r['time']} {r['zone']}",
+                     "cite": self.cite(r["page"], f"{p['track']} depths {r['date']} {r['time']}")}
+            if t <= start:
+                out = [state]
+            elif t <= end:
+                out.append(state)
+        return out
+
+    def water(self, p, start, end):
+        """The water a boat dived in, for the depth figure: the seafloor under her track inside the window (seafloor.csv,
+        NOAA ETOPO1 at her positions, straight between fixes, so as placed as the track) and her bathythermograph
+        readings of the window's days and the day either side (layers.csv, as typed)."""
+        d = patrol_dir(p["track"])
+        floor = []
+        if (d / "seafloor.csv").exists():
+            for r in csv.DictReader(open(d / "seafloor.csv", encoding="utf-8")):
+                if r["seafloor_m"] and start - timedelta(hours=1) <= parse_iso(r["utc"]) <= end + timedelta(hours=1):
+                    floor.append({"utc": r["utc"], "m": -float(r["seafloor_m"])})
+        days = {(start + timedelta(days=k)).date().isoformat() for k in range(-1, (end - start).days + 2)}
+        layers = []
+        if (d / "layers.csv").exists():
+            for r in csv.DictReader(open(d / "layers.csv", encoding="utf-8")):
+                if (r.get("date_fix") or r["date"]) in days:
+                    layers.append({"date": r.get("date_fix") or r["date"], "time": r["time_gct"], "iso_ft": r["iso_ft"], "iso_deg": r["iso_deg"],
+                                   "grad_ft": r["grad_ft"], "grad_deg": r["grad_deg"], "note": r.get("note", ""),
+                                   "cite": self.cite(r["page"], f"{p['track']} layers {r['date']}")})
+        return {"seafloor": floor, "layers": layers}
 
     def japanese_events(self, japanese, pairs, start, end):
         """The Japanese records inside the window. A record of one day's event that gives no time is drawn at the time

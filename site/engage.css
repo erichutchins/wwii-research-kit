@@ -69,6 +69,28 @@ button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible
 .trk { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .trk.ahead { stroke-opacity: 0.25; stroke-dasharray: 3 4; }
 .trk.observed { stroke: var(--ink-3); stroke-width: 1.4; stroke-dasharray: 2 4; }   /* the convoy's path as the boats saw it: ours, dotted */
+.trk.under { stroke-width: 1; }   /* the boat submerged, from her depth log: thin */
+.course-line { fill: none; stroke: var(--japan); stroke-width: 1.5; stroke-linecap: round; }   /* the convoy's course as a sheet types it */
+.course-halo { fill: none; stroke: var(--surface); stroke-width: 4; stroke-linecap: round; opacity: .8; }
+.course-hit { fill: none; stroke: transparent; stroke-width: 12; cursor: pointer; }
+.charge path { stroke: var(--japan); stroke-width: 1.3; stroke-linecap: round; }   /* depth charges, at the boat */
+.charge { cursor: pointer; }
+.course.future, .charge.future { display: none; }
+.lane-under { fill: var(--ink-3); fill-opacity: .14; }
+.overview { position: absolute; top: 8px; right: 8px; z-index: 2; background: var(--surface); border: 1px solid var(--rule); border-radius: 2px; padding: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.overview.folded { padding: 0; }
+.overview-fold { position: absolute; top: 2px; right: 2px; z-index: 1; font: 13px/1 var(--serif); color: var(--ink-2); background: var(--surface); border: 1px solid var(--rule); border-radius: 2px; min-width: 20px; height: 20px; padding: 0 5px; cursor: pointer; }
+.overview.folded .overview-fold { position: static; height: 26px; font-style: italic; }
+.overview svg { display: block; }
+.overview-sea { fill: var(--surface); }
+.overview .land { fill: var(--land); stroke: var(--coast); stroke-width: .5; }
+.overview-leg { fill: none; stroke: var(--ink-2); stroke-width: 1.6; stroke-dasharray: 5 3; }
+.overview-leg.assumed { stroke-dasharray: 1.5 3; stroke-linecap: round; }
+.overview-port { fill: var(--surface); stroke: var(--ink); stroke-width: 1.3; }
+.overview-name { font: 12px var(--serif); fill: var(--ink-2); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.overview-box { fill: var(--ink); fill-opacity: .08; stroke: var(--ink); stroke-width: 1.3; }
+.overview-cap { max-width: 230px; font: 12px/1.3 var(--serif); color: var(--ink-2); padding: 3px 2px 0; }
+@media (max-width: 640px) { .overview-cap { display: none; } }
 /* the map's base where a frame names one (engagement.md `relief`, `roads`): today's relief inside its tiles' box, the
    sea in the page's colour, the land through the elevation mask, the hillshade over it; the traced roads of 1942 faint */
 .relief-sea { fill: var(--page); }
