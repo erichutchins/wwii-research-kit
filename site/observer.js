@@ -13,9 +13,9 @@ const Observer = (() => {
   // fields of view, degrees across: secondary sources, to check against the Submarine Periscope Manual (NAVPERS 16165)
   const FIELDS = { periscope: [["low", "Low power", 32], ["high", "High power", 8]], bridge: [["binoculars", "Binoculars, 7×", 7]] };
   // a target's assumed size by kind (feet: length, beam, the outline's height above the waterline comes from its shape)
-  const SIZE = { cargo: [400, 55], tanker: [450, 60], destroyer: [350, 34], escort: [250, 30], gunboat: [200, 30], submarine: [300, 27] };
+  const SIZE = { cargo: [400, 55], tanker: [450, 60], destroyer: [350, 34], escort: [250, 30], gunboat: [200, 30], submarine: [300, 27], carrier: [750, 90] };
   // the target's kind: the first kind of ship the sheet's description names ("1 large AK ... escorted by two DD's")
-  const KINDS = [["tanker", /\bAO\b|tanker/i], ["destroyer", /\bDD'?s?\b|destroyer/i], ["escort", /\bDE\b|\bPC\b|escort|frigate|kaibokan|minesweeper/i],
+  const KINDS = [["carrier", /\bCVL?\b|carrier/i], ["tanker", /\bAO\b|tanker/i], ["destroyer", /\bDD'?s?\b|destroyer/i], ["escort", /\bDE\b|\bPC\b|escort|frigate|kaibokan|minesweeper/i],
                  ["gunboat", /gunboat|\bPG\b/i], ["cargo", /\bAK\b|\bAP\b|freighter|transport|maru|cargo/i]];
   const kindOf = words => {
     const hits = KINDS.map(([k, re]) => [k, (words || "").search(re)]).filter(([, i]) => i >= 0).sort((a, b) => a[1] - b[1]);
@@ -68,8 +68,41 @@ const Observer = (() => {
       cur = list[i];
       pick.querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-pressed", i === j));
       const words = cur.sh.words[0] || {};
-      cur.kind = kindOf([words.description, words.target_line].join(" "));
-      A = E.attackSheet(cur.sh.torpedoes, { length: SIZE[cur.kind][0], beam: SIZE[cur.kind][1] });
+      // the target's kind: what the sheet claims it hit or sank names the boat's own target ("One fleet type destroyer"),
+      // where its description may name the whole force; failing those, the description and the target line
+      const claimed = [words.sunk, words.damaged].filter(w => w && !/^none\.?$/i.test(w.trim())).join(" ");
+      cur.kind = claimed && KINDS.some(([, re]) => re.test(claimed)) ? kindOf(claimed) : kindOf([words.description, words.target_line].join(" "));
+      // her class's own outline, where the engagement names a ship of that kind on the other side with one (one only, so
+      // the choice is not ours to make among several); otherwise the generic outline for the kind, at its assumed size
+      const profile = kind => {
+        const own = (D.participants || []).filter(p => p.of !== "us" && p.kind === kind && window.SHIPS && SHIPS[p.sil]);
+        const ship = own.length === 1 ? { who: own[0], sil: SHIPS[own[0].sil] } : null;
+        return { kind, ship, size: ship ? [+ship.sil.length, SIZE[kind][1]] : SIZE[kind] };
+      };
+      // each target its own: a sheet aimed at two (BANG's "Target: DD ... Range: 1800 yds. / AK ... / AO ... Range: 2800
+      // yds.") names each in its target line; the target whose range a segment types takes that segment's kind
+      const segs = String(words.target_line || "").split(/\s\/\s/);
+      // or a description that numbers them ("(1) Medium freighter ... (2) ...", "1 - Large AO ... 2 - Lare AK"): item n is
+      // the target the target line numbers n (its part holding that target's range), else the n-th target fired at
+      const items = [...String(words.description || "").matchAll(/(?:^|\s)(?:\((\d)\)|(\d)\s+-)\s*(.+?)(?=\s(?:\(\d\)|\d\s+-)|$)/g)]
+        .map(m => ({ n: +(m[1] || m[2]), text: m[3] })).filter(x => KINDS.some(([, re]) => re.test(x.text)));
+      const parts = String(words.target_line || "").split(/\((\d)\)/);   // ["...", "1", "28' ... 2600.", "2", "25' ... 3000."]
+      const numbered = T => { for (let i = 1; i < parts.length - 1; i += 2) if (T.range != null && (parts[i + 1].replace(/,/g, "").match(/\d+/g) || []).map(Number).includes(+T.range)) return +parts[i]; return null; };
+      const kindFor = (T, gi, all) => {
+        const seg = segs.find(g => { const m = g.match(/range:?\s*([\d,]+)/i); return m && T.range != null && +m[1].replace(/,/g, "") === +T.range; });
+        if (seg && KINDS.some(([, re]) => re.test(seg))) return kindOf(seg);
+        if (all.length > 1 && items.length === all.length) {
+          const it = items.find(x => x.n === (numbered(T) ?? gi + 1));
+          if (it) return kindOf(it.text);
+        }
+        // several targets, and a claim naming several kinds ("One DD and two AK's") with nothing to say which was which:
+        // the generic merchant, not the first kind named for all of them
+        if (all.length > 1 && new Set(KINDS.filter(([, re]) => re.test(claimed)).map(([k]) => k)).size > 1) { cur.unsure = true; return "cargo"; }
+        return cur.kind;
+      };
+      cur.unsure = false;
+      cur.tg = E.attackSheet(cur.sh.torpedoes, {}).targets.map((T, gi, all) => profile(kindFor(T, gi, all)));
+      A = E.attackSheet(cur.sh.torpedoes, { sizes: cur.tg.map(t => t.size) });
       const first = cur.sh.torpedoes[0].time.match(/-(\d\d)$/);
       cur.t0 = cur.ms + (first ? +first[1] * 1000 : 0);      // the first torpedo, to the second where the sheet types it
       cur.zone = (cur.ev.local.match(/ ([A-Z]{1,2})$/) || [])[1] || "";
@@ -140,8 +173,7 @@ const Observer = (() => {
         if (x.done && x.t.hitTyped) gTorp.append("path").attr("class", "obs-hit").attr("d", "M-6,-6L6,6M6,-6L-6,6").attr("transform", `translate(${P(x.p)})`);
         else if (!x.done) gTorp.append("circle").attr("r", 2.5).attr("fill", "var(--ink)").attr("cx", P(x.p)[0]).attr("cy", P(x.p)[1]);
       });
-      const [L, B] = SIZE[cur.kind];
-      q.targets.forEach(T => { if (T) gShip.append("path").attr("d", planPath(L, B)).attr("fill", "var(--japan)").attr("opacity", T.hit ? 0.45 : 1)
+      q.targets.forEach((T, gi) => { const [L, B] = cur.tg[gi].size; if (T) gShip.append("path").attr("d", planPath(L, B)).attr("fill", "var(--japan)").attr("opacity", T.hit ? 0.45 : 1)
         .attr("transform", `translate(${P(T.p)}) rotate(${T.course - 90})`); });
       const sil = window.SHIPS && SHIPS.balao;
       gShip.append("path").attr("d", planPath(sil ? +sil.length : 312, 27.3)).attr("fill", colour(cur.actor)).attr("transform", `translate(${P(q.own.p)}) rotate(${q.own.heading - 90})`);
@@ -227,15 +259,29 @@ const Observer = (() => {
         else if (day < 0.5) offTxt.text("no moon up");
       }
       // each target: its outline, foreshortened by the angle on the bow, at its angular size
-      const [Lft, Bft] = SIZE[cur.kind], shape = window.SIL_CATEGORIES && SIL_CATEGORIES.shapes[cur.kind];
-      q.targets.forEach(T => {
+      q.targets.forEach((T, gi) => {
+        const g = cur.tg[gi], [Lft, Bft] = g.size, shape = g.ship ? g.ship.sil.d : window.SIL_CATEGORIES && (SIL_CATEGORIES.shapes[g.kind] || SIL_CATEGORIES.shapes.cargo);
         if (!T || !shape) return;
         const projFt = Lft * Math.abs(Math.sin(rad(T.aob))) + Bft * Math.abs(Math.cos(rad(T.aob)));
-        const kx = (2 * deg(Math.atan(projFt / 3 / 2 / T.range)) * ppd) / 118, ky = (deg(Math.atan(Lft / 118 / 3 / T.range)) * ppd);
         const vis = lt ? 1 - Math.exp(-Math.pow(lt.V / T.range, 1.5)) : 1;
         const hull = mix(mix(skyLow, "#020304", 0.97), "#2d3237", day);
-        shipG.append("path").attr("d", shape).attr("fill", T.hit ? mix(hull, "#7a2a20", 0.4) : hull).attr("opacity", vis)
-          .attr("transform", `translate(${cx + norm(T.bearing - B) * ppd},${hy}) scale(${(T.aob < 0 ? -1 : 1) * kx},${ky}) translate(-60,-22)`);
+        // a class outline is in feet (x from the stern, y up from the waterline as negative), the generic one in its
+        // 120 x 24 box with the waterline at 22: each scaled to the target's angular size, foreshortened by the angle on the bow
+        const wide = 2 * deg(Math.atan(projFt / 3 / 2 / T.range)) * ppd, flip = T.aob < 0 ? -1 : 1;
+        const tr = g.ship
+          ? `translate(${cx + norm(T.bearing - B) * ppd},${hy}) scale(${flip * wide / Lft},${deg(Math.atan(1 / 3 / T.range)) * ppd}) translate(${-Lft / 2},0)`
+          : `translate(${cx + norm(T.bearing - B) * ppd},${hy}) scale(${flip * wide / 118},${deg(Math.atan(Lft / 118 / 3 / T.range)) * ppd}) translate(-60,-22)`;
+        shipG.append("path").attr("d", shape).attr("fill", T.hit ? mix(hull, "#7a2a20", 0.4) : hull).attr("opacity", vis).attr("transform", tr);
+      });
+      // a target outside the field of view: a marker at the rim, on the horizon, on the side to train towards
+      const KIND_WORD = { cargo: "AK", tanker: "AO", destroyer: "DD", escort: "escort", gunboat: "gunboat", submarine: "submarine", carrier: "CV" };
+      q.targets.forEach((T, gi) => {
+        if (!T || q.targets.filter(Boolean).length < 2) return;
+        const d = norm(T.bearing - B);
+        if (Math.abs(d) * ppd < r - 8) return;
+        const left = d < 0, label = `${left ? "◂ " : ""}target ${gi + 1}, ${cur.tg[gi].ship ? cur.tg[gi].ship.who.name : KIND_WORD[cur.tg[gi].kind] || cur.tg[gi].kind}: ${pad3(T.bearing)}°, ${Math.round(T.range).toLocaleString("en-US")} yd${left ? "" : " ▸"}`;
+        shipG.append("text").attr("class", "obs-tick obs-off").attr("x", left ? cx - r + 16 : cx + r - 16).attr("y", hy + 36 + gi * 16)
+          .attr("text-anchor", left ? "start" : "end").attr("fill", "#e6edf5").text(label);
       });
       brgTxt.text(`true bearing ${pad3(B)}°${train ? "  ·  double-click: back on the target" : ""}`);
       return { B, fv };
@@ -308,7 +354,9 @@ const Observer = (() => {
           `<p class="below"><b>Not drawn:</b> ${A.problems.map(esc).join("; ")}. The rows above are what ${esc(nameOf(cur.actor))}'s report types (${EV.cite(cur.sh.cite, "src")}); the courses are in her narrative, still to be read for this view.</p>`;
         return;
       }
-      const list = [...A.assumed.map(esc), `the target's size, a ${cur.kind} of ${SIZE[cur.kind][0]} ft (assumed), drawn as the kit's generic outline`,
+      const list = [...A.assumed.map(esc), ...cur.tg.map((g, gi) => { const who = cur.tg.length > 1 ? `target ${gi + 1}${A.targets[gi].range != null ? ` (${A.targets[gi].range} yds at firing)` : ""}` : "the target";
+          return g.ship ? `${who} drawn as ${esc(g.ship.who.name)}, the one ${esc(g.kind)} the engagement names on the other side, in her class's outline (${esc(g.ship.sil.name)}, ${g.size[0]} ft, from its plate): which ship the sheet's target was is ours, inferred`
+            : `${who}'s size, a ${g.kind} of ${g.size[0]} ft (assumed${cur.tg.length > 1 ? (cur.unsure ? ": the sheet names several kinds and not which target was which, so a merchant ship" : ", the kind from the sheet's own words for each target where it gives them") : ""}), drawn as the kit's generic outline`; }),
         "the fields of view (periscope 32° and 8°, binoculars 7°: secondary sources, to check against the Submarine Periscope Manual, NAVPERS 16165)"];
       document.getElementById("obs-words").innerHTML = parts.join("") +
         `<p class="below">From ${esc(nameOf(cur.actor))}'s attack data sheet, as typed: ${EV.cite(cur.sh.cite, "src")}. Computed from it, and assumed: ${list.join("; ")}. A reconstruction, not a photograph: a lead, not a record.</p>`;
@@ -316,7 +364,7 @@ const Observer = (() => {
 
     // what the TDC tabs show, and what they assume
     function drawTdcNote() {
-      const [Lft] = SIZE[cur.kind], lowDepth = A.torps.some(t => (parseFloat(t.row.depth_set) || 99) < 10);
+      const [Lft] = cur.tg[aimAt].size, lowDepth = A.torps.some(t => (parseFloat(t.row.depth_set) || 99) < 10);
       const list = [`that ${esc(nameOf(cur.actor))}'s computer was a Mark 3 (no record read names its mark; the Mark 3's manual went to boats "SS 167-544 incl.", OP 1056 p. 277)`,
         "the forward and after angle solvers ordering the same angles (the periscope-to-tube distance, the torpedo's reach and its turn are left out, as in the plot); tubes 1-6 forward, 7-10 aft",
         `the target's length, ${Lft} ft${Lft < 300 ? " (below the dial's 300 ft, shown at 300)" : ""}`, "the own-speed dial's numbers (the manual says only that it matches the ship's log)",
@@ -333,7 +381,7 @@ const Observer = (() => {
       if (!train) aimAt = firing;
       const lt = lightAt(cur.t0 + s * 1000);
       if (tab === "plot") drawPlot(q);
-      else tdc.set(E.tdcAt(A, s), { time: s - A.start, length: SIZE[cur.kind][0] });
+      else tdc.set(E.tdcAt(A, s), { time: s - A.start, length: cur.tg[aimAt].size[0] });
       const { B, fv } = drawScope(q, lt);
       const tg = q.targets[aimAt];
       drawSky(lt, B, tg ? tg.bearing : B, fv);

@@ -240,10 +240,12 @@ const Engage = (() => {
       return [T.p0[0] + Math.sin(rad(T.course)) * v * (s - T.at), T.p0[1] + Math.cos(rad(T.course)) * v * (s - T.at)]; };
     // each torpedo's run: to where it first reaches the target's hull (a line of the target's length, `opts.length`
     // feet, on its course), or, missing, how far from the hull it passed
-    const halfL = (opts.length || 400) / 6, halfB = (opts.beam || 55) / 6;   // feet -> half the length and beam in yards
+    // (`opts.sizes`, one [length, beam] in feet for each target, where a sheet's targets differ: a DD and an AO)
+    const half = gi => { const [L, B] = (opts.sizes && opts.sizes[gi]) || [opts.length || 400, opts.beam || 55]; return [L / 6, B / 6]; };   // feet -> half, in yards
     torps.forEach(t => {
       const T = targets[t.target];
       if (t.course == null || !T.ok) return;
+      const [halfL, halfB] = half(t.target);
       const from = ownAt(t.s).p, v = YD_S(t.knots), vt = [Math.sin(rad(t.course)) * v, Math.cos(rad(t.course)) * v];
       const tp = targetAt(t.target, t.s), u = [Math.sin(rad(T.course)), Math.cos(rad(T.course))], vT = [u[0] * YD_S(T.speed), u[1] * YD_S(T.speed)];
       const r0 = [from[0] - tp[0], from[1] - tp[1]], dv = [vt[0] - vT[0], vt[1] - vT[1]];   // the torpedo, from the target
