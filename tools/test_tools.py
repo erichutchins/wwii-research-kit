@@ -16,6 +16,7 @@ Usage: uv run tools/test_tools.py   (unittest; -v for each test's name)
 """
 import contextlib
 import io
+import json
 import os
 import subprocess
 import sys
@@ -37,6 +38,8 @@ import check_track
 import jgrid
 import lint
 import loc_sitmaps
+import morning_reports
+import nara
 import naval_grid
 import neighbours
 import records
@@ -997,6 +1000,72 @@ class SituationMaps(unittest.TestCase):
             r["base"] = "B11" if r["date"] < "1945-03-10" else "B12"
         self.assertEqual([r["date"] for r in loc_sitmaps.select(rows, "B12")], ["1945-03-10", "1945-03-11"])
         self.assertEqual(loc_sitmaps.select(rows, "1945-04-01"), [])
+
+class CatalogCache(unittest.TestCase):
+    """tools/morning_reports.py names a file unit's cache folder and its citations by the record group the catalog gives
+    (rg38- for a war diary, rg24- for a muster roll, rg64- for a morning-report roll), not by the Army's."""
+
+    def hit(self, naid, group):
+        return {"body": {"hits": {"hits": [{"_source": {"record": {
+            "naId": naid, "title": "T", "digitalObjects": [{"objectId": "9", "objectUrl": "u"}],
+            "ancestors": [{"levelOfDescription": "recordGroup", "recordGroupNumber": group}]}}}]}}}
+
+    def run_in(self, tmp, setup, roll, group):
+        nara = Path(tmp)
+        setup(nara)
+        with mock.patch.object(morning_reports, "NARA", nara), mock.patch.object(morning_reports, "_RECORDS", {}), \
+                mock.patch.object(morning_reports, "get_json", return_value=self.hit(int(roll), group)) as g:
+            return morning_reports.cite(roll, 22), morning_reports.folder(roll).name, g.call_count, sorted(
+                f.name for f in nara.iterdir())
+
+    def test_new_roll_takes_the_catalogs_group(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = self.run_in(tmp, lambda n: None, "135938645", 38)
+        self.assertEqual(out[:2], ("rg38-135938645/p0022", "rg38-135938645"))
+        self.assertEqual(out[3], ["rg38-135938645"])
+
+    def test_cache_filed_under_the_armys_group_is_renamed(self):
+        def legacy(n):
+            (n / "rg64-135938645").mkdir()
+            (n / "rg64-135938645" / "record.json").write_text('{"naId": 1, "title": "T", "pages": [["9", "u"]]}')
+            (n / "rg64-135938645" / "p0022.txt").write_text("ocr")
+        with tempfile.TemporaryDirectory() as tmp:
+            out = self.run_in(tmp, legacy, "135938645", 38)
+            kept = (Path(tmp) / "rg38-135938645" / "p0022.txt").exists()
+        self.assertEqual(out[3], ["rg38-135938645"])
+        self.assertTrue(kept)
+
+    def test_a_folder_nara_py_made_needs_no_request(self):
+        def made(n):
+            (n / "rg38-135938645").mkdir()
+            (n / "rg38-135938645" / "record.json").write_text(json.dumps(self.hit(135938645, 38)["body"]["hits"]["hits"][0]["_source"]["record"]))
+        with tempfile.TemporaryDirectory() as tmp:
+            out = self.run_in(tmp, made, "135938645", 38)
+        self.assertEqual((out[0], out[2]), ("rg38-135938645/p0022", 0))
+
+
+class CatalogSearch(unittest.TestCase):
+    """tools/nara.py search: the catalog's matches for words, in a named series, by title alone or by the scanned text."""
+
+    HITS = {"total": {"value": 18, "relation": "eq"}, "hits": [{"_source": {"record": {
+        "naId": 78591807, "title": "COM NAV BASES, SOUTH SOLOMONS - War Diary, 7/1-31/44",
+        "digitalObjects": [{}] * 9, "ancestors": [{"levelOfDescription": "series", "title": "War Diaries"}]}}}]}
+
+    def test_title_search_in_a_named_series(self):
+        with mock.patch.object(nara, "get", return_value=self.HITS) as g:
+            total, lower, rows = nara.search('"COM NAV BASES"', title=True, series="war-diaries", limit=3)
+        self.assertEqual(g.call_args.args[0], {"title": '"COM NAV BASES"', "limit": 3, "page": 1,
+                                                "ancestorNaId": nara.SERIES_WAR_DIARIES})
+        self.assertEqual((total, lower), (18, False))
+        self.assertEqual(rows, [(78591807, 9, "COM NAV BASES, SOUTH SOLOMONS - War Diary, 7/1-31/44", "War Diaries")])
+
+    def test_text_search_is_q_and_a_capped_total_is_a_lower_bound(self):
+        capped = {"total": {"value": 10000, "relation": "gte"}, "hits": []}
+        with mock.patch.object(nara, "get", return_value=capped) as g:
+            total, lower, rows = nara.search("Wickham")
+        self.assertEqual(g.call_args.args[0], {"q": "Wickham", "limit": 20, "page": 1})
+        self.assertEqual((total, lower, rows), (10000, True, []))
+
 
 class Neighbours(unittest.TestCase):
     """Who was beside and facing a unit, from the situation maps: computed leads."""

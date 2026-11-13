@@ -16,7 +16,7 @@ contact sheets to find which pages hold which tables.
       -> /tmp/bang/74802868_p11_zoom.jpg (x y w h in full-scan pixels, contrast-stretched)
 
   uv run tools/crop_pages.py heads 578447414 918 953 960
-      -> /tmp/bang/heads_578447414_1.jpg ... (Army morning reports, rg64-<roll>:
+      -> /tmp/bang/heads_578447414_1.jpg ... (Army morning reports, in the cache folder rg<record group>-<roll>:
          the date / STATION / ORGANIZATION strip of each page, 6 to an image; pages as
          "918 953" or "918-930,953"; add `tall` for the book-type forms of 1940 - mid-1943,
          whose ORGANIZATION line sits lower)
@@ -36,6 +36,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageOps
 
+from morning_reports import folder as folder_of
 from records import CACHE
 
 OUT = Path(os.environ.get("CROP_DIR", "/tmp/bang"))
@@ -56,7 +57,7 @@ def scan(na_id, page):
 def heads(roll, pages, per=6, width=1400, bottom=0.17):
     """Morning-report header strips stacked for quick reading. The 1943-44
     form fills the frame, so the header sits in the top ~16% of the scan."""
-    folder = CACHE / "nara" / f"rg64-{roll}"
+    folder = folder_of(roll)
     for s in range(0, len(pages), per):
         strips = []
         for p in pages[s:s + per]:
@@ -82,7 +83,7 @@ def rg64_pages(roll, spec):
         for piece in str(part).split(","):
             a, _, b = piece.partition("-")
             out += range(int(a), int(b or a) + 1)
-    folder = CACHE / "nara" / f"rg64-{roll}"
+    folder = folder_of(roll)
     have = [p for p in out if (folder / f"p{p:04d}.jpg").exists()]
     if len(have) < len(out):
         print(f"not fetched (morning_reports.py fetch {roll} ...): "

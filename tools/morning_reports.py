@@ -18,7 +18,7 @@ The catalog front end uses these unauthenticated endpoints:
 
 A roll is a "file unit" with its own NAID. Pages are numbered 1..N in the
 order the catalog viewer shows them (its objectPage), which is how they're
-cited: rg64-<rollNaId>/p0960 is https://catalog.archives.gov/id/<roll>?objectPage=960.
+cited: rg64-<rollNaId>/p0960 (rg38- for a war diary, rg24- for a muster roll: the record group the catalog gives) is https://catalog.archives.gov/id/<roll>?objectPage=960.
 
 Commands:
   search "<text>" [YYYY-MM]          rolls whose OCR contains the phrase
@@ -30,7 +30,7 @@ Commands:
                                      a unit's pages month by month -> sources/drafts/*.csv
   text <roll> <pages>                print cached/fetched OCR, e.g. 918-966,970
   changes <draft.csv> [skip-roll...] pages where the OCR'd station changes (read these on the scan)
-  fetch <roll> <pages>               download scans -> sources/nara/rg64-<roll>/pNNNN.jpg
+  fetch <roll> <pages>               download scans -> sources/nara/rg<record group>-<roll>/pNNNN.jpg
   classify <roll> <pages> ["<regex>"] each page's kind from its OCR (spacer, form, panel,
                                      entries, specialists, ration, noocr), with its date and unit as
                                      far as OCR goes, and * where the regex matches: the
@@ -38,7 +38,8 @@ Commands:
   checkdraft <draft.csv> [...]       check a reader's draft (guides/MORNING-REPORTS.md,
                                      "Reading at scale") before its rows go to records/army/
 
-OCR text and scans are cached in sources/nara/rg64-<roll>/ (git-ignored).
+OCR text and scans are cached in sources/nara/rg<record group>-<roll>/ (git-ignored), the group read from the catalog:
+rg64- for a morning-report roll, rg38- for a war diary, rg24- for a muster roll.
 Search hits are OCR matches: always confirm on the scan. A soldier only
 appears on a report when his status changes, so a missing name proves nothing.
 """
@@ -52,6 +53,7 @@ import time
 import urllib.parse
 import urllib.request
 
+from nara import record_group
 from records import CACHE, rel
 
 NARA = CACHE / "nara"
@@ -73,24 +75,60 @@ def get_json(url, tries=7):
             time.sleep(5 * 2 ** min(attempt, 4))
 
 
-def folder(roll):
-    return NARA / f"rg64-{roll}"
+def make_record(r):
+    """The cached shape of a catalog record: its title, its record group (read from the catalog, 64 for a
+    morning-report roll, 38 for a war diary, 24 for a muster roll) and its page list (objectId, URL)."""
+    return {"naId": r["naId"], "title": r["title"], "group": record_group(r),
+            "pages": [[o["objectId"], o["objectUrl"]] for o in r.get("digitalObjects", [])]}
+
+
+_RECORDS = {}
 
 
 def record(roll):
-    """Roll metadata, cached: title plus the page list (objectId, URL)."""
-    path = folder(roll) / "record.json"
-    if path.exists():
-        return json.loads(path.read_text())
-    hits = get_json(f"{PROXY}/v3/records/search?naId_is={roll}&allowLegacyOrgNames=true")["body"]["hits"]["hits"]
-    if not hits:
-        sys.exit(f"no record {roll}")
-    r = hits[0]["_source"]["record"]
-    rec = {"naId": r["naId"], "title": r["title"],
-           "pages": [[o["objectId"], o["objectUrl"]] for o in r.get("digitalObjects", [])]}
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(rec))
+    """Roll metadata, cached in sources/nara/rg<record group>-<roll>/record.json. A folder tools/nara.py made (the
+    catalog's own record) is read as it is; a cache made here before the group was kept is upgraded once, and
+    renamed if it was filed under the wrong group."""
+    if roll in _RECORDS:
+        return _RECORDS[roll]
+    rec = None
+    folders = [f for f in sorted(NARA.glob(f"rg*-{roll}")) if f.name != f"rg367-{roll}"]
+    for f in folders:
+        path = f / "record.json"
+        if not path.exists():
+            continue
+        raw = json.loads(path.read_text())
+        if "digitalObjects" in raw:                 # nara.py's: the catalog's record, left as it is
+            rec = make_record(raw)
+        elif "group" in raw:
+            rec = raw
+        if rec:
+            break
+    if rec is None:
+        hits = get_json(f"{PROXY}/v3/records/search?naId_is={roll}&allowLegacyOrgNames=true")["body"]["hits"]["hits"]
+        if not hits:
+            sys.exit(f"no record {roll}")
+        rec = make_record(hits[0]["_source"]["record"])
+    right = NARA / f"rg{rec['group']}-{roll}"
+    for f in folders:
+        if f != right and not right.exists():       # filed under the Army's group before the group was read
+            f.rename(right)
+    right.mkdir(parents=True, exist_ok=True)
+    path = right / "record.json"
+    have = json.loads(path.read_text()) if path.exists() else {}
+    if "group" not in have and "digitalObjects" not in have:
+        path.write_text(json.dumps(rec))
+    _RECORDS[roll] = rec
     return rec
+
+
+def folder(roll):
+    return NARA / f"rg{record(roll)['group']}-{roll}"
+
+
+def cite(roll, n=None):
+    """The citation form of a page of a catalog file unit: rg<record group>-<roll>/pNNNN."""
+    return f"rg{record(roll)['group']}-{roll}" + (f"/p{n:04d}" if n else "")
 
 
 def ocr(roll, n):
@@ -173,7 +211,7 @@ def show(roll, pages, needle=None):
     texts = ocr_many(roll, pages)
     for n in pages:
         date, org, station = header(texts[n])
-        print(f"  rg64-{roll}/p{n:04d}  {date or '?':10}  {org or '-':45}  {station}")
+        print(f"  {cite(roll, n)}  {date or '?':10}  {org or '-':45}  {station}")
         if needle:
             lines = [ln.strip() for ln in texts[n].split("\n")]
             for i, ln in enumerate(lines):
@@ -325,11 +363,11 @@ def locate(phrases, pattern, start, end):
         if not runs:
             print(f"{month}: not found (top: " + ", ".join(f"{cands[r]} {len(matched[r])}" for r in ranked[:3]) + ")")
         for roll, pages in sorted(runs, key=lambda r: cands[r[0]]):
-            print(f"{month}: rg64-{roll} pages {pages[0]}-{pages[-1]}  ({cands[roll]})")
+            print(f"{month}: {cite(roll)} pages {pages[0]}-{pages[-1]}  ({cands[roll]})")
             texts = ocr_many(roll, pages)
             for p in pages:
                 date, org, station = header(texts[p])
-                rows.append([month, f"rg64-{roll}/p{p:04d}", date, org, station])
+                rows.append([month, cite(roll, p), date, org, station])
     out = CACHE / "drafts" / (re.sub(r"\W+", "-", pattern).strip("-").lower() + ".csv")
     out.parent.mkdir(parents=True, exist_ok=True)
     import csv
@@ -350,7 +388,7 @@ def changes(draft, skip=()):
     out, prev, month = {}, "", ""
     for r in csv.DictReader(open(draft)):
         roll, page = r["page"].split("/")
-        roll, page = roll.removeprefix("rg64-"), int(page[1:])
+        roll, page = re.sub(r"^rg\d+-", "", roll), int(page[1:])
         st = norm(r["station_ocr"])
         if roll in skip or r["org_ocr"].startswith("[") or len(st) < 4:
             continue
@@ -454,8 +492,8 @@ def checkdraft(paths):
                 print(f"{where}: {msg}"); bad += 1
             if not re.fullmatch(r"\d{6,12}", r["roll"]): err(f"roll {r['roll']!r}")
             if not re.fullmatch(r"\d{1,4}", r["page"]): err(f"page {r['page']!r}")
-            elif not (NARA / f"rg64-{r['roll']}" / f"p{int(r['page']):04d}.jpg").exists():
-                err(f"page not fetched (read it on the scan): rg64-{r['roll']}/p{int(r['page']):04d}")
+            elif not any(NARA.glob(f"rg*-{r['roll']}/p{int(r['page']):04d}.jpg")):
+                err(f"page not fetched (read it on the scan): {r['roll']}/p{int(r['page']):04d}")
             if r["kind"] not in ("form", "panel", "entries"): err(f"kind {r['kind']!r}")
             if not re.fullmatch(r"194\d-(0[1-9]|1[0-2])", r["month"]): err(f"month {r['month']!r} (YYYY-MM)")
             if r["days"] and not re.fullmatch(r"\d{1,2}(-\d{1,2})?", r["days"]): err(f"days {r['days']!r}")
@@ -485,7 +523,7 @@ if __name__ == "__main__":
         unit(args[0], args[1], int(args[2]) if len(args) > 2 else 25)
     elif cmd == "text" and len(args) == 2:
         for n, t in ocr_many(args[0], parse_pages(args[1])).items():
-            print(f"===== rg64-{args[0]}/p{n:04d}\n{t}\n")
+            print(f"===== {cite(args[0], n)}\n{t}\n")
     elif cmd == "changes" and args:
         for roll, pages in changes(args[0], skip=args[1:]).items():
             print(roll, ",".join(map(str, pages)))

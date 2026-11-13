@@ -13,6 +13,13 @@ JPG URL per scanned page). No API key is needed for this endpoint.
 Commands:
   python3 tools/nara.py find "Bang"            list the boat's folders in the
                                                  War Patrol Reports series (RG 38 copies too)
+  python3 tools/nara.py search "<words>" [--title] [--series war-diaries|patrol-reports|muster-rolls|morning-reports|<id>]
+                                               [--limit N] [--page N]
+                                                 any catalog item: its id, pages and title, with the number of matches
+                                                 (a negative result is "0 matches" for the words and series you name).
+                                                 Words are the catalog's: add quotes for a phrase. --title matches the
+                                                 item's title alone (a diary's title is its command and dates); without
+                                                 it the words are matched in the scanned text too, and the hits are loose
   python3 tools/nara.py fetch 74802746 [...]   download folder(s) to sources/nara/rg<group>-<id>/
   python3 tools/nara.py index                  rebuild records/scans.json (page -> public URL)
   python3 tools/nara.py rename                 move cache folders still under the old "rg367-" name
@@ -35,6 +42,10 @@ NARA = CACHE / "nara"
 API = "https://catalog.archives.gov/proxy/v3/records/search"   # the older /proxy/records/search stopped answering q= in 2026
 SERIES_PATROL_REPORTS = 305243        # RG 38 "U.S. Submarine War Patrol Reports" (microfiche M1752)
 SERIES_WAR_DIARIES = 4697018          # RG 38 "World War II War Diaries, Other Operational Records and Histories"
+SERIES_MUSTER_ROLLS = 594996          # RG 24 "Muster Rolls of U.S. Navy Ships, Stations, and Other Naval Activities"
+SERIES_MORNING_REPORTS = 85713825     # RG 64 Army morning reports (tools/morning_reports.py)
+SERIES = {"war-diaries": SERIES_WAR_DIARIES, "patrol-reports": SERIES_PATROL_REPORTS,
+          "muster-rolls": SERIES_MUSTER_ROLLS, "morning-reports": SERIES_MORNING_REPORTS}
 
 
 def get(params, tries=4):
@@ -73,6 +84,23 @@ def find(name):
                 seen.add(r["naId"])
                 out.append((r["naId"], title, s.get("title", ""), len(r.get("digitalObjects", []))))
     return out
+
+
+def search(words, title=False, series=None, limit=20, page=1):
+    """Catalog items matching the words: (total matches, whether the total is only a lower bound, rows of
+    (id, pages, title, series title)). title=True matches the item's title alone; series is a name in SERIES or a
+    catalog id."""
+    params = {"title" if title else "q": words, "limit": limit, "page": page}
+    if series:
+        params["ancestorNaId"] = SERIES.get(series, series)
+    hits = get(params)
+    total = hits.get("total", {})
+    rows = []
+    for h in hits["hits"]:
+        r = h["_source"]["record"]
+        ser = [a for a in r.get("ancestors", []) if a.get("levelOfDescription") == "series"]
+        rows.append((r["naId"], len(r.get("digitalObjects", [])), r.get("title", ""), ser[0].get("title", "") if ser else ""))
+    return total.get("value", len(rows)), total.get("relation") not in (None, "eq"), rows
 
 
 def record_group(rec):
@@ -152,7 +180,22 @@ def index():
 
 if __name__ == "__main__":
     cmd, args = (sys.argv[1], sys.argv[2:]) if len(sys.argv) > 1 else ("", [])
-    if cmd == "find" and args:
+    if cmd == "search" and args:
+        opts, words, i = {}, [], 0
+        while i < len(args):
+            if args[i] == "--title":
+                opts["title"] = True
+            elif args[i] in ("--series", "--limit", "--page") and i + 1 < len(args):
+                opts[args[i][2:]] = int(args[i + 1]) if args[i] != "--series" else args[i + 1]
+                i += 1
+            else:
+                words.append(args[i])
+            i += 1
+        total, lower, rows = search(" ".join(words), **opts)
+        print(f"{'at least ' if lower else ''}{total} match{'es' if total != 1 else ''} ({len(rows)} shown)", file=sys.stderr)
+        for na_id, pages, title, ser in rows:
+            print(f"{na_id}\t{pages:3d} pp\t{title}\t[{ser}]")
+    elif cmd == "find" and args:
         for na_id, title, series, pages in find(" ".join(args)):
             print(f"{na_id}\t{pages:3d} pp\t{title}\t[{series}]")
     elif cmd == "fetch" and args:

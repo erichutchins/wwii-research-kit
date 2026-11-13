@@ -21,9 +21,8 @@ for "<n>th Construction Battalion"), filmed in date order, with OCR. Per quarter
 `tools/morning_reports.py`, written for the Army's rolls, works on any catalog file unit:
 `pages <id> "<text>"` finds pages by OCR (a service number, "Navy", "Forwarded", "Hosp"),
 `text <id> <pages>` prints the OCR, and `fetch <id> <pages>` downloads the scans. A muster roll
-is cited by its own record group, `rg24-<id>/pNNNN`. The tool's cache folder is still named for
-the Army's group (`sources/nara/rg64-<id>/`), so for a muster roll make the folder `rg24-<id>`
-and link `rg64-<id>` to it: a limit of the tool, not part of the method.
+is cited by its own record group, `rg24-<id>/pNNNN`, which is also its cache folder, `sources/nara/rg24-<id>/`
+(the tool reads the group from the catalog; it prints a war diary as `rg38-`).
 
 ## Places from the rolls
 
