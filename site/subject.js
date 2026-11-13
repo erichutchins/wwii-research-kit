@@ -106,7 +106,10 @@
     rows = pts.map(p => ({ t: p.t, date: p.utc.slice(0, 10), lonlat: p.lonlat, own: !p.assumed, offtrack: !p.on_track || p.kind === "ship", kind: p.kind,
                            words: p.ref, source: p.kind, period: p.patrol, page: p.page, note: p.note }));
     const track = rows.filter(r => !r.offtrack && r.own);
-    for (let i = 1; i < track.length; i++) if (track[i].period === track[i - 1].period) legs.push({ a: track[i - 1], b: track[i], coords: [track[i - 1].lonlat, track[i].lonlat], style: "own", period: track[i].period });
+    // a ship's diaries can leave months between her positions (an escort read for a few convoys): she is joined only
+    // across two days at most, never straight across the silence (a boat's patrol is one record, joined throughout)
+    const joins = (a, b) => S.kind === "boat" || b.t - a.t <= 2 * 864e5;
+    for (let i = 1; i < track.length; i++) if (track[i].period === track[i - 1].period && joins(track[i - 1], track[i])) legs.push({ a: track[i - 1], b: track[i], coords: [track[i - 1].lonlat, track[i].lonlat], style: "own", period: track[i].period });
     stages = S.periods.map(p => ({ id: String(p.n), name: S.kind === "boat" ? `Patrol ${p.n}` : p.name, sub: p.name !== `Patrol ${p.n}` && S.kind === "boat" ? p.name : "",
       from: T(p.from), to: T(p.to), rows: rows.filter(r => r.period === p.n), legs: legs.filter(l => l.period === p.n), period: p }));
   } else if (S.kind === "unit") {

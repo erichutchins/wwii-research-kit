@@ -15,8 +15,9 @@
   const out = [];
 
   // boats and ships: by hull number, each patrol a link
-  const vessels = (kind, title, note) => {
-    const xs = ALL.filter(s => s.kind === kind).sort((a, b) => hullNo(a) - hullNo(b));
+  // `side`: our ships, or the other side's (each followed through a record she kept herself), each in its own list
+  const vessels = (kind, title, note, side = "us") => {
+    const xs = ALL.filter(s => s.kind === kind && (s.of || "us") === side).sort((a, b) => hullNo(a) - hullNo(b) || a.name.localeCompare(b.name));
     if (!xs.length) return;
     out.push(`<h2>${title}</h2><p class="key">${note}</p><div class="ledger-wrap"><table class="ledger"><thead><tr><th>Subject</th><th>What it was</th><th>${kind === "boat" ? "Patrols" : "Record"}</th><th>When</th><th class="num">Positions</th><th>Status</th></tr></thead><tbody>${xs.map(s => {
       const periods = kind === "boat" ? s.periods.map(p => `<a href="${esc(href(s))}&amp;period=${p.n}" title="${esc(`${p.name}, ${p.dates}${p.area ? `: ${p.area}` : ""}`)}">${p.n}</a>`).join(" ") : esc(s.periods[0]?.name || "");
@@ -27,6 +28,7 @@
   };
   vessels("boat", "Submarines", "War patrol reports (NARA series 305243); each patrol opens the boat's page on that patrol.");
   vessels("ship", "Surface ships", "War diaries (NARA RG 38). Most of the carriers, battleships and cruisers are read for 6 April 1945 only, the day USS Haynsworth was hit.");
+  vessels("ship", "Japanese ships", "Each followed through a record she kept herself: her war diary or battle report (JACAR), in Tokyo time (zone I). A ship only named in another's record stays a name in it.", "jp");
 
   // Army units, by theatre
   const units = ALL.filter(s => s.kind === "unit");

@@ -234,9 +234,15 @@ class Build:
                                                    f"Task Unit {tu}, {group.rstrip('.')}" if tu and group else (f"Task Unit {tu}" if tu else r["section"]),
                                                    r["date"], "", "reported", r["page"], (r["note"] or "") + (f" (listed under {r['section']})" if tu else ""),
                                                    f"comsubpac/disposition.csv {r['date']} {r['boat']}"))
-            out.append({"id": d.name, "alias": y["name"].lower(), "kind": "boat" if boat else "ship", "vessel": y.get("kind", ""),
-                        "name": f"USS {y['name']} ({hull})", "short": y["name"] if boat else f"USS {y['name']}", "hull": hull,
-                        "class": y.get("class", ""), "silhouette": y.get("silhouette", ""), "plain": y.get("plain", ""), "of": "us",
+            # a Japanese ship (`of: jp`) has no hull number and no "USS": her name and short form as ship.yml gives them
+            of = y.get("of", "us")
+            if of == "us":
+                name, short = f"USS {y['name']} ({hull})", y["name"] if boat else f"USS {y['name']}"
+            else:
+                name, short = (f"{y['name']} ({y['short']})" if y.get("short") else y["name"]), y.get("short") or y["name"]
+            out.append({"id": d.name, "alias": y.get("alias") or y["name"].lower(), "kind": "boat" if boat else "ship", "vessel": y.get("kind", ""),
+                        "name": name, "short": short, "hull": hull if of == "us" else "", **({"name_ja": y["name_ja"]} if y.get("name_ja") else {}),
+                        "class": y.get("class", ""), "silhouette": y.get("silhouette", ""), "plain": y.get("plain", ""), "of": of,
                         "theatre": theatre, "note": "", "dives": bool(y.get("dives")), "max_kts": y.get("max_kts"),
                         "geojson": str(geo.relative_to(RECORDS)) if geo.exists() else None, "catalogId": m.get("catalogId"),
                         "periods": periods, "relations": relations, "engagements": sorted(engs.get(d.name, []), key=lambda e: e["from"]),
@@ -447,6 +453,14 @@ def build():
     engs = b.engagements()
     leads = b.leads()
     subjects = b.vessels(inv, engs, disposition, task_org) + b.army(inv, engs, leads) + b.seabees(inv, engs) + b.convoys(engs) + b.commands(inv, task_org)
+    # a ship that is a subject in its own right (an escort with her own diary) carries her convoys too: each convoy's
+    # `ships:` row that names her, the same row turned round (dir "of": she is in the convoy)
+    by_key = {k: s for s in subjects if s["kind"] in ("ship", "boat") for k in (s["id"], s["alias"])}
+    for c in (s for s in subjects if s["kind"] == "convoy"):
+        for r in c["relations"]:
+            s = by_key.get(r["other"]) if r["relation"] == "in_convoy" else None
+            if s:
+                s["relations"].append({**r, "dir": "of", "other": c["id"], "other_name": c["name"]})
     ids = [s["id"] for s in subjects] + [s["alias"] for s in subjects]
     for k, n in {k: ids.count(k) for k in set(ids)}.items():
         if n > 1 and k not in {s["id"] for s in subjects if s["alias"] == k}:

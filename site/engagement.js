@@ -100,7 +100,7 @@
     return `${every ? "each day" : `on ${SITMAPS.length} days`} from ${dmy(first)} to ${dmy(last)}`;
   })();
   const STATIONS = D.stations || {};
-  const ROUTE_DASH = { reported: null, sketched: "7 4", inferred: "1.5 4" };   // routes.yml's line by basis
+  const ROUTE_DASH = { reported: null, sketched: "7 4", inferred: "1.5 4", reckoned: "4 2.5" };   // routes.yml's line by basis; `reckoned` the build's, from a ship's log
   const inkOf = x => LIGHTER.has(x.source_kind) ? "var(--ink-3)" : x.opposed ? "var(--japan)" : x.of ? "var(--ink-2)" : "var(--ink-3)";   // no `of`: a place
   const colour = id => byId[id]?.colour ? `var(--c${byId[id].colour})` : byId[id] ? inkOf(byId[id]) : "var(--ink-2)";
   const evColour = e => byId[e.actor] ? colour(e.actor) : inkOf(e);
@@ -223,7 +223,10 @@
     return at && { who, name, course: c, kts: k, ms, at, onPath: !ev, local: `${r.date} ${r.time} ${r.zone}`, cite: a.cite };
   })).filter(Boolean);
   // the escorts' depth charges, as the boat logged them, at where she was then (straight between her fixes: placed, ours)
-  const CHARGES = D.events.filter(e => e.kind === "depth_charge" && e.utc && D.tracks[e.actor]).map(e => ({ e, ms: E.T(e.utc), at: E.posAt(D.tracks[e.actor], E.T(e.utc)) })).filter(d => d.at);
+  // and an escort's own attacks, as her log writes them (origin `log`): the drop itself, where her reckoning puts her
+  // (the build places it), drawn solid at the centre so a drop reads apart from a boat's hearing of one
+  const CHARGES = D.events.filter(e => e.kind === "depth_charge" && e.utc && (e.origin === "log" ? e.lat != null : D.tracks[e.actor]))
+    .map(e => ({ e, ms: E.T(e.utc), dropped: e.origin === "log", at: e.origin === "log" ? [e.lon, e.lat] : E.posAt(D.tracks[e.actor], E.T(e.utc)) })).filter(d => d.at);
 
   // ---------- legend: only the marks this engagement has
   const has = f => D.events.some(f);
@@ -256,14 +259,15 @@
     FRONT_UNITS.some(u => !u.opposed) && `<span>${EV.legendMark.unitUs}A US division or corps on that map: in its area, not at a position</span>`,
     FRONT_UNITS.some(u => u.opposed) && `<span>${EV.legendMark.unitEnemy}The enemy as that map placed them (US intelligence)</span>`,
     (D.rings || []).length && `<span><svg width="20" height="14" viewBox="0 0 20 14"><circle cx="10" cy="7" r="6" fill="var(--ink-2)" fill-opacity=".05" stroke="var(--ink-2)" stroke-width="1.2"${(D.rings || []).some(r => r.basis !== "reported") ? ' stroke-dasharray="4 2"' : ""}/></svg>A weapon's reach: its range as the field manual gives it, round where the battery was${(D.rings || []).some(r => r.basis !== "reported") ? " (dashed: the battery's place or its weapon not its own record's)" : ""}</span>`,
-    ...["reported", "sketched", "inferred"].filter(b => (D.routes || []).some(r => r.basis === b)).map(b => `<span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" stroke="var(--ink-2)" stroke-width="${b === "reported" ? 2.2 : 1.6}" stroke-linecap="round"${ROUTE_DASH[b] ? ` stroke-dasharray="${ROUTE_DASH[b]}"` : ""}/></svg>${{ reported: "An aircraft's course as its form types it (the length ours)", sketched: "A course as a squadron's sketch map draws it (traced, ± a few km)", inferred: "<i>A path no record gives: a straight line between two places (ours)</i>" }[b]}</span>`),
+    ...["reported", "sketched", "inferred", "reckoned"].filter(b => (D.routes || []).some(r => r.basis === b)).map(b => `<span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" stroke="var(--ink-2)" stroke-width="${b === "reported" ? 2.2 : 1.6}" stroke-linecap="round"${ROUTE_DASH[b] ? ` stroke-dasharray="${ROUTE_DASH[b]}"` : ""}/></svg>${{ reported: "An aircraft's course as its form types it (the length ours)", sketched: "A course as a squadron's sketch map draws it (traced, ± a few km)", inferred: "<i>A path no record gives: a straight line between two places (ours)</i>", reckoned: "<i>A ship's path reckoned from her own log: her courses and speeds run on from each fix she wrote (ours; the speeds assumed)</i>" }[b]}</span>`),
     Object.values(STATIONS).some(rows => rows.length > 1) && `<span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" class="way" stroke="var(--ink-2)"/></svg>A unit's stations, joined straight; lighter in the week before the engagement</span>`,
     ROADS && `<span><svg width="22" height="10"><line x1="1" y1="5" x2="21" y2="5" class="road"/></svg>Primary roads of 1942 (OSS Map 967, traced, ± about 4 km)</span>`,
     PATH.length > 1 && `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--ink-3)" stroke-width="1.4" stroke-dasharray="2 4"/></svg><i>The convoy's path as the boats saw it (ours; to the clock)</i></span>`,
     PATH.length > 1 && PLAYS && `<span><svg width="16" height="16" viewBox="-8 -8 16 16"><circle r="6" fill="url(#hatch-intel)" stroke="var(--japan)" stroke-width="1.4"/></svg><i>The convoy at the clock, on that path (ours)</i></span>`,
     COURSES.length && `<span><svg width="26" height="10"><path d="M2,5H23M18,1.5L23,5L18,8.5" fill="none" stroke="var(--japan)" stroke-width="1.5"/></svg>The convoy's course and speed as a boat's attack sheet types it (her estimate as she fired; the length an hour's run, ours)</span>`,
     Object.keys(DIVES).some(id => D.tracks[id]) && `<span><svg width="30" height="10"><line x1="1" y1="5" x2="13" y2="5" stroke="var(--ink-2)" stroke-width="2"/><line x1="16" y1="5" x2="29" y2="5" stroke="var(--ink-2)" stroke-width="1"/></svg>Surfaced, then submerged (her depth log; her dot open while she was down)</span>`,
-    CHARGES.length && `<span><svg width="16" height="16" viewBox="-8 -8 16 16"><path d="${d3.range(8).map(i => { const a = i * Math.PI / 4, r0 = i % 2 ? 2.5 : 3, r1 = i % 2 ? 5 : 7; return `M${r0 * Math.cos(a)},${r0 * Math.sin(a)}L${r1 * Math.cos(a)},${r1 * Math.sin(a)}`; }).join("")}" stroke="var(--japan)" stroke-width="1.3"/></svg>Depth charges, as the boat logged them, where she was (placed, ours)</span>`,
+    CHARGES.some(d => d.dropped) && `<span><svg width="16" height="16" viewBox="-8 -8 16 16"><path d="${d3.range(8).map(i => { const a = i * Math.PI / 4, r0 = i % 2 ? 2.5 : 3, r1 = i % 2 ? 5 : 7; return `M${r0 * Math.cos(a)},${r0 * Math.sin(a)}L${r1 * Math.cos(a)},${r1 * Math.sin(a)}`; }).join("")}" stroke="var(--japan)" stroke-width="1.3"/><circle r="2.2" fill="var(--japan)"/></svg>A depth-charge attack as the escort's own log writes it, where her reckoning puts her (placed, ours)</span>`,
+    CHARGES.some(d => !d.dropped) && `<span><svg width="16" height="16" viewBox="-8 -8 16 16"><path d="${d3.range(8).map(i => { const a = i * Math.PI / 4, r0 = i % 2 ? 2.5 : 3, r1 = i % 2 ? 5 : 7; return `M${r0 * Math.cos(a)},${r0 * Math.sin(a)}L${r1 * Math.cos(a)},${r1 * Math.sin(a)}`; }).join("")}" stroke="var(--japan)" stroke-width="1.3"/></svg>Depth charges, as the boat logged them, where she was (placed, ours)</span>`,
   ].filter(Boolean).join("");
 
   // ---------- map
@@ -479,10 +483,11 @@
   // routes.yml: paths through the air as the records give them, each in its side's ink: a course typed on a form (solid,
   // drawn back from the position it was typed at, for a length that is ours), a squadron's sketch (dashed), a straight
   // line between two places where no record gives the path (dotted). An arrowhead at the end where the direction is sure.
-  const ROUTE_WORD = { reported: "as the record types it", sketched: "as a sketch map draws it", inferred: "inferred: no record gives the path" };
+  const ROUTE_WORD = { reported: "as the record types it", sketched: "as a sketch map draws it", inferred: "inferred: no record gives the path", reckoned: "reckoned from her own log: her courses and speeds between her fixes (ours)" };
   function drawRoutes() {
     gRoute.selectAll("*").remove();
-    (D.routes || []).forEach(r => {
+    // a ship's reckoned path is drawn as her track (below, dashed), not again here
+    (D.routes || []).filter(r => r.basis !== "reckoned").forEach(r => {
       const pts = r.points.map(([lon, lat]) => P(lon, lat)), c = (r.actor && SUBJECT_COLOUR[r.actor]) || inkOf(r);
       const g = gRoute.append("g").attr("class", "route");
       // an aircraft's path: chevrons along it, pointing the way it flew, so air reads apart from a unit's moves on the ground
@@ -574,9 +579,10 @@
       .on("click", (ev, d) => { stop(); setTime(d.ms); highlightRow(d.ms); });
     gCharge.selectAll("g").data(CHARGES).join(enter => { const g = enter.append("g").attr("class", "charge");
       g.append("path").attr("d", d3.range(8).map(i => { const a = i * Math.PI / 4, r0 = i % 2 ? 2.5 : 3, r1 = i % 2 ? 6 : 8; return `M${r0 * Math.cos(a)},${r0 * Math.sin(a)}L${r1 * Math.cos(a)},${r1 * Math.sin(a)}`; }).join(""));
+      g.filter(d => d.dropped).append("circle").attr("class", "dropped").attr("r", 2.6);
       g.append("circle").attr("r", 9).attr("fill", "transparent"); return g; })
       .attr("transform", d => `translate(${P(...d.at).map(v => v.toFixed(1))})`)
-      .on("mouseenter", (ev, d) => EV.showTip(ev, `<div class="v">${esc(d.e.title)}</div><div class="k">${esc(d.e.local)}</div><div class="m">${esc(d.e.words || "")}</div><div class="i">The escorts' counter-attack as ${esc(nameOf(d.e.actor))} logged it; drawn where she was then, straight between her fixes (placed, ours)</div>`))
+      .on("mouseenter", (ev, d) => EV.showTip(ev, `<div class="v">${esc(d.e.title)}</div><div class="k">${esc(d.e.local)}</div><div class="m">${esc(d.e.words || "")}</div><div class="i">${d.dropped ? `${esc(nameOf(d.e.actor))}'s own attack, as her log writes it; drawn where her reckoning puts her then, from her last fix along her logged courses and speeds (placed, ours; her speeds assumed)` : `The escorts' counter-attack as ${esc(nameOf(d.e.actor))} logged it; drawn where she was then, straight between her fixes (placed, ours)`}</div>`))
       .on("mousemove", EV.moveTip).on("mouseleave", EV.hideTip)
       .on("click", (ev, d) => { stop(); setTime(d.ms); highlightRow(d.ms); });
     showByClock();
@@ -750,7 +756,7 @@
         const times = [...new Set(cuts)].sort((a, b) => a - b);
         d3.pairs(times).forEach(([a, b]) => {
           const st = stateAt(p.id, a), under = st && st.state === "submerged";
-          rows.push({ id: p.id, cls: (PLAYS && a >= t ? "ahead" : "past") + (under ? " under" : ""), pts: [E.posAt(pts, a), E.posAt(pts, b)] });
+          rows.push({ id: p.id, cls: (PLAYS && a >= t ? "ahead" : "past") + (under ? " under" : "") + (p.reckoned ? " reckoned" : ""), pts: [E.posAt(pts, a), E.posAt(pts, b)] });
         });
         if (now && PLAYS) nows.push({ p, now, st: stateAt(p.id, t) });   // the "now" dot is the clock's
       });

@@ -117,6 +117,16 @@ BASIS = {"reported", "derived", "inferred", "assumed", "secondary"}
 ROUTE = {"id", "label", "of", "actor", "by", "basis", "arrow", "points", "from", "to", "course", "drawn_km", "time", "source", "ref", "note"}
 ROUTE_BASIS = {"reported", "sketched", "inferred"}
 ROUTE_BY = {"air", "ground", "sea"}   # what moved: the page marks an aircraft's path apart from a unit's or a ship's
+# a ship's log.yml (records/SCHEMA.md, "A ship's log"): her own lines of helm, course and speed between her fixes, from
+# which the build reckons her path (a route of basis `reckoned`: computed here, never hand-entered)
+LOG = {"date", "time", "zone", "time_fix", "fix_note", "helm", "course", "speed", "event", "depth_m", "charges", "original",
+       "translation", "source", "page", "note"}
+LOG_EVENT = {"contact_report", "charges_heard", "action_stations", "stand_down", "ship_torpedoed", "depth_charge",
+             "sonar_contact", "search", "survivors", "rescue", "rejoin", "torpedo_wake", "torpedoed", "fire", "beached"}
+# a log line's event -> the entry's kind on the page (KINDS); the rest are `log`, a line of her log
+LOG_KIND = {"depth_charge": "depth_charge", "contact_report": "contact_report", "sonar_contact": "sighting", "rescue": "rescue",
+            "survivors": "rescue", "ship_torpedoed": "witness", "torpedo_wake": "sighting", "torpedoed": "hit", "fire": "damage", "beached": "damage"}
+COURSE = re.compile(r"(?:([NS]) (\d+)° ([EW])|([NSEW]))")
 # reach.yml: a weapon's range round a position; basis says how much is the record's: the weapon and the place both in the
 # unit's records (reported), the weapon inferred (a sister battery's, say), or the place assumed (near the unit it defended)
 REACH = {"id", "label", "of", "actor", "at", "weapon", "range_yd", "basis", "source", "ref", "note"}
@@ -490,12 +500,6 @@ class Build:
             if p.get("sil") and p["sil"] not in SIL_IDS:
                 self.bad(w, f"silhouette {p['sil']!r} is not in silhouettes.yml")
             parts.append(p)
-        # the ships and boats with a track take the page's categorical colours, in order (colour follows the boat)
-        coloured = [p for p in parts if p.get("track")]
-        if len(coloured) > MAX_BOATS:
-            self.bad(where, f"{len(coloured)} tracks; the page's colours are checked for {MAX_BOATS}: split it or check a fourth")
-        for i, b in enumerate(coloured, 1):
-            b["colour"] = i
         # who the page follows, whose they are, and whom they faced (the docstring: derived, never stored, but for `against`)
         for p in parts:
             p["followed"] = bool(p.get("track") or p.get("unit"))
@@ -512,6 +516,14 @@ class Build:
         of_actor = {p["id"]: p.get("of", "") for p in parts}
         for p in parts:
             p["opposed"] = opposed(p.get("of", ""))
+        own = sorted({p["of"] for p in parts if p["followed"] and p.get("of") and not p["opposed"]})
+        # our side's ships and boats with a track take the page's categorical colours, in order (colour follows the boat);
+        # the other side's (an escort followed through her own diary) is drawn in its side's ink, as every opposed mark is
+        coloured = [p for p in parts if p.get("track") and not p["opposed"]]
+        if len(coloured) > MAX_BOATS:
+            self.bad(where, f"{len(coloured)} tracks; the page's colours are checked for {MAX_BOATS}: split it or check a fourth")
+        for i, b in enumerate(coloured, 1):
+            b["colour"] = i
         secs = sections(body)
         cites = {c: resolve_cite(c, self.chk.srcs) for c in re.findall(r"\[\[cite:([^\]|]+)", body)}
 
@@ -608,6 +620,7 @@ class Build:
 
         # each participant's own record, inside the window
         tracks, fixes, seen_ja, japanese, pairs, sheets, notes, dives, water = {}, [], set(), [], [], {}, [], {}, {}
+        reckoned = []   # a ship's path reckoned from her log (routes of basis `reckoned`)
         for p in parts:
             if not p.get("track") or not start:
                 continue
@@ -616,8 +629,25 @@ class Build:
             on = [r for r in rows if r["on_track"] == "yes"]
             inside = [r for r in rows if start <= r["utc"] <= end]
             on_inside = [r for r in inside if r["on_track"] == "yes"]
-            before, after = [r for r in on if r["utc"] < start][-1:], [r for r in on if r["utc"] > end][:1]
+            # the fix either side of the window carries the line in and out. A boat's patrol is one record, so its next
+            # fix serves however far off; a ship's diaries can leave months between (an escort read for two convoys),
+            # so hers serves only within two days, and she isn't drawn straight across the gap
+            near = timedelta(days=2) if "/" not in p["track"] else timedelta.max / 2
+            before = [r for r in on if r["utc"] < start and start - r["utc"] <= near][-1:]
+            after = [r for r in on if r["utc"] > end and r["utc"] - end <= near][:1]
             tracks[p["id"]] = [self.fix(p, r) for r in before + on_inside + after] if on_inside else []
+            rk, logged = self.reckon(p, rows, start, end)
+            if rk:
+                # her reckoned path is her track: it replaces the straight line between her fixes (the more accurate
+                # path wins), and her written fixes are drawn as reported positions on it
+                timed = rk.pop("timed")
+                tracks[p["id"]] = [{"who": p["id"], "of": p.get("of", ""), "utc": iso(t), "lat": round(la, 4), "lon": round(lo, 4),
+                                    "kind": "reckoned", "ref": "", "on_track": True, "local": "", "raw": "", "note": "", "fix": "",
+                                    "assumed": False, "cite": rk["cite"]} for t, la, lo in timed]
+                p["reckoned"] = True
+                fixes += [self.fix(p, r) for r in inside]
+                reckoned.append(rk)
+            events += logged
             if p.get("kind") == "submarine":
                 fixes += [self.fix(p, r) for r in inside]
                 events += self.depths(p, start, end)
@@ -686,7 +716,7 @@ class Build:
                 "places": fm.get("places") or [], "sections": secs, "cites": cites, "box": box,
                 "steps": steps, "relief": relief, "roads": roads, "fronts": fronts, "stations": stations,
                 "tracks": tracks, "dives": dives, "water": water, "fixes": fixes, "events": events, "claims": claims, "pairs": moments,
-                "positions": list(positions.values()), **({"routes": routes} if routes else {}), **({"rings": rings} if rings else {}), "convoys": conv, "sheets": sheets}
+                "positions": list(positions.values()), **({"routes": routes + reckoned} if routes or reckoned else {}), **({"rings": rings} if rings else {}), "convoys": conv, "sheets": sheets}
 
     # ------------------------------------------------------------------ the story's steps and the map's base
     @staticmethod
@@ -921,6 +951,117 @@ class Build:
                 r["lat"] = round(base["lat"] + dist * math.cos(math.radians(brg)) / 60, 5)
                 r["lon"] = round(base["lon"] + dist * math.sin(math.radians(brg)) / (60 * math.cos(math.radians(base["lat"]))), 5)
                 r["resolved"] = f"{brg:g}° {dist:g} nm from {base.get('label') or r['from']}"
+
+    @staticmethod
+    def course_deg(s):
+        """A course as a Japanese log writes it, converted to N 65° E (or N, S, E, W) -> degrees true, or None."""
+        m = COURSE.fullmatch(str(s or "").strip())
+        if not m:
+            return None
+        if m.group(4):
+            return {"N": 0, "E": 90, "S": 180, "W": 270}[m.group(4)]
+        a = int(m.group(2))
+        return {("N", "E"): a, ("S", "E"): 180 - a, ("S", "W"): 180 + a, ("N", "W"): 360 - a}[(m.group(1), m.group(3))] % 360
+
+    def reckon(self, p, rows, start, end):
+        """A ship's log.yml -> (her path reckoned between her fixes, as a route of basis `reckoned`, or None; her log's
+        lines inside the window as entries, each placed where the reckoning puts her then). From each fix
+        on her track she runs on the last course and speed logged (the speeds by word from ship.yml `speeds`) to the
+        next line or fix; at a fix the reckoning starts again from it, and the distance it was off is said in the note.
+        Helm orders between courses aren't modelled. Points inside the window only."""
+        d = records.RECORDS / "ships" / p["track"]
+        path = d / "log.yml"
+        if "/" in p["track"] or not path.exists():
+            return None, []
+        y = records.load_yaml(d / "ship.yml") or {}
+        # a speed word whose knots are null (towed, say) is known to be unknown: from it she has no place until a fix
+        speeds = {k: (v or {}).get("kts") for k, v in (y.get("speeds") or {}).items()}
+        items, first = [], None
+        for i, e in enumerate(records.load_yaml(path) or [], 1):
+            w = f"{rel(path)} #{i} ({e.get('time') or 'untimed'})"
+            for k in set(e) - LOG:
+                self.bad(w, f"unknown field {k!r} (known: {', '.join(sorted(LOG))})")
+            if e.get("event") and e["event"] not in LOG_EVENT:
+                self.bad(w, f"event {e['event']!r} is not one of {', '.join(sorted(LOG_EVENT))}")
+            if e.get("speed") and e["speed"] not in speeds:
+                self.bad(w, f"speed {e['speed']!r} has no knots in ship.yml `speeds`")
+            if e.get("course") and self.course_deg(e["course"]) is None:
+                self.bad(w, f"course {e['course']!r} is not written as N 65° E, or N, S, E, W")
+            cite = self.cite(e.get("source"), w, e.get("page", ""))
+            first = first or cite
+            e = {**e, "cite": cite}
+            hhmm = str(e.get("time_fix") or e.get("time") or "")
+            if not hhmm or "?" in hhmm:
+                if items:   # an untimed line goes with the line before it, in the record's order
+                    items[-1][2].setdefault("then", []).append(e)
+                continue   # untimed, or read with doubt and not corrected: no place in the reckoning
+            dd = e["date"].isoformat() if isinstance(e.get("date"), date) else str(e.get("date", ""))
+            _, t, _ = self.when(f"{dd} {hhmm} {e.get('zone', 'I')}", "I", w)
+            if t:
+                items.append((t, 1, e))
+        fixes = sorted((r for r in rows if r["on_track"] == "yes"), key=lambda r: r["utc"])
+        items.sort(key=lambda x: (x[0], x[1]))
+        if not items:
+            return None, []
+        anchor = [r for r in fixes if r["utc"] <= items[0][0]][-1:]
+        if not anchor:
+            return None, []
+        timeline = sorted([(r["utc"], 0, r) for r in fixes if anchor[0]["utc"] <= r["utc"] <= items[-1][0]] + items, key=lambda x: (x[0], x[1]))
+        lat, lon, t0, crs, kts = anchor[0]["lat"], anchor[0]["lon"], anchor[0]["utc"], None, None
+        pts, off, entries, timed = [], [], [], []
+        lost = False   # after a silence of more than 12 hours her position is unknown until her next fix
+        for t, kind, x in timeline:
+            if t - t0 > timedelta(hours=12):
+                lost, crs, kts = True, None, None
+            if crs is not None and kts and not lost:
+                dist = kts * (t - t0).total_seconds() / 3600
+                lat += dist * math.cos(math.radians(crs)) / 60
+                lon += dist * math.sin(math.radians(crs)) / 60 / math.cos(math.radians(lat))
+            t0 = t
+            if kind == 0:
+                if x is not anchor[0] and not lost:
+                    nm = 60 * math.hypot(x["lat"] - lat, (x["lon"] - lon) * math.cos(math.radians(lat)))
+                    off.append(f"{nm:.0f} nm off her {x['time_fix'] or x['time']} {x['zone']} fix")
+                lat, lon, lost = x["lat"], x["lon"], False
+            else:
+                if x.get("speed") and speeds.get(x["speed"]) is None:
+                    lost = True   # towed, or another speed with no figure: where she went isn't known
+                if not lost:
+                    crs = self.course_deg(x.get("course")) if x.get("course") else crs
+                    kts = speeds.get(x["speed"]) if x.get("speed") else kts
+                if start <= t <= end:   # an unplaced line still goes in the chronology, with no place on the map
+                    entries.append(self.log_entry(p, x, t, None if lost else lat, None if lost else lon))
+            if start <= t <= end and not lost:
+                pts.append([round(lon, 4), round(lat, 4)])
+                timed.append((t, lat, lon))
+        if len(pts) < 2:
+            return None, entries
+        sp = ", ".join(f"{k} {v.get('kts')} kt ({v.get('basis')})" for k, v in (y.get("speeds") or {}).items() if v.get("kts"))
+        return {"id": f"{p['id']}-reckoned", "label": f"{p['name']}: her path reckoned from her log", "of": p.get("of", ""),
+                "actor": p["id"], "by": "sea", "basis": "reckoned", "arrow": False, "points": pts, "time": "",
+                "resolved": "reckoned from her log's courses and speeds, run on from each fix she wrote; ours",
+                "note": f"Speeds: {sp}. Helm orders between courses are not modelled" + (f"; the reckoning was {'; '.join(off)}" if off else ""),
+                "source": "her log (log.yml)", "ref": first["ref"] if first else "", "cite": first or {}, "opposed": p.get("opposed", False),
+                "timed": timed}, entries
+
+    def log_entry(self, p, x, t, lat, lon):
+        """A line of a ship's log -> an engagement entry, placed where her reckoning puts her then (ours)."""
+        kind = LOG_KIND.get(x.get("event", ""), "log")
+        title = (f"Depth-charge attack, {x['depth_m']} m ({x['charges']} charges)" if kind == "depth_charge"
+                 else re.split(r"(?<!No)\. |; ", str(x.get("translation", "")))[0].strip()[:70])
+        then = x.get("then") or []
+        words = " ".join([str(x.get("translation", "")).strip()] + [f"Then, untimed: {str(y.get('translation', '')).strip()}" for y in then])
+        orig = " ".join([str(x.get("original", ""))] + [str(y.get("original", "")) for y in then])
+        hhmm = x.get("time_fix") or x.get("time")
+        return {"origin": "log", "of": p.get("of", ""), "actor": p["id"], "kind": kind, "title": title, "words": words,
+                "original": orig, "lang": "ja", "translation": words,
+                "local": f"{x['date'].isoformat() if isinstance(x['date'], date) else x['date']} {hhmm} {x.get('zone', 'I')}",
+                "utc": iso(t), "key": iso(t), **({"lat": round(lat, 4), "lon": round(lon, 4), "placed": "reckoned"} if lat is not None else {}),
+                "basis": "reported", "cite": x["cite"],
+                "note": " ".join(s for s in ["Placed where her reckoning puts her then (ours; her speeds assumed)." if lat is not None
+                                             else "Not placed: her log gives no course and speed to reckon from here (towed, or after a silence) until her next fix.",
+                                             f"The time corrected from {x['time']}: {x['fix_note']}" if x.get("time_fix") else "",
+                                             str(x.get("note", "")).strip()] + [str(y.get("note", "")).strip() for y in then] if s)}
 
     def fix(self, p, r):
         return {"who": p["id"], "of": p.get("of", ""), "utc": iso(r["utc"]), "lat": round(r["lat"], 4), "lon": round(r["lon"], 4),

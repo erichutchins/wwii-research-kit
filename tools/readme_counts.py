@@ -17,7 +17,8 @@ Each repository's commit hook runs it on its own README (the kit's on README.md,
 for the rewritten file to be staged. check_builds.sh runs `check` on both before a push and in the CI.
 
 The counts:
-  boats, ships, battalions, convoys   subjects.json, by kind
+  boats, ships, battalions, convoys   subjects.json, by kind (ships: US ships)
+  other_ships                         subjects.json: the other side's ships, each followed through a record she kept
   patrols                             boats/*/patrol-N folders
   other_boats                         boats less one (the boat followed for every patrol)
   army_units                          units with at least one row in army/stations.csv
@@ -41,13 +42,15 @@ MARK = re.compile(r"<!--n:([a-z_]+)-->([^<]*)<!--/n-->")
 
 
 def counts():
-    kinds = Counter(s["kind"] for s in json.loads((RECORDS / "subjects.json").read_text(encoding="utf-8")))
+    subjects = json.loads((RECORDS / "subjects.json").read_text(encoding="utf-8"))
+    kinds = Counter(s["kind"] for s in subjects)
+    other_ships = sum(1 for s in subjects if s["kind"] == "ship" and s.get("of", "us") != "us")
     index = json.loads((RECORDS / "engagements" / "index.json").read_text(encoding="utf-8"))
     with open(RECORDS / "army" / "stations.csv", encoding="utf-8", newline="") as f:
         stationed = {r["unit"] for r in csv.DictReader(f)}
     days = list((RECORDS / "fronts").glob("12ag-*.yml"))
     out = {
-        "boats": kinds["boat"], "ships": kinds["ship"], "battalions": kinds["battalion"], "convoys": kinds["convoy"],
+        "boats": kinds["boat"], "ships": kinds["ship"] - other_ships, "other_ships": other_ships, "battalions": kinds["battalion"], "convoys": kinds["convoy"],
         "patrols": len(list((RECORDS / "boats").glob("*/patrol-*/"))),
         "other_boats": kinds["boat"] - 1,
         "army_units": len(stationed),

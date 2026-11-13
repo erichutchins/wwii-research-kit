@@ -21,6 +21,7 @@ nodes:
   singapore: {name: Singapore, lon: 103.82, lat: 1.26, port: true, source: hand-placed}
   w-genkai: {name: Genkai Sea, lon: 129.6, lat: 33.75, assumed: "out of Shimonoseki Strait to the west, clear of Iki"}
   w-goto: {name: off the Goto Islands, lon: 128.7, lat: 31.9, assumed: "south of the Goto Islands, toward the East China Sea"}
+  w-tokara: {name: Suwanose Suido (Tokara Islands), lon: 129.6, lat: 29.55, assumed: "north through the Tokara Islands by Suwanose Suido, where NAKA-303 was attacked (W-15's battle report, jacar:C08030608100 p30)"}
   w-kbay: {name: off Kagoshima Bay, lon: 130.7, lat: 31.05, assumed: "the mouth of Kagoshima Bay"}
   w-ecs: {name: East China Sea, lon: 125.3, lat: 28.6, assumed: "a straight run across the East China Sea"}
   w-ntw: {name: north of Formosa, lon: 122.0, lat: 25.55, assumed: "off Keelung, clear of the north coast"}

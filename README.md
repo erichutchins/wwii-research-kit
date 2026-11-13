@@ -111,11 +111,11 @@ records (National Archives microfilm). The transcriptions are a separate reposit
 
 | | |
 |---|---|
-| <!--n:boats-->25<!--/n--> submarines | USS BANG (SS-385) for all six war patrols; the others for one or two patrols each |
+| <!--n:boats-->26<!--/n--> submarines | USS BANG (SS-385) for all six war patrols; the others for one or two patrols each |
 | <!--n:ships-->23<!--/n--> surface ships | four at length from their war diaries, the rest for one day |
 | <!--n:army_units-->33<!--/n--> Army units | mostly anti-aircraft artillery, station by station |
 | <!--n:battalions-->2<!--/n--> naval construction battalions | from their muster rolls |
-| <!--n:convoys-->11<!--/n--> Japanese convoys, <!--n:engagements-->25<!--/n--> engagements | the other side's own record is entered for <!--n:engagements_other_side-->21<!--/n--> of the engagements; each page says which |
+| <!--n:convoys-->12<!--/n--> Japanese convoys, <!--n:other_ships-->1<!--/n--> Japanese escort followed through her own diaries, <!--n:engagements-->26<!--/n--> engagements | the other side's own record is entered for <!--n:engagements_other_side-->22<!--/n--> of the engagements; each page says which |
 | The front in Europe | the daily situation maps from 6 June 1944 |
 
 The selection is not a sample of the war. It began with one submarine and grew along one family's research: the

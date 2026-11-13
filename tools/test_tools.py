@@ -734,6 +734,29 @@ class GlossaryPatterns(unittest.TestCase):
                          ["zone-time", "army-grid", "german-point", "naval-square", "kana-code", "track-angle", "gyro-angle"])
 
 
+class Reckoning(unittest.TestCase):
+    """A Japanese log's courses, as converted (北六五度東 -> N 65° E), to degrees true; and W-15's night of 22-23 November
+    1944 reckoned from her log between her two fixes (ships/jp-w-15): the route is the build's, and says how far off it was."""
+
+    def test_courses_as_written(self):
+        c = build_engagement.Build.course_deg
+        self.assertEqual([c("N 65° E"), c("S 80° E"), c("S 45° W"), c("N 20° W"), c("W"), c("E"), c("N 0° E")], [65, 100, 225, 340, 270, 90, 0])
+        self.assertIsNone(c("north-east"))
+
+    def test_w15_reckoned_from_her_log(self):
+        b = build_engagement.Build()
+        p = {"id": "w-15", "name": "W-15", "of": "jp", "track": "jp-w-15", "opposed": True}
+        rows, _, _ = b.patrol("jp-w-15")
+        r, logged = b.reckon(p, rows, datetime(1944, 11, 22, 10, 0), datetime(1944, 11, 23, 0, 0))
+        charges = [e for e in logged if e["kind"] == "depth_charge"]
+        self.assertEqual([(e["local"], e["placed"]) for e in charges], [("1944-11-22 2346 I", "reckoned"), ("1944-11-23 0005 I", "reckoned")])
+        self.assertIn("Then, untimed: Sonar", charges[0]["words"])   # the untimed sonar line goes with the 2346 attack
+        self.assertEqual([m for m in map(str, b.problems)], [])
+        self.assertEqual((r["basis"], r["by"], r["actor"], r["points"][0]), ("reckoned", "sea", "w-15", [122.5167, 24.3667]))   # from her 2240 fix
+        self.assertIn("off her 0730 I fix", r["note"])
+        self.assertIn("(assumed)", r["note"])
+
+
 class EngagementPairs(unittest.TestCase):
     """Build.pair: a pairing from a patrol's claims.yml (as Build.patrol reads it, with the Japanese record beside it) ->
     the engagement's `pairs` entry for the Sources view: the attack, the boat, the record as written, and how they
