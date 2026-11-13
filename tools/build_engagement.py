@@ -1013,6 +1013,9 @@ class Build:
         for t, kind, x in timeline:
             if t - t0 > timedelta(hours=12):
                 lost, crs, kts = True, None, None
+            # under way with no course or speed logged yet: she didn't stay at the fix, and where she went isn't known
+            if t > t0 and not lost and (kts is None or (kts and crs is None)):
+                lost = True
             if crs is not None and kts and not lost:
                 dist = kts * (t - t0).total_seconds() / 3600
                 lat += dist * math.cos(math.radians(crs)) / 60
