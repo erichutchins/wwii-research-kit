@@ -88,13 +88,13 @@
         "the target's true bearing and angle on the bow now, computed from the sheet; the track from the solution (OP 1056 pp. 72-73)"],
       ["range", on ? yd(d.range) : none, "the same range, read beside the target dial"],
       ["distance to track", on ? yd(d.distanceToTrack) : none, "how far the boat lies from the target's track: range × |sin angle on the bow| (OP 1056 Fig. 38); the arm stands at the angle on the bow, its × at the range"],
-      ["own ship", on ? `bearing ${pad3(d.trueBearing)}° (the ring); relative bearing ${pad3(d.relBearing)}° (the inner disc)${F ? `; forward gyro ${pad3(F.gyroOrder)}°` : ""}${Af ? `; after gyro ${pad3(Af.gyroOrder)}°` : ""}` : none,
+      ["own ship", on ? `bearing ${pad3(d.trueBearing)}°${A.relative ? " relative to her head" : ""} (the ring); relative bearing ${pad3(d.relBearing)}° (the inner disc)${F ? `; forward gyro ${pad3(F.gyroOrder)}°` : ""}${Af ? `; after gyro ${pad3(Af.gyroOrder)}°` : ""}` : none,
         "the target's bearing from own bow, and the gyro angles ordered (the arrowheads; the after one paler)"],
       ["time", `${Math.floor((s - A.start) / 60)} min ${Math.round((s - A.start) % 60)} s`, "the computer's clock, started at the start of this view (assumed)"],
       ["target length", `${len} ft`, cur.tg[d.target] && cur.tg[d.target].ship ? `the length of ${esc(cur.tg[d.target].ship.sil.name)}'s plate (which ship the target was is inferred)` : `assumed for a ${esc((cur.tg[d.target] || cur.tg[0]).kind)}${len < 300 ? " (below the dial's 300 ft, shown at 300)" : ""}`],
       ["relative target bearing", on ? `${pad3(d.relBearing)}°` : none, "true bearing less own course, on a 1-speed dial and a 36-speed dial (10° a turn) for the fine reading"],
       ["own speed", `${A.ownSpeed} kts`, "the sheet's own speed; the dial's numbers assumed (the manual says only that it matches the ship's log)"],
-      ["own course", `${pad3(d.ownCourse)}°`, "own heading now: the sheet's course, turned through any gyro-angle change it types"],
+      ["own course", `${pad3(d.ownCourse)}°${A.relative ? " relative" : ""}`, A.relative ? "the sheet types no course: her head set at 000, so the ring's bearings are relative, not true" : "own heading now: the sheet's course, turned through any gyro-angle change it types"],
     ];
     const solverSide = (x, name) => x ? `${name}: tube ${esc(x.tube)}, gyro ${pad3(x.gyroOrder)}°` : `${name}: no tube to fire`;
     const as = [

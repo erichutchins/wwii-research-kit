@@ -196,11 +196,22 @@ const Engage = (() => {
   function attackSheet(rows, opts = {}) {
     const assumed = [], problems = [];
     const n = rows.length, tf = firingTimes(rows);
+    // a sheet that types no course at all, own or target's, but the track angle, gyro and range (TINOSA's summary of
+    // attacks): drawn in the boat's own frame, her head 000 relative, the target's course from the typed track angle
+    // (track = torpedo course + 180 - target course, starboard positive, as fireControl); every bearing then relative
+    const trackOf = s => { const m = /^\s*(\d+(?:\.\d+)?)\s*([SP])\s*$/.exec(s ?? ""); return m ? (m[2] === "P" ? -m[1] : +m[1]) : null; };
+    const relative = rows.every(r => !coursesOf(r.own_course).length && !coursesOf(r.target_course).length && num(r.target_range) != null
+      && gyroOf(r.gyro) != null && trackOf(r.track) != null);
+    // (one course for each target, from the first torpedo fired at it: the sheet's speed and range name the target)
+    if (relative) { const first = {}; rows = rows.map(r => { const k = [r.target_speed, r.target_range].join("|");
+      first[k] ??= String(Math.round(norm(gyroOf(r.gyro) + 180 - trackOf(r.track)) * 10) / 10);
+      return { ...r, own_course: "0", target_course: first[k] }; }); }
     const own = rows.map((r, i) => { const c = coursesOf(r.own_course); return c.length ? c[0] + (c.length > 1 && n > 1 ? (c[c.length - 1] - c[0]) * i / (n - 1) : 0) : null; });
     const swinging = rows.some(r => coursesOf(r.own_course).length > 1);
     const ownSpeed = num(rows[0].own_speed) ?? 0;
     const surface = rows.some(r => /surface/i.test(r.own_depth || "")) || (num(rows[0].own_depth) ?? 99) < 25;
     if (own.some(c => c == null)) problems.push("the sheet types no own course");
+    if (relative) assumed.push("the sheet types no course, the boat's or the target's: drawn with the boat's head up (000 relative), the target's course worked back from the typed track angle and gyro; every bearing is relative to the boat's head, not true");
     if (tf.some(x => x.assumed)) assumed.push(`a salvo the sheet gives no time for starts ${SALVO_GAP} s after the last torpedo`);
     // one target for each set of target data the rows carry (a sheet may aim at two)
     const key = r => [r.target_course, r.target_speed, r.target_range].join("|");
@@ -264,7 +275,7 @@ const Engage = (() => {
       Object.assign(t, { from, v: vt, run, runYd: run * v, passed, end: t.hitTyped ? run : Math.max(run * 1.5, 4000 / v) });
     });
     const end = Math.max(30, ...torps.filter(t => t.end != null).map(t => t.s + t.end)) + 15;
-    return { rows, torps, targets, surface, ownSpeed, assumed, problems, start: -240, end, ownAt, targetAt };
+    return { rows, torps, targets, surface, ownSpeed, assumed, problems, relative, start: -240, end, ownAt, targetAt };
   }
   const d3mean = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
   // Everything at second s: the boat, each target (bearing, range, angle on the bow), each torpedo running or done

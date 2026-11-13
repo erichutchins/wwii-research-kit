@@ -114,6 +114,7 @@ const Observer = (() => {
       // a sheet that can't place the target (TINOSA's summary table: no own or target course) shows its rows only
       const drawable = !A.problems.length;
       card.querySelectorAll(".obs-ctrl, .obs-read, .obs-stage").forEach(el => { el.hidden = !drawable; });
+      document.querySelectorAll(".obs-up").forEach(el => { el.textContent = A.relative ? "her head" : "north"; });
       drawTorpTable(); drawWords();
       // the same attack's Torpedo Data Computer, on its own page
       const tdcLink = document.getElementById("obs-tdc");
@@ -147,7 +148,7 @@ const Observer = (() => {
       for (let y = Math.floor((cy - H / 2 / k) / step) * step; sy(y) > 0; y += step) gGrid.append("line").attr("class", "obs-grid").attr("y1", sy(y)).attr("y2", sy(y)).attr("x1", 0).attr("x2", W);
       gGrid.append("line").attr("class", "obs-bar").attr("x1", W - 16 - step * k).attr("x2", W - 16).attr("y1", H - 14).attr("y2", H - 14);
       gGrid.append("text").attr("class", "obs-lbl").attr("x", W - 16 - step * k / 2).attr("y", H - 20).attr("text-anchor", "middle").text(`${step.toLocaleString()} yd`);
-      gGrid.append("text").attr("class", "obs-lbl").attr("x", W - 14).attr("y", 20).attr("text-anchor", "end").text("N ↑");
+      gGrid.append("text").attr("class", "obs-lbl").attr("x", W - 14).attr("y", 20).attr("text-anchor", "end").text(A.relative ? "her head ↑ (no course typed)" : "N ↑");
       // the targets' tracks: before firing dashed (held on the sheet's course: assumed), after solid
       A.targets.forEach((T, gi) => {
         if (!T.ok) return;
@@ -156,7 +157,7 @@ const Observer = (() => {
         gTrk.append("path").attr("class", "obs-trk").attr("d", d3.line()(after));
         const lp = P(A.targetAt(gi, A.start));
         gLbl.append("text").attr("class", "obs-lbl").attr("x", lp[0] + 8).attr("y", lp[1] + 4)
-          .text(`${A.targets.length > 1 ? `target ${gi + 1}: ` : ""}${pad3(T.course)}°, ${T.speed} kts (sheet)`);
+          .text(`${A.targets.length > 1 ? `target ${gi + 1}: ` : ""}${pad3(T.course)}°${A.relative ? " relative" : ""}, ${T.speed} kts (${A.relative ? "from the typed track angle" : "sheet"})`);
       });
       const own = d3.range(A.start, A.end, 5).map(t => P(A.ownAt(t).p));
       gTrk.append("path").attr("class", "obs-trk own").attr("stroke", colour(cur.actor)).attr("d", d3.line()(own));
@@ -235,7 +236,7 @@ const Observer = (() => {
       // night vision: drawn in a modern image intensifier's green (#obs-nv), the stars as the darkness has them
       view.attr("filter", light === "night" ? "url(#obs-nv)" : null);
       const starA = Math.max(0, 0.9 - (lt ? lt.rawL : 1) * 2.2);
-      if (starA > 0.02) for (const st of STARS) { const x = cx + norm(st.b - B) * ppd, y = hy - st.a * ppd;
+      if (starA > 0.02 && !A.relative) for (const st of STARS) { const x = cx + norm(st.b - B) * ppd, y = hy - st.a * ppd;
         if (Math.hypot(x - cx, y - hy) < r && y < hy) stars.append("circle").attr("cx", x).attr("cy", y).attr("r", 0.7 + st.m * 0.6).attr("fill", "#dfe6f0").attr("opacity", starA * st.m); }
       const step = fv > 20 ? 5 : 1;
       for (let b = Math.ceil((B - fv / 2) / step) * step; b <= B + fv / 2; b += step) {
@@ -243,8 +244,8 @@ const Observer = (() => {
         ticks.append("line").attr("x1", x).attr("x2", x).attr("y1", hy - 4).attr("y2", hy + 4).attr("stroke", "#9fb3c8").attr("opacity", .6);
         if (b % (step * 2) === 0) ticks.append("text").attr("x", x).attr("y", hy + 16).attr("text-anchor", "middle").attr("class", "obs-tick").text(pad3(b));
       }
-      offTxt.text("");
-      if (lt) {
+      offTxt.text(A.relative ? "no course typed: bearings relative, sun and moon not placed" : "");
+      if (lt && !A.relative) {
         const su = lt.sun, sdx = norm(su.bearing - B) * ppd, sdy = -su.altitude * ppd;
         if (su.altitude > -1 && Math.abs(sdx) < r) {
           if (su.altitude < 40) bodies.append("rect").attr("x", cx + sdx - 4 * ppd).attr("width", 8 * ppd).attr("y", hy).attr("height", S - hy).attr("fill", "url(#obs-glit)").attr("filter", "url(#obs-soft)").attr("opacity", 0.9);
@@ -283,7 +284,7 @@ const Observer = (() => {
         shipG.append("text").attr("class", "obs-tick obs-off").attr("x", left ? cx - r + 16 : cx + r - 16).attr("y", hy + 36 + gi * 16)
           .attr("text-anchor", left ? "start" : "end").attr("fill", "#e6edf5").text(label);
       });
-      brgTxt.text(`true bearing ${pad3(B)}°${train ? "  ·  double-click: back on the target" : ""}`);
+      brgTxt.text(`${A.relative ? "relative bearing" : "true bearing"} ${pad3(B)}°${train ? "  ·  double-click: back on the target" : ""}`);
       return { B, fv };
     }
 
@@ -296,11 +297,11 @@ const Observer = (() => {
       const L = lt ? lt.rawL : 1, day = lt ? lt.day : 1;
       skyc.append("circle").attr("cx", SC / 2).attr("cy", SC / 2).attr("r", SR).attr("fill", mix(mix("#05080d", "#2a3a55", L * 2), "#c7dcef", day)).attr("stroke", "var(--ink-3)");
       for (const a of [30, 60]) skyc.append("circle").attr("cx", SC / 2).attr("cy", SC / 2).attr("r", altR(a)).attr("fill", "none").attr("stroke", "#9fb3c8").attr("stroke-opacity", .35).attr("stroke-dasharray", "2 3");
-      for (const [b, n] of [[0, "N"], [90, "E"], [180, "S"], [270, "W"]]) { const [x, y] = at2(b, -13); skyc.append("text").attr("class", "obs-lbl").attr("x", x).attr("y", y + 4).attr("text-anchor", "middle").text(n); }
+      for (const [b, n] of A.relative ? [[0, "head"]] : [[0, "N"], [90, "E"], [180, "S"], [270, "W"]]) { const [x, y] = at2(b, -13); skyc.append("text").attr("class", "obs-lbl").attr("x", x).attr("y", y + 4).attr("text-anchor", "middle").text(n); }
       const arc = d3.arc().innerRadius(altR(fv / 2)).outerRadius(SR).startAngle(rad(B - fv / 2)).endAngle(rad(B + fv / 2));
       skyc.append("path").attr("d", arc()).attr("transform", `translate(${SC / 2},${SC / 2})`).attr("fill", "#9fb3c8").attr("fill-opacity", .35).attr("stroke", "#9fb3c8");
       const [tx, ty] = at2(BT, 0); skyc.append("circle").attr("cx", tx).attr("cy", ty).attr("r", 3.5).attr("fill", "var(--ink)").attr("stroke", "var(--surface)");
-      if (!lt) return;
+      if (!lt || A.relative) return;
       if (lt.sun.altitude > 0) { const [x, y] = at2(lt.sun.bearing, lt.sun.altitude); skyc.append("circle").attr("cx", x).attr("cy", y).attr("r", 7).attr("fill", "#ffd34d").attr("stroke", "#c79a1e"); }
       if (lt.moon.altitude > 0 && lt.moon.fraction > 0.01) { const [x, y] = at2(lt.moon.bearing, lt.moon.altitude); skyc.append("circle").attr("cx", x).attr("cy", y).attr("r", 6.5).attr("fill", "#2a2d33");
         skyc.append("path").attr("d", moonPath(6.5, lt.moon.phase)).attr("transform", `translate(${x},${y})`).attr("fill", "#efe9d2"); }
@@ -316,10 +317,10 @@ const Observer = (() => {
       const T = q.targets[aimAt], TS = A.targets[aimAt], fired = q.torps.length;
       const cells = [
         ["Time", clock(s), rel(s)],
-        ["Target bearing", T ? pad3(T.bearing) + "° T" : "—", "computed"],
+        ["Target bearing", T ? pad3(T.bearing) + (A.relative ? "° relative" : "° T") : "—", "computed"],
         ["Range", T ? Math.round(T.range).toLocaleString() + " yd" : "—", s === 0 && TS.ok ? `sheet: ${TS.range}` : "computed"],
         ["Angle on the bow", T ? `${Math.abs(Math.round(T.aob))}° ${T.aob >= 0 ? "starboard" : "port"}` : "—", "computed"],
-        ["Target", TS.ok ? `${pad3(TS.course)}°, ${TS.speed} kts` : "—", "the sheet's"],
+        ["Target", TS.ok ? `${pad3(TS.course)}°${A.relative ? " rel." : ""}, ${TS.speed} kts` : "—", A.relative ? "course from the typed track; speed the sheet's" : "the sheet's"],
         ["Torpedoes", fired ? `${fired} of ${A.torps.length} fired` : "not yet fired", fired ? `hits typed: ${A.torps.filter(t => t.hitTyped && q.torps.some(x => x.t === t)).length}` : ""],
       ];
       document.getElementById("obs-read").innerHTML = cells.map(([k, v, n]) => `<div><div class="k">${k}</div><div class="v">${esc(v)}</div><div class="n">${esc(n)}</div></div>`).join("");
@@ -336,7 +337,7 @@ const Observer = (() => {
         // a typed hit that the computation has passing clear: said as a gap, since the assumptions below can open one
         const clear = t.passed > 20 ? `passing ${Math.round(t.passed)} yd clear of the hull${t.hitTyped ? "*" : ""}` : t.hitTyped ? "" : "reaching the hull";
         const run = t.run != null ? `${Math.round(t.run)} s, ${Math.round(t.runYd).toLocaleString()} yd${clear ? ", " + clear : ""}` : "—";
-        return `<tr><td>${esc(t.tube)}</td><td>${t.s} s${t.timeAssumed ? " (assumed)" : ""}</td><td>Mk ${esc(t.row.torpedo || "?")}, ${t.knots} kts${{ assumed: " (assumed)", sheet: " (sheet)", atule: " (ATULE's sheet)" }[t.speedBasis]}</td><td class="typed">${esc(t.row.gyro || "")}</td><td class="typed">${esc(t.row.track || "")}</td><td>${fc ? `${fc.track.toFixed(0)}${fc.side}${off != null && off > 10 ? " <b>disagrees</b>" : ""}` : "—"}</td><td>${run}</td><td class="typed">${esc(t.row.hit || "")}</td></tr>`;
+        return `<tr><td>${esc(t.tube)}</td><td>${t.s} s${t.timeAssumed ? " (assumed)" : ""}</td><td>Mk ${esc(t.row.torpedo || "?")}, ${t.knots} kts${{ assumed: " (assumed)", sheet: " (sheet)", atule: " (ATULE's sheet)" }[t.speedBasis]}</td><td class="typed">${esc(t.row.gyro || "")}</td><td class="typed">${esc(t.row.track || "")}</td><td>${A.relative ? "(worked from it)" : fc ? `${fc.track.toFixed(0)}${fc.side}${off != null && off > 10 ? " <b>disagrees</b>" : ""}` : "—"}</td><td>${run}</td><td class="typed">${esc(t.row.hit || "")}</td></tr>`;
       }).join("");
       const starred = A.torps.some(t => t.hitTyped && t.passed > 20);
       document.getElementById("obs-torps").innerHTML = `<table class="obs-table">${head}${rows}</table>` +

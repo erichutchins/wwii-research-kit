@@ -107,7 +107,12 @@ or the middle of the spread where none is typed. The target is placed at the she
 of aim and the fire-control angles give. Each torpedo runs to where it first reaches a hull of the target's assumed
 length, or past it. Torpedo speed is the sheet's where typed; the Mark 18's 27.7 knots is from ATULE's sheet; the
 Mark 14's and 23's are from secondary sources. The torpedo's straight run and turn out of the tube are left out, so
-runs come out a few seconds short (SEAHORSE's Attack 3: 33 s against the narrative's 36).
+runs come out a few seconds short (SEAHORSE's Attack 3: 33 s against the narrative's 36). A sheet that types no
+course, the boat's or the target's, but does type each torpedo's track angle, gyro angle and the range (TINOSA's
+summary of attacks, third patrol) is drawn in the boat's own frame: her head at 000 relative, the target's course worked
+back from the first torpedo's track angle (track = torpedo course + 180 − target course). The geometry is the sheet's;
+only the orientation to north is missing, so every bearing is labelled relative, the plot is "her head up", and the sun,
+moon and stars are not placed.
 
 **The Torpedo Data Computer.** The dials show own course and speed; the target aimed at (the next torpedo's, else the
 last's), its course and speed; true and relative bearing, range and angle on the bow (`attackAt`); distance to track

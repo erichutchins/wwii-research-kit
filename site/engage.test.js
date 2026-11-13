@@ -281,4 +281,17 @@ near(E.hullRange(357, "SS-385").ft, 22.7, 0.1, "357 lb against an SS-285 class h
 near(E.hullRange(357, "SS-283").ft, 43.9, 0.2, "357 lb against an SS-212 class hull, ft");
 console.log(E.hullRange(357, "SS-385").curve === "ss285" && E.hullRange(100, "SS-212").curve === "ss212" ? "ok  " : (failed++, "FAIL"), "the class by hull number");
 
+// A summary-of-attacks sheet with no courses (TINOSA, 6 Oct 1943, Attack 2: rg38-74856215/p19): drawn in the boat's frame,
+// her head 000, the target's course worked back from the typed track angle (75S, gyro 0: 105 relative); a port track
+// and a left gyro (3A: 110P, 10L) the same way; a spread at different gyros keeps one target
+const tin = E.attackSheet([0, 9, 18].map(i => ({ time: "0204", target_speed: "11.5", target_range: "1540", track: "75S", gyro: "0", interval: String(i), torpedo: "18", hit: "Hit" })));
+ok(tin.relative && !tin.problems.length && tin.targets.length === 1, "no courses typed: drawn relative, one target, no problems");
+near(tin.targets[0].course, 105, 0.01, "relative: the target's course from the track angle");
+near(tin.targets[0].track, 75, 0.01, "relative: the computed track is the typed one");
+const tin3a = E.attackSheet([{ time: "0818", target_speed: "6", target_range: "1630", track: "110P", gyro: "10L", interval: "0" }]);
+near(tin3a.targets[0].course, 280, 0.01, "relative: a port track and a left gyro");
+const spread = E.attackSheet([{ time: "0100", target_speed: "8", target_range: "1500", track: "90S", gyro: "2R" }, { time: "0100", target_speed: "8", target_range: "1500", track: "92S", gyro: "0" }]);
+ok(spread.targets.length === 1, "relative: a spread at different gyros, one target");
+ok(!E.attackSheet([{ time: "0100", target_speed: "8", target_range: "1500", gyro: "0" }]).relative, "relative: not without a typed track angle");
+
 process.exit(failed ? 1 : 0);
