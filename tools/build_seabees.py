@@ -42,7 +42,7 @@ from records import RECORDS
 SEABEES = RECORDS / "seabees"
 MAX_KM_PER_DAY = 900        # ~20 knots, a fast transport; rail across the US is slower
 MAX_KNOTS = 22              # a ship between two logged positions
-SOURCE_CODES = ("muster", "wardiary", "ncbhist", "bases", "mcsol")
+SOURCE_CODES = ("muster", "wardiary", "ncbhist", "bases", "mcsol", "photo")
 VOYAGE_STATUS = ("confirmed", "partial", "planned", "ordered", "named", "not recorded")
 ZONE_HOURS = {"I": 9, "K": 10, "L": 11, "M": 12, "Z": 0}   # zone letter -> hours ahead of GMT
 ASSUMED = ("", "date", "place", "part")

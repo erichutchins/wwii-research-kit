@@ -63,7 +63,8 @@ SOURCE_WORDS = {"mr": "its own morning reports", "btry": "the battery's own posi
                 "div": "division-level sources (the division's position)", "cp": "the order of battle's command posts",
                 "uaar": "its own after action reports",
                 "muster": "its muster rolls", "wardiary": "the war diaries of the ships that carried it",
-                "ncbhist": "its history sheet (the Seabee Museum)", "bases": "Building the Navy's Bases", "mcsol": "Marines in the Central Solomons"}
+                "ncbhist": "its history sheet (the Seabee Museum)", "bases": "Building the Navy's Bases", "mcsol": "Marines in the Central Solomons",
+                "photo": "the captions of the National Archives' photographs"}
 LEAD_FIELDS = {"statement", "units", "said_by", "ref", "searched", "still"}
 PACK = re.compile(r"^17\.(1[1-9]|2[0-4])\b")   # ComSubPac's coordinated attack groups, G 17.11 through G 17.24
 

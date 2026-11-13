@@ -87,7 +87,8 @@
     hist: "the 894th's printed history, the battalion's position", aar: "Third Army's situation maps, the battalion's symbol", div: "the division's position" };
   const OWN_WORDS = { mr: "its own morning reports", btry: "its own position in the battalion's records", cp: "the order of battle's command posts",
     uaar: "its own after action reports", muster: "its muster rolls", wardiary: "the ships' war diaries", ncbhist: "its history sheet",
-    bases: "Building the Navy's Bases", mcsol: "Marines in the Central Solomons" };
+    bases: "Building the Navy's Bases", mcsol: "Marines in the Central Solomons",
+    photo: "the captions of the National Archives' photographs" };
   const AT_SEA = /\b(at sea|aboard|on board)\b/i;
   const sourceWords = k => ASSUMED[k] || OWN_WORDS[k] || k;
   // the same, short and without a comma, for the lede's list
