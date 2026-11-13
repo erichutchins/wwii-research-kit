@@ -362,7 +362,10 @@ Between BANG's sheet and the table: 5 min, 7.6 nm.  Between the sheet and FRUPAC
 ```
 
 The columns are sources; the chips under each head give its kind and nationality; the arithmetic is done on the page
-by `engage.js` and labelled. The claims board under it is `claims.yml`, each answer badged by its source's kind.
+by `engage.js` and labelled. Where the pairing carries JANAC's entry for the loss (`janac` in `claims.yml`), it is a
+column after the intelligence, chipped *assessment · US*: the ship, type and tonnage as printed, the list's agent with
+its asterisk where JANAC held the credit probable, the boat the appendix names, and both pages. It prints a date and no
+time, so only the miles are computed. The claims board under it is `claims.yml`, each answer badged by its source's kind.
 Repetition isn't corroboration: a secondary source repeating the loss list is one column, and the board merges
 repeated answers and counts them once. A FRUPAC note tied to an attack with no Japanese pairing is an entry and a
 mark but no moment, since moments are pairings.

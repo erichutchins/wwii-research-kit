@@ -252,6 +252,16 @@ const intel = E.chronologyColumns([{ actor: "bang", of: "us", local: "1944-04-29
 ok(intel.map(c => c.name).join("|") === "BANG|FRUPAC war map|Takegawa Maru" && intel[1].colour === "var(--ink-3)" && !intel[1].opposed && E.columnChip(intel[1]) === "intelligence · US", "columns: FRUPAC's own column, chipped intelligence · US, in the lighter ink, not the other side");
 ok(M[0].ours.relation === "hit" && /^a hit/.test(M[0].ours.words) && M[0].ours.note === "Takegawa Maru (1,930 GRT), TAMA-17", "moments: what we make of it is the pairing's relation and note");
 ok(E.pairMoments({ participants: [], fixes: [], events: [], pairs: [] }).length === 0, "moments: none without pairs");
+// JANAC's entry for the loss (`janac` on the pair): a source of its own after the intelligence, as printed (a date, no time),
+// the asterisk explained in our voice, both pages; and JANAC's entry among the engagement's events then isn't listed twice
+const jx = { ...tama.pairs[0], janac: [{ ship: "Takegawa Maru", date: "1944-04-29", tons: "1,930", lat_raw: "19-26N", lon_raw: "118-45E", lat: 19.4333, lon: 118.75,
+  agent: "BANG", probable: true, note: "", cite: { ref: "janac:4/p58", href: "#", label: "p. 58", kind: "assessment", of: "us" }, appendix: { ref: "janac:6/p3", href: "#", label: "p. 3" } }] };
+const JM = E.pairMoments({ ...tama, events: tama.events.map(e => e.actor === "JANAC" ? { ...e, utc: "1944-04-29T13:30Z" } : e), pairs: [jx] })[0];
+const js = JM.sources.find(s => s.role === "assessment");
+ok(js && JM.sources.indexOf(js) === 4 && js.typed === "1944-04-29" && js.utc === null && js.raw === "19-26N 118-45E", "janac: its own source after the intelligence, its date as printed and no time");
+ok(js.words[0].typed === "Takegawa Maru, 1,930 tons: Submarine*" && js.words[1].typed === "Appendix: BANG" && /Probable Agent/.test(js.words[2].ours) && js.cite.more[0].ref === "janac:6/p3", "janac: the agent with its asterisk, explained in our voice, both pages");
+ok(JM.sources.filter(s => /JANAC/.test(s.name)).length === 1, "janac: the engagement's own JANAC entry isn't listed again among the near sources");
+ok(JM.apart[3].minutes === null && JM.apart[3].nm != null, "janac: no minutes (no time printed), a distance from the position");
 
 // The questions the records leave open: answers by source for the view, merged by their words for the board, each badged
 // by its source's kind, the weight kept where it differs; an inference keeps its own mark

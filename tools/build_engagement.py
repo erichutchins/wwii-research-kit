@@ -99,6 +99,9 @@ PART = {"id", "name", "of", "kind", "sil", "hull", "co", "track", "convoy", "uni
 EVENT = {"at", "placed", "of", "actor", "kind", "to", "from", "title", "words", "original", "lang", "translation", "source",
          "ref", "pos", "step", "basis", "note"}
 CLAIM = {"question", "answer", "weight", "source", "ref", "note"}
+PAIRING = {"attack", "record", "relation", "note", "janac"}
+# JANAC's entry for the loss a pairing is about (records/SCHEMA.md, "A patrol's claims"): as printed, with both its pages
+JANAC = {"ship", "date", "type", "tons", "lat_raw", "lon_raw", "agent", "probable", "ref", "appendix", "note"}
 SHIP = {"ship", "role", "number", "from", "to", "cargo", "cargo_t", "cargo_for", "fate", "source", "page", "basis",
         "note", "sil", "sil_basis"}
 CONVOY_FM = {"convoy", "name_ja", "plain", "from", "to", "via", "sailed", "arrived", "size", "cargo", "attacked_by", "sources",
@@ -312,6 +315,9 @@ class Build:
         cl_path = d / "claims.yml"
         for x in records.load_yaml(cl_path) or [] if cl_path.exists() else []:
             w = f"{rel(cl_path)} {x.get('attack')}"
+            for k in set(x) - PAIRING:
+                self.bad(w, f"unknown field {k!r} (known: {', '.join(sorted(PAIRING))})")
+            x = {**x, "janac": [self.janac(e, f"{w} janac {e.get('ship') if isinstance(e, dict) else e!r}") for e in x.get("janac") or []]}
             other, _, ref = str(x["attack"]).rpartition(":")
             arows = rows if not other else load(other)
             a = next((r for r in arows if r["ref"] == ref), None)
@@ -322,6 +328,31 @@ class Build:
             if a is not None and x.get("record") in ja:
                 pairs.append({**x, "unit": other or unit, "attack_ref": ref, "attack_utc": a["utc"], "ja": ja[x["record"]]})
         return rows, ja, pairs
+
+    def janac(self, e, where):
+        """A pairing's `janac` entry -> the loss as JANAC prints it, checked: the ship, the date, the agent as printed
+        (a boat's name from the appendix, or "Submarine", "Army Mine" ...), `probable` (the list's asterisk), the list's
+        page (`ref`, janac:3 or janac:4) and, for a submarine's credit, the appendix's (`appendix`, janac:6)."""
+        if not isinstance(e, dict):
+            self.bad(where, "a janac entry is a mapping (ship, date, agent, probable, ref, ...)")
+            return {}
+        for k in set(e) - JANAC:
+            self.bad(where, f"unknown field {k!r} (known: {', '.join(sorted(JANAC))})")
+        for k in ("ship", "date", "agent", "ref"):
+            if not e.get(k):
+                self.bad(where, f"no {k!r}")
+        if not isinstance(e.get("probable"), bool):
+            self.bad(where, "`probable` is true (the list prints the agent with an asterisk) or false")
+        if e.get("ref") and not re.match(r"janac:[34]/p\d+$", str(e["ref"])):
+            self.bad(where, f"`ref` {e['ref']!r} is a page of the lists (janac:3/pN or janac:4/pN)")
+        if e.get("appendix") and not re.match(r"janac:6/p\d+$", str(e["appendix"])):
+            self.bad(where, f"`appendix` {e['appendix']!r} is a page of the appendix (janac:6/pN)")
+        d = e.get("date")
+        return {"ship": str(e.get("ship") or ""), "date": d.isoformat() if isinstance(d, date) else str(d or ""),
+                "type": str(e.get("type") or ""), "tons": str(e.get("tons") or ""), "lat_raw": str(e.get("lat_raw") or ""), "lon_raw": str(e.get("lon_raw") or ""),
+                "lat": parse_coord(str(e.get("lat_raw") or "")), "lon": parse_coord(str(e.get("lon_raw") or "")),
+                "agent": str(e.get("agent") or ""), "probable": e.get("probable") is True, "note": str(e.get("note") or "").strip(),
+                "cite": self.cite(e.get("ref"), where), **({"appendix": self.cite(e["appendix"], where)} if e.get("appendix") else {})}
 
     def frupac(self, unit, rows, path=None):
         """A boat's FRUPAC notes (frupac.yml, records/README.md "US radio intelligence"), each checked and read for the
@@ -800,7 +831,7 @@ class Build:
         how (`relation`, `note`). The page does the arithmetic between the two (Engage.apart), never the build."""
         j = x["ja"]
         return {"attack": x["attack_ref"], "boat": by_unit[x["unit"]], "utc": iso(x["attack_utc"]),
-                "relation": x.get("relation", ""), "note": x.get("note", ""),
+                "relation": x.get("relation", ""), "note": x.get("note", ""), "janac": x.get("janac") or [],
                 "record": {"id": j["id"], "event": j.get("event", ""), "ship": j.get("ship", ""), "convoy": j.get("convoy", ""),
                            "date": j["date"], "time": str(j.get("time") or ""), "zone": j.get("zone", "I") if j.get("time") else "",
                            "local": j["local"], "utc": iso(j["utc"]),

@@ -547,9 +547,22 @@ const Engage = (() => {
         assumed: f.utc ? "FRUPAC's zone assumed I" : "",
         words: [f.text && { typed: f.text }, (f.relation || f.note) && { ours: [f.relation, f.note].filter(Boolean).join(": ") }].filter(Boolean),
         cite: f.zoom ? { href: f.zoom, ref: f.zoom, label: "map" } : f.cite || null }));
+      // the postwar assessment: JANAC's entry for the loss (`janac` on the pair, from the boat's claims.yml), as printed:
+      // a date and no time, the agent as the appendix names it, an asterisk where JANAC held the agent probable
+      const assessment = (x.janac || []).map(j => ({
+        role: "assessment", name: `JANAC, ${j.ship}`, sub: "Japanese Naval and Merchant Shipping Losses, 1947",
+        kind: (j.cite && j.cite.kind) || "assessment", of: (j.cite && j.cite.of) || "us", zone: "",
+        typed: j.date || "", utc: null, lat: j.lat, lon: j.lon, raw: [j.lat_raw, j.lon_raw].filter(Boolean).join(" "),
+        basis: j.lat != null ? "as printed, to the minute" : "",
+        // the list prints the agent's type ("Submarine", "Army Mine"); the appendix names the boat
+        words: [{ typed: `${[j.ship, j.type, j.tons && `${j.tons} tons`].filter(Boolean).join(", ")}: ${j.appendix ? "Submarine" : j.agent}${j.probable ? "*" : ""}` },
+                j.appendix && { typed: `Appendix: ${j.agent}` },
+                j.probable && { ours: "the asterisk: \"*Probable Agent\"; JANAC held this credit probable, not certain" },
+                j.note && { ours: j.note }].filter(Boolean),
+        cite: j.appendix ? { ...j.cite, more: [j.appendix] } : j.cite || null }));
       const ships = String(r.ship || "").split(/;\s*/).filter(Boolean), boatName = nameOf(x.boat), at = T(x.utc);
       const near = (D.events || []).filter(e => e.source_kind && e.source_kind !== "record" && !(e.record === r.id && e.origin === "japanese") && e.actor !== x.boat
-          && e.origin !== "frupac" && e.utc && Math.abs(T(e.utc) - at) <= NEAR_MS).filter(e => {
+          && e.origin !== "frupac" && !(assessment.length && e.source_kind === "assessment" && /JANAC/.test(e.source || "")) && e.utc && Math.abs(T(e.utc) - at) <= NEAR_MS).filter(e => {
         const text = [e.title, e.actor, e.ship, e.words, e.translation, e.note].map(v => String(v || "")).join(" ");
         return ships.some(n => text.includes(n)) || (text.includes(ref) && text.includes(boatName));
       }).map(e => ({
@@ -558,7 +571,7 @@ const Engage = (() => {
         basis: e.lat != null ? (e.basis || "placed") : "",
         words: [e.original ? { original: e.original, lang: e.lang || "ja", translation: e.translation || e.words } : e.words && { typed: e.words }, e.note && { ours: e.note }].filter(Boolean),
         cite: e.cite || null }));
-      const sources = [attack, record, ...intelligence, ...near];
+      const sources = [attack, record, ...intelligence, ...assessment, ...near];
       return { key: `${x.boat}:${x.attack}:${r.id}`, boat: x.boat, attack: ref, record: r.id, utc: x.utc, sources,
                apart: sources.slice(1).map((s, i) => ({ a: 0, b: i + 1, ...apart(attack, s) })),
                ours: { relation: x.relation, words: RELATION[x.relation] || x.relation, note: x.note || "" } };

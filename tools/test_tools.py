@@ -752,7 +752,7 @@ class EngagementPairs(unittest.TestCase):
     def test_bangs_attack_1_and_takegawa_marus_torpedoing(self):
         out = build_engagement.Build.pair(self.pairing(), {"ss-385-bang/1": "bang"})
         self.assertEqual({k: v for k, v in out.items() if k != "record"},
-                         {"attack": "Attack 1", "boat": "bang", "utc": "1944-04-29T12:56Z", "relation": "hit", "note": "Takegawa Maru (1,930 GRT), TAMA-17"})
+                         {"attack": "Attack 1", "boat": "bang", "utc": "1944-04-29T12:56Z", "relation": "hit", "note": "Takegawa Maru (1,930 GRT), TAMA-17", "janac": []})
         r = out["record"]
         self.assertEqual((r["id"], r["event"], r["ship"], r["date"], r["time"], r["zone"]), ("J03", "torpedoed", "Takegawa Maru", "1944-04-29", "2201", "I"))
         self.assertEqual((r["local"], r["utc"]), ("1944-04-29 2201 I", "1944-04-29T13:01Z"))   # 2201 I is 1301 GMT, five minutes after the attack
@@ -760,6 +760,19 @@ class EngagementPairs(unittest.TestCase):
         self.assertEqual((r["lang"], r["original"][:5], r["translation"][:7]), ("ja", "二九日二二", "At 2201"))
         self.assertEqual(r["cite"]["ref"], "jacar:C08050103200 p23")
         self.assertNotIn("minutes", out)   # the arithmetic is the page's (Engage.apart), never stored
+
+    def test_janacs_entry_as_printed_and_checked(self):
+        # Takegawa Maru in JANAC's merchant list (p58) and BANG's page of the appendix (p3): both pages resolve, the
+        # position is placed from the printed minutes, and an entry with no `probable`, a wrong page or an unknown field is a problem
+        b = build_engagement.Build()
+        j = b.janac({"ship": "Takegawa Maru", "date": date(1944, 4, 29), "type": "Cargo", "tons": "1,930", "lat_raw": "19-26N",
+                     "lon_raw": "118-45E", "agent": "BANG", "probable": False, "ref": "janac:4/p58", "appendix": "janac:6/p3"}, "test")
+        self.assertEqual(b.problems, [])
+        self.assertEqual((j["date"], j["agent"], j["probable"], round(j["lat"], 4), round(j["lon"], 4)), ("1944-04-29", "BANG", False, 19.4333, 118.75))
+        self.assertEqual((j["cite"]["ref"], j["appendix"]["ref"]), ("janac:4/p58", "janac:6/p3"))
+        b.janac({"ship": "Takegawa Maru", "date": "1944-04-29", "agent": "BANG", "ref": "janac:6/p3", "credit": "BANG"}, "test")
+        msgs = " ".join(map(str, b.problems))
+        self.assertIn("`probable`", msgs); self.assertIn("a page of the lists", msgs); self.assertIn("unknown field 'credit'", msgs)
 
     def test_a_loss_list_has_no_time_and_no_position(self):
         # J10, the April loss table: dated to a month, no time, no position; the record keeps its month and nothing is invented
