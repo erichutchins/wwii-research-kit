@@ -401,26 +401,32 @@
     const own = SITMAPS.flatMap(S => S.placed).find(u => !u.opposed)?.of, enemy = SITMAPS.flatMap(S => S.placed).find(u => u.opposed)?.of;
     const shown = SITMAPS;   // every day's map: the page can show each
     if (fresh || !sidesAt) {
-      const lines = shown.map(S => S.runs.map(r => r.map(c => P(c[0], c[1]))));
-      const toLine = (line, [x, y]) => d3.min(line.flatMap(r => r.slice(1).map((b, i) => {
-        const a = r[i], dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1, u = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / L2));
-        return Math.hypot(x - a[0] - u * dx, y - a[1] - u * dy);
-      }))) ?? 999;
-      const busy = [...shown.flatMap(S => S.placed.map(u => P(u.lon, u.lat))), ...busyPoints()];
+      // the nearest of the days' lines, from points every 3 px along each (within 1.5 px of the line itself), and the
+      // nearest busy point (rows count 1.6 times a column): two indexes, built once a zoom, so each candidate is a lookup
+      // and not a walk over every leg of every day's front (twenty thousand legs for the Bulge's nineteen days)
+      const linePts = d3.quadtree();
+      shown.forEach(S => S.runs.forEach(r => r.forEach((c, i) => {
+        const b = P(c[0], c[1]);
+        if (!i) { linePts.add(b); return; }
+        const a = P(r[i - 1][0], r[i - 1][1]), n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 3);
+        for (let k = 1; k <= n; k++) linePts.add([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]);
+      })));
+      const toLine = (x, y) => { const q = linePts.find(x, y, 160); return q ? Math.hypot(q[0] - x, q[1] - y) : 999; };
+      const busy = d3.quadtree([...shown.flatMap(S => S.placed.map(u => P(u.lon, u.lat))), ...busyPoints()].map(([x, y]) => [x, y * 1.6]));
+      const toBusy = (x, y) => { const q = busy.find(x, y * 1.6); return q ? Math.hypot(q[0] - x, q[1] - y * 1.6) : 999; };
       const rows = side => (side === -1 && !STEPPER ? [0, 26, 40] : [0, 26]), half = side => (side === -1 && !STEPPER ? 70 : 14);
       sidesAt = [];
       [-1, 1].forEach(side => {
-        let best = null;
+        const cands = [];
         for (let y = 40; y < H - 60; y += 12) for (let x = 40 + half(side); x < W - 60 - half(side); x += 12) {
-          const ds = lines.map(l => toLine(l, [x, y]));
-          if (Math.min(...ds) < 40 || Math.min(...ds) > 160) continue;
-          const ll = proj.invert([x, y]);
-          if (!shown.every(S => E.frontSide(S.runs, ll) === side)) continue;
-          const clear = d3.min(rows(side).flatMap(r => [x - half(side), x, x + half(side)].map(cx => [cx, y + r])),
-            ([cx, cy]) => d3.min(busy, q => Math.hypot(q[0] - cx, (q[1] - cy) * 1.6)) ?? 999);
-          const score = Math.min(clear, 90) - y * 0.15;   // clear ground first, then the top of the map
-          if (clear >= 26 && (!best || score > best.score)) best = { x, y, score };
+          const d = toLine(x, y);
+          if (d < 40 || d > 160) continue;
+          const clear = d3.min(rows(side).flatMap(r => [x - half(side), x, x + half(side)].map(cx => toBusy(cx, y + r))));
+          if (clear >= 26) cands.push({ x, y, score: Math.min(clear, 90) - y * 0.15 });   // clear ground first, then the top of the map
         }
+        // the side of every day's front last, as it costs the most: the best-placed candidate that is on it
+        cands.sort((a, b) => b.score - a.score);
+        const best = cands.find(c => { const ll = proj.invert([c.x, c.y]); return shown.every(S => E.frontSide(S.runs, ll) === side); });
         if (best) sidesAt.push([best.x, best.y, side]);
       });
     }
