@@ -220,7 +220,7 @@ def place(rows, page=PAGE):
         if r["kind"] not in KINDS or r["placed"] not in PLACED:
             problems.append(f"{where} kind {r['kind']!r} / placed {r['placed']!r} (want {KINDS} / {PLACED})")
             continue
-        if not re.fullmatch(r"ok45th-\d+/p\d{2}|rg64-\d+/p\d{4}|" + PAGE["hist"] + "|" + AAR, r["page"]):
+        if not re.fullmatch(r"ok45th-\d+/p\d{2}|rg64-\d+/p\d{4}|hist313/p\d+|" + PAGE["hist"] + "|" + AAR, r["page"]):
             problems.append(f"{where} page {r['page']!r}")
         lat = lon = None
         if r["placed"] == "grid":

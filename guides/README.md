@@ -16,6 +16,9 @@ set by. The rules an agent follows are in [`CLAUDE.md`](../CLAUDE.md); the tools
 
 - [MORNING-REPORTS.md](MORNING-REPORTS.md): an Army company's, battery's or detachment's stations
   day by day, from its morning reports (National Archives, Record Group 64).
+- [FOLLOWING-A-SOLDIER.md](FOLLOWING-A-SOLDIER.md): one soldier between units, by his serial number: the replacement
+  pipeline (shipment rosters, depots, packing sheets, replacement battalions) and the evacuation chain (transit
+  hospitals' admission and disposition reports, hospital plants, the hospital admission card files).
 - [MUSTER-ROLLS.md](MUSTER-ROLLS.md): a Navy shore unit, such as a Seabee battalion, from its
   muster rolls (Record Group 24), which account for men and not for places.
 - [JAPANESE-RECORDS.md](JAPANESE-RECORDS.md): the Imperial Navy's record of an attack (JACAR), and

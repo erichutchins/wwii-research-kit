@@ -212,6 +212,24 @@ These outside sources agree with the transcription and the code:
 | Sun and moon | Computed in the browser (low-precision almanac formulas, about 1°) | `dives.js` | Sunrise/sunset, twilight, moon phase, moonrise/moonset at the interpolated position |
 | Earthquakes | USGS ComCat (includes ISC-GEM), ISC bulletin (FDSN), Taiwan CWA catalog | (one-off search) | Nothing found for the 2 May 1945 rumble. See `records/boats/ss-385-bang/README.md` for why that's expected |
 
+### Newspapers of the day
+
+What the papers printed is evidence of what was said at the time, not of what happened, and two papers printing one
+communiqué count once. Each is cited in a note by its `SOURCES.yml` form.
+
+- **The German papers**: the Deutsches Zeitungsportal (`ddbzp`) answers a script. Its newspaper index takes a Solr query
+  without a key and returns each page's OCR text: `https://api.deutsche-digitale-bibliothek.de/search/index/newspaper-issues/select?q=plainpagefulltext:"<place>" AND publication_date:[<day>T00:00:00Z TO <day>T23:59:59Z]&fl=id,paper_title,publication_date,plainpagefulltext`.
+  The Wehrmacht's daily report is in every paper the next day. A hit's `thumbnail` is the issue's first page as a IIIF
+  image (`https://iiif.deutsche-digitale-bibliothek.de/image/2/<thumbnail>/full/full/0/default.jpg`) and its
+  `preview_reference` the page's ALTO XML, whose word boxes locate a passage; later pages' images sit behind the
+  libraries' viewers, which put a bot check in front of scripts.
+- **The French papers** (`gallica`): Gallica refuses scripts, so a page is saved by hand from the issue's address
+  (`https://gallica.bnf.fr/ark:/12148/<title ark>/date<YYYYMMDD>`). The occupied press printed the German communiqué;
+  a liberated town's paper, where one exists, prints its own side.
+- **The Italian bulletins** (`lastampa`): *La Stampa*'s issues are mirrored on the Internet Archive, one item per day,
+  with page images and OCR.
+- **A local archive's page that has gone**: the Wayback Machine often kept the files a removed page linked to.
+
 ### The other side's records
 
 The strongest check on an attack sheet is the target's own record. For the Pacific that is the
