@@ -45,7 +45,8 @@ from records import RECORDS, rel, unit_dir
 # B is the US Army's clock in Germany in April 1945 (UTC+2, as was German summer time).
 # A and N to S are the Atlantic's and Pacific's east side (SOLAR's war diaries type no zone; her rows carry the zone of their longitude;
 # SOUTH DAKOTA's 1942 diary types plus 11 to plus 4 on her way to Panama, X to Q).
-ZONES = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7, "GH": 7.5, "Z": 0, "N": -1, "O": -2, "P": -3, "Q": -4, "R": -5, "S": -6, "M": 12, "LM": 11.5, "L": 11, "KL": 10.5, "K": 10, "IK": 9.5, "I": 9, "H": 8, "TU": -7.5, "T": -7, "U": -8, "UV": -8.5, "V": -9, "VW": -9.5,
+# ST (+6½) is Haynsworth's October 1944 passage, Balboa to San Pedro.
+ZONES = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7, "GH": 7.5, "Z": 0, "N": -1, "O": -2, "P": -3, "Q": -4, "R": -5, "S": -6, "ST": -6.5, "M": 12, "LM": 11.5, "L": 11, "KL": 10.5, "K": 10, "IK": 9.5, "I": 9, "H": 8, "TU": -7.5, "T": -7, "U": -8, "UV": -8.5, "V": -9, "VW": -9.5,
          "W": -10, "WX": -10.5, "X": -11, "XY": -11.5, "Y": -12}
 DR_TOL = 30     # nm of dead-reckoning disagreement allowed between fixes
 
@@ -121,7 +122,9 @@ def place_events(events, rows):
 
 
 def load(unit):
-    """Usable fixes (time and both coordinates present), sorted by UTC."""
+    """Usable fixes (time and both coordinates present, and on the globe), sorted by UTC. A position typed past 90° of
+    latitude or 180° of longitude (Haynsworth's 4 Oct 1944 1200, "90-51N 23-30W") stays in positions.csv as typed but
+    is no place to draw, so it is left out here."""
     rows, events = [], []
     for r in csv.DictReader(open(folder(unit) / "positions.csv")):
         if not r["time"]:
@@ -130,7 +133,8 @@ def load(unit):
         r["lat"] = parse_coord(r["lat_fix"] or r["lat_raw"])
         r["lon"] = parse_coord(r.get("lon_fix") or r["lon_raw"])
         if r["lat"] is not None and r["lon"] is not None:
-            rows.append(r)
+            if abs(r["lat"]) <= 90 and abs(r["lon"]) <= 180:
+                rows.append(r)
         elif single(unit) and not (r["lat_raw"] or r["lon_raw"] or r["lat_fix"] or r["lon_fix"]):
             events.append(r)   # (BANG's own coordinate-less rows, e.g. "enter area", stay unplaced)
     rows.sort(key=lambda r: r["utc"])

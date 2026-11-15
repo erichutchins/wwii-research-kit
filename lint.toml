@@ -32,5 +32,10 @@ why = "The New York Navy Yard on the East River (Solar's diary, Nov 1944 - Mar 1
 
 [[allow]]
 code = "ACC001"
+target = "9.00, -79.60"
+why = "Haynsworth's 1200 fix of 2 Oct 1944, typed 09-00N 79-36W while she was in the Panama Canal (0847-1305, rg38-78679858/p14): a canal, narrower than the 1:10m coastline."
+
+[[allow]]
+code = "ACC001"
 target = "-27.47, 153.03"
 why = "Brisbane, up the Brisbane River (Seahorse's patrol 5 departure): a river port, narrower than the 1:10m coastline."
