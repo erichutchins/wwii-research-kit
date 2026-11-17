@@ -1,0 +1,7 @@
+[package]
+name = "wwii-book"
+version = "0.1.0"
+entrypoint = "lib.typ"
+authors = ["WWII research kit"]
+license = "MIT"
+description = "Print pages from the WWII research kit's records: archive pages by citation, records tables, QR tags."

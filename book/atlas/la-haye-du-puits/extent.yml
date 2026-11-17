@@ -1,0 +1,32 @@
+# One operational geography, drawn twice: the panorama (top-down, the situation) and the oblique view (the ground).
+# Both views and the reconstruction read this file; nothing here is copied from the kit's records, only named.
+name: la-haye-du-puits
+title: La Haye-du-Puits, 11 July 1944
+crs: EPSG:2154                       # Lambert-93: both views share it, so a point is in the same place in each
+bbox_lonlat: [-1.82, 49.185, -1.28, 49.375]   # west, south, east, north: the shared extent (its Lambert-93 envelope)
+date: 1944-07-11
+fronts: [1944-07-07, 1944-07-11]     # records/fronts/12ag-<day>.geojson: the traced fronts; the last is the day's
+units: 1944-07-11                    # records/fronts/12ag-<day>.geojson: the divisions as the army group drew them
+situation_map: 1944-07-11            # the original sheet, shown beside the views as the historical reference
+locator:
+  bbox_lonlat: [-2.0, 48.8, -0.2, 49.75]    # the campaign: the Cotentin to the Orne
+  places:                                   # name, lon, lat
+    - [Cherbourg, -1.6222, 49.6386]
+    - [Carentan, -1.2478, 49.3036]
+    - [Saint-Lô, -1.0906, 49.1158]
+    - [Bayeux, -0.7025, 49.2765]
+    - [Coutances, -1.4453, 49.0478]
+    - [Caen, -0.3707, 49.1829]
+towns: [La Haye-du-Puits, Lessay, Périers, Saint-Sauveur-le-Vicomte, Sainteny]   # named large on the panorama
+not_places: [La Haye, Montsenelle]    # OSM's names for communes merged in 2016: not on any 1944 map
+sources:
+  scan50_zoom: 14                    # IGN SCAN 50 1950 tiles: about 6 m a pixel here, the sheets' own detail
+  copernicus: GLO-30
+  geofabrik: europe/france/basse-normandie
+panorama:
+  width_in: 9.6
+oblique:
+  azimuth: 90                        # looking east along the front
+  tilt: 15                           # a shallow camera
+  exaggeration: 5
+  width_in: 9.6

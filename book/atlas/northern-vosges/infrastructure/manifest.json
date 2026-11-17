@@ -1,0 +1,104 @@
+{
+ "extent": "northern-vosges",
+ "built": "2026-11-16",
+ "sources": {
+  "period_map": {
+   "kind": "scan50",
+   "metres_per_pixel": 6.28,
+   "sheets": [
+    {
+     "sheet": "3613",
+     "edition": 1955
+    },
+    {
+     "sheet": "3614",
+     "edition": 1956
+    },
+    {
+     "sheet": "3615",
+     "edition": 1955
+    },
+    {
+     "sheet": "3713",
+     "edition": 1953
+    },
+    {
+     "sheet": "3714",
+     "edition": 1956
+    },
+    {
+     "sheet": "3715",
+     "edition": 1956
+    },
+    {
+     "sheet": "3813",
+     "edition": 1956
+    },
+    {
+     "sheet": "3814",
+     "edition": 1939
+    },
+    {
+     "sheet": "3815",
+     "edition": 1939
+    },
+    {
+     "sheet": "3913",
+     "edition": 1957
+    },
+    {
+     "sheet": "3914",
+     "edition": 1939
+    },
+    {
+     "sheet": "3915",
+     "edition": 1939
+    }
+   ],
+   "placing": [],
+   "layer": "GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN50.1950",
+   "zoom": 14
+  },
+  "osm": {
+   "extract": "europe/france/alsace",
+   "licence": "ODbL, (c) OpenStreetMap contributors"
+  }
+ },
+ "tolerances": {
+  "road_m": 30.0,
+  "road_degrees": 25.0,
+  "rail_m": 25.0,
+  "step_m": 15.0,
+  "link_ink_m": 60.0,
+  "link_gap_m": 600.0,
+  "connector_m": 400.0,
+  "connector_snap_m": 30.0,
+  "trace_snap_m": 80.0,
+  "join_m": 300.0,
+  "isolated_under_m": 600.0
+ },
+ "counts": {
+  "roads": 3104,
+  "rails": 605,
+  "water": 1454,
+  "places": 198,
+  "hills": 353,
+  "woods": 618,
+  "churches": 0,
+  "junctions": 0,
+  "crossings": 128
+ },
+ "roads": {
+  "osm_aligned": 3104,
+  "traced": 0,
+  "connectors": 369,
+  "bridged_km": 12.0,
+  "joined_km": 138.6,
+  "isolated": 3
+ },
+ "rails_on_sheet": {
+  "shown": 545,
+  "partly": 39,
+  "not seen": 21
+ }
+}

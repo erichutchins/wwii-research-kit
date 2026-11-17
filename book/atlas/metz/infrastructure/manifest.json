@@ -1,0 +1,100 @@
+{
+ "extent": "metz",
+ "built": "2026-11-16",
+ "sources": {
+  "period_map": {
+   "kind": "scan50",
+   "metres_per_pixel": 6.24,
+   "sheets": [
+    {
+     "sheet": "3311",
+     "edition": 1953
+    },
+    {
+     "sheet": "3312",
+     "edition": 1957
+    },
+    {
+     "sheet": "3313",
+     "edition": 1956
+    },
+    {
+     "sheet": "3411",
+     "edition": 1953
+    },
+    {
+     "sheet": "3412",
+     "edition": 1956
+    },
+    {
+     "sheet": "3413",
+     "edition": 1956
+    },
+    {
+     "sheet": "3511",
+     "edition": 1955
+    },
+    {
+     "sheet": "3512",
+     "edition": 1955
+    },
+    {
+     "sheet": "3513",
+     "edition": 1955
+    },
+    {
+     "sheet": "3612",
+     "edition": 1956
+    },
+    {
+     "sheet": "3613",
+     "edition": 1955
+    }
+   ],
+   "placing": [],
+   "layer": "GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN50.1950",
+   "zoom": 14
+  },
+  "osm": {
+   "extract": "europe/france/lorraine",
+   "licence": "ODbL, (c) OpenStreetMap contributors"
+  }
+ },
+ "tolerances": {
+  "road_m": 30.0,
+  "road_degrees": 25.0,
+  "rail_m": 25.0,
+  "step_m": 15.0,
+  "link_ink_m": 60.0,
+  "link_gap_m": 600.0,
+  "connector_m": 400.0,
+  "connector_snap_m": 30.0,
+  "trace_snap_m": 80.0,
+  "join_m": 300.0,
+  "isolated_under_m": 600.0
+ },
+ "counts": {
+  "roads": 7208,
+  "rails": 2994,
+  "water": 1901,
+  "places": 447,
+  "hills": 249,
+  "woods": 1424,
+  "churches": 780,
+  "junctions": 0,
+  "crossings": 177
+ },
+ "roads": {
+  "osm_aligned": 7208,
+  "traced": 0,
+  "connectors": 950,
+  "bridged_km": 77.2,
+  "joined_km": 373.3,
+  "isolated": 21
+ },
+ "rails_on_sheet": {
+  "shown": 2447,
+  "partly": 296,
+  "not seen": 251
+ }
+}

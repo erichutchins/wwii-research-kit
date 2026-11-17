@@ -1,0 +1,72 @@
+{
+ "extent": "la-haye-du-puits",
+ "built": "2026-11-16",
+ "sources": {
+  "period_map": {
+   "kind": "scan50",
+   "metres_per_pixel": 6.23,
+   "sheets": [
+    {
+     "sheet": "1211",
+     "edition": 1947
+    },
+    {
+     "sheet": "1212",
+     "edition": 1947
+    },
+    {
+     "sheet": "1311",
+     "edition": 1959
+    },
+    {
+     "sheet": "1312",
+     "edition": 1957
+    }
+   ],
+   "placing": [],
+   "layer": "GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN50.1950",
+   "zoom": 14
+  },
+  "osm": {
+   "extract": "europe/france/basse-normandie",
+   "licence": "ODbL, (c) OpenStreetMap contributors"
+  }
+ },
+ "tolerances": {
+  "road_m": 30.0,
+  "road_degrees": 25.0,
+  "rail_m": 25.0,
+  "step_m": 15.0,
+  "link_ink_m": 60.0,
+  "link_gap_m": 600.0,
+  "connector_m": 400.0,
+  "connector_snap_m": 30.0,
+  "trace_snap_m": 80.0,
+  "join_m": 300.0,
+  "isolated_under_m": 600.0
+ },
+ "counts": {
+  "roads": 537,
+  "rails": 104,
+  "water": 535,
+  "places": 97,
+  "hills": 6,
+  "woods": 105,
+  "churches": 0,
+  "junctions": 20,
+  "crossings": 30
+ },
+ "roads": {
+  "osm_aligned": 371,
+  "traced": 166,
+  "connectors": 44,
+  "bridged_km": 3.0,
+  "joined_km": 34.8,
+  "isolated": 7
+ },
+ "rails_on_sheet": {
+  "shown": 82,
+  "partly": 13,
+  "not seen": 9
+ }
+}

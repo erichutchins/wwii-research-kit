@@ -1,0 +1,37 @@
+# The Northern Vosges in January 1945: Operation Nordwind and the withdrawal to the Moder. The panorama and the
+# oblique view share this file; nothing here is copied from the kit's records, only named.
+name: northern-vosges
+title: The Northern Vosges, January 1945
+crs: EPSG:2154                       # Lambert-93
+bbox_lonlat: [7.15, 48.76, 7.9, 49.075]   # Bitche to Haguenau, Sarre-Union's edge to the Rhine plain
+date: 1945-01-29
+fronts: [1944-12-31, 1945-01-29]     # the line before Nordwind, and after VI Corps fell back to the Moder
+units: 1945-01-29
+situation_map: 1945-01-29
+stations:                            # a unit's own positions and engagements (records/army/army.json), for a window
+  - unit: 106aaa-d
+    from: 1944-12-01
+    to: 1945-02-09
+    symbol: {arm: antiaircraft, echelon: i, letter: D, label: "106", mobility: sp}   # FM 21-30 (1943), chart 26
+locator:
+  bbox_lonlat: [5.9, 47.95, 8.4, 49.6]    # Lorraine and Alsace
+  places:                                 # name, lon, lat
+    - [Metz, 6.1757, 49.1193]
+    - [Nancy, 6.1844, 48.6921]
+    - [Sarreguemines, 7.0686, 49.11]
+    - [Strasbourg, 7.7521, 48.5734]
+    - [Colmar, 7.3585, 48.0794]
+towns: [Bitche, Niederbronn-les-Bains, Ingwiller, La Petite-Pierre, Wingen-sur-Moder, Haguenau, Bouxwiller]
+not_places: []
+sources:
+  scan50_zoom: 14
+  scan50_roads: black               # these editions (1939, 1953-56) print roads black, cased, not red
+  copernicus: GLO-30
+  geofabrik: europe/france/alsace
+panorama:
+  width_in: 9.6
+oblique:
+  azimuth: 0                         # looking north, from behind the American line toward the German
+  tilt: 22                           # steeper than the coast's: the ridges would hide the valleys
+  exaggeration: 4
+  width_in: 9.6

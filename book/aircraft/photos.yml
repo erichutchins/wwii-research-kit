@@ -1,0 +1,44 @@
+# Representative photographs of each aircraft type, for the aircraft cards (src/wwiibook/aircraft.py), keyed as the
+# kit's records/silhouettes/silhouettes.yml and records/air/aircraft.yml. Wikimedia Commons renderings (1280 px),
+# cached under the kit's sources/air-photos/ (git-ignored). `faces`: whether people are visible; any photograph with
+# a face waits for the book's editor's approval before a book prints it (`approved`). A photo shows the type, not the aircraft or
+# the unit in our story unless its caption says so.
+
+beaufighter:
+  - commons: "255 Squadron RAF Beaufighter MK II at RAF Hibaldstow Sept 1941.jpg"
+    file: 255_Squadron_RAF_Beaufighter_MK_II_at_RAF_Hibaldstow_Sept_1941.jpg
+    caption: >-
+      A Beaufighter Mark IIF night fighter of No. 255 Squadron RAF, R2402 YD-G, at Hibaldstow, Lincolnshire, in
+      September 1941, with AI Mark IV radar: the squadron that flew from La Sebala in 1943, two years earlier and in
+      an earlier mark.
+    credit: Imperial War Museum (Crown copyright expired), via Wikimedia Commons
+    licence: Public domain
+    faces: false
+    approved: true
+
+ju88:
+  - commons: "Junkers Ju 88 A-4, III. KG 54 (1).jpg"
+    file: Junkers_Ju_88_A-4_III._KG_54_1_.jpg
+    caption: >-
+      A Junkers Ju 88 A-4 of the staff of III./KG 54, B3+QD, about 1942, place not recorded: the type the raids on
+      Bizerte flew, not one of their aircraft.
+    credit: via Wikimedia Commons
+    licence: Public domain
+    faces: true
+    approved: true                    # 17 Nov 2026
+  - commons: "Riddled German Junkers Ju 88A of KG 54 in Tunisia, in 1943 (342-FH-3A48576-79787AC).jpg"
+    file: Riddled_German_Junkers_Ju_88A_of_KG_54_in_Tunisia_in_1943_342-FH-3A48576-79787AC_.jpg
+    caption: A Ju 88A of KG 54 left riddled on a Tunisian airfield, 1943, with two American officers.
+    credit: U.S. Air Force photograph, National Archives (342-FH-3A48576), via Wikimedia Commons
+    licence: Public domain
+    faces: true                       # two American officers, clearly
+    approved: true                    # 17 Nov 2026
+
+me262:
+  - commons: "Messerschmitt Me 262 A-1a at Stendal airfield, Germany, in April 1945 (342-FH-3A20043-165462AC).jpg"
+    file: Messerschmitt_Me_262_A-1a_at_Stendal_airfield_Germany_in_April_1945_342-FH-3A20043-165462AC_.jpg
+    caption: An Me 262 A-1a found at Stendal airfield, Germany, in April 1945.
+    credit: U.S. Air Force photograph, National Archives (342-FH-3A20043), via Wikimedia Commons
+    licence: Public domain
+    faces: false                      # two soldiers far off under the wing; no face can be made out
+    approved: true

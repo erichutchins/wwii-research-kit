@@ -1,0 +1,49 @@
+# Metz, January-February 1945: the Third Army's line on the Saar-Moselle, with the 9th Armored Division in reserve
+# north of the city and an antiaircraft gun battalion's headquarters in it. The panorama and the oblique view share
+# this file; nothing here is copied from the kit's records, only named.
+name: metz
+title: Metz, January – February 1945
+crs: EPSG:2154                       # Lambert-93
+bbox_lonlat: [5.95, 49.0, 6.85, 49.45]   # Metz to Thionville, the Moselle to the Saar-Moselle line
+date: 1945-02-01
+fronts: [1945-01-14, 1945-02-01]
+units: 1945-02-01
+situation_map: 1945-02-01
+highlight: 9ad                       # the division the 12th Army Group's map draws, in red
+highlight_words: 9th Armored Division
+stations:                            # units' own positions and engagements (records/army/army.json), for a window
+  - unit: 9ad-hq                     # no symbol of its own: the division's is on the army group's map
+    from: 1945-01-12
+    to: 1945-02-21
+  - unit: 128aaa-hq
+    from: 1945-01-20
+    to: 1945-02-28
+    symbol: {arm: antiaircraft, echelon: i, letter: Hq, label: "128"}   # FM 21-30 (1943), chart 26
+churches: true                       # the city's Catholic churches: the cathedral on the views, all of them on the inset
+inset:
+  title: Metz, the old town
+  bbox_lonlat: [6.162, 49.106, 6.192, 49.128]   # the Moselle to the Seille, Saint-Vincent to Saint-Martin
+  zoom: 15                           # IGN's 1:50,000 at its full detail
+  width_in: 3.0
+locator:
+  bbox_lonlat: [4.8, 48.4, 7.8, 50.2]    # Lorraine, Luxembourg and the Saar
+  places:                                 # name, lon, lat
+    - [Luxembourg, 6.1319, 49.6116]
+    - [Nancy, 6.1844, 48.6921]
+    - [Saarbrücken, 6.9969, 49.2402]
+    - [Verdun, 5.3878, 49.1598]
+    - [Trier, 6.6371, 49.7499]
+towns: [Metz, Thionville, Boulay-Moselle, Bouzonville, Hagondange]
+not_places: []
+sources:
+  scan50_zoom: 14
+  scan50_roads: black                # these editions (1953-57) print roads black, cased
+  copernicus: GLO-30
+  geofabrik: europe/france/lorraine
+panorama:
+  width_in: 9.6
+oblique:
+  azimuth: 90                        # looking east, from beyond the Moselle toward the Saar front
+  tilt: 22
+  exaggeration: 4
+  width_in: 9.6

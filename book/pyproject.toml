@@ -1,0 +1,39 @@
+[project]
+name = "wwii-book"
+version = "0.1.0"
+description = "Print books from the WWII research kit's records: Typst templates, archive pages fetched by citation, figures drawn from the data."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = [
+    "typst==0.15.2",   # the compiler; pinned, since Typst is pre-1.0 and minor releases can break templates
+    "pillow>=10",
+    "pyyaml>=6",
+    "segno>=1.6",
+    "numpy>=1.26",     # the oblique view's terrain renderer
+    "scipy>=1.11",     # cleaning the situation maps' road ink
+    # the atlas: a shared projected frame, period infrastructure from IGN's 1:50,000 and OSM, Copernicus terrain
+    "pyproj>=3.6",
+    "shapely>=2.0",
+    "rasterio>=1.3",
+    "scikit-image>=0.22",
+    "osmium>=3.7",
+    "pyogrio>=0.7",
+    "pyyaml>=6",
+]
+
+[project.scripts]
+wwii-book = "wwiibook.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "pymupdf>=1.24,<2"]   # tests read the PDF text back; 2.x pulls in onnxruntime
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wwiibook"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
