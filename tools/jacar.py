@@ -17,9 +17,12 @@ shows the first ~300 characters of, and matches loosely (タマ17 also finds
 Commands:
   python3 tools/jacar.py search "第一海上護衛隊" [1944-04 1944-05]   reference codes and titles
   python3 tools/jacar.py meta C08030140600                          title, pages, OCR snippet
+  python3 tools/jacar.py parts C11110269200                         a file's parts: reference codes and titles
   python3 tools/jacar.py fetch C08030140600 [...]                   PDF + pages to sources/jacar/<code>/
 
-fetch saves <code>.pdf and meta.json, and renders pNN.jpg pages at 110 dpi
+A record that is a whole file (簿冊, such as a unit's action report in several parts) has no images of its own: its
+page lists its parts (件名一覧), and fetch downloads each part to its own folder instead, the file's meta.json listing
+them. fetch saves <code>.pdf and meta.json, and renders pNN.jpg pages at 110 dpi
 (grayscale) with poppler's pdftoppm if it is installed. The PDFs are scans
 with no text layer: read the page images. sources/ is not committed.
 """
@@ -29,6 +32,7 @@ import re
 import shutil
 import subprocess
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -72,12 +76,46 @@ def meta(code):
             "url": f"{SITE}/das/image/{code}"}
 
 
+def parts(code):
+    """(code, title) for each part of a record that is a file, from its page's list of items (件名一覧); [] for a
+    record with images of its own."""
+    page = get(f"{SITE}/das/meta/{code}?rows=200")      # the list shows 20 items unless asked for more (200 at most)
+    k = page.find("件名一覧")
+    if k < 0:
+        return []
+    lines = text_lines(page[k:])
+    out, title = [], ""
+    for i, line in enumerate(lines):
+        if line == "件名" and i + 1 < len(lines):
+            title = lines[i + 1]
+        elif re.fullmatch(r"C\d{11}", line) and "レファレンスコード" in lines[max(0, i - 2):i]:
+            if line != code and line not in (c for c, _ in out):
+                out.append((line, title))
+    n = lines[lines.index("該当件数") + 1] if "該当件数" in lines else ""
+    if n.isdigit() and int(n) > len(out):
+        print(f"{code}: {n} parts listed, {len(out)} read (the page shows 200 at most)", file=sys.stderr)
+    return out
+
+
 def fetch(code):
     folder = OUT / code
     folder.mkdir(parents=True, exist_ok=True)
     info = meta(code)
+    try:
+        viewer = get(f"{SITE}/das/image/{code}")
+    except urllib.error.HTTPError as e:
+        if e.code != 404:
+            raise
+        found = parts(code)
+        if not found:
+            sys.exit(f"{code}: no images (404) and no parts listed")
+        info["parts"] = [{"code": c, "title": t} for c, t in found]
+        (folder / "meta.json").write_text(json.dumps(info, indent=1, ensure_ascii=False))
+        print(f"{code}: {info['title']} — a file of {len(found)} parts; fetching each")
+        for c, _ in found:
+            fetch(c)
+        return
     (folder / "meta.json").write_text(json.dumps(info, indent=1, ensure_ascii=False))
-    viewer = get(f"{SITE}/das/image/{code}")
     m = re.search(r'\\/content\\/item\\/[^"]*?raw\\/[^"]*?\.pdf', viewer)
     if not m:
         sys.exit(f"{code}: no PDF link on the image page")
@@ -98,6 +136,9 @@ if __name__ == "__main__":
             print(f"{code}\t{title}")
     elif cmd == "meta" and args:
         print(json.dumps(meta(args[0]), indent=1, ensure_ascii=False))
+    elif cmd == "parts" and args:
+        for code, title in parts(args[0]):
+            print(f"{code}\t{title}")
     elif cmd == "fetch" and args:
         for a in args:
             fetch(a)
