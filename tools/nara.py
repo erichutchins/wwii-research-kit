@@ -21,6 +21,12 @@ Commands:
                                                  item's title alone (a diary's title is its command and dates); without
                                                  it the words are matched in the scanned text too, and the hits are loose
   python3 tools/nara.py fetch 74802746 [...]   download folder(s) to sources/nara/rg<group>-<id>/
+  python3 tools/nara.py text 78498844 [...]    the catalog's OCR of every page of an item, in one request, cached as
+                                                 sources/nara/rg<group>-<id>/ocr/pNN.txt (no scans downloaded)
+  python3 tools/nara.py grep 78498844 "convoy col+ege" [--context 300]
+                                               the pages of an item whose OCR matches a regular expression (case
+                                                 ignored), each as its citation with the words around the match. OCR
+                                                 misreads typed pages: allow for it, and read the scan before quoting
   python3 tools/nara.py index                  rebuild records/scans.json (page -> public URL)
   python3 tools/nara.py rename                 move cache folders still under the old "rg367-" name
 
@@ -162,6 +168,64 @@ def fetch(na_id):
     print(f"{na_id}: {rec['title']} — {len(objs)} pages -> {rel(folder)}")
 
 
+def text(na_id, rec=None):
+    """{page number: the catalog's OCR text} for every page of an item, from one request to the catalog's extracted-text
+    endpoint, cached in the item's folder as ocr/pNN.txt (a page with no OCR is an empty file). The pages are numbered
+    in the record's own order of digitalObjects, as fetch numbers the scans."""
+    rec = rec or record(na_id)
+    if not rec:
+        sys.exit(f"no record {na_id}")
+    objs = rec.get("digitalObjects", [])
+    folder = folder_for(na_id, rec) / "ocr"
+    path = lambda n: folder / f"p{n:02d}.txt"       # as fetch names the scans and the citations name the pages
+    if objs and all(path(n).exists() for n in range(1, len(objs) + 1)):
+        return {n: path(n).read_text() for n in range(1, len(objs) + 1)}
+    order = {str(o.get("objectId")): n for n, o in enumerate(objs, 1)}
+    found, page = {}, 1
+    while True:
+        url = f"https://catalog.archives.gov/proxy/extractedText/{na_id}?{urllib.parse.urlencode({'limit': 1000, 'page': page})}"
+        for attempt in range(4):
+            try:
+                with urllib.request.urlopen(url, timeout=120) as r:
+                    j = json.load(r)
+                break
+            except Exception as e:
+                if attempt == 3:
+                    raise
+                print(f"  retry ({e})", file=sys.stderr)
+                time.sleep(5 * (attempt + 1))
+        batch = j.get("digitalObjects") or []
+        for o in batch:
+            n = order.get(str(o.get("objectId")))
+            if n:
+                found[n] = o.get("extractedText") or ""
+        if not batch or len(found) >= int(j.get("total") or 0):
+            break
+        page += 1
+    folder.mkdir(parents=True, exist_ok=True)
+    out = {n: found.get(n, "") for n in range(1, len(objs) + 1)}
+    for n, t in out.items():
+        path(n).write_text(t)
+    print(f"{na_id}: OCR for {sum(1 for t in out.values() if t.strip())} of {len(objs)} pages -> {rel(folder)}",
+          file=sys.stderr)
+    return out
+
+
+def grep(na_id, pattern, context=200):
+    """(citation, snippet) for each match of a regular expression (case ignored) in an item's OCR."""
+    import re
+    rec = record(na_id)
+    if not rec:
+        sys.exit(f"no record {na_id}")
+    prefix = f"rg{record_group(rec)}-{na_id}"
+    out = []
+    for n, t in text(na_id, rec).items():
+        for m in re.finditer(pattern, t, flags=re.I):
+            snip = " ".join(t[max(0, m.start() - context):m.end() + context].split())
+            out.append((f"{prefix}/p{n:02d}", snip))
+    return out
+
+
 def index():
     """records/scans.json: {"rg38-<id>/pNN": public URL} for every downloaded folder,
     merged into the existing index so folders not downloaded on this machine are kept."""
@@ -202,6 +266,15 @@ if __name__ == "__main__":
         for a in args:
             fetch(int(a))
         index()
+    elif cmd == "text" and args:
+        for a in args:
+            text(int(a))
+    elif cmd == "grep" and len(args) >= 2:
+        ctx = int(args[args.index("--context") + 1]) if "--context" in args else 200
+        hits = grep(int(args[0]), args[1], ctx)
+        print(f"{len(hits)} match{'es' if len(hits) != 1 else ''}", file=sys.stderr)
+        for cite, snip in hits:
+            print(f"{cite}\t{snip}")
     elif cmd == "index":
         index()
     elif cmd == "rename":
