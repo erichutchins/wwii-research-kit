@@ -47,6 +47,7 @@ CITES = {
     "fronts/units.csv": ["map"],      # and its unit symbols (fronts/<map>-units.csv)
     "army/ships.csv": ["links"],
     "army/relations.csv": ["page"],
+    "navy/relations.csv": ["page"],
     "comsubpac/disposition.csv": ["page"],
     "comsubpac/task_organization.csv": ["page"],
     "comsubpac/changes.csv": ["page"],
