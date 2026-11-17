@@ -1,0 +1,205 @@
+{
+ "extent": "bizerte",
+ "built": "2026-11-16",
+ "sources": {
+  "period_map": {
+   "kind": "gsgs4225",
+   "metres_per_pixel": 6.0,
+   "sheets": [
+    {
+     "sheet": "GSGS 4225 sheet 2",
+     "edition": 1942
+    },
+    {
+     "sheet": "GSGS 4225 sheet 3",
+     "edition": 1942
+    },
+    {
+     "sheet": "GSGS 4225 sheet 6",
+     "edition": 1942
+    },
+    {
+     "sheet": "GSGS 4225 sheet 7",
+     "edition": 1942
+    },
+    {
+     "sheet": "GSGS 4225 sheet 12",
+     "edition": 1942
+    },
+    {
+     "sheet": "GSGS 4225 sheet 13",
+     "edition": 1942
+    }
+   ],
+   "placing": [
+    {
+     "sheet": "2",
+     "name": "Bizerte",
+     "crossings": 589,
+     "lines": {
+      "vertical": 31,
+      "horizontal": 19
+     },
+     "shift_km": [
+      0,
+      0
+     ],
+     "px_per_km": 141.5,
+     "fit_rms_m": 16.3,
+     "bounds": [
+      9.5607,
+      37.2132,
+      9.9288,
+      37.4099
+     ]
+    },
+    {
+     "sheet": "3",
+     "name": "Metline",
+     "crossings": 620,
+     "lines": {
+      "vertical": 31,
+      "horizontal": 20
+     },
+     "shift_km": [
+      0,
+      0
+     ],
+     "px_per_km": 142.5,
+     "fit_rms_m": 9.9,
+     "bounds": [
+      9.9193,
+      37.1848,
+      10.2879,
+      37.3825
+     ]
+    },
+    {
+     "sheet": "6",
+     "name": "Djebel Ichkeul",
+     "crossings": 640,
+     "lines": {
+      "vertical": 32,
+      "horizontal": 20
+     },
+     "shift_km": [
+      0,
+      0
+     ],
+     "px_per_km": 141.4,
+     "fit_rms_m": 10.5,
+     "bounds": [
+      9.5398,
+      37.0339,
+      9.907,
+      37.2307
+     ]
+    },
+    {
+     "sheet": "7",
+     "name": "Porto Farina",
+     "crossings": 600,
+     "lines": {
+      "vertical": 30,
+      "horizontal": 20
+     },
+     "shift_km": [
+      0,
+      0
+     ],
+     "px_per_km": 142.1,
+     "fit_rms_m": 6.2,
+     "bounds": [
+      9.8976,
+      37.0057,
+      10.2653,
+      37.2033
+     ]
+    },
+    {
+     "sheet": "12",
+     "name": "Mateur",
+     "crossings": 640,
+     "lines": {
+      "vertical": 32,
+      "horizontal": 20
+     },
+     "shift_km": [
+      0,
+      0
+     ],
+     "px_per_km": 141.9,
+     "fit_rms_m": 18.2,
+     "bounds": [
+      9.519,
+      36.8547,
+      9.8854,
+      37.0514
+     ]
+    },
+    {
+     "sheet": "13",
+     "name": "Ariana",
+     "crossings": 640,
+     "lines": {
+      "vertical": 32,
+      "horizontal": 20
+     },
+     "shift_km": [
+      0,
+      0
+     ],
+     "px_per_km": 142.2,
+     "fit_rms_m": 9.5,
+     "bounds": [
+      9.876,
+      36.8265,
+      10.2429,
+      37.0241
+     ]
+    }
+   ]
+  },
+  "osm": {
+   "extract": "africa/tunisia",
+   "licence": "ODbL, (c) OpenStreetMap contributors"
+  }
+ },
+ "tolerances": {
+  "road_m": 80.0,
+  "road_degrees": 25.0,
+  "rail_m": 60.0,
+  "step_m": 15.0,
+  "link_ink_m": 60.0,
+  "link_gap_m": 600.0,
+  "connector_m": 400.0,
+  "connector_snap_m": 30.0,
+  "trace_snap_m": 80.0,
+  "join_m": 300.0,
+  "isolated_under_m": 600.0
+ },
+ "counts": {
+  "roads": 2667,
+  "rails": 76,
+  "water": 59,
+  "places": 41,
+  "hills": 3,
+  "woods": 268,
+  "churches": 0,
+  "junctions": 0,
+  "crossings": 52
+ },
+ "roads": {
+  "osm_aligned": 1113,
+  "traced": 1554,
+  "connectors": 99,
+  "bridged_km": 3.2,
+  "joined_km": 385.8,
+  "isolated": 255
+ },
+ "rails_on_sheet": {
+  "shown": 72,
+  "partly": 2,
+  "not seen": 2
+ }
+}

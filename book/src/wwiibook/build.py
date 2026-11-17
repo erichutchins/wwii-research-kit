@@ -1,0 +1,200 @@
+"""Build a book in two passes.
+
+  1. Ask Typst for every request the book's pages make (`<wwii-request>` metadata, written by the Typst package's
+     facsimile(), records() and qr-tag()). Each request carries a `kind`, the `key` Typst will look it up by, and its
+     arguments. The book compiles at this stage too: an unprepared request draws a placeholder.
+  2. Prepare each request not yet in `build/assets.json` (fetch and crop a scan, stage a records file as JSON, draw
+     a QR code) and compile again. Then ask Typst for its warnings (`<wwii-warning>`: an image placed below 300 dpi).
+
+Everything prepared lands in the book's own `build/` folder, which Typst can read (a Typst project can't read files
+outside its root). The keys come from Typst, so the two sides never compute them twice.
+"""
+import csv
+import hashlib
+import json
+import re
+import shutil
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+
+import typst
+import yaml
+
+from . import figures, images, nara, paths, qr
+from .cite import parse
+
+
+@dataclass
+class Result:
+    pdf: Path
+    prepared: list[str] = field(default_factory=list)
+    reused: list[str] = field(default_factory=list)
+    failed: list[tuple[str, str]] = field(default_factory=list)
+    warnings: list[dict] = field(default_factory=list)
+
+
+def _slug(key: str) -> str:
+    return re.sub(r"[^A-Za-z0-9]+", "-", key).strip("-")[:60] + "-" + hashlib.sha1(key.encode()).hexdigest()[:8]
+
+
+def _facsimile(req: dict, build: Path) -> dict:
+    cite = parse(req["cite"])
+    src = nara.page_image(cite)
+    name = f"{_slug(req['key'])}.png"
+    w, h = images.facsimile(src, build / name, crop=req.get("crop"), rotate=req.get("rotate") or 0)
+    return {"kind": "facsimile", "path": f"build/{name}", "px": [w, h], "credit": cite.credit, "link": cite.link,
+            "cite": cite.text}
+
+
+def _records(req: dict, build: Path) -> dict:
+    src = paths.records() / req["path"]
+    if src.suffix == ".csv":
+        with src.open(newline="") as f:
+            data = list(csv.DictReader(f))
+    elif src.suffix in (".yml", ".yaml"):
+        data = yaml.safe_load(src.read_text())
+    else:
+        data = json.loads(src.read_text())
+    name = f"{_slug(req['key'])}.json"
+    (build / name).write_text(json.dumps(data, ensure_ascii=False))
+    return {"kind": "records", "path": f"build/{name}", "source": req["path"]}
+
+
+def _qr(req: dict, build: Path) -> dict:
+    name = f"{_slug(req['key'])}.svg"
+    qr.svg(req["url"], build / name)
+    return {"kind": "qr", "path": f"build/{name}", "url": req["url"]}
+
+
+def _picture(req: dict, build: Path) -> dict:
+    """A picture already in the cache (a photograph, a crop, a clipping), by its path under the cache."""
+    from PIL import Image
+    src = paths.cache() / req["path"]
+    name = f"{_slug(req['key'])}{src.suffix.lower()}"
+    shutil.copyfile(src, build / name)
+    with Image.open(src) as im:
+        px = im.size
+    return {"kind": "picture", "path": f"build/{name}", "px": list(px), "source": req["path"]}
+
+
+def _plate(req: dict, build: Path) -> dict:
+    """A slice of a day's 12th Army Group situation map, as scanned, with a unit ringed (sitmap.plate)."""
+    from . import sitmap
+    name = f"{_slug(req['key'])}.png"
+    meta = sitmap.plate(req["day"], req["box"], req.get("unit"), build / name)
+    return {"kind": "plate", "path": f"build/{name}", **meta}
+
+
+def _atlas(req: dict, build: Path) -> dict:
+    """One view of an atlas extent (book/atlas/<name>/extent.yml): the panorama or the oblique view. The extent's
+    period network is reconstructed first if it hasn't been."""
+    from .atlas import oblique, panorama, reconstruct
+    from .atlas.extent import Extent
+    ex = Extent.load(req["extent"])
+    if not (ex.infrastructure / "manifest.json").exists():
+        reconstruct.build(ex)
+    if req["view"] == "panorama":
+        svg, notes = panorama.panorama(ex, req.get("width"), highlight=req.get("highlight"),
+                                       highlight_words=req.get("highlight_words"))
+    elif req["view"] == "inset":
+        from .atlas import inset
+        svg, notes = inset.inset(ex, req.get("width"))
+    elif req["view"] == "sheet":
+        from .atlas import sheetview
+        svg, notes = sheetview.sheet_view(ex, req.get("width"))
+    else:
+        svg, notes = oblique.oblique(ex, req.get("width"), azimuth=req.get("azimuth"), tilt=req.get("tilt"),
+                                     exaggeration=req.get("exaggeration"), highlight=req.get("highlight"))
+    name = f"{_slug(req['key'])}.svg"
+    (build / name).write_text(svg)
+    return {"kind": "atlas", "path": f"build/{name}", "title": ex.title, **notes}
+
+
+def _figure(req: dict, build: Path) -> dict:
+    if req["figure"] == "oblique":
+        from . import oblique
+        route = json.loads((build.parent / req["data"]).read_text()) if req.get("data") else None
+        svg, notes = oblique.view(req["box"], req.get("width") or 5.5, req.get("height"),
+                                  azimuth=req.get("azimuth", 180), tilt=req.get("tilt", 30),
+                                  exaggeration=req.get("exaggeration", 4), zoom=req.get("zoom", 12),
+                                  fronts=tuple(req.get("fronts") or ()), units=req.get("units"),
+                                  highlight=req.get("highlight"), route=route, window=req.get("window"),
+                                  labels=tuple(req.get("labels") or ()), places=tuple(tuple(x) for x in req.get("places") or ()))
+        name = f"{_slug(req['key'])}.svg"
+        (build / name).write_text(svg)
+        return {"kind": "figure", "path": f"build/{name}", **notes}
+    if req["figure"] == "route":
+        data = json.loads((build.parent / req["data"]).read_text())
+        svg, notes = figures.route_map(data, req.get("width") or 5.5, req["panels"], req.get("labels") or [],
+                                       req.get("fronts") or [], req.get("window"), req.get("height"),
+                                       req.get("legs") or "full")
+        name = f"{_slug(req['key'])}.svg"
+        (build / name).write_text(svg)
+        return {"kind": "figure", "path": f"build/{name}", **notes}
+    svg, s = figures.render(req["figure"], req["engagement"], req.get("width") or 5.5, req.get("box"), req.get("window"),
+                            req.get("follow"))
+    name = f"{_slug(req['key'])}.svg"
+    (build / name).write_text(svg)
+    marks = []
+    for m in s.marks:
+        t = figures._t(m.utc)
+        marks.append({**asdict(m), "gmt": f"{t.day} {t:%b} {t:%H%M}Z"})
+    return {"kind": "figure", "path": f"build/{name}", "marks": marks, "others": figures.grouped_cites(s),
+            "zones": figures.zones_line(s)}
+
+
+def _chain(req: dict, build: Path) -> dict:
+    """A unit's chain of command from the kit's relations.csv (chain.py): over months, or on one day."""
+    from . import chain
+    if req["view"] == "ladder":
+        svg, notes = chain.ladder(req["unit"], req["on"], req.get("width") or 3.0)
+    elif req["view"] == "strip":
+        svg, notes = chain.strip(req["unit"], req["on"], req.get("width") or 6.0)
+    else:
+        svg, notes = chain.timeline(req["unit"], req["start"], req["end"], req.get("width") or 9.6,
+                                    req.get("title") or "", req.get("marks") or [])
+    name = f"{_slug(req['key'])}.svg"
+    (build / name).write_text(svg)
+    return {"kind": "chain", "path": f"build/{name}", **notes}
+
+
+PREPARERS: dict[str, Callable[[dict, Path], dict]] = {"facsimile": _facsimile, "records": _records, "qr": _qr,
+                                                      "figure": _figure, "picture": _picture, "plate": _plate,
+                                                      "atlas": _atlas, "chain": _chain}
+
+
+def _query(book: Path, selector: str, root: Path) -> list:
+    out = typst.query(str(book), selector, field="value", root=str(root), package_path=str(paths.TYPST),
+                      font_paths=[str(paths.FONTS)])
+    return json.loads(out) if isinstance(out, (str, bytes)) else list(out)
+
+
+def build(book: Path | str, output: Path | str | None = None, refresh: bool = False) -> Result:
+    book = Path(book).resolve()
+    root = book.parent
+    build_dir = root / "build"
+    build_dir.mkdir(exist_ok=True)
+    assets_path = build_dir / "assets.json"
+    assets = {} if refresh or not assets_path.exists() else json.loads(assets_path.read_text())
+    assets = {k: v for k, v in assets.items() if (root / v["path"]).exists()}   # a file gone is prepared again
+    assets_path.write_text(json.dumps(assets, indent=1))
+    pdf = Path(output).resolve() if output else book.with_suffix(".pdf")
+    result = Result(pdf)
+
+    requests = {r["key"]: r for r in _query(book, "<wwii-request>", root)}    # pass 1 (also proves it compiles)
+    for key, req in requests.items():
+        have = assets.get(key)
+        if have and (root / have["path"]).exists():
+            result.reused.append(key)
+            continue
+        try:
+            assets[key] = PREPARERS[req["kind"]](req, build_dir)
+            result.prepared.append(key)
+        except Exception as e:          # one bad request leaves its placeholder; the rest of the book still builds
+            result.failed.append((key, f"{type(e).__name__}: {e}"))
+    assets_path.write_text(json.dumps(assets, indent=1))
+
+    typst.compile(str(book), output=str(pdf), root=str(root), package_path=str(paths.TYPST), font_paths=[str(paths.FONTS)])                           # pass 2
+    result.warnings = _query(book, "<wwii-warning>", root)
+    return result

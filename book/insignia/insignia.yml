@@ -1,0 +1,158 @@
+# Shoulder sleeve insignia for the chain-of-command figures (src/wwiibook/chain.py), keyed by the kit's unit id
+# (records/army/units.csv, relations.csv). The images are Wikimedia Commons renderings (500 px), cached under the
+# kit's sources/insignia/commons/ (git-ignored, re-downloadable from `source`). The designs are the US Army's;
+# each rendering's licence is as Commons gives it, and a CC BY-SA one is credited where the figure is printed.
+# `period`: what has been checked about the years the patch was worn. A patch not yet checked is drawn, and listed
+# in the figure's notes, until it is.
+
+79th-division:
+  name: "79th Infantry Division"
+  file: "79th_Infantry_Division_SSI.png"
+  aspect: 0.852
+  source: "https://commons.wikimedia.org/wiki/File:79th_Infantry_Division_SSI.svg"
+  licence: "Public domain"
+  period: "not yet checked"
+45th-division:
+  name: "45th Infantry Division"
+  file: "45th_Infantry_insignia_(thunderbird).png"
+  aspect: 1.0
+  source: "https://commons.wikimedia.org/wiki/File:45th_Infantry_insignia_(thunderbird).svg"
+  licence: "Public domain"
+  period: "the Thunderbird, adopted in 1939: the patch of 1943-45 (the division's earlier patch, 1924-39, is not)"
+9ad:
+  name: "9th Armored Division"
+  file: "9th_US_Armored_Division_SSI.png"
+  aspect: 1.188
+  source: "https://commons.wikimedia.org/wiki/File:9th_US_Armored_Division_SSI.svg"
+  licence: "Public domain"
+  period: "not yet checked"
+first-army:
+  name: "First US Army"
+  file: "US_Army_1st_Army_SSI_Prior_to_1950.png"
+  aspect: 0.781
+  source: "https://commons.wikimedia.org/wiki/File:US_Army_1st_Army_SSI_Prior_to_1950.png"
+  licence: "CC BY-SA 4.0"
+  credit: "Military editor, Wikimedia Commons"
+  period: "Commons describes this as the patch before 1950 (the red and white ground came later); not yet checked against the Institute of Heraldry"
+third-army:
+  name: "Third US Army"
+  file: "3rd_Army.png"
+  aspect: 1.025
+  source: "https://commons.wikimedia.org/wiki/File:3rd_Army.svg"
+  licence: "Public domain"
+  period: "not yet checked"
+seventh-army:
+  name: "Seventh US Army"
+  file: "US_Seventh_Army_SSI.png"
+  aspect: 2.0
+  source: "https://commons.wikimedia.org/wiki/File:US_Seventh_Army_SSI.svg"
+  licence: "Public domain"
+  period: "not yet checked"
+ninth-army:
+  name: "Ninth US Army"
+  file: "US_Ninth_Army_patch.png"
+  aspect: 1.027
+  source: "https://commons.wikimedia.org/wiki/File:US_Ninth_Army_patch.svg"
+  licence: "Public domain"
+  period: "not yet checked"
+fifteenth-army:
+  name: "Fifteenth US Army"
+  file: "Fifteenth_Army_SSI.png"
+  aspect: 0.935
+  source: "https://commons.wikimedia.org/wiki/File:Fifteenth_Army_SSI.svg"
+  licence: "Public domain"
+  period: "not yet checked"
+12th-army-group:
+  name: "12th Army Group"
+  file: "12th_Army_Group.png"
+  aspect: 0.751
+  source: "https://commons.wikimedia.org/wiki/File:12th_Army_Group.svg"
+  licence: "CC BY-SA 3.0"
+  credit: "Beringar, Wikimedia Commons"
+  period: "not yet checked"
+6th-army-group:
+  name: "6th Army Group"
+  file: "US_6th_Army_Group.png"
+  aspect: 1.0
+  source: "https://commons.wikimedia.org/wiki/File:US_6th_Army_Group.svg"
+  licence: "CC BY-SA 4.0"
+  credit: "EclecticArkie, Wikimedia Commons"
+  period: "not yet checked"
+iii-corps:
+  name: "III Corps"
+  file: "3_Corps_Shoulder_Sleeve_Insignia.png"
+  aspect: 1.136
+  source: "https://commons.wikimedia.org/wiki/File:3_Corps_Shoulder_Sleeve_Insignia.svg"
+  licence: "Public domain"
+  period: "not yet checked"
+v-corps:
+  name: "V Corps"
+  file: "V_Corps.png"
+  aspect: 1.05
+  source: "https://commons.wikimedia.org/wiki/File:V_Corps.svg"
+  licence: "Public domain"
+  period: "not yet checked"
+vi-corps:
+  name: "VI Corps"
+  file: "US_VI_Corps_SSI.png"
+  aspect: 1.0
+  source: "https://commons.wikimedia.org/wiki/File:US_VI_Corps_SSI.png"
+  licence: "Public domain"
+  period: "not yet checked"
+vii-corps:
+  name: "VII Corps"
+  file: "US_VII_Corps_SSI.png"
+  aspect: 1.0
+  source: "https://commons.wikimedia.org/wiki/File:US_VII_Corps_SSI.png"
+  licence: "Public domain"
+  period: "not yet checked"
+viii-corps:
+  name: "VIII Corps"
+  file: "US_VIII_Corps_SSI.png"
+  aspect: 1.0
+  source: "https://commons.wikimedia.org/wiki/File:US_VIII_Corps_SSI.png"
+  licence: "Public domain"
+  period: "not yet checked"
+xiii-corps:
+  name: "XIII Corps"
+  file: "USA_-_XIII_Corps.png"
+  aspect: 1.0
+  source: "https://commons.wikimedia.org/wiki/File:USA_-_XIII_Corps.png"
+  licence: "Public domain"
+  period: "not yet checked"
+xv-corps:
+  name: "XV Corps"
+  file: "US_XV_Corps_SSI.png"
+  aspect: 1.0
+  source: "https://commons.wikimedia.org/wiki/File:US_XV_Corps_SSI.svg"
+  licence: "Public domain"
+  period: "not yet checked"
+xvi-corps:
+  name: "XVI Corps"
+  file: "XVI_Corps_SSI.png"
+  aspect: 0.876
+  source: "https://commons.wikimedia.org/wiki/File:XVI_Corps_SSI.svg"
+  licence: "Public domain"
+  period: "not yet checked"
+xix-corps:
+  name: "XIX Corps"
+  file: "XIX_Corps_SSI.png"
+  aspect: 0.994
+  source: "https://commons.wikimedia.org/wiki/File:XIX_Corps_SSI.svg"
+  licence: "Public domain"
+  period: "not yet checked"
+etousa:
+  name: "European Theater of Operations, US Army"
+  file: "ETOUSA_shoulder_sleeve_insignia.png"
+  aspect: 0.718
+  source: "https://commons.wikimedia.org/wiki/File:ETOUSA_shoulder_sleeve_insignia.svg"
+  licence: "Public domain"
+  period: "not yet checked"
+sos-natousa:
+  name: "North African Theater of Operations, US Army"
+  file: "NATOUSA_shoulder_sleeve_insignia.png"
+  aspect: 0.828
+  source: "https://commons.wikimedia.org/wiki/File:NATOUSA_shoulder_sleeve_insignia.svg"
+  licence: "CC BY-SA 4.0"
+  credit: "Meghdhanu, Wikimedia Commons"
+  period: "the theater's patch (NATOUSA); whether its Services of Supply wore it or their own is not yet checked"

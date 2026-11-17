@@ -1,0 +1,19 @@
+# GSGS 4225, Tunisia 1:50,000 (War Office, 1942; reprinted by the Army Map Service, "Second edition - AMS 1"),
+# "copied from a French map" (the sheets name the French edition's year). Scans: University of Texas Libraries,
+# PCL Map Collection (public domain). Each sheet's first labelled easting and northing were read by eye from its
+# margin (16 Nov 2026); the rest of its grid lines are numbered from them.
+series: GSGS 4225
+source: gsgs-tunisia-50k        # records/SOURCES.yml
+title: Tunisia 1:50,000
+grid: nwa                  # British North-West Africa Grid, printed in purple ("DO NOT USE BLACK GRID")
+ink: purple
+cache: maps/utexas/tunisia-50k
+url: "https://maps.lib.utexas.edu/maps/ams/tunisia_50k/txu-pclmaps-oclc-6540922-{file}"
+edition: "1942"
+sheets:
+  "2":  {name: Bizerte, file: bizerte-2.jpg, east0_km: 1848, north0_km: 918}
+  "3":  {name: Metline, file: metline-3.jpg, east0_km: 1880, north0_km: 918}
+  "6":  {name: Djebel Ichkeul, file: djebel-ichkeul-6.jpg, east0_km: 1848, north0_km: 898}
+  "7":  {name: Porto Farina, file: porto-farina-7.jpg, east0_km: 1880, north0_km: 898}
+  "12": {name: Mateur, file: mateur-12.jpg, east0_km: 1848, north0_km: 878}
+  "13": {name: Ariana, file: ariana-13.jpg, east0_km: 1880, north0_km: 878}

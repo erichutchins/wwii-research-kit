@@ -1,0 +1,23 @@
+# GSGS 4229, Italy 1:50,000 (War Office, 1943; reprinted by the Army Map Service, "First edition (coloured) - AMS 1"),
+# "copied and reduced from 1:25,000" Istituto Geografico Militare sheets (the sheets name their own dates). Scans:
+# University of Texas Libraries, PCL Map Collection (public domain). Each sheet's first labelled easting and northing
+# were read by eye from its margin (16 Nov 2026); the rest of its grid lines are numbered from them.
+series: GSGS 4229
+source: ams-italy-50k          # records/SOURCES.yml
+title: Italy 1:50,000
+grid: italy-s                  # South Italy Zone grid, printed in blue
+ink: blue
+cache: maps/utexas/italy-50k
+url: "https://maps.lib.utexas.edu/maps/ams/italy_50k/txu-pclmaps-oclc-6540719-{file}"
+edition: "1943"
+body: [0.02, 0.02, 0.86, 0.98]   # where to look for the grid: nearly the whole scan (the first lines sit close to the frame)
+# Each sheet's frame (`frame`: west, south, east, north, degrees east of Greenwich) is the graticule its margin prints,
+# given east of Rome (Monte Mario, 12 deg 27' 08.4" E of Greenwich): a quarter sheet spans 15' of longitude and 10' of
+# latitude. The mosaic cuts each sheet to its frame, so no margin is pasted in.
+sheets:
+  "249-I":   {name: Partanna Mondello, file: partanna-mondello-249-1.jpg, east0_km: 631, north0_km: 470, frame: [13.20233, 38.16667, 13.45233, 38.33333]}
+  "249-II":  {name: Palermo, file: palermo-249-2.jpg, east0_km: 631, north0_km: 452, frame: [13.20233, 38.0, 13.45233, 38.16667]}
+  "249-III": {name: Partinico, file: partinico-249-3.jpg, east0_km: 609, north0_km: 452, frame: [12.95233, 38.0, 13.20233, 38.16667]}
+  "249-IV":  {name: Punta Raisi, file: punta-raisi-249-4.jpg, east0_km: 609, north0_km: 471, frame: [12.95233, 38.16667, 13.20233, 38.33333]}
+  "250-III": {name: Bagheria, file: bagheria-250-3.jpg, east0_km: 653, north0_km: 452, frame: [13.45233, 38.0, 13.70233, 38.16667]}
+  "258-I":   {name: Marineo, file: marineo-258-1.jpg, east0_km: 630, north0_km: 433, frame: [13.20233, 37.83333, 13.45233, 38.0]}

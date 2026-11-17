@@ -48,6 +48,14 @@ For film of a place and date, follow the skill `find-film` (rules in `records/fi
 - `site/`: static pages, no build step. D3 7.9.0, topojson-client, js-yaml and suncalc come from a CDN, each at the one
   pinned address listed at the top of `config.js` (a page's `<script src>` must match it exactly); `config.js` also holds
   the paths.
+- `book/`: print books from the records (`book/README.md`), the kit's one Python package rather than a PEP 723 script:
+  its own `pyproject.toml` and `uv.lock`, code in `src/wwiibook/`, the Typst package it ships in
+  `src/wwiibook/typst/local/wwii-book/<version>/`, offline tests in `tests/`. A book's pages ask for an archive page by
+  its citation, a records file or a QR tag, and `uv run wwii-book build <book.typ>` fetches them through the shared
+  scan cache (the same `sources/nara/` folders the tools fill) and compiles. Its examples name no one's relative.
+  `book/atlas/<extent>/` holds an illustrated atlas's coordinated pair (panorama and oblique view, one projected
+  frame): `extent.yml` by hand, `infrastructure/` the period roads and railways reconstructed from IGN's 1:50,000
+  (`uv run wwii-book atlas <extent>`); method and sources in `book/atlas/README.md`.
 - `sources/`: downloaded scans and caches. **Git-ignored. Never commit.**
 
 ## Transcription rules

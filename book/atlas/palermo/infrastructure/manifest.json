@@ -1,0 +1,205 @@
+{
+ "extent": "palermo",
+ "built": "2026-11-16",
+ "sources": {
+  "period_map": {
+   "kind": "gsgs4229",
+   "metres_per_pixel": 6.0,
+   "sheets": [
+    {
+     "sheet": "GSGS 4229 sheet 249-II",
+     "edition": 1943
+    },
+    {
+     "sheet": "GSGS 4229 sheet 249-I",
+     "edition": 1943
+    },
+    {
+     "sheet": "GSGS 4229 sheet 250-III",
+     "edition": 1943
+    },
+    {
+     "sheet": "GSGS 4229 sheet 249-III",
+     "edition": 1943
+    },
+    {
+     "sheet": "GSGS 4229 sheet 249-IV",
+     "edition": 1943
+    },
+    {
+     "sheet": "GSGS 4229 sheet 258-I",
+     "edition": 1943
+    }
+   ],
+   "placing": [
+    {
+     "sheet": "249-II",
+     "name": "Palermo",
+     "crossings": 399,
+     "lines": {
+      "vertical": 21,
+      "horizontal": 19
+     },
+     "shift_km": [
+      0,
+      0
+     ],
+     "px_per_km": 157.6,
+     "fit_rms_m": 12.1,
+     "bounds": [
+      13.212,
+      38.0005,
+      13.4417,
+      38.1642
+     ]
+    },
+    {
+     "sheet": "249-I",
+     "name": "Partanna Mondello",
+     "crossings": 418,
+     "lines": {
+      "vertical": 22,
+      "horizontal": 19
+     },
+     "shift_km": [
+      0,
+      0
+     ],
+     "px_per_km": 156.9,
+     "fit_rms_m": 17.6,
+     "bounds": [
+      13.2102,
+      38.1628,
+      13.4518,
+      38.3265
+     ]
+    },
+    {
+     "sheet": "250-III",
+     "name": "Bagheria",
+     "crossings": 437,
+     "lines": {
+      "vertical": 23,
+      "horizontal": 19
+     },
+     "shift_km": [
+      -1,
+      0
+     ],
+     "px_per_km": 157.7,
+     "fit_rms_m": 20.0,
+     "bounds": [
+      13.4518,
+      38.0019,
+      13.7038,
+      38.1651
+     ]
+    },
+    {
+     "sheet": "249-III",
+     "name": "Partinico",
+     "crossings": 396,
+     "lines": {
+      "vertical": 22,
+      "horizontal": 18
+     },
+     "shift_km": [
+      0,
+      0
+     ],
+     "px_per_km": 158.7,
+     "fit_rms_m": 8.0,
+     "bounds": [
+      12.9608,
+      38.0075,
+      13.2023,
+      38.1627
+     ]
+    },
+    {
+     "sheet": "249-IV",
+     "name": "Punta Raisi",
+     "crossings": 300,
+     "lines": {
+      "vertical": 20,
+      "horizontal": 15
+     },
+     "shift_km": [
+      -1,
+      0
+     ],
+     "px_per_km": 156.7,
+     "fit_rms_m": 40.4,
+     "bounds": [
+      12.9469,
+      38.2058,
+      13.2001,
+      38.334
+     ]
+    },
+    {
+     "sheet": "258-I",
+     "name": "Marineo",
+     "crossings": 440,
+     "lines": {
+      "vertical": 22,
+      "horizontal": 20
+     },
+     "shift_km": [
+      0,
+      1
+     ],
+     "px_per_km": 156.4,
+     "fit_rms_m": 28.8,
+     "bounds": [
+      13.2024,
+      37.8292,
+      13.443,
+      38.0019
+     ]
+    }
+   ]
+  },
+  "osm": {
+   "extract": "europe/italy/isole",
+   "licence": "ODbL, (c) OpenStreetMap contributors"
+  }
+ },
+ "tolerances": {
+  "road_m": 80.0,
+  "road_degrees": 25.0,
+  "rail_m": 60.0,
+  "step_m": 15.0,
+  "link_ink_m": 60.0,
+  "link_gap_m": 600.0,
+  "connector_m": 400.0,
+  "connector_snap_m": 30.0,
+  "trace_snap_m": 80.0,
+  "join_m": 300.0,
+  "isolated_under_m": 600.0
+ },
+ "counts": {
+  "roads": 1499,
+  "rails": 434,
+  "water": 93,
+  "places": 38,
+  "hills": 153,
+  "woods": 0,
+  "churches": 0,
+  "junctions": 0,
+  "crossings": 22
+ },
+ "roads": {
+  "osm_aligned": 1287,
+  "traced": 212,
+  "connectors": 172,
+  "bridged_km": 13.8,
+  "joined_km": 184.1,
+  "isolated": 35
+ },
+ "rails_on_sheet": {
+  "shown": 62,
+  "partly": 86,
+  "not seen": 286
+ }
+}

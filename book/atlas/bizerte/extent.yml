@@ -1,0 +1,44 @@
+# Lake Bizerte, May to October 1943: after the Axis surrender in Tunisia, the Allies' anti-aircraft defences of the
+# ports and airfields gathered for Sicily. No front; the military layer is the units' own records. The panorama and
+# the oblique view share this file; nothing here is copied from the kit's records, only named.
+name: bizerte
+title: Lake Bizerte, summer 1943
+crs: EPSG:32632                      # UTM 32N: the extent's own projected frame (Lambert-93 is France's)
+bbox_lonlat: [9.58, 36.99, 10.16, 37.33]   # Mateur to Bizerte, Djebel Ichkeul to Protville
+date: 1943-07-04
+stations:                            # a unit's own positions and engagements (records/army/army.json), for a window
+  - unit: 62ca-c
+    from: 1943-06-01
+    to: 1943-07-18
+    symbol: {arm: antiaircraft, echelon: i, letter: C, label: "62"}    # FM 21-30 (1943), charts 13 and 26
+  - unit: 67ca-med
+    from: 1943-05-01
+    to: 1943-10-15
+    symbol: {arm: medical, label: "67"}     # the Medical Corps' cross; a regiment's medical detachment has no size mark
+locator:
+  bbox_lonlat: [7.9, 35.4, 11.3, 37.6]    # north-east Algeria and northern Tunisia
+  places:                                 # name, lon, lat
+    - [Tunis, 10.1815, 36.8065]
+    - [Béja, 9.1817, 36.7256]
+    - [Sousse, 10.6346, 35.8254]
+    - [Medjez el Bab, 9.6123, 36.6497]
+towns: [Bizerte, Ferryville, Mateur, Protville, Porto Farina]
+language: fr                         # place names in French, as the 1942 sheets give them
+names:                               # today's name (OSM, in French) -> the name on the 1942 sheets and in the records
+  Menzel Bourguiba: Ferryville
+  Ghar El Melh: Porto Farina
+not_places: []
+sources:
+  period_map: gsgs4225               # the War Office's Tunisia 1:50,000 (atlas/sheets/gsgs4225.yml)
+  sheets: ["2", "3", "6", "7", "12", "13"]
+  road_tol_m: 80                     # a 1936 survey, copied in 1942 and placed by its grid: to about 100 m
+  rail_tol_m: 60
+  copernicus: GLO-30
+  geofabrik: africa/tunisia
+panorama:
+  width_in: 9.6
+oblique:
+  azimuth: 0                         # looking north, across Lake Bizerte to the town and the sea
+  tilt: 25
+  exaggeration: 3
+  width_in: 9.6

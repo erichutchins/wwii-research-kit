@@ -1,0 +1,5 @@
+# A book's prepared assets and its output, always rebuilt
+build/
+*.pdf
+.venv/
+.pytest_cache/
