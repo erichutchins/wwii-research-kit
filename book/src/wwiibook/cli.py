@@ -60,6 +60,9 @@ def _atlas(a) -> int:
     if ex.inset:
         from .atlas import inset
         views += (("inset", lambda: inset.inset(ex)),)
+    if ex.air:
+        from .atlas import air
+        views += (("air", lambda: air.air_map(ex)),)
     for name, draw in views:
         svg, notes = draw()
         (ex.build / f"{name}.svg").write_text(svg)

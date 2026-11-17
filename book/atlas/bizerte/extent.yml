@@ -11,6 +11,10 @@ stations:                            # a unit's own positions and engagements (r
     from: 1943-06-01
     to: 1943-07-18
     symbol: {arm: antiaircraft, echelon: i, letter: C, label: "62"}    # FM 21-30 (1943), charts 13 and 26
+    # its guns' reach, drawn as a ring: the battery's reports don't name its guns; its sister batteries of the 1st
+    # Battalion fired 90 mm in the Algiers raids (records/engagements/algiers-1943, "The defences"), so 90 mm is
+    # inferred, and with it FM 4-155's maximum horizontal range "as limited by fuze or tracer"
+    reach: {weapon: "90 mm guns", range_yd: 12600, basis: inferred, ref: fm-4-155/p8}
   - unit: 67ca-med
     from: 1943-05-01
     to: 1943-10-15
@@ -23,6 +27,21 @@ locator:
     - [Sousse, 10.6346, 35.8254]
     - [Medjez el Bab, 9.6123, 36.6497]
 towns: [Bizerte, Ferryville, Mateur, Protville, Porto Farina]
+air:                                 # the air view: the raids on the harbour and the fields they flew from (records/air/)
+  bbox_lonlat: [7.6, 35.4, 16.4, 41.75]   # Tunisia, Sardinia, Sicily and southern Italy
+  target: [Bizerte, 9.8739, 37.2744]
+  target_id: bizerte
+  target_words: the harbour and the lake's anchorages
+  from: 1943-06-01
+  to: 1943-09-30
+  width_in: 9.6
+  places:                                # name, lon, lat
+    - [Tunis, 10.1815, 36.8065]
+    - [Cagliari, 9.1100, 39.2238]
+    - [Palermo, 13.3615, 38.1157]
+    - [Naples, 14.2681, 40.8518]
+    - [Rome, 12.4964, 41.9028]
+    - [Malta, 14.5146, 35.8989]
 language: fr                         # place names in French, as the 1942 sheets give them
 names:                               # today's name (OSM, in French) -> the name on the 1942 sheets and in the records
   Menzel Bourguiba: Ferryville

@@ -100,6 +100,9 @@ def _atlas(req: dict, build: Path) -> dict:
     elif req["view"] == "inset":
         from .atlas import inset
         svg, notes = inset.inset(ex, req.get("width"))
+    elif req["view"] == "air":
+        from .atlas import air
+        svg, notes = air.air_map(ex, req.get("width"))
     elif req["view"] == "sheet":
         from .atlas import sheetview
         svg, notes = sheetview.sheet_view(ex, req.get("width"))
@@ -144,6 +147,15 @@ def _figure(req: dict, build: Path) -> dict:
             "zones": figures.zones_line(s)}
 
 
+def _aircraft(req: dict, build: Path) -> dict:
+    """An aircraft card: a photograph of the type, its silhouettes, and the recognition manual's figures."""
+    from . import aircraft
+    svg, notes = aircraft.card(req["type"], req.get("width") or 4.4, req.get("photo") or 0)
+    name = f"{_slug(req['key'])}.svg"
+    (build / name).write_text(svg)
+    return {**notes, "kind": "aircraft", "path": f"build/{name}"}
+
+
 def _chain(req: dict, build: Path) -> dict:
     """A unit's chain of command from the kit's relations.csv (chain.py): over months, or on one day."""
     from . import chain
@@ -161,7 +173,8 @@ def _chain(req: dict, build: Path) -> dict:
 
 PREPARERS: dict[str, Callable[[dict, Path], dict]] = {"facsimile": _facsimile, "records": _records, "qr": _qr,
                                                       "figure": _figure, "picture": _picture, "plate": _plate,
-                                                      "atlas": _atlas, "chain": _chain}
+                                                      "atlas": _atlas, "chain": _chain,
+                                                      "aircraft": _aircraft}
 
 
 def _query(book: Path, selector: str, root: Path) -> list:

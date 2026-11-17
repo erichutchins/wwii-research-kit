@@ -48,6 +48,8 @@ scans are about 1,800 pixels wide, so about six inches is the most they can prin
 | `src/wwiibook/geo.py` | Coastlines (world-atlas, cached in `<cache>/geo/`, TopoJSON decoded here) and a Mercator frame |
 | `src/wwiibook/atlas/` | An atlas extent's pair of views: the period network reconstructed from IGN's 1:50,000 (`reconstruct.py`), the panorama, the oblique view, the QGIS export (`atlas/README.md`) |
 | `src/wwiibook/chain.py` | A unit's chain of command over months, on one day, or as a row of patches, from `records/army/relations.csv` |
+| `src/wwiibook/aircraft.py` | An aircraft card: a photograph of the type, its silhouettes, the recognition manual's figures (`records/air/aircraft.yml`) |
+| `aircraft/photos.yml` | The cards' photographs: Commons file, caption, credit, licence, whether a face shows and whether Eric approved it |
 | `insignia/insignia.yml` | Shoulder sleeve insignia by unit id: the Commons file, its licence and credit, what is checked of its period |
 | `src/wwiibook/figures.py` | An engagement's map and timeline as SVG, from `records/engagements/<id>/engagement.json` |
 | `src/wwiibook/typst/local/wwii-book/0.1.0/` | The Typst package: page, components, request functions |

@@ -28,6 +28,7 @@ class Extent:
     not_places: list[str] = field(default_factory=list)
     churches: bool = False            # an extent that asks: its Catholic churches (the cathedral on the views)
     inset: dict = field(default_factory=dict)   # a detail at a larger scale (the inset view)
+    air: dict = field(default_factory=dict)     # the air war round the extent: raids, airfields (the air view)
     stations: list[dict] = field(default_factory=list)
     names: dict = field(default_factory=dict)
     highlight: str = ""

@@ -188,6 +188,26 @@ def _cathedral(x: float, y: float, colour: str = CATHEDRAL, k: float = 1.0) -> s
             f'H{x + 1.3 * k:.1f}" stroke="{colour}" stroke-width="0.8"/>')
 
 
+def reach_ring(cx: float, cy: float, r: float, colour: str, reach: dict, words: bool = True) -> str:
+    """A unit's guns' reach as a ring of radius r (points): pale fill, a dashed edge where the gun is inferred, and
+    its weapon and range written along the top of the ring."""
+    dash = ' stroke-dasharray="3 2"' if reach.get("basis") != "reported" else ""
+    out = (f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="{colour}" fill-opacity="0.07" stroke="{colour}" '
+           f'stroke-width="0.9" stroke-opacity="0.85"{dash}/>')
+    if words and r > 30:
+        yd = int(reach["range_yd"])
+        miles = yd / 1760
+        text = (f"{reach['weapon']}: reach {yd:,} yd, about {miles:.0f} miles"
+                + (" (gun inferred)" if reach.get("basis") != "reported" else ""))
+        pid = f"reach{int(cx)}{int(cy)}"
+        out += (f'<defs><path id="{pid}" d="M{cx - r * 0.97:.1f},{cy:.1f} A{r * 0.97:.1f},{r * 0.97:.1f} 0 0 1 '
+                f'{cx + r * 0.97:.1f},{cy:.1f}"/></defs>'
+                f'<text font-family="{DISPLAY}" font-size="6.2" font-weight="bold" fill="{colour}" '
+                f'stroke="#ffffff" stroke-width="2" stroke-linejoin="round" paint-order="stroke">'
+                f'<textPath href="#{pid}" startOffset="50%" text-anchor="middle">{escape(text)}</textPath></text>')
+    return out
+
+
 def _burst(x: float, y: float, colour: str = OWN) -> str:
     """An aircraft engaged: a burst, eight short rays round a small open ring."""
     rays = " ".join(f"M{x + 2.2 * math.cos(a):.1f},{y + 2.2 * math.sin(a):.1f} "
@@ -412,6 +432,11 @@ def panorama(ex: Extent, width_in: float | None = None, highlight: str | None = 
             labels.occupy(mx - 12, my - 10, 34, 18)
         else:
             labels.occupy(mx - 4, my - 4, 8, 8)
+    for m in own_marks:
+        if m["kind"] == "station" and m.get("current") and m.get("reach"):
+            mx, my = d.pt(m["lon"], m["lat"])
+            r_reach = float(m["reach"]["range_yd"]) * 0.9144 / page.metres_per_pt()
+            own.append(reach_ring(mx, my, r_reach, m["colour"], m["reach"]))
     for m in own_marks:
         mx, my = d.pt(m["lon"], m["lat"])
         c = m["colour"]

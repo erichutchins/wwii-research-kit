@@ -283,3 +283,17 @@ this prototype, so it has not been run.
 - The GSGS sheets are public domain scans from the University of Texas Libraries' PCL Map Collection.
 - Copernicus DEM GLO-30 is © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018, provided under
   COPERNICUS by the European Union and ESA.
+
+## The air view
+
+An extent's `air:` block (a box at the scale of the sea between the airfields, a target, a window) draws the raids on
+the target from `records/air/raids.csv` and the fields from `records/air/airfields.csv` (`atlas/air.py`). A raid
+whose airfield a source names gets a thick, tapered, curved arrow from that field toward the target; the defending
+fighters' arrows run from their fields to where they would meet the raiders. Arrows show direction only: no record
+read gives a raid's route, so they are drawn wide and curved to read as "from there, toward here", never as tracks
+(the rule for positions). Raids with no named field are listed in the column beside the map, as the raiding side's
+record words them, with the defenders' own record of the same night where one exists. The extent's own units stand
+at their positions in their FM 21-30 symbols, set off on leaders, and an AA unit with a `reach` (weapon, range in
+yards, basis, page) has its guns' reach drawn as a ring, dashed where the gun is inferred; the panorama draws the
+same ring at its own scale.
+

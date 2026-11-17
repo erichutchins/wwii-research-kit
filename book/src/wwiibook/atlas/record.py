@@ -88,7 +88,8 @@ def marks(ex: Extent) -> list[dict]:
                    "place": st["place"].split(" (")[0], "from": st["date"], "to": st["date"],
                    "assumed_from": st.get("assumed_from"), "lon": st["lon"], "lat": st["lat"],
                    "placed": st["placed"], "grid": st.get("grid") or "", "offset": st.get("offset") or "",
-                   "pages": [st["page"]], "current": False, "until": after[id(st)], "rows": [id(st)]}
+                   "pages": [st["page"]], "current": False, "until": after[id(st)], "rows": [id(st)],
+                   "reach": want.get("reach")}
             mine.append(run)
         # the unit's symbol: where it was on the map's date, if that is on the map; else its longest stay here
         if mine:

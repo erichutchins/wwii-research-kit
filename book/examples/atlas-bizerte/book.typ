@@ -29,3 +29,33 @@
   caption: [The sheets themselves: GSGS 4225, Tunisia 1:50,000, sheets 2, 3, 6, 7, 12 and 13 (War Office, 1942;
   Army Map Service reprint), placed by their own purple North-West Africa grid, the grid the battery's reports
   use ("J 775914 Sheet 6"). The rings are ours. University of Texas Libraries, PCL Map Collection.])
+
+#pagebreak()
+
+#(wwii.atlas-view)("bizerte", view: "air", width: 9.4in,
+  caption: [The air war over the harbour, June to September 1943. The raids are the German Naval Staff's own record of
+  them (its war diary gives numbers and results, rarely units or airfields). Where a unit history names the raiders,
+  the arrow comes from their airfield: I./KG 76 and then II./KG 76 flew Ju 88s from Foggia. The night fighters' arrows
+  come from La Sebala and Monastir, where No. 255 Squadron RAF's Beaufighters patrolled against the bombers until it
+  left for Sicily in July. On the ground, the units in this atlas in their own colours and FM 21-30 symbols: Battery C,
+  62nd CA (AA), on Lake Bizerte's south-east shore through the 5/6 July raid, and the 67th CA's medical detachment at
+  Protville through August; each dot is where its reports put it, the symbol set off on a leader. The dashed ring is
+  Battery C's guns' reach: 90 mm (inferred from its sister batteries), 12,600 yards by FM 4-155. Arrows show
+  direction, not routes.])
+
+#pagebreak()
+
+= The aircraft
+#eyebrow[As the Allies' recognition manuals described them]
+
+#grid(columns: (1fr, 1fr), column-gutter: 0.4in,
+  (wwii.aircraft-card)("ju88", photo: 1, width: 4.3in),
+  (wwii.aircraft-card)("beaufighter", width: 4.3in),
+)
+
+#pagebreak()
+
+#grid(columns: (1fr, 1fr), column-gutter: 0.4in,
+  (wwii.aircraft-card)("spitfire", width: 4.3in),
+  (wwii.aircraft-card)("me262", width: 4.3in),
+)

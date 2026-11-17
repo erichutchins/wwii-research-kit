@@ -257,9 +257,19 @@
     if caption == none { img } else { std.figure(img, caption: caption) }
   }
 
+  // An aircraft card: a photograph of the type (book/aircraft/photos.yml; one with a face only once approved), its
+  // silhouettes, and the Allies' recognition manual's figures for it (records/air/aircraft.yml), as printed and cited.
+  let aircraft-card(kind, photo: 0, width: 4.4in, caption: none) = {
+    let key-id = "aircraft:" + repr((kind, photo, width))
+    _request("aircraft", key-id, (type: kind, photo: photo, width: width / 1in))
+    let a = get(key-id)
+    let img = if a == none { _pending("aircraft · " + kind, height: 3in) } else { image(load(a.path), width: width) }
+    if caption == none { img } else { std.figure(img, caption: caption) }
+  }
+
   (facsimile: facsimile, records: records, qr-tag: qr-tag, engagement-figure: engagement-figure, picture: picture,
    route-map: route-map, oblique-view: oblique-view, situation-map: situation-map, atlas-view: atlas-view,
-   unit-chain: unit-chain)
+   unit-chain: unit-chain, aircraft-card: aircraft-card)
 }
 
 // One row per torpedo, from a patrol's attacks.csv as records() returns it.
