@@ -445,7 +445,7 @@ def _units(day: str) -> list[dict]:
 
 def route_map(data: dict, width_in: float, panels: list[dict], labels: list[str], fronts: list[str],
               window: list[str] | None = None, height_in: float | None = None, legs: str = "full") -> tuple[str, dict]:
-    """A person's stations (his units' positions, from the family's export of scripts/timeline.py) on one or more
+    """A person's stations (his units' positions, as a JSON file a family layer supplies beside its book) on one or more
     panels side by side at one height: say the United States and Europe, with the crossing between them.
 
     How we know: a station is a filled dot where his unit's report places it and he is recorded with the unit; hollow

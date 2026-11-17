@@ -1,7 +1,7 @@
 # Representative photographs of each aircraft type, for the aircraft cards (src/wwiibook/aircraft.py), keyed as the
 # kit's records/silhouettes/silhouettes.yml and records/air/aircraft.yml. Wikimedia Commons renderings (1280 px),
 # cached under the kit's sources/air-photos/ (git-ignored). `faces`: whether people are visible; any photograph with
-# a face waits for Eric's approval before a book prints it (`approved`). A photo shows the type, not the aircraft or
+# a face waits for the book's editor's approval before a book prints it (`approved`). A photo shows the type, not the aircraft or
 # the unit in our story unless its caption says so.
 
 beaufighter:
@@ -25,14 +25,14 @@ ju88:
     credit: via Wikimedia Commons
     licence: Public domain
     faces: true
-    approved: true                    # Eric, 17 Nov 2026
+    approved: true                    # 17 Nov 2026
   - commons: "Riddled German Junkers Ju 88A of KG 54 in Tunisia, in 1943 (342-FH-3A48576-79787AC).jpg"
     file: Riddled_German_Junkers_Ju_88A_of_KG_54_in_Tunisia_in_1943_342-FH-3A48576-79787AC_.jpg
     caption: A Ju 88A of KG 54 left riddled on a Tunisian airfield, 1943, with two American officers.
     credit: U.S. Air Force photograph, National Archives (342-FH-3A48576), via Wikimedia Commons
     licence: Public domain
     faces: true                       # two American officers, clearly
-    approved: true                    # Eric, 17 Nov 2026
+    approved: true                    # 17 Nov 2026
 
 me262:
   - commons: "Messerschmitt Me 262 A-1a at Stendal airfield, Germany, in April 1945 (342-FH-3A20043-165462AC).jpg"
