@@ -1,6 +1,8 @@
 """wwii-book: build a book; fetch one archive page by its citation.
 
   wwii-book build examples/morning-report/book.typ [-o out.pdf] [--refresh]
+  wwii-book proof examples/morning-report/book.typ [--ppi 110]     its pages as PNGs in proof/, for review
+  wwii-book preflight book.pdf [--preset blurb-magazine]          page size, page count, fonts, image resolution
   wwii-book fetch rg64-469722323/p0712
   wwii-book atlas la-haye-du-puits [--reconstruct] [--qgis]
 """
@@ -8,7 +10,7 @@ import argparse
 import sys
 
 from . import nara
-from .build import build
+from .build import build, proof
 from .cite import parse
 
 
@@ -19,6 +21,12 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("book")
     b.add_argument("-o", "--output")
     b.add_argument("--refresh", action="store_true", help="prepare every request again")
+    pr = sub.add_parser("proof", help="build, then render every page to proof/page-NN.png for review")
+    pr.add_argument("book")
+    pr.add_argument("--ppi", type=int, default=110)
+    pf = sub.add_parser("preflight", help="check a finished PDF against its printer's specifications")
+    pf.add_argument("pdf")
+    pf.add_argument("--preset", default="blurb-magazine")
     f = sub.add_parser("fetch", help="download a page into the scan cache and print its path")
     f.add_argument("cite", nargs="+")
     at = sub.add_parser("atlas", help="reconstruct an atlas extent's period network and draw its pair of views")
@@ -30,17 +38,30 @@ def main(argv: list[str] | None = None) -> int:
     if a.cmd == "atlas":
         return _atlas(a)
 
+    if a.cmd == "preflight":
+        from .preflight import check
+        rep = check(a.pdf, a.preset)
+        print(f"{rep.pdf}: {rep.pages} pages, {len(rep.problems)} problems, {len(rep.warnings)} warnings")
+        for p in rep.problems:
+            print("  problem:", p)
+        for w in rep.warnings:
+            print("  warning:", w)
+        return 0 if rep.ok else 1
+
     if a.cmd == "fetch":
         for c in a.cite:
             print(nara.page_image(parse(c)))
         return 0
 
-    r = build(a.book, a.output, refresh=a.refresh)
+    r = build(a.book, getattr(a, "output", None), refresh=getattr(a, "refresh", False))
     print(f"{r.pdf}: {len(r.prepared)} prepared, {len(r.reused)} reused, {len(r.failed)} failed")
     for key, err in r.failed:
         print(f"  failed {key}: {err}", file=sys.stderr)
     for w in r.warnings:
         print(f"  warning: {w.get('message', w)}", file=sys.stderr)
+    if a.cmd == "proof":
+        for p in proof(a.book, a.ppi):
+            print(p)
     return 1 if r.failed else 0
 
 

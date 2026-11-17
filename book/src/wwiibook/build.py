@@ -211,3 +211,18 @@ def build(book: Path | str, output: Path | str | None = None, refresh: bool = Fa
     typst.compile(str(book), output=str(pdf), root=str(root), package_path=str(paths.TYPST), font_paths=[str(paths.FONTS)])                           # pass 2
     result.warnings = _query(book, "<wwii-warning>", root)
     return result
+
+
+def proof(book: Path | str, ppi: int = 110) -> list[Path]:
+    """The book's pages as PNGs in its proof/ folder (git-ignored), for review: what an agent's report points at and
+    what the main session looks at before merging. Compiles with the assets already prepared (run build first)."""
+    book = Path(book).resolve()
+    root = book.parent
+    out = root / "proof"
+    out.mkdir(exist_ok=True)
+    for old in out.glob("page-*.png"):
+        old.unlink()
+    typst.compile(str(book), output=str(out / "page-{0p}.png"), format="png", ppi=ppi, root=str(root),
+                  package_path=str(paths.TYPST), font_paths=[str(paths.FONTS)])
+    return sorted(out.glob("page-*.png"))
+

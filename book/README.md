@@ -52,7 +52,7 @@ scans are about 1,800 pixels wide, so about six inches is the most they can prin
 | `aircraft/photos.yml` | The cards' photographs: Commons file, caption, credit, licence, whether a face shows and whether the editor approved it |
 | `insignia/insignia.yml` | Shoulder sleeve insignia by unit id: the Commons file, its licence and credit, what is checked of its period |
 | `src/wwiibook/figures.py` | An engagement's map and timeline as SVG, from `records/engagements/<id>/engagement.json` |
-| `src/wwiibook/typst/local/wwii-book/0.1.0/` | The Typst package: page, components, request functions |
+| `src/wwiibook/typst/local/wwii-book/0.1.0/` | The Typst package: `core.typ` (tokens, page, type, the request plumbing), `components/`, `templates/`, `requests/` (one file each), and `lib.typ`, which imports them and assembles `init` |
 | `examples/` | Books built from the public records alone, naming no one's relative |
 
 ## An engagement's figures
@@ -99,3 +99,30 @@ credit the CC BY-SA ones. `examples/unit-chain/` shows all three.
 
 Not yet: JACAR and Library of Congress pages, Army engagements (fronts and stations rather than tracks), the
 templates beyond the ledger and the engagement figures, fonts.
+
+## Adding a template
+
+A template is one file, so several can be built at once without touching each other's work.
+
+1. **The Typst.** A page or component that needs no prepared asset goes in `templates/<name>.typ` (a page or
+   spread) or `components/<name>.typ` (a block used inside pages), starting `#import "../core.typ": *`. A figure the
+   build must draw from the records is a request: `requests/<name>.typ` defines `make-<name>(get, load)`, returning the
+   function, which calls `_request(<kind>, <key>, <args>)`, looks its asset up with `get(key)` and draws `_pending(...)`
+   until the build has prepared it (`requests/atlas-view.typ` is the pattern). The key must change whenever an argument
+   that changes the drawing changes.
+2. **The preparer**, for a request: a module under `src/wwiibook/` with a function that returns `(svg, notes)`, and a
+   `_<kind>(req, build)` in `build.py` that writes the SVG to the book's `build/` folder. Notes carry every citation
+   the figure draws on.
+3. **The example**: `examples/<name>/book.typ`, filled from public records only, naming no one's relative. It shows
+   the template at the size a book uses it, with a caption that says what is drawn and from what.
+4. **The checks**: `uv run wwii-book build examples/<name>/book.typ`, then `uv run wwii-book proof
+   examples/<name>/book.typ`, whose PNGs in `proof/` are what a reviewer looks at; `uv run pytest -q` (every example
+   compiles with nothing prepared: `tests/test_examples.py`), and a test of the preparer's computation where it has
+   any; ruff, ty and the kit's lint.
+5. **Registering it** is one line each, and the merge does it, not the template's author: an `#import` in `lib.typ`,
+   the request's entry in `init`, its preparer in `build.py`'s `PREPARERS`.
+
+Every template keeps the kit's rules on the page: each quote, position and figure carries its citation; every
+inference is labelled (reported, derived, inferred, assumed) and every position shows its precision; the other side is
+named as its records name it; no lines join a unit's dated positions; figures are credited as drawn for this research.
+
