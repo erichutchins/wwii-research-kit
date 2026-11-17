@@ -31,7 +31,7 @@ reading (section 3, "Keeping quality up"). Later boats follow the skill
 | **War patrol reports**: the captain's report of each patrol (narrative, contact tables, attack sheets, density layers, weather) | NARA catalog series 305243 "U.S. Submarine War Patrol Reports" (Record Group 38, "Records of the Office of the Chief of Naval Operations"), microfiche publication **M1752** | Yes, Fold3 scans of the microfiche, about 2460×3217 px per page | **Primary source** |
 | Second copies of the same reports | RG 38 "World War II War Diaries, Other Operational Records and Histories" | Yes | Not yet (a cross-check source for illegible pages) |
 | Muster rolls (crew lists) | RG 24, series 594996 | Yes (Ancestry scans) | No (out of scope for now) |
-| Deck logs (hour-by-hour logbooks) | RG 24, series 594258 "Logbooks of U.S. Navy Ships and Stations" | For BANG, only from 1951: the series has her logbooks from that year on and none for 1944–45 (catalog searched November 2026). Not checked for other boats | No |
+| Deck logs (hour-by-hour logbooks) | RG 24, series 594258 "Logbooks of U.S. Navy Ships and Stations" | For BANG, only from 1951: the series has her logbooks from that year to 1972 and none for 1944–45 (catalog searched November 2026, by her title and in the series). Other boats' wartime logs are scanned, at least in part (GATO and FINBACK, April 1945), so check each boat; a missing month is a request to the National Archives at College Park, not a dead end | No |
 
 An older OCR'd PDF of BANG's reports circulates under the name "Deck Log"
 (from microfilm reel AR-51-78). It is the same war patrol reports, not the
