@@ -48,6 +48,8 @@ CITES = {
     "army/ships.csv": ["links"],
     "army/relations.csv": ["page"],
     "navy/relations.csv": ["page"],
+    "air/raids.csv": ["page"],
+    "air/airfields.csv": ["page"],
     "comsubpac/disposition.csv": ["page"],
     "comsubpac/task_organization.csv": ["page"],
     "comsubpac/changes.csv": ["page"],
