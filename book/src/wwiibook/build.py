@@ -190,11 +190,27 @@ def _fire_control(req: dict, build: Path) -> dict:
     return fire_control.prepare(req, build)
 
 
+def _convoy_route(req: dict, build: Path) -> dict:
+    """A convoy's whole route on the lanes of the time, joined to the engagement's map (convoy_route.py)."""
+    from . import convoy_route
+    svg, notes = convoy_route.route_figure(req["engagement"], req.get("width") or 7.0, req.get("height"), req.get("box"),
+                                           req.get("layout") or "auto")
+    name = f"{_slug(req['key'])}.svg"
+    (build / name).write_text(svg)
+    return {"kind": "convoy-route", "path": f"build/{name}", **notes}
+
+
+def _convoy_ships(req: dict, build: Path) -> dict:
+    """A convoy that several boats attacked: its ships at one scale, and the tally (convoy_ships.py)."""
+    from . import convoy_ships
+    return convoy_ships.prepare(req, build)
+
+
 PREPARERS: dict[str, Callable[[dict, Path], dict]] = {"facsimile": _facsimile, "records": _records, "qr": _qr,
                                                       "figure": _figure, "picture": _picture, "plate": _plate,
                                                       "atlas": _atlas, "chain": _chain,
                                                       "aircraft": _aircraft, "board": _board,
-                                                      "firecontrol": _fire_control}
+                                                      "firecontrol": _fire_control, "convoy-route": _convoy_route, "convoyships": _convoy_ships}
 
 
 def _query(book: Path, selector: str, root: Path) -> list:

@@ -174,14 +174,27 @@ def _symbol(kind, origin, x, y, colour, size=4.0):
     return f'<line x1="{x:.1f}" y1="{y - s * .6:.1f}" x2="{x:.1f}" y2="{y + s * .6:.1f}" stroke="{colour}" stroke-width="0.8"/>'
 
 
+# The boats' colours, in participant order (guides/ENGAGEMENTS.md, "Colour": checked for colour blindness with the hit
+# red, every pair). Red is reserved for hits and is never a boat's colour.
+BOATS = ("#2a6fc9", "#008f78", "#6a3a9e")
+
+
+def _boat_colour(d: dict, lane: str) -> str:
+    us = [p for p in d["participants"] if p["of"] == "us"]
+    p = next((p for p in us if p["id"] == lane), None)
+    i = (p.get("colour") or us.index(p) + 1) - 1 if p else 0
+    return BOATS[i % len(BOATS)]
+
+
 def _lane_colour(lane: str, d: dict, follow: str) -> str:
-    """The boat the book follows in red; the other boats in ink; the other side in its cool grey; FRUPAC in ochre."""
+    """Each US boat in its own colour; the other side in its cool grey; FRUPAC in ochre. The boat the book follows is
+    drawn heavier (in the tracks), not in another hue."""
     p = next((p for p in d["participants"] if p["id"] == lane), None)
     if p is None:
         return INTEL
     if p["of"] != "us":
         return JP
-    return OWN if lane == follow else INK
+    return _boat_colour(d, lane)
 
 
 def _follow(d: dict, follow: str | None) -> str:
@@ -248,7 +261,7 @@ def engagement_map(engagement: str, width_in: float = 5.5, box: list[float] | No
     # tracks: each boat's own fixes in time order; a leg dashed where an end is assumed
     for who, fixes in d["tracks"].items():
         own = sorted((x for x in fixes if x.get("on_track")), key=lambda x: x["utc"])
-        colour, sw = (OWN, 1.4) if who == follow else (INK, 0.9)
+        colour, sw = _boat_colour(d, who), (1.4 if who == follow else 0.9)
         for a, c in zip(own, own[1:]):
             (x1, y1), (x2, y2) = f.xy(a["lon"], a["lat"]), f.xy(c["lon"], c["lat"])
             dash = ' stroke-dasharray="3 2"' if a.get("assumed") or c.get("assumed") else ""
