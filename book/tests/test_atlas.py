@@ -126,3 +126,30 @@ def test_a_ruled_tint_is_not_a_line_but_a_stroke_on_it_is():
     lum[:, 30:33] = 100                     # a grid line across it
     d = _darker(lum, 11)
     assert d[30, 31] > 12 and d[30, 10] < 6
+
+
+def test_the_jets_notional_attack_runs_up_the_course_turns_and_ends_on_the_loss_from_behind():
+    from wwiibook.atlas.mission import _attack_path
+    sketch = [[11.0, 48.9], [11.1, 48.8]]                # a course south-east
+    end = (11.12, 48.78)
+    path = _attack_path(sketch, end)
+    assert path[-1] == end
+    # the first leg runs north-west (against the course): latitude rises, longitude falls
+    assert path[1][1] > path[0][1] and path[1][0] < path[0][0]
+    # the last leg runs south-east (with the course), from behind the loss
+    (a, b), (c, d) = path[-2], path[-1]
+    assert d < b and c > a
+
+
+def test_a_route_time_is_inside_or_outside_the_fights_minutes():
+    from wwiibook.atlas.mission import _in_window
+    w = ["1130", "1200"]
+    assert _in_window("1150", w) and _in_window("1130-1145", w) and _in_window("", w)
+    assert not _in_window("1725", w)
+
+
+def test_the_reach_cut_by_a_section_off_the_guns_is_the_smaller_circle():
+    import math
+    R, off = 3200.0, 1840.0                              # a 3.2 km reach, the section 1.84 km off the guns
+    r = math.sqrt(R ** 2 - off ** 2)
+    assert 2600 < r < 2630

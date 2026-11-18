@@ -1,0 +1,64 @@
+# Neuburg an der Donau, 26 April 1945: six Me 262s of JV 44 attack the 17th Bomb Group's B-26s over the Danube while
+# the 45th Infantry Division crosses it below, and Batteries C and D of the 106th AAA AW Battalion fire on the jets.
+# This extent draws no period network (no wartime German sheet is in the atlas yet): its views are the mission map
+# (the air war at the scale of the airfields, with the fight inset) and the sight-line section (the ground under the
+# bombers' course, from the battery's assumed position). Everything here is named, not copied: the engagement's
+# routes, positions and rings (records/engagements/neuburg-1945-04-26/), the airfields (records/air/airfields.csv),
+# the day's front (records/fronts/12ag-1945-04-26).
+name: neuburg
+title: Neuburg an der Donau, 26 April 1945
+crs: EPSG:32632                      # UTM 32N (6-12° E)
+bbox_lonlat: [10.92, 48.62, 11.32, 48.96]   # Rennertshofen to Rohrenfels, Eichstätt's edge to Neuburg's south
+date: 1945-04-26
+fronts: ["1945-04-26"]
+mission:                             # the mission map (atlas/mission.py)
+  engagement: neuburg-1945-04-26
+  bbox_lonlat: [4.4, 46.55, 12.5, 49.75]    # Dijon to Munich, the Swiss border to Nuremberg's latitude
+  bombers: {actor: 17bg, field: dijon, name: "17th Bomb Group, B-26s"}
+  interceptors: {actor: jv44, field: riem, name: "JV 44, six Me 262s"}
+  # the record segments the notional legs join: the way in starts at the first route's first point, the way home
+  # leaves from the second route's last point (records/engagements/neuburg-1945-04-26/routes.yml)
+  way_in: formation-sketch-a
+  way_home: formation-sketch-b
+  target: lechfeld                   # a position in the engagement: the bombers' briefed target
+  fight: neuburg                     # where the two sides' notional legs meet
+  window: ["1130", "1200"]           # the routes and positions the inset draws, by their time (blank: always)
+  places:                            # name, lon, lat (towns for the reader to find the way by)
+    - [Dijon, 5.0415, 47.3220]
+    - [Strasbourg, 7.7521, 48.5734]
+    - [Stuttgart, 9.1829, 48.7758]
+    - [Ulm, 9.9876, 48.4011]
+    - [Augsburg, 10.8978, 48.3705]
+    - [Munich, 11.5820, 48.1351]
+    - [Nuremberg, 11.0767, 49.4521]
+    - [Basel, 7.5886, 47.5596]
+    - [Zurich, 8.5417, 47.3769]
+    - [Besançon, 6.0241, 47.2378]
+  inset:
+    bbox_lonlat: [10.92, 48.67, 11.32, 48.94]
+    places:
+      - [Neuburg, 11.1880, 48.7456]
+      - [Eichstätt, 11.1989, 48.8863]
+      - [Bergen, 11.1436, 48.7837]
+      - [Rennertshofen, 11.0490, 48.7564]
+      - [Rohrenfels, 11.1565, 48.6862]
+sightline:                           # the section (atlas/sightline.py)
+  engagement: neuburg-1945-04-26
+  # the section follows Big Red's course as its form types it (155°, true or magnetic not said) through its last
+  # known position, back toward the way the formation came and on past Neuburg: the one course the records give at
+  # a position near the guns (the 432nd's sketched line lies 3-5 km west of the losses; the sketch is good to a few km)
+  along: bigred-course
+  course: 155
+  back_km: 14
+  on_km: 9
+  from_words: "north-north-west: the way the formation came in"
+  to_words: "south-south-east: over the Danube at Neuburg"
+  from: bergen                       # the battery's position, assumed (the rings' `at`)
+  rings: [d-37mm, d-50cal]
+  marks: [bigred, neuburg]
+  # heights as the records type them; none says whether above the guns, the ground or the sea: drawn above the
+  # battery's ground (assumed)
+  heights:
+    - {label: "six Me 262s, 500 to 5,000 feet", low_ft: 500, high_ft: 5000, source: "106th AAA AW Bn, April 1945 history, p. 6", ref: ok45th-17560/p06}
+    - {label: "six Me 262s, 10,000 to 500 feet", low_ft: 500, high_ft: 10000, source: "45th Inf Div G-2 Periodic Report No. 219, p. 2", ref: ok45th-5343/p06}
+  width_in: 9.4

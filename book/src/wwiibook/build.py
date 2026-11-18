@@ -92,9 +92,16 @@ def _atlas(req: dict, build: Path) -> dict:
     from .atlas import oblique, panorama, reconstruct
     from .atlas.extent import Extent
     ex = Extent.load(req["extent"])
-    if not (ex.infrastructure / "manifest.json").exists():
+    # the mission, the fight and the section draw no period network: an extent without one (no sheets) still has them
+    if req["view"] not in ("mission", "fight", "sightline") and not (ex.infrastructure / "manifest.json").exists():
         reconstruct.build(ex)
-    if req["view"] == "panorama":
+    if req["view"] in ("mission", "fight"):
+        from .atlas import mission
+        svg, notes = mission.mission_map(ex, req.get("width"), part="map" if req["view"] == "mission" else "fight")
+    elif req["view"] == "sightline":
+        from .atlas import sightline
+        svg, notes = sightline.sightline(ex, req.get("width"))
+    elif req["view"] == "panorama":
         svg, notes = panorama.panorama(ex, req.get("width"), highlight=req.get("highlight"),
                                        highlight_words=req.get("highlight_words"))
     elif req["view"] == "inset":

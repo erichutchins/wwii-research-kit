@@ -29,6 +29,8 @@ class Extent:
     churches: bool = False            # an extent that asks: its Catholic churches (the cathedral on the views)
     inset: dict = field(default_factory=dict)   # a detail at a larger scale (the inset view)
     air: dict = field(default_factory=dict)     # the air war round the extent: raids, airfields (the air view)
+    mission: dict = field(default_factory=dict)  # a day's air mission and its interceptors (the mission view)
+    sightline: dict = field(default_factory=dict)  # a section under an aircraft's course from a battery (sightline)
     stations: list[dict] = field(default_factory=list)
     names: dict = field(default_factory=dict)
     highlight: str = ""

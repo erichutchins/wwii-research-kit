@@ -71,19 +71,27 @@ def _atlas(a) -> int:
     from .atlas import oblique, panorama, qgis, reconstruct
     from .atlas.extent import Extent
     ex = Extent.load(a.extent)
-    if a.reconstruct or not (ex.infrastructure / "manifest.json").exists():
+    networked = bool(ex.sources)          # an extent with a period map; the mission and the section need none
+    if networked and (a.reconstruct or not (ex.infrastructure / "manifest.json").exists()):
         m = reconstruct.build(ex)
         print(f"{ex.infrastructure}: {json.dumps(m['counts'])}")
     ex.build.mkdir(parents=True, exist_ok=True)
     from .atlas import sheetview
-    views = (("panorama", lambda: panorama.panorama(ex)), ("oblique", lambda: oblique.oblique(ex)),
-             ("sheet", lambda: sheetview.sheet_view(ex)))
+    views = ((("panorama", lambda: panorama.panorama(ex)), ("oblique", lambda: oblique.oblique(ex)),
+              ("sheet", lambda: sheetview.sheet_view(ex))) if networked else ())
     if ex.inset:
         from .atlas import inset
         views += (("inset", lambda: inset.inset(ex)),)
     if ex.air:
         from .atlas import air
         views += (("air", lambda: air.air_map(ex)),)
+    if ex.mission:
+        from .atlas import mission
+        views += (("mission", lambda: mission.mission_map(ex, part="map")),
+                  ("fight", lambda: mission.mission_map(ex, part="fight")))
+    if ex.sightline:
+        from .atlas import sightline
+        views += (("sightline", lambda: sightline.sightline(ex)),)
     for name, draw in views:
         svg, notes = draw()
         (ex.build / f"{name}.svg").write_text(svg)

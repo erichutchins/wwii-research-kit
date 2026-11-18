@@ -24,6 +24,7 @@ In a book: `atlas-view("<extent>", view: "panorama" | "oblique" | "sheet" | "ins
 | `northern-vosges` | Alsace, Dec 1944 – Feb 1945 | IGN 1:50,000, black roads (1939, 1953–56) | 12th Army Group, 31 Dec and 29 Jan | Battery D, 106th AAA AW Bn (SP) |
 | `bizerte` | Tunisia, May – Oct 1943 | GSGS 4225, Tunisia 1:50,000 (1942) | none (after the Axis surrender) | Battery C, 62nd CA; Med. Det., 67th CA |
 | `palermo` | Sicily, July 1943 – Apr 1944 | GSGS 4229, Italy 1:50,000 (1943) | none (the island taken) | Battery C, 62nd CA; other batteries' raids |
+| `neuburg` | Bavaria, 26 April 1945 | none yet (no wartime German sheet in the atlas) | 12th Army Group, 26 April | the engagement `neuburg-1945-04-26`: the bombers' and jets' paths, losses and the guns' reach |
 | `metz` | Lorraine, Jan – Feb 1945 | IGN 1:50,000, black roads (1953–57) | 12th Army Group, 14 Jan and 1 Feb | 9th Armored HQ; HQ Battery, 128th AAA Gun Bn; the old town's Catholic churches (inset) |
 
 ## An extent
@@ -297,3 +298,30 @@ at their positions in their FM 21-30 symbols, set off on leaders, and an AA unit
 yards, basis, page) has its guns' reach drawn as a ring, dashed where the gun is inferred; the panorama draws the
 same ring at its own scale.
 
+
+## The air war's two halves: the air view and the mission view
+
+The air view (`air:`, `atlas/air.py`) draws raids on a target the units below defended: the raiders' fields, wide
+arrows toward the target, the defending fighters' arrows to meet them (Bizerte, 1943: German night bombers, Allied
+night fighters). The mission view (`mission:`, `atlas/mission.py`) is its complement: one day's mission flown over
+the units, and the fighters sent up against it (Neuburg, 26 April 1945: the 17th Bomb Group's B-26s from Dijon, JV 44's
+Me 262s from Munich-Riem). It is two pages:
+
+- `view: "mission"`: the airfields' map. Each side's legs out and home are **notional**: wide, pale, curved arrows from
+  its recorded field (`records/air/airfields.csv`) to the first point of its recorded path and back from the last,
+  since the records give the ends and the fight, never the route between. The briefed target is ringed and said to
+  be only that. The day's front from `records/fronts/`.
+- `view: "fight"`: the box drawn large, from the engagement's own records (`engagement.json`): the routes by their
+  basis (a course as typed solid, a squadron's sketch dashed), the losses, a report's grid square hatched, the guns'
+  reach round their (often assumed) place, and the fighters' attack as the accounts describe it (head-on, over and
+  round to attack from behind), computed from the sketched course and the loss, never stored, labelled notional.
+  The minutes beside it are the engagement's entries inside `window`, as typed.
+
+## The section: what the guns could see and reach
+
+`sightline:` (`atlas/sightline.py`, `view: "sightline"`) is a vertical section along an aircraft's course (a route
+of the engagement; with `back_km`/`on_km`, its typed course carried through its last point), from a battery's
+position (a ring's `at`, assumed where the ring says so). Computed, never stored: the ground (Copernicus GLO-30), the
+lowest height in sight from the guns over each point (a straight ray clearing the ground between, with the earth's
+curve and refraction, k = 4/3), and each gun's reach where its sphere cuts the section. The heights the records type
+are drawn above the guns' ground, since no record says above what: the page says so. GLO-30 includes today's woods.
