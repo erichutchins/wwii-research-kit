@@ -35,6 +35,7 @@ from records import RECORDS, REFERENCE, rel
 # file name (or folder/name) -> the columns that cite the row's source
 CITES = {
     "positions.csv": ["page"],
+    "decklog.csv": ["ref"],         # a boat's deck-log transcription, cited by box (rg24-594258/box713)
     "depths.csv": ["page"],
     "layers.csv": ["page"],
     "attacks.csv": ["page"],

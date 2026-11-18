@@ -58,6 +58,12 @@ class Positions(unittest.TestCase):
         self.assertAlmostEqual(check_track.parse_coord("123-10W"), -(123 + 10 / 60))
         self.assertAlmostEqual(check_track.parse_coord("26-56-15N"), 26 + 56 / 60 + 15 / 3600)
         self.assertAlmostEqual(check_track.parse_coord("26-42.5N"), 26 + 42.5 / 60)
+        # a deck log's transcription: spaces, seconds, whole degrees; no hemisphere, or a decimal degree, is no place
+        self.assertAlmostEqual(check_track.parse_coord("41 12.5N"), 41 + 12.5 / 60)
+        self.assertAlmostEqual(check_track.parse_coord("157 57 50.00W"), -(157 + 57 / 60 + 50 / 3600))
+        self.assertAlmostEqual(check_track.parse_coord("23N"), 23)
+        self.assertIsNone(check_track.parse_coord("20 45"))
+        self.assertIsNone(check_track.parse_coord("24.5 21.5N"))
 
     def test_an_illegible_or_blank_position_is_none(self):
         self.assertIsNone(check_track.parse_coord("26-4?N"))

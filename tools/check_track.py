@@ -25,6 +25,9 @@ Usage: uv run tools/check_track.py bang/1 [--geojson] [-q]     one patrol
        uv run tools/check_track.py haynsworth --geojson         a ship's war diary
        uv run tools/check_track.py all --geojson                every boat and ship
 
+A boat's deck log (records/boats/<boat>/decklog.csv: the 0800, 1200 and 2000 positions) is checked end to end, on
+its own; it isn't drawn (records/SCHEMA.md says why). -v prints its legs.
+
 --geojson writes each track.geojson, each boat's tracks.geojson (all its patrols, for the
 map page) and records/ships.json (every ship.yml, for the pages; a ship's dates, heading and end of
 track that its ship.yml leaves out are filled in from its positions.csv).
@@ -32,6 +35,7 @@ track that its ship.yml leaves out are filled in from its positions.csv).
 import csv
 import json
 import math
+import re
 import sys
 from datetime import datetime, timedelta
 
@@ -52,12 +56,18 @@ DR_TOL = 30     # nm of dead-reckoning disagreement allowed between fixes
 
 
 def parse_coord(s):
-    """'26-42.5N' -> 26.708, '157-58W' -> -157.967, '26-56-15N' (with seconds, as some diaries type) -> 26.938"""
-    if not s or "?" in s:  # blank, or illegible in the scan
+    """'26-42.5N' -> 26.708, '157-58W' -> -157.967, '26-56-15N' (with seconds, as some diaries type) -> 26.938;
+    a deck log's transcription separates them with spaces ('41 12.5N', '21 21 14.00N') and can give whole degrees
+    ('23N'). A deck log's position with no hemisphere letter, or a degree that isn't a whole number, is no place until a lat_fix/lon_fix gives it one."""
+    s = (s or "").strip()
+    if not s or "?" in s or (s[-1] not in "NSEW" and " " in s):  # blank, illegible, or a deck log's with no hemisphere
         return None
-    hemi = s[-1]
-    deg, minutes, *sec = s[:-1].split("-")
-    v = int(deg) + float(minutes) / 60 + (float(sec[0]) / 3600 if sec else 0)
+    hemi = s[-1]   # (a dashed position with no letter, '141-50', is read as it always was: its last digit dropped)
+    deg, *rest = re.split(r"[-\s]+", s[:-1].strip())
+    minutes, sec = (rest + ["0", "0"])[:2]
+    if not deg.isdigit():   # a degree typed with a decimal point ('24.5 21.5N') is a slip: no place until a fix reads it
+        return None
+    v = int(deg) + float(minutes) / 60 + float(sec) / 3600
     return -v if hemi in "SW" else v
 
 
@@ -142,6 +152,32 @@ def load(unit):
     return sorted(rows, key=lambda r: r["utc"])
 
 
+DECKLOG_NOON = "the transcription doesn't label this position's hour; noon assumed"
+
+
+def load_decklog(key):
+    """A boat's deck-log positions (records/boats/<boat>/decklog.csv), as load() gives a patrol's fixes, sorted by UTC:
+    source `decklog`, ref the hour. The zone is the log's zone description, a number (-10: local time is GCT + 10),
+    not a letter. A position whose hour the transcription doesn't label is placed at noon, assumed, and says so; a port's
+    position filled in by the transcriber (basis `assumed`) is marked assumed and stays off the drawn line."""
+    p = records.vessel_dir(key) / "decklog.csv"
+    if not p.exists():
+        return []
+    rows = []
+    for r in csv.DictReader(open(p, encoding="utf-8")):
+        lat, lon = parse_coord(r["lat_fix"] or r["lat_raw"]), parse_coord(r["lon_fix"] or r["lon_raw"])
+        if lat is None or lon is None:
+            continue
+        hour = r["hour"] if r["hour"] != "unlabelled" else "1200"
+        local = datetime.strptime(f"{r['date_fix'] or r['date']} {hour}", "%Y-%m-%d %H%M")
+        fix = "; ".join(x for x in (r["fix_note"], DECKLOG_NOON if r["hour"] == "unlabelled" else "") if x)
+        rows.append({**r, "source": "decklog", "ref": r["hour"], "time": hour, "time_fix": "", "page": r["ref"],
+                     "zone": r["zone_fix"] or r["zone"], "fix_note": fix, "lat": lat, "lon": lon,
+                     "utc": local + timedelta(hours=float(r["zone_fix"] or r["zone"])),
+                     **({"assumed": True} if r["basis"] == "assumed" else {})})
+    return sorted(rows, key=lambda r: r["utc"])
+
+
 def write_geojson(unit, rows):
     """Track as a LineString of own-ship fixes, plus every fix as a Point."""
     track = [r for r in rows if r["on_track"] == "yes"]
@@ -170,10 +206,11 @@ def write_geojson(unit, rows):
     print(f"wrote {rel(out)} ({len(track)} track points, {len(rows)} fixes)")
 
 
-def check(unit, verbose=True):
-    """Print each track leg; return the number of legs too long to sail in the time."""
+def check(unit, verbose=True, rows=None):
+    """Print each track leg; return the number of legs too long to sail in the time; `rows` checks a list of fixes
+    given instead of the unit's (a boat's deck log)."""
     max_kts = records.ship(str(unit).split("/")[0])["max_kts"]
-    rows = [r for r in load(unit) if r["on_track"] == "yes"]
+    rows = [r for r in (rows if rows is not None else load(unit)) if r["on_track"] == "yes"]
     bad, prev = 0, None
     for r in rows:
         flag, leg = "", ""
@@ -255,6 +292,11 @@ def main():
             write_geojson(unit, load(unit))
         bad = check(unit, verbose="-q" not in sys.argv and len(units) == 1)
         print(f"{unit}: {bad} too-fast legs")
+    for key in dict.fromkeys(u.split("/")[0] for u in units if not single(u)):
+        log = load_decklog(key)
+        if log:   # the deck log on its own, end to end (passages and refits too)
+            bad = check(key, verbose="-v" in sys.argv, rows=log)
+            print(f"{key} deck log: {bad} too-fast legs")
     if "--geojson" in sys.argv:
         for key in dict.fromkeys(u.split("/")[0] for u in units if not single(u)):
             write_boat_tracks(key)
