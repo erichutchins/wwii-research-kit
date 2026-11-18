@@ -62,7 +62,7 @@ The kit's page for this engagement plays the same records on one clock: BANG's t
 records and her depth through the four and a half hours of depth charges that followed.
 
 #(wwii.punch-card)("https://erichutchins.github.io/wwii-research-kit/engagement.html?e=taka-909-1944-09-19",
-  lines: ("U.S.S. BANG (SS-385)", "CONVOY TAKA-909", "182315Z SEP 44"))
+  fields: ("U.S.S. BANG\n(SS-385)", "CONVOY\nTAKA-909", "182315Z\nSEP 44"))
 
 #section-sources(titles: ("74802831": "USS Bang, August 1944 - September 1944"))
 ]

@@ -11,7 +11,9 @@ def svg(url: str, dest: Path, dark: str = "#1c221d") -> Path:
     return dest
 
 
-CARD, CARD_EDGE, CARD_PRINT, CARD_INK = "#eadcb4", "#b9a77c", "#b0644b", "#231f1a"
+CARD, CARD_EDGE, CARD_INK = "#eadcb4", "#b9a77c", "#231f1a"
+HOLE = "#1d1a16"          # the dark backing seen through a hole
+LIP = "#c9b78c"           # the card's cut edge, lit from the top left, inside a hole's top and left
 MONO = "Courier Prime, Courier New, monospace"
 COND = "Barlow, Barlow Condensed, Arial Narrow, sans-serif"
 
@@ -20,43 +22,59 @@ def _esc(s: str) -> str:
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def punch(url: str, dest: Path, lines: tuple[str, ...] = (), caption: str = "Scan for the engagement") -> Path:
-    """The QR code as a punched card: buff stock with its corner cut, the card's printed digit columns, the modules
-    punched as slots. The finder squares stay solid and a quiet zone of four modules stays clear of the print, so it
-    scans as any QR code does. `lines`: up to three typed lines at the card's head (a ship, a convoy, a date-time
-    group)."""
+def punch(url: str, dest: Path, fields: tuple[str, ...] = (), caption: str = "Scan to see it move",
+          m: float = 2.6) -> Path:
+    """The QR code as a punched card: buff stock with its corner cut, the code's modules punched through as an IBM
+    card's holes turned to lie along the card's long way, so the dark backing shows through, each with the card's
+    cut edge. The three finder squares are die-cut windows (one square ring and one square, each a single hole), since
+    a scanner needs them unbroken. Four modules of plain card round the code are its quiet zone.
+
+    `fields`: the typed fields down the card's left side, each a ship, a convoy, a date-time group; a field's lines
+    split at "\n" ("U.S.S. BANG\n(SS-385)"); the first field in bold. The left side is as wide as the longest line,
+    so no type reaches the quiet zone. Studied against eleven other styles, read clean and in simulated phone
+    photographs by two decoders."""
     q = segno.make(url, error="m")
     M = [[bool(v) for v in row] for row in q.matrix]
     N = len(M)
-    H = 136.0
-    m = (H - 24) / (N + 8)                   # a module, with four modules of quiet zone above and below
-    side = N * m
-    W = 150 + side + 8 * m
-    qx, qy = W - side - 4 * m - 6, (H - side) / 2
-    b = [f'<path d="M14,0 H{W:.1f} V{H:.1f} H0 V14 Z" fill="{CARD}" stroke="{CARD_EDGE}" stroke-width="0.6"/>']
-    for col in range(int((qx - 4 * m - 22) / 4.1)):
-        x = 18 + col * 4.1
-        for row in range(10):
-            b.append(f'<text x="{x:.1f}" y="{40 + row * 8.6:.1f}" font-family="{MONO}" font-size="4.2" fill="{CARD_PRINT}" '
-                     f'text-anchor="middle">{row}</text>')
-    for i, s in enumerate(lines[:3]):
-        b.append(f'<text x="18" y="{12 + i * 8.5:.1f}" font-family="{MONO}" font-size="{6.2 if i == 0 else 5.4}" '
-                 f'font-weight="{"bold" if i == 0 else "normal"}" fill="{CARD_INK}">{_esc(s)}</text>')
-    b.append(f'<text x="18" y="{H - 6:.1f}" font-family="{COND}" font-size="5" fill="#7d5a3c" '
-             f'letter-spacing="0.4" font-style="italic">{_esc(caption)}</text>')
+    side, quiet = N * m, 4 * m
+    bold, regular, step = 7.0, 6.2, 8.6
+    lines: list[tuple[str, bool]] = []
+    for k, f in enumerate(fields):
+        if k:
+            lines.append(("", False))
+        lines += [(ln, k == 0) for ln in f.split("\n")]
+    widest = max([len(t) * (bold if b else regular) * 0.6 for t, b in lines] + [40.0])   # Courier: 0.6 em a character
+    left = 16 + widest + 2
+    W, H = left + side + 2 * quiet, side + 2 * quiet + 4
+    qx, qy = left + quiet, quiet + 2
+    b = [f'<path d="M12,0 H{W:.1f} V{H:.1f} H0 V12 Z" fill="{CARD}" stroke="{CARD_EDGE}" stroke-width="0.6"/>']
+    for i, (t, is_bold) in enumerate(lines):
+        if t:
+            b.append(f'<text x="16" y="{22 + i * step:.1f}" font-family="{MONO}" font-size="{bold if is_bold else regular}" '
+                     f'font-weight="{"bold" if is_bold else "normal"}" fill="{CARD_INK}">{_esc(t)}</text>')
+    b.append(f'<text x="16" y="{H - 9:.1f}" font-family="{COND}" font-size="6" fill="#7d5a3c" '
+             f'font-style="italic">{_esc(caption)}</text>')
 
-    def finder(r, c):
-        return any(r0 <= r < r0 + 7 and c0 <= c < c0 + 7 for r0, c0 in ((0, 0), (0, N - 7), (N - 7, 0)))
+    def hole(x, y, w, h, rx=0.0):
+        b.append(f'<rect x="{x:.2f}" y="{y:.2f}" width="{w:.2f}" height="{h:.2f}" rx="{rx:.2f}" fill="{HOLE}"/>')
+        t = min(w, h) * 0.12
+        b.append(f'<path d="M{x:.2f},{y + h:.2f} V{y:.2f} H{x + w:.2f} v{t:.2f} H{x + t:.2f} V{y + h:.2f} Z" '
+                 f'fill="{LIP}" opacity="0.55"/>')
+
+    corners = ((0, 0), (0, N - 7), (N - 7, 0))
+    for r0, c0 in corners:
+        x0, y0 = qx + c0 * m, qy + r0 * m
+        b.append(f'<path d="M{x0:.2f},{y0:.2f} h{7 * m:.2f} v{7 * m:.2f} h{-7 * m:.2f} Z M{x0 + m:.2f},{y0 + m:.2f} '
+                 f'v{5 * m:.2f} h{5 * m:.2f} v{-5 * m:.2f} Z" fill="{HOLE}" fill-rule="evenodd"/>')
+        t = m * 0.14
+        b.append(f'<path d="M{x0:.2f},{y0 + 7 * m:.2f} V{y0:.2f} H{x0 + 7 * m:.2f} v{t:.2f} H{x0 + t:.2f} '
+                 f'V{y0 + 7 * m:.2f} Z" fill="{LIP}" opacity="0.55"/>')
+        hole(x0 + 2 * m, y0 + 2 * m, 3 * m, 3 * m)
     for r in range(N):
         for c in range(N):
-            if not M[r][c]:
-                continue
-            x, y = qx + c * m, qy + r * m
-            if finder(r, c):
-                b.append(f'<rect x="{x:.2f}" y="{y:.2f}" width="{m + 0.05:.2f}" height="{m + 0.05:.2f}" fill="{CARD_INK}"/>')
-            else:
-                b.append(f'<rect x="{x + m * 0.12:.2f}" y="{y:.2f}" width="{m * 0.76:.2f}" height="{m + 0.05:.2f}" '
-                         f'rx="{m * 0.1:.2f}" fill="{CARD_INK}"/>')
+            if M[r][c] and not any(r0 <= r < r0 + 7 and c0 <= c < c0 + 7 for r0, c0 in corners):
+                x, y = qx + c * m, qy + r * m
+                hole(x + m * 0.02, y + m * 0.24, m * 0.96, m * 0.52, m * 0.05)
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(f'<svg xmlns="http://www.w3.org/2000/svg" width="{W:.1f}pt" height="{H:.1f}pt" '
                     f'viewBox="0 0 {W:.1f} {H:.1f}">{"".join(b)}</svg>')

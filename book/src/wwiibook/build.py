@@ -64,7 +64,7 @@ def _records(req: dict, build: Path) -> dict:
 def _qr(req: dict, build: Path) -> dict:
     name = f"{_slug(req['key'])}.svg"
     if req.get("style") == "punch":
-        qr.punch(req["url"], build / name, tuple(req.get("lines") or ()), req.get("caption") or "Scan for the engagement")
+        qr.punch(req["url"], build / name, tuple(req.get("fields") or ()), req.get("caption") or "Scan to see it move")
     else:
         qr.svg(req["url"], build / name)
     return {"kind": "qr", "path": f"build/{name}", "url": req["url"]}

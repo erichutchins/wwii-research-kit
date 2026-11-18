@@ -25,13 +25,15 @@
 }
 
 #let make-punch-card(get, load) = {
-  // The QR code as a punched card (1940s tabulating stock) that still scans: up to three typed lines at its head (a
-  // ship, a convoy, a date-time group), the code's modules punched as slots. Links only to the kit's public pages.
-  let punch-card(url, lines: (), caption: "Scan for the engagement", width: 100%) = {
-    let key = "punch:" + url + ":" + lines.join("|") + ":" + caption
-    _request("qr", key, (url: url, style: "punch", lines: lines, caption: caption))
+  // The QR code as a punched card (1940s tabulating stock) that still scans: its typed fields down the left (a ship,
+  // a convoy, a date-time group; a field's lines split at "\n"), the code's modules punched through as holes, the
+  // finder squares die-cut windows. Links only to the kit's public pages. About 2.4 in wide puts the code at about
+  // 1.1 in, the size its scan tests used.
+  let punch-card(url, fields: (), caption: "Scan to see it move", width: 2.4in) = {
+    let key = "punch:" + url + ":" + fields.join("|") + ":" + caption
+    _request("qr", key, (url: url, style: "punch", fields: fields, caption: caption))
     let a = get(key)
-    if a == none { _pending("punch card · " + url, height: width * 0.45) } else { image(load(a.path), width: width) }
+    if a == none { _pending("punch card · " + url, height: width * 0.66) } else { image(load(a.path), width: width) }
   }
   punch-card
 }

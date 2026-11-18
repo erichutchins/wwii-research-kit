@@ -146,7 +146,7 @@
     if page != none and page not in groups.at(key).pages { groups.at(key).pages.push(page) }
   }
   let known = _note-sources.get()
-  block(above: 18pt, below: 6pt, text(font: tokens.display, weight: "semibold", size: 9pt, heading))
+  block(above: 18pt, below: 6pt, sticky: true, text(font: tokens.display, weight: "semibold", size: 9pt, heading))
   set text(font: tokens.body, size: 7.6pt)
   set par(justify: false, hanging-indent: 10pt, spacing: 4pt, first-line-indent: 0pt)
   for key in order {
