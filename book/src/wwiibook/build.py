@@ -171,10 +171,20 @@ def _chain(req: dict, build: Path) -> dict:
     return {"kind": "chain", "path": f"build/{name}", **notes}
 
 
+def _board(req: dict, build: Path) -> dict:
+    """Attacks on a maneuvering board, solved by the kit's site/engage.js (maneuvering.py)."""
+    from . import maneuvering
+    svg, notes = maneuvering.board(req["engagement"], req["attacks"], req.get("width") or 5.5, req.get("boat"),
+                                   sizes=req.get("sizes"))
+    name = f"{_slug(req['key'])}.svg"
+    (build / name).write_text(svg)
+    return {"kind": "board", "path": f"build/{name}", **notes}
+
+
 PREPARERS: dict[str, Callable[[dict, Path], dict]] = {"facsimile": _facsimile, "records": _records, "qr": _qr,
                                                       "figure": _figure, "picture": _picture, "plate": _plate,
                                                       "atlas": _atlas, "chain": _chain,
-                                                      "aircraft": _aircraft}
+                                                      "aircraft": _aircraft, "board": _board}
 
 
 def _query(book: Path, selector: str, root: Path) -> list:
