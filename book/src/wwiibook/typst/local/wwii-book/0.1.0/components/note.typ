@@ -168,8 +168,10 @@
       let middle = if o != none and o.captures.at(1) == "/" { o.captures.at(2).split("/").slice(0, -1) } else { () }
       let kind = if pages.len() > 0 and pages.all(p => p.starts-with("f")) { "f" } else { "p" }
       let nums = pages.map(p => p.replace(regex("^[pf](\d+)$"), m => m.captures.at(0)))
-      let lead = if nums.len() > 1 { kind + kind + "." } else { kind + "." }
-      par[#title#if middle.len() > 0 [ #middle.join(", ")]#if nums.len() > 0 [, #lead #nums.join(", ")].]
+      // a page or folio gets "p." or "f."; any other locus (a year, a volume) is printed as it stands
+      let paged = pages.len() > 0 and pages.all(p => p.match(regex("^[pf]\d+$")) != none)
+      let lead = if not paged { "" } else if nums.len() > 1 { kind + kind + ". " } else { kind + ". " }
+      par[#title#if middle.len() > 0 [ #middle.join(", ")]#if nums.len() > 0 [, #lead#nums.join(", ")].]
     }
   }
 }
