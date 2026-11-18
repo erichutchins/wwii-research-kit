@@ -13,7 +13,7 @@ description: >
 
 Every silhouette comes from a plate: a wartime recognition manual's drawing of that aircraft or
 class, with its printed dimensions. **Never draw one from memory.** If no plate can be found, say so
-and leave it out (the file's header notes there is no Hellcat for exactly this reason).
+and leave it out, and say so in the file's header (as it does for the Queen Elizabeth).
 
 The conventions are in the header of `records/silhouettes/silhouettes.yml`. Read it first.
 
