@@ -296,7 +296,7 @@ def silhouettes(engagement: str, width_in: float = 6.9) -> tuple[str, dict]:
                     body.append(_t(tx + len(s["ship"]) * 3.7 + 5, ty, ja, 7.0, INK, family=JA))
                 ly = ty + 8.2
                 body.append(_t(x, ly, " · ".join(v for v in (str(s.get("role") or ""), tonnage(s)) if v), 6.2, INK))
-                for ln in _wrap(basis_words(s["sil"], s.get("sil_basis")) + f", {sh['length']} ft", int(cw / 2.6)):
+                for ln in _wrap(basis_words(s["sil"], s.get("sil_basis")) + f", {sh['length']} ft", int(cw / 3.05)):   # 5.8 pt serif italic: about 3 pt a character
                     ly += 7.0
                     body.append(_t(x, ly, ln, 5.8, MUTED, family=SERIF, italic=True))
                 if f.get("words"):

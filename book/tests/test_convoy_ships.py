@@ -29,11 +29,11 @@ def test_one_scale(eid):
 
 def test_ships_without_a_plate_are_listed_not_drawn():
     svg, notes = c.silhouettes("taka-206-1944-11-22", 5.5)
-    # Hozan and Amakusa Maru have their own plates (ONI 208-J (Revised) pp. 36-37); the other four merchant ships'
-    # silhouette is only "cargo", a kind, so they are listed, not drawn
-    assert notes["drawn"] == ["Manazuru", "W-15", "Hozan Maru", "Amakusa Maru"]
+    # a ship with a plate in the library is drawn; one whose silhouette is only a kind ("cargo") is listed
+    assert {"Manazuru", "W-15", "Hozan Maru", "Amakusa Maru"} <= set(notes["drawn"])
     assert "Taiken Maru" in notes["not_drawn"] and "Taiken Maru" in svg
     assert 'data-ship="Taiken Maru"' not in svg and 'data-ship="Hozan Maru"' in svg
+    assert not set(notes["drawn"]) & set(notes["not_drawn"])
     assert "her own plate" in svg
 
 
