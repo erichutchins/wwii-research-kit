@@ -184,10 +184,17 @@ def _board(req: dict, build: Path) -> dict:
     return {"kind": "board", "path": f"build/{name}", **notes}
 
 
+def _fire_control(req: dict, build: Path) -> dict:
+    """How a torpedo was aimed: the triangle, the angle on the bow, the TDC (fire_control.py, on site/engage.js)."""
+    from . import fire_control
+    return fire_control.prepare(req, build)
+
+
 PREPARERS: dict[str, Callable[[dict, Path], dict]] = {"facsimile": _facsimile, "records": _records, "qr": _qr,
                                                       "figure": _figure, "picture": _picture, "plate": _plate,
                                                       "atlas": _atlas, "chain": _chain,
-                                                      "aircraft": _aircraft, "board": _board}
+                                                      "aircraft": _aircraft, "board": _board,
+                                                      "firecontrol": _fire_control}
 
 
 def _query(book: Path, selector: str, root: Path) -> list:
