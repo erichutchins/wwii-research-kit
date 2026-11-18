@@ -7,6 +7,7 @@
   display: ("Barlow", "Barlow Condensed", "Arial Narrow"),
   body: ("Source Serif 4", "Georgia"),
   typed: ("Courier Prime", "Courier New"),
+  ja: ("Shippori Mincho", "Noto Serif JP"),   // Japanese: the original beside the translation
 )
 
 // The man's name and the book's title, for the running heads; set by `book`.

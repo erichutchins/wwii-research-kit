@@ -199,4 +199,6 @@ the march south, and three stations whose grid letter had to be read as another 
 Its notes continue the chapter's numbering, and its last column is the record's page. A station is not a track: the
 company was somewhere between one report's station and the next, and the records do not say where, so nothing joins
 them here or on a map.
+
+#section-sources(titles: ("480601116": "Morning Reports for July 1944: Roll 523 (5 of 5)", "478558151": "Morning Reports for June 1944: Roll 662 (1 of 5)"))
 ]

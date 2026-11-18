@@ -40,3 +40,22 @@ def test_board_taka_909():
     assert "rg38-74802831/p17" in notes["cites"] and "rg38-74802831/p20" in notes["cites"]
     assert notes["t0"] == [0, 55]
     assert any("400 ft by 55" in s for s in notes["assumed"])
+
+
+@needs_node
+def test_board_hits_both_sides():
+    _, notes = m.board("taka-909-1944-09-19", ["Attack 3", "Attack 4"], 5.0)
+    a, b = notes["targets"]
+    # what BANG recorded, salvo by salvo (rg38-74802831/p17, p19)
+    assert (a["heard"], a["claim"]) == ("2 Hits", "damaged")
+    assert (b["heard"], b["claim"]) == ("2 Hits", "sunk")
+    # the Japanese records, each placed from BANG's own reckoned position by its own: W-15's (J08) about 8.7 nm on 117
+    j = {r["record"]: r for r in notes["japanese"]}
+    assert {"J02", "J04", "J08"} <= set(j)
+    assert j["J08"]["bearing"] == 117 and j["J08"]["nm"] == pytest.approx(8.7, abs=0.2)
+    assert "bearing" not in j["J04"]          # J04 gives no position, so it is listed, not placed
+
+
+def test_bearing_nm():
+    brg, nm = m._bearing_nm(24.0, 122.0, 24.0 + 1 / 60, 122.0)   # one minute of latitude north
+    assert brg == pytest.approx(0) and nm == pytest.approx(1.0)

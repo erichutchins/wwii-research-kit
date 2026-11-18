@@ -23,6 +23,14 @@
 // before it when the citation is a path ("breakout/4/p74" is "4, p. 74", set after a title ending "ch." as "ch. 4,
 // p. 74"). An identifier after a colon (`ddbzp:<id>/p1`) is the source's own and is left out: the title the book
 // gives the source says which issue.
+// A source the book gives as (title: [...], id: true) is one whose identifier names the item (a JACAR reference
+// code): the identifier is kept after the title.
+#let _title(entry, sep, rest) = {
+  if type(entry) == dictionary {
+    if entry.at("id", default: false) and sep == ":" [#entry.title #rest.split("/").first()] else { entry.title }
+  } else { entry }
+}
+
 #let _locus(title, sep, rest) = {
   let parts = rest.split("/")
   let last = parts.last().replace(regex("^p(\d+)$"), m => "p. " + m.captures.at(0))
@@ -41,7 +49,7 @@
     let p = str(int(page))
     link("https://catalog.archives.gov/id/" + naid + "?objectPage=" + p)[National Archives, RG #group, NAID #naid, p. #p]
   } else if o != none and o.captures.at(0) in titles {
-    _locus(titles.at(o.captures.at(0)), o.captures.at(1), o.captures.at(2))
+    _locus(_title(titles.at(o.captures.at(0)), o.captures.at(1), o.captures.at(2)), o.captures.at(1), o.captures.at(2))
   } else {
     raw(cite)
   }
@@ -107,4 +115,61 @@
     ceiling = ys.at(i) - gap
   }
   for (i, it) in items.enumerate() { place(top + left, dx: x, dy: ys.at(i), it.words) }
+}
+
+// ---------------------------------------------------------------- a section's sources, at its end
+// Every source the section's notes cite, gathered: one line a source, its pages in order, each page linked where the
+// archive has a viewer. A section is the run of notes since the numbering last began at 1 (`running-text` restarts it),
+// so `section-sources()` set at a chapter's end lists that chapter's. `titles` names an archive item where the book
+// knows it ("74802831": "BANG, third war patrol report").
+#let _page-num(s) = { let m = s.match(regex("\d+")); if m == none { 0 } else { int(m.text) } }
+
+#let section-sources(heading: [Sources], titles: (:)) = context {
+  let before = query(selector(<wwii-note>).before(here()))
+  if before.len() == 0 { return }
+  let start = before.len() - 1
+  while start > 0 and before.at(start).value.n != 1 { start -= 1 }
+  let groups = (:)          // a source's key -> (kind, label, pages)
+  let order = ()
+  for m in before.slice(start) {
+    let c = m.value.cite
+    if c == none { continue }
+    let nara = c.match(_nara)
+    let other = c.match(_other)
+    let (key, page) = if nara != none {
+      ("rg" + nara.captures.at(0) + "-" + nara.captures.at(1), str(int(nara.captures.at(2))))
+    } else if other != none {
+      let parts = other.captures.at(2).split("/")
+      (other.captures.at(0) + other.captures.at(1) + parts.slice(0, -1).join("/"), parts.last())
+    } else { (c, none) }
+    if key not in groups { groups.insert(key, (cite: c, pages: ())); order.push(key) }
+    if page != none and page not in groups.at(key).pages { groups.at(key).pages.push(page) }
+  }
+  let known = _note-sources.get()
+  block(above: 18pt, below: 6pt, text(font: tokens.display, weight: "semibold", size: 9pt, heading))
+  set text(font: tokens.body, size: 7.6pt)
+  set par(justify: false, hanging-indent: 10pt, spacing: 4pt, first-line-indent: 0pt)
+  for key in order {
+    let g = groups.at(key)
+    let pages = g.pages.sorted(key: _page-num)
+    let nara = g.cite.match(_nara)
+    if nara != none {
+      let (group, naid, _) = nara.captures
+      let item = titles.at(naid, default: none)
+      par[National Archives, RG #group, NAID #naid#if item != none [, #emph(item)], #if pages.len() > 1 [pp.] else [p.] #{
+        pages.map(p => link("https://catalog.archives.gov/id/" + naid + "?objectPage=" + p, p)).join(", ")
+      }.]
+    } else {
+      let o = g.cite.match(_other)
+      let title = if o != none and o.captures.at(0) in known {
+        _title(known.at(o.captures.at(0)), o.captures.at(1), o.captures.at(2))
+      } else { raw(key) }
+      // a path's middle parts (a chapter) follow the title, as a note's source line sets them
+      let middle = if o != none and o.captures.at(1) == "/" { o.captures.at(2).split("/").slice(0, -1) } else { () }
+      let kind = if pages.len() > 0 and pages.all(p => p.starts-with("f")) { "f" } else { "p" }
+      let nums = pages.map(p => p.replace(regex("^[pf](\d+)$"), m => m.captures.at(0)))
+      let lead = if nums.len() > 1 { kind + kind + "." } else { kind + "." }
+      par[#title#if middle.len() > 0 [ #middle.join(", ")]#if nums.len() > 0 [, #lead #nums.join(", ")].]
+    }
+  }
 }

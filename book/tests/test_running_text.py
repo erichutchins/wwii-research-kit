@@ -51,7 +51,12 @@ def test_the_notes_and_the_text_alternate_sides(built):
         # the note numbers: words of digits at the note column's left edge (36 pt in from the outer trim, then 110 pt)
         outer, inner = TRIM_W - 36 - 110, 36.0
         here, there = (outer, inner) if recto else (inner, outer)
-        numbers = [w for w in words if re.fullmatch(r"\d+", w[4]) and 60 < w[1] < 760]
+        # (a note's number is set in the display face at the notes' size: a figure in the text, a table or a list
+        # of sources is not one)
+        numbers = [(sp["bbox"][0], sp["bbox"][1], 0, 0, sp["text"].strip())
+                   for b in page.get_text("dict")["blocks"] for ln in b.get("lines", []) for sp in ln["spans"]
+                   if re.fullmatch(r"\d+", sp["text"].strip()) and "Barlow" in sp["font"]
+                   and abs(sp["size"] - 7.2) < 0.3 and 60 < sp["bbox"][1] < 760]
         assert any(abs(w[0] - trim_left - here) < 1.5 for w in numbers), f"page {i}: no notes in the outer column"
         assert not any(abs(w[0] - trim_left - there) < 1.5 for w in numbers), f"page {i}: a note on the inside"
         # the text frame: the leftmost body word sits at the inside margin on a recto and after the notes on a verso

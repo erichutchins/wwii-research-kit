@@ -1,20 +1,25 @@
 // Part of the wwii-book package (lib.typ imports it).
 // A request function: `init` makes it with the book's asset lookup (get) and file loader (load).
 #import "../core.typ": *
+#import "../components/other-side.typ": other-side
 
 // An attack on the Navy's maneuvering board: own ship at the centre, each target where the kit's fire-control
 // solution (site/engage.js) puts it at firing, each torpedo on own course + its typed gyro. `key: true` sets, under
-// the board, the sheet's numbers as typed beside what follows from them, what is assumed, and the pages.
+// the board, the sheet's numbers as typed beside what follows from them, what is assumed, and the pages. `parts`
+// chooses what this call sets, so a page can place them apart from one asset: "figure", "key", "japanese" (the other
+// side's records of the engagement, originals beside translations).
 #let make-maneuvering-board(get, load) = {
-  let maneuvering-board(engagement, attacks, boat: none, width: 5.5in, sizes: none, caption: none, key: true) = {
+  let maneuvering-board(engagement, attacks, boat: none, width: 5.5in, sizes: none, caption: none, key: true,
+                             japanese: false, japanese-intro: none, parts: none) = {
+    let parts = if parts != none { parts } else { ("figure",) + if key { ("key",) } else { () } + if japanese { ("japanese",) } else { () } }
     let key-id = "board:" + engagement + ":" + attacks.join("+") + ":" + repr(boat) + ":" + repr(width) + ":" + repr(sizes)
     _request("board", key-id, (engagement: engagement, attacks: attacks, boat: boat, width: width / 1in, sizes: sizes))
     let a = get(key-id)
     if a == none {
       std.figure(_pending("maneuvering board · " + attacks.join(", "), height: width), caption: caption, kind: image)
     } else {
-      std.figure(image(load(a.path), width: width), caption: caption)
-      if key {
+      if "figure" in parts { std.figure(image(load(a.path), width: width), caption: caption) }
+      if "key" in parts {
         set text(size: 7pt)
         set par(justify: false)
         let head(h) = text(font: tokens.display, weight: "semibold", style: "italic", h)
@@ -43,6 +48,11 @@
         text(size: 6.5pt, fill: tokens.muted)[
           #if a.disagree.len() > 0 [*Not as typed.* #a.disagree.join("; "). ]
           *Assumed:* #a.assumed.join("; "). *Sources:* the attack data sheets, #a.cites.map(typed).join(", ").]
+      }
+      // the other side's record of the same minutes: its originals beside our translations
+      if "japanese" in parts and a.japanese.len() > 0 {
+        if "figure" in parts or "key" in parts { v(6pt) }
+        other-side(a.japanese, intro: japanese-intro)
       }
     }
   }

@@ -23,3 +23,15 @@
   }
   qr-tag
 }
+
+#let make-punch-card(get, load) = {
+  // The QR code as a punched card (1940s tabulating stock) that still scans: up to three typed lines at its head (a
+  // ship, a convoy, a date-time group), the code's modules punched as slots. Links only to the kit's public pages.
+  let punch-card(url, lines: (), caption: "Scan for the engagement", width: 100%) = {
+    let key = "punch:" + url + ":" + lines.join("|") + ":" + caption
+    _request("qr", key, (url: url, style: "punch", lines: lines, caption: caption))
+    let a = get(key)
+    if a == none { _pending("punch card · " + url, height: width * 0.45) } else { image(load(a.path), width: width) }
+  }
+  punch-card
+}

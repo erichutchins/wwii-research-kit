@@ -19,7 +19,7 @@
     #{
       show heading: it => block(below: 12pt, text(font: tokens.display, size: 30pt, weight: "bold",
         top-edge: "cap-height", bottom-edge: "baseline", upper(it.body)))
-      heading(level: 1, title)
+      { set text(hyphenate: false); heading(level: 1, title) }
     }
     #if standfirst != none {
       block(width: 82%, text(size: 12pt, style: "italic", top-edge: 9.4pt, bottom-edge: -2.6pt,

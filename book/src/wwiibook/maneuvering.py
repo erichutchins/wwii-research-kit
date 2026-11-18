@@ -23,7 +23,9 @@ from typing import Any
 
 from . import figures, halo, paths
 
-INK, MUTED, PAPER, OWN = figures.INK, figures.MUTED, figures.PAPER, figures.OWN
+INK, MUTED, PAPER = figures.INK, figures.MUTED, figures.PAPER
+BOAT = "#2a6fc9"       # the first US boat's colour (guides/ENGAGEMENTS.md, "Colour"): her torpedoes and what she recorded
+HIT = "#c8323c"        # red is reserved for hits: here, the other side's record of a ship hit or sunk
 SHEET = "#6f8a78"      # the board's printed ink: a muted green, light enough that the plot reads over it in greyscale
 SHEET_LIGHT = "#b9c8bc"
 PENCIL = "#2b2f2c"
@@ -151,6 +153,14 @@ def _sheet(cx, cy, R, rings, ring_yd, scale_at=45.0) -> list[str]:
     return b
 
 
+def _bearing_nm(lat0, lon0, lat1, lon1):
+    """Bearing (degrees true) and distance (nautical miles) from one position to another: plane sailing, fine at a
+    few miles."""
+    dn = (lat1 - lat0) * 60
+    de = (lon1 - lon0) * 60 * math.cos(math.radians((lat0 + lat1) / 2))
+    return math.degrees(math.atan2(de, dn)) % 360, math.hypot(dn, de)
+
+
 def board(engagement: str, attacks: list[str], width_in: float = 5.5, boat: str | None = None,
           ring_yd: int = 150, rings: int = 10, sizes: dict | None = None) -> tuple[str, dict]:
     """One or more attacks fired close together (a bow and a stern salvo) on one board, own ship at the centre at
@@ -225,7 +235,21 @@ def board(engagement: str, attacks: list[str], width_in: float = 5.5, boat: str 
             body.append(_t(px - ux_ * 14, py - uy_ * 14 + 3, letter, 9, PENCIL, DISPLAY, weight="bold", halo_=True))
             body.append(_t(qx + ux_ * 9, qy + uy_ * 9 + 2, f"{T['course']:03.0f}° · {T['speed']:.0f} kn", 5.4, PENCIL,
                            TYPED, anchor="start" if ux_ >= 0 else "end", halo_=True))
-            marks.append({"letter": letter, "attack": a["attack"], "bearing": round(T["bearing"], 1),
+            # what BANG recorded: the sheet's hits, and sunk or damaged, ringed in her colour where the run ended
+            w = (sheets[a["attack"]].get("words") or [{}])
+            w = w[0] if isinstance(w, list) and w else (w if isinstance(w, dict) else {})
+            claim = "sunk" if w.get("sunk") else "damaged" if w.get("damaged") else None
+            heard = w.get("hits")
+            if heard or claim:
+                rr = Lft / 3 * yd * 0.75 + 3
+                body.append(f'<circle cx="{qx:.1f}" cy="{qy:.1f}" r="{rr:.1f}" fill="none" stroke="{BOAT}" '
+                            f'stroke-width="0.9" stroke-dasharray="2.2 1.2"/>')
+                words = " · ".join(x for x in (f"{heard.lower()} heard" if heard else None,
+                                               f"claimed {claim}" if claim else None) if x)
+                below = qy > cy
+                body.append(_t(qx, qy + (rr + 7 if below else -rr - 3), f"BANG: {words}", 5.4, INK, DISPLAY,
+                               italic=True, halo_=True))
+            marks.append({"letter": letter, "attack": a["attack"], "heard": heard, "claim": claim, "bearing": round(T["bearing"], 1),
                           "range": T["range"], "course": T["course"], "speed": T["speed"],
                           "aob": round(T["aob"], 1), "lead": round(T["lead"], 1),
                           "track": round(T["track"], 1), "side": T["side"], "typed_track": "–".join(dict.fromkeys(
@@ -238,12 +262,15 @@ def board(engagement: str, attacks: list[str], width_in: float = 5.5, boat: str 
             fx, fy = t["from"]
             vx, vy = t["v"]
             ex, ey = fx + vx * t["run"], fy + vy * t["run"]
+            # drawn from the first ring out, so the salvos don't cross over own ship at the centre
+            sp = math.hypot(vx, vy)
+            fx, fy = fx + vx / sp * ring_yd, fy + vy / sp * ring_yd
             ox, oy = fx + vx * (t["run"] + 6), fy + vy * (t["run"] + 6)
             sx, sy = P(fx, fy)
             exx, eyy = P(ex, ey)
             oxx, oyy = P(ox, oy)
-            body.append(f'<line x1="{sx:.1f}" y1="{sy:.1f}" x2="{exx:.1f}" y2="{eyy:.1f}" stroke="{OWN}" stroke-width="0.7"/>')
-            body.append(f'<line x1="{exx:.1f}" y1="{eyy:.1f}" x2="{oxx:.1f}" y2="{oyy:.1f}" stroke="{OWN}" '
+            body.append(f'<line x1="{sx:.1f}" y1="{sy:.1f}" x2="{exx:.1f}" y2="{eyy:.1f}" stroke="{BOAT}" stroke-width="0.7"/>')
+            body.append(f'<line x1="{exx:.1f}" y1="{eyy:.1f}" x2="{oxx:.1f}" y2="{oyy:.1f}" stroke="{BOAT}" '
                         f'stroke-width="0.5" stroke-dasharray="0.6 1.4"/>')
         # the salvo's label beside its fan, part way out, along the middle torpedo's course
         ts = [t for t in a["torps"] if t["course"] is not None and t["run"] is not None]
@@ -261,20 +288,58 @@ def board(engagement: str, attacks: list[str], width_in: float = 5.5, boat: str 
             lx_, ly_ = mx + perp[0] * 9, my + perp[1] * 9
             kinds = sorted({str(t.get("torpedo") or "") for t in sheets[a["attack"]]["torpedoes"]} - {""})
             body.append(_t(lx_, ly_, f"tubes {ts[0]['tube']}–{ts[-1]['tube']}"
-                           + (f" · Mark {', '.join(kinds)}" if kinds else ""), 5.6, OWN, DISPLAY, weight="bold",
+                           + (f" · Mark {', '.join(kinds)}" if kinds else ""), 5.6, BOAT, DISPLAY, weight="bold",
                            halo_=True, rotate=ang))
     # own ship at the centre, to scale (a Balao, 312 ft by 27), on the sheet's course, and her way during the salvos
-    body.append(_hull(cx, cy, own_course or 0, 312 / 3 * yd, 27 / 3 * yd, OWN, OWN, 0.3))
+    body.append(_hull(cx, cy, own_course or 0, 312 / 3 * yd, 27 / 3 * yd, BOAT, BOAT, 0.3))
     for a in solved:
         last = max(t["s"] for t in a["torps"]) + t0[-1]
         oc = math.radians(own_course or 0)
         v = a["ownSpeed"] * 2025.4 / 3600
         ax, ay = P0(math.sin(oc) * v * (last + 30), math.cos(oc) * v * (last + 30))
-        body.append(f'<line x1="{cx:.1f}" y1="{cy:.1f}" x2="{ax:.1f}" y2="{ay:.1f}" stroke="{OWN}" stroke-width="0.5"/>')
+        body.append(f'<line x1="{cx:.1f}" y1="{cy:.1f}" x2="{ax:.1f}" y2="{ay:.1f}" stroke="{BOAT}" stroke-width="0.5"/>')
     la = math.radians(label_at)
     lx, ly = cx + R * 0.3 * math.sin(la), cy - R * 0.3 * math.cos(la)
-    body.append(_t(lx, ly + 2, f"own ship · {own_course or 0:03.0f}° · {solved[0]['ownSpeed']:.0f} kn", 5.6, OWN, TYPED,
+    body.append(_t(lx, ly + 2, f"own ship · {own_course or 0:03.0f}° · {solved[0]['ownSpeed']:.0f} kn", 5.6, BOAT, TYPED,
                    anchor="start" if math.sin(la) >= 0 else "end", halo_=True))
+    # the other side's record of a ship hit or sunk, in red: where it puts her, from where BANG's sheet puts BANG. Each
+    # position is its own record's reckoning; a few miles' gap between two navigators is usual, so a mark off the
+    # board sits on the rim at its bearing with its distance, not pulled in
+    own = next((e for e in d["events"] if e.get("kind") == "attack" and e.get("title") == attacks[0]
+                and e.get("lat") is not None), None)
+    japanese: list[dict] = []
+    for e in d["events"]:
+        if e.get("origin") != "japanese":
+            continue
+        rec = {"record": e.get("record"), "local": e.get("local"), "ship": e.get("ship") or e.get("actor"),
+               "kind": e.get("kind"), "original": e.get("original"), "translation": e.get("translation") or e.get("words"),
+               "cite": (e.get("cite") or {}).get("ref"), "href": (e.get("cite") or {}).get("href")}
+        if own and e.get("kind") in ("torpedoed", "sank", "hit") and e.get("lat") is not None:
+            brg, nm = _bearing_nm(own["lat"], own["lon"], e["lat"], e["lon"])
+            rec.update(bearing=round(brg), nm=round(nm, 1))
+        japanese.append(rec)
+    placed = [j for j in japanese if "bearing" in j]
+    for k, j in enumerate(sorted(placed, key=lambda j: j["bearing"])):
+        a_ = math.radians(j["bearing"])
+        r_yd = j["nm"] * 2025.4
+        on = r_yd <= rings * ring_yd
+        rr = r_yd * yd if on else R
+        x, y = cx + rr * math.sin(a_), cy - rr * math.cos(a_)
+        s_ = 3.2
+        body.append(f'<path d="M{x - s_:.1f},{y - s_:.1f} L{x + s_:.1f},{y + s_:.1f} M{x - s_:.1f},{y + s_:.1f} '
+                    f'L{x + s_:.1f},{y - s_:.1f}" stroke="{HIT}" stroke-width="1.3"/>')
+        when = (j["local"] or "").split(" ", 1)[-1] if j.get("local") and " " in j["local"] else "no time"
+        what = "torpedoed" if j["kind"] in ("torpedoed", "hit") else "sunk"
+        # labelled inside the rim, toward the centre, so a label never runs off the sheet
+        inward = math.sin(a_) >= 0
+        lx_ = x + (-8 if inward else 8)
+        ly_ = y + 2 + k * 8 - (len(placed) - 1) * 4
+        anchor = "end" if inward else "start"
+        body.append(_t(lx_, ly_, f"{j['ship']} {what}, {when} ({j['record']})", 5.4, HIT, DISPLAY, anchor=anchor,
+                       halo_=True))
+        if not on:
+            body.append(_t(lx_, ly_ + 6.5, f"{j['nm']:.1f} nm on {j['bearing']:03d}°, off the board", 4.8, INK,
+                           DISPLAY, anchor=anchor, italic=True, halo_=True))
     # the sheet's legend, in its corner, as the printed board carries its scale
     body.append(_t(8, H - 18, "Maneuvering board", 6.8, SHEET, DISPLAY, anchor="start", weight="bold", italic=True))
     body.append(_t(8, H - 10, f"bearings true · rings {ring_yd} yards · drawn for this research", 5.4, SHEET, DISPLAY,
@@ -303,5 +368,6 @@ def board(engagement: str, attacks: list[str], width_in: float = 5.5, boat: str 
                                     "derived_track": (lambda dd: f"{abs(dd):.0f}{'S' if dd >= 0 else 'P'}")(
                                         derived_track(t["course"], a["targets"][t["target"]]["course"]))}
                                    for a in solved for t in a["torps"] if t["course"] is not None]
-    return svg, {"targets": marks, "torpedoes": torps, "assumed": assumed, "disagree": disagreements(solved),
+    return svg, {"japanese": japanese, "own_position": own and {"lat": own["lat"], "lon": own["lon"]},
+                 "targets": marks, "torpedoes": torps, "assumed": assumed, "disagree": disagreements(solved),
                  "problems": [p for a in solved for p in a["problems"]], "cites": cites, "t0": t0}
