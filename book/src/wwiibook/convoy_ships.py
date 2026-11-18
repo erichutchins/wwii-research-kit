@@ -198,6 +198,8 @@ def basis_words(sil: str, basis: str | None) -> str:
     if basis and basis.startswith("class, assumed"):
         why = basis.split(":", 1)[1].strip() if ":" in basis else ""
         return f"her class, assumed: {name}" + (f" ({why})" if why else "")
+    if basis and basis.startswith("own"):     # the manual draws her by name (alone, or with a sister on one plate)
+        return f"her own plate: {name}"
     return f"her class: {name}"
 
 

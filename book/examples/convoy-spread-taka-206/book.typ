@@ -50,8 +50,8 @@ settle them.
 #heading(level: 2)[The convoy's ships]
 #(wwii.convoy-ships)(e, parts: ("silhouettes",),
   caption: [Convoy TAKA-206 as W-15's battle report lists it, escorts then merchant ships, at one scale. A red cross is
-  a ship the Japanese records have sunk; a red ring, one torpedoed and not sunk. The library holds plates for two of
-  the escorts' classes; the others are named, not drawn. BANG's own silhouette is set beside them for scale.])
+  a ship the Japanese records have sunk; a red ring, one torpedoed and not sunk. Each is drawn from her own plate or her
+  class's, as labelled; the ships no wartime manual draws are named, not drawn. BANG's own silhouette is set beside them for scale.])
 
 #heading(level: 2)[Claimed, credited, recorded]
 #(wwii.convoy-ships)(e, parts: ("tally",))
