@@ -30,8 +30,8 @@ TILES = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png
 SEA, LAND, COAST = "#dde7ea", "#f1f2ec", "#93aab3"
 WATER, WATER_INK = "#7d9dab", "#4f7484"
 ADMIN, BORDER, TOWN, REGION = "#9ba49a", "#727b70", "#4a5249", "#8a9388"
-DISPLAY = "Barlow, Barlow Condensed, Arial Narrow, sans-serif"
-SERIF = "Source Serif 4, Georgia, serif"
+DISPLAY = "IBM Plex Sans, IBM Plex Sans Condensed, Arial Narrow, sans-serif"
+SERIF = "Newsreader, Georgia, serif"
 
 
 def _get(url: str) -> bytes:
@@ -184,7 +184,7 @@ class Labels:
     Hard obstacles (`occupy`): marks and labels already placed; a label never covers one. Soft obstacles (`line`): the
     route's legs, the fronts; a label avoids them when it can, and may cross one, on its white halo, when it can't.
     Positions are tried in order: beside the point in eight directions, then farther out in the same eight with a
-    short leader line back to the point. Widths are estimated from the type size (Barlow Condensed is narrow)."""
+    short leader line back to the point. Widths are estimated from the type size (IBM Plex Sans Condensed is narrow)."""
 
     def __init__(self, bounds: tuple[float, float, float, float]):
         self.bounds = bounds

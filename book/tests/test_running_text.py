@@ -55,7 +55,7 @@ def test_the_notes_and_the_text_alternate_sides(built):
         # of sources is not one)
         numbers = [(sp["bbox"][0], sp["bbox"][1], 0, 0, sp["text"].strip())
                    for b in page.get_text("dict")["blocks"] for ln in b.get("lines", []) for sp in ln["spans"]
-                   if re.fullmatch(r"\d+", sp["text"].strip()) and "Barlow" in sp["font"]
+                   if re.fullmatch(r"\d+", sp["text"].strip()) and "IBMPlex" in sp["font"]
                    and abs(sp["size"] - 7.2) < 0.3 and 60 < sp["bbox"][1] < 760]
         assert any(abs(w[0] - trim_left - here) < 1.5 for w in numbers), f"page {i}: no notes in the outer column"
         assert not any(abs(w[0] - trim_left - there) < 1.5 for w in numbers), f"page {i}: a note on the inside"

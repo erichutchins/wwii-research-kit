@@ -24,7 +24,7 @@ SEA = np.array([196, 212, 219], dtype=np.float32)
 LOW = np.array([234, 236, 223], dtype=np.float32)
 HIGH = np.array([200, 190, 156], dtype=np.float32)
 OWN, INK, FRONT = "#a3241b", "#1c221d", "#2f3b31"
-SERIF = "Source Serif 4, Georgia, serif"
+SERIF = "Newsreader, Georgia, serif"
 
 
 def _merc(lat):

@@ -17,7 +17,7 @@ import re
 from html import escape
 
 INK, ENEMY, PAPER, OWN = "#1c221d", "#4d5963", "#ffffff", "#a3241b"
-DISPLAY = "Barlow, Barlow Condensed, Arial Narrow, sans-serif"
+DISPLAY = "IBM Plex Sans, IBM Plex Sans Condensed, Arial Narrow, sans-serif"
 
 ARM_WORDS = {"infantry": "Infantry", "armored": "Armored", "armored-infantry": "Armored Infantry", "airborne": "Airborne"}
 ARM_WORDS_DE = {"infantry": "Infantry", "armored": "Panzer", "armored-infantry": "Panzergrenadier", "airborne": "Parachute"}

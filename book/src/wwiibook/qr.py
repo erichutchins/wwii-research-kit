@@ -15,7 +15,7 @@ CARD, CARD_EDGE, CARD_INK = "#eadcb4", "#b9a77c", "#231f1a"
 HOLE = "#1d1a16"          # the dark backing seen through a hole
 LIP = "#c9b78c"           # the card's cut edge, lit from the top left, inside a hole's top and left
 MONO = "Courier Prime, Courier New, monospace"
-COND = "Barlow, Barlow Condensed, Arial Narrow, sans-serif"
+COND = "IBM Plex Sans, IBM Plex Sans Condensed, Arial Narrow, sans-serif"
 
 
 def _esc(s: str) -> str:

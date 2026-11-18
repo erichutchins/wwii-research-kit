@@ -111,7 +111,7 @@ def test_labels_never_overlap():
     for i in range(30):                                 # thirty places crowded into a small map
         x, y = 20 + (i * 37) % 160, 15 + (i * 23) % 90
         lab.occupy(x - 2, y - 2, 4, 4)
-        lab.place(x, y, [(f"Place {i}", 7, "#000", "bold", "Barlow")], force=False)
+        lab.place(x, y, [(f"Place {i}", 7, "#000", "bold", "IBM Plex Sans")], force=False)
     r = lab.placed
     assert len(r) > 10
     for i in range(len(r)):

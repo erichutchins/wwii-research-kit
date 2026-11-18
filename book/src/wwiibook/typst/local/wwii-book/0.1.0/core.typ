@@ -3,11 +3,17 @@
 #let tokens = (
   ink: rgb("#1c221d"), muted: rgb("#5d675b"), rule: rgb("#c4cbbf"), accent: rgb("#a3241b"),
   other: rgb("#e4e7e9"), other-ink: rgb("#4d5963"), paper: rgb("#fbfaf6"), band: rgb("#171c18"), band-ink: rgb("#ecede6"),
-  // Typst files Barlow Condensed under the family "Barlow", condensed
-  display: ("Barlow", "Barlow Condensed", "Arial Narrow"),
-  body: ("Source Serif 4", "Georgia"),
-  typed: ("Courier Prime", "Courier New"),
-  ja: ("Shippori Mincho", "Noto Serif JP"),   // Japanese: the original beside the translation
+  // Typst files IBM Plex Sans Condensed under the family "IBM Plex Sans", condensed
+  display: ("IBM Plex Sans", "IBM Plex Sans Condensed", "Shippori Mincho", "Noto Serif JP Symbols", "Arial Narrow"),
+  // every face falls back to Shippori Mincho for Japanese (a record's original quoted in a note or a key), then to
+  // a subset of Noto Serif JP for the few marks the originals use that Shippori lacks (✓ ─ ｜ ∠, half-width kana)
+  // Newsreader cut to fixed weights at the 10 pt optical size (Typst uses a variable font's default instance only)
+  body: ("Newsreader", "Shippori Mincho", "Noto Serif JP Symbols", "Georgia"),
+  typed: ("Courier Prime", "Shippori Mincho", "Noto Serif JP Symbols", "Courier New"),
+  // the typewriter for effect, where a record's look matters more than its reading (no degree sign: Courier Prime
+  // stands in for it)
+  typed-effect: ("TT2020 Style E", "Courier Prime", "Shippori Mincho", "Noto Serif JP Symbols"),
+  ja: ("Shippori Mincho", "Noto Serif JP Symbols", "Noto Serif JP"),   // Japanese: the original beside the translation
 )
 
 // The man's name and the book's title, for the running heads; set by `book`.
@@ -57,6 +63,8 @@
     })
   set text(font: tokens.body, size: 10.2pt, fill: tokens.ink, lang: "en", region: "gb", hyphenate: true)
   set par(justify: true, leading: 0.68em, spacing: 0.68em, first-line-indent: (amount: 1.1em, all: false))
+  // raw text (a citation key shown as it stands) in the typewriter face, not Typst's default monospace
+  show raw: set text(font: tokens.typed)
   show heading: set text(font: tokens.display, weight: "bold")
   show heading.where(level: 2): it => block(above: 1.5em, below: 0.7em,
     text(size: 10.5pt, weight: "semibold", tracking: 0.12em, upper(it.body)))

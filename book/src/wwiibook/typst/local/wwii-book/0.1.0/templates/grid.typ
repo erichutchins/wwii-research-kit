@@ -9,13 +9,13 @@
 //   inside 54 pt | two text columns of 194 pt, gutter 12 pt | 12 pt | the note column, 110 pt | outside 36 pt
 //   top 54 pt to the first baseline's line, 52 lines of 13 pt, bottom 62 pt
 //
-// The text is Source Serif 4 at 9.5 pt on a 13 pt baseline (about 44 characters to a column's line); notes 7.2 pt
+// The text is Newsreader at 10 pt on a 13 pt baseline (its smaller x-height reads as Source Serif did at 9.5); notes 7.2 pt
 // on 9.75 pt (three lines of notes to four of text). The outer column is the right on a recto (odd page), the left
 // on a verso. Running heads sit over the whole live area (text and notes): the part on a verso, the chapter on a
 // recto, none on a page that opens a chapter; folios at the foot, outside.
 #let grids = (
   blurb-magazine: (inside: 54pt, outside: 36pt, top: 54pt, bottom: 62pt, note: 110pt, note-gap: 12pt, gutter: 12pt,
-                   size: 9.5pt, baseline: 13pt, head: 20pt, foot: 22pt),
+                   size: 10pt, baseline: 13pt, head: 20pt, foot: 22pt),
 )
 
 // The part, for the verso's running head: `#part-title[The Cotentin]` (it draws nothing).
