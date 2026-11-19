@@ -41,6 +41,10 @@ def _ordinal(n: str) -> str:
     return f"{k}{suffix}{m.group(2)}"
 
 
+LABEL_WORDS = {"MTN": "Mountain", "ZbV": "z.b.V.", "VG": "Volksgrenadier", "PZ": "Panzer", "PG": "Panzergrenadier",
+               "PARA": "Parachute", "MAR": "Marine"}
+
+
 def full_name(unit: dict) -> str:
     """Words for a box, from what the symbol shows: '2 SS' drawn armored on the German side -> '2nd SS Panzer Division'.
     Worked out from the symbol, so no more than the map says."""
@@ -48,9 +52,16 @@ def full_name(unit: dict) -> str:
     arm, side, echelon = unit.get("arm") or "", unit.get("of") or "", unit.get("echelon") or ""
     words = ARM_WORDS_DE if side == "de" else ARM_WORDS
     kind = {"xx": "Division", "xxx": "Corps", "xxxx": "Army"}.get(echelon, "unit, echelon not marked")
+    if echelon == "xx" and not re.search(r"\d", number):      # a division drawn by name ("VAN HOBE"): as written
+        return ("elements of " if elements else "") + f"Division {number}"
     ss = " SS" if re.search(r"\bSS\b", number) else ""
-    num = _ordinal(re.sub(r"\s*SS\b", "", number).strip())
-    name = f"{num}{ss} {words.get(arm, '')} {kind}".replace("  ", " ")
+    num = re.sub(r"\s*SS\b", "", number).strip()
+    extra = ""
+    for written, word in LABEL_WORDS.items():               # a kind the label writes ("2 MTN", "616 ZbV")
+        if re.search(rf"\b{written}\b", num, re.I):
+            num, extra = re.sub(rf"\s*\b{written}\b", "", num, flags=re.I).strip(), word
+    num = _ordinal(num)
+    name = f"{num}{ss} {extra or words.get(arm, '')} {kind}".replace("  ", " ")
     return ("elements of the " if elements else "") + name
 
 
