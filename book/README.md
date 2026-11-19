@@ -156,6 +156,27 @@ three places.
 spot colours, and the PDF/X-3 markers and output intent. A file straight from the build fails only the last, until it
 has been through `press`.
 
+## The grid section
+
+`grid-figure(view: "zones" | "ladder", case:, width:, columns: 2)` explains the military grids the units' references
+use, from the kit's own definitions of them (`tools/grid_ref.py`) and the worked cases in `grids/cases.yml`
+(`gridref.py`):
+
+- **zones**: Western Europe and North Africa with each grid's 100 km squares lettered as the kit letters them (the
+  North West Africa grid, whose letters repeat in every 500 km block; the French Lambert Zone I, block V; the Nord de
+  Guerre), each over the ground the records' references fall on rather than the zone's official limits, and every
+  station in `records/army/stations.csv` given by grid as a dot.
+- **ladder**: one unit's typed reference read down in four steps, each panel drawn in the grid's own metres: the
+  500 km block, the 100 km square, the 10 km square and the 1 km square. The last two show the period sheet the case
+  names (`map:` a GSGS sheet placed by its printed grid, or IGN's 1950 SCAN 50), resampled into the grid, so the
+  kit's computed lines lie on the sheet's printed ones. A case with a `slip:` (a reference typed with the wrong
+  letter) hatches the square as typed.
+
+The example `examples/grid-references/` sets it as a section: running text, the zones map across the live area
+(`across-all`, which reaches over the note column), the two cases (Battery C, 62nd CA (AA) at Lake Bizerte, July 1943;
+Company B, 313th Infantry at La Haye-du-Puits, July 1944) with their morning reports' headings, and the instructions
+an Army Map Service sheet of 1942 prints in its margin ("To give a grid reference on this sheet").
+
 ## The style
 
 The book's type and colours are set once, in `core.typ` (`tokens`), and every template and figure draws from them.

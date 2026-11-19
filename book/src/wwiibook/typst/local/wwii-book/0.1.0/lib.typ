@@ -22,7 +22,7 @@
 #import "components/other-side.typ": other-side, other-side-source
 #import "components/call-to-action.typ": see-it-move, cta-mark
 #import "templates/grid.typ": on-grid, part-title, grids, note-reach, end-mark
-#import "templates/running-text.typ": running-text, across, balance, ship-line, map-frame
+#import "templates/running-text.typ": running-text, across, across-all, balance, ship-line, map-frame
 #import "requests/facsimile.typ": make-facsimile
 #import "requests/records.typ": make-records
 #import "requests/qr-tag.typ": make-qr-tag, make-punch-card
@@ -40,9 +40,10 @@
 #import "requests/convoy-ships.typ": make-convoy-ships
 #import "requests/torpedo-salvos.typ": make-torpedo-salvos
 #import "requests/silhouette.typ": make-silhouette
+#import "requests/grid-figure.typ": make-grid-figure
 
 // The request functions, made with the book's assets and loader: `#let wwii = init(...)`, then `(wwii.atlas-view)(...)`.
 #let init(assets: (:), load: none) = {
   let get(key) = assets.at(key, default: none)
-  (facsimile: make-facsimile(get, load), records: make-records(get, load), qr-tag: make-qr-tag(get, load), punch-card: make-punch-card(get, load), engagement-figure: make-engagement-figure(get, load), picture: make-picture(get, load), route-map: make-route-map(get, load), oblique-view: make-oblique-view(get, load), situation-map: make-situation-map(get, load), atlas-view: make-atlas-view(get, load), unit-chain: make-unit-chain(get, load), aircraft-card: make-aircraft-card(get, load), maneuvering-board: make-maneuvering-board(get, load), fire-control: make-fire-control(get, load), convoy-route: make-convoy-route(get, load), convoy-ships: make-convoy-ships(get, load), torpedo-salvos: make-torpedo-salvos(get, load), silhouette: make-silhouette(get, load))
+  (facsimile: make-facsimile(get, load), records: make-records(get, load), qr-tag: make-qr-tag(get, load), punch-card: make-punch-card(get, load), engagement-figure: make-engagement-figure(get, load), picture: make-picture(get, load), route-map: make-route-map(get, load), oblique-view: make-oblique-view(get, load), situation-map: make-situation-map(get, load), atlas-view: make-atlas-view(get, load), unit-chain: make-unit-chain(get, load), aircraft-card: make-aircraft-card(get, load), maneuvering-board: make-maneuvering-board(get, load), fire-control: make-fire-control(get, load), convoy-route: make-convoy-route(get, load), convoy-ships: make-convoy-ships(get, load), torpedo-salvos: make-torpedo-salvos(get, load), silhouette: make-silhouette(get, load), grid-figure: make-grid-figure(get, load))
 }

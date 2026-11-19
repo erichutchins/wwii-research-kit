@@ -107,3 +107,13 @@
         bottom-edge: "baseline", upper(title))))
   }
 })
+
+// Something set across the whole live area at the top or the foot of a page: a large map, a strip of figures. With
+// notes beside the text that is both text columns and the note column (on a verso the note column is on the left, so
+// the block reaches left over it); with notes at the end there is no note column, and it is the full measure.
+#let across-all(at: top, preset: "blurb-magazine", body) = context {
+  let extra = if _notes-mode.get() == "side" { note-reach(preset: preset) } else { 0pt }
+  let verso = not recto-at(here().page())
+  place(at, float: true, scope: "parent", clearance: 18pt, dx: if verso { -extra } else { 0pt },
+    block(width: 100% + extra, body))
+}

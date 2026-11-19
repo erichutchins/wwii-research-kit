@@ -275,12 +275,25 @@ def _silhouette(req: dict, build: Path) -> dict:
             "length": s.get("length"), "ratio": (x1 - x0) / (y1 - y0)}
 
 
+def _grid(req: dict, build: Path) -> dict:
+    """The grid section's figures: the grids over Europe and North Africa, or one reference read down (gridref.py)."""
+    from . import gridref
+    if req["view"] == "ladder":
+        svg, notes = gridref.ladder(req["case"], req.get("width") or 7.2, int(req.get("columns") or 2))
+    else:
+        svg, notes = gridref.zones(req.get("width") or 7.2)
+    name = f"{_slug(req['key'])}.svg"
+    (build / name).write_text(svg)
+    return {"kind": "grid", "path": f"build/{name}", **notes}
+
+
 PREPARERS: dict[str, Callable[[dict, Path], dict]] = {"facsimile": _facsimile, "records": _records, "qr": _qr,
                                                       "figure": _figure, "picture": _picture, "plate": _plate,
                                                       "atlas": _atlas, "chain": _chain,
                                                       "aircraft": _aircraft, "board": _board,
                                                       "firecontrol": _fire_control, "convoy-route": _convoy_route, "convoyships": _convoy_ships,
-                                                      "torpedoes": _torpedoes, "silhouette": _silhouette}
+                                                      "torpedoes": _torpedoes, "silhouette": _silhouette,
+                                                      "grid": _grid}
 
 
 def _query(book: Path, selector: str, root: Path, inputs: dict[str, str] | None = None) -> list:

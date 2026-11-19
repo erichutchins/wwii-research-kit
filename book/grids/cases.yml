@@ -1,0 +1,71 @@
+# The grid section's worked references: one a grid, each a unit's own typed reference on its own morning report, read
+# down from the grid's lettered 100 km squares to the point (gridref.py). Hand-edited; nothing here is a position, only
+# which row to read and which map to read it on. The positions are the grid's, computed by the kit's tools/grid_ref.py.
+#
+# grids: how each grid is drawn on the section's large map: the box (lon/lat) it is drawn over, which is the ground
+# the records' references fall on, not the zone's official limits; its colour; its 100 km letters as tools/grid_ref.py
+# letters them (`block`: one lettered 500 km block, its south-west corner in the grid's metres; `repeat`: the letters
+# repeat in every 500 km block).
+
+grids:
+  nwa:
+    name: British North West Africa Grid
+    short: N.W. Africa grid
+    colour: "#6a3a9e"            # the purple the sheets print it in ("N. W. AFRICA ZONE GRID (Purple)")
+    box: [-9.5, 33.0, 11.4, 37.6]
+    letters: repeat
+    note: "Lambert, Clarke 1880, origin 34° N on Greenwich; the 100 km letters repeat in every 500 km block"
+    ref: princeton-amsalger
+  lambert1:
+    name: French Lambert Zone I
+    short: Lambert Zone I
+    colour: "#2a6fc9"
+    box: [-5.3, 47.7, 0.9, 50.6]
+    letters: {block: [0, 0], prefix: V}
+    note: "Lambert, Clarke 1880, origin 49.5° N on the Paris meridian; the 500 km square V, its 100 km squares A to Z"
+  ndg:
+    name: Lambert Nord de Guerre
+    short: Nord de Guerre
+    colour: "#008f78"
+    box: [2.3, 46.6, 12.6, 51.4]
+    letters: {block: [400000, 100000]}
+    note: "Lambert, Clarke 1880, origin 49.5° N, 5° 24′ east of Paris; one 500 km block, its 100 km squares A to Z"
+
+map:
+  box: [-9.5, 33.0, 12.6, 52.0]     # Morocco to Bavaria, the Sahara's edge to the Channel
+  places:                           # name, lon, lat
+    - [Algiers, 3.0588, 36.7538]
+    - [Tunis, 10.1815, 36.8065]
+    - [Oran, -0.6417, 35.6971]
+    - [Casablanca, -7.5898, 33.5731]
+    - [Paris, 2.3522, 48.8566]
+    - [Cherbourg, -1.6222, 49.6337]
+    - [Nancy, 6.1844, 48.6921]
+    - [Strasbourg, 7.7521, 48.5734]
+    - [Munich, 11.5820, 48.1351]
+    - [Marseille, 5.3698, 43.2965]
+    - [Rome, 12.4964, 41.9028]
+
+cases:
+  bizerte:
+    title: "Lake Bizerte, 5 July 1943"
+    grid: nwa
+    ref: "J 775914"
+    near: [37.1525, 9.7880]          # Ferryville, the town the June entry names: the letters repeat every 500 km
+    unit: 62ca-c
+    date: 1943-07-05                 # the station of 4-7 July (army/stations.csv's row of 4 July, p0545); on the 4th's
+    page: rg64-427182819/p0546       # page a stamped serial number covers the letter, on the 5th's it reads clearly
+    typed: "J 775914 Sheet 6, 1:50,000 Br N.W.A. Grid"
+    map: {kind: gsgs, series: gsgs4225, sheet: "6"}
+  la-haye:
+    title: "La Haye-du-Puits, 11 July 1944"
+    grid: lambert1
+    ref: "VT 1683"                   # as read: the clerk typed VO from 5 July (the slip below)
+    unit: 313inf-b
+    date: 1944-07-11
+    page: rg64-480601116/p0027
+    typed: "1/4 Mile NW VO 1683 French Lambert Zone 1"
+    slip:
+      typed: "VO 1683"
+      words: "From 5 July the company's clerk typed square O for T: one letter, a square to the north, puts the company in the Channel"
+    map: {kind: scan50, z: 14}
