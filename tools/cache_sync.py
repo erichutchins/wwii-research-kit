@@ -33,7 +33,7 @@ PUBLIC = [
     "janac-ia", "frupac", "ntmj", "ndl-ussbs", "t312", "t314", "t315", "t1022", "luftwaffe", "seabee-museum",
     "silhouettes", "silhouettes-ja", "insignia", "air-photos", "commons",
     "geo", "natural-earth", "naturalearth", "terrain-tiles", "etopo1", "copernicus", "ign", "maps", "gsgs-italy",
-    "osm", "osm-rail", "era5", "isd", "german-grids", "blurb",
+    "osm", "osm-rail", "era5", "isd", "german-grids", "blurb", "hathitrust", "googlebooks",
 ]
 
 
