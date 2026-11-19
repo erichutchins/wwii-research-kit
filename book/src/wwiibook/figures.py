@@ -24,7 +24,7 @@ INK, MUTED, RULE, PAPER = "#1c221d", "#586257", "#c4cbbf", "#fbfaf6"
 OWN, JP, INTEL, LAND, SEA, NIGHT = "#a3241b", "#4d5963", "#8a6d1f", "#d4dbcc", "#f3f5f1", "#e6e9e3"
 DISPLAY = "IBM Plex Sans, IBM Plex Sans Condensed, Arial Narrow, sans-serif"   # Typst files IBM Plex Sans Condensed as family IBM Plex Sans
 TYPED = "Courier Prime, Courier New, Courier, monospace"
-SERIF = "Newsreader, Georgia, serif"
+SERIF = "Libertinus Serif, Georgia, serif"
 
 NUMBERED = {("track", "attack"), ("japanese", "torpedoed"), ("japanese", "sank"), ("japanese", "attacked_no_damage"),
             ("frupac", "attacked"), ("frupac", "hit"), ("frupac", "damage"), ("frupac", "sighting")}

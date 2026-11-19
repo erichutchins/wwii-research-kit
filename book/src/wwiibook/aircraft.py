@@ -17,7 +17,7 @@ from . import halo, paths
 
 INK, MUTED, RULE, PAPER = "#1c221d", "#586257", "#c4cbbf", "#fbfaf6"
 DISPLAY = "IBM Plex Sans, IBM Plex Sans Condensed, Arial Narrow, sans-serif"
-SERIF = "Newsreader, Georgia, serif"
+SERIF = "Libertinus Serif, Georgia, serif"
 PHOTOS = paths.PACKAGE.parents[1] / "aircraft" / "photos.yml"
 
 

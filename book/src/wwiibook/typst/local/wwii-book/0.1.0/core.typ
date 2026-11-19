@@ -7,8 +7,8 @@
   display: ("IBM Plex Sans", "IBM Plex Sans Condensed", "Shippori Mincho", "Noto Serif JP Symbols", "Arial Narrow"),
   // every face falls back to Shippori Mincho for Japanese (a record's original quoted in a note or a key), then to
   // a subset of Noto Serif JP for the few marks the originals use that Shippori lacks (✓ ─ ｜ ∠, half-width kana)
-  // Newsreader cut to fixed weights at the 10 pt optical size (Typst uses a variable font's default instance only)
-  body: ("Newsreader", "Shippori Mincho", "Noto Serif JP Symbols", "Georgia"),
+  // Libertinus Serif: built into Typst (SIL OFL), so present wherever Typst runs, with no font file to ship
+  body: ("Libertinus Serif", "Shippori Mincho", "Noto Serif JP Symbols", "Georgia"),
   typed: ("Courier Prime", "Shippori Mincho", "Noto Serif JP Symbols", "Courier New"),
   // the typewriter for effect, where a record's look matters more than its reading (no degree sign: Courier Prime
   // stands in for it)
@@ -67,7 +67,7 @@
   show raw: set text(font: tokens.typed)
   show heading: set text(font: tokens.display, weight: "bold")
   show heading.where(level: 2): it => block(above: 1.5em, below: 0.7em,
-    text(size: 10.5pt, weight: "semibold", tracking: 0.12em, upper(it.body)))
+    text(size: 10.5pt, weight: "bold", tracking: 0.12em, upper(it.body)))
   set footnote.entry(separator: line(length: 25%, stroke: 0.5pt + tokens.rule), gap: 0.4em)
   show footnote.entry: set text(size: 7.6pt)
   show figure.caption: set text(size: 8pt)

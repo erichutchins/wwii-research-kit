@@ -29,7 +29,7 @@ from . import halo, paths
 
 INK, MUTED, RULE, PAPER = "#1c221d", "#586257", "#c4cbbf", "#fbfaf6"
 DISPLAY = "IBM Plex Sans, IBM Plex Sans Condensed, Arial Narrow, sans-serif"
-SERIF = "Newsreader, Georgia, serif"
+SERIF = "Libertinus Serif, Georgia, serif"
 INSIGNIA = paths.PACKAGE.parents[1] / "insignia" / "insignia.yml"
 
 # the levels, top to bottom, and how a name says which it is

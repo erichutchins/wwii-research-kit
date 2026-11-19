@@ -9,7 +9,7 @@
 //   inside 54 pt | two text columns of 194 pt, gutter 12 pt | 12 pt | the note column, 110 pt | outside 36 pt
 //   top 54 pt to the first baseline's line, 52 lines of 13 pt, bottom 62 pt
 //
-// The text is Newsreader at 10 pt on a 13 pt baseline (its smaller x-height reads as Source Serif did at 9.5); notes 7.2 pt
+// The text is Libertinus Serif at 10 pt on a 13 pt baseline, heads IBM Plex Sans Condensed Bold; notes 7.2 pt
 // on 9.75 pt (three lines of notes to four of text). The outer column is the right on a recto (odd page), the left
 // on a verso. Running heads sit over the whole live area (text and notes): the part on a verso, the chapter on a
 // recto, none on a page that opens a chapter; folios at the foot, outside.

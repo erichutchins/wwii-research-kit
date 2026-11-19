@@ -31,7 +31,7 @@ SEA, LAND, COAST = "#dde7ea", "#f1f2ec", "#93aab3"
 WATER, WATER_INK = "#7d9dab", "#4f7484"
 ADMIN, BORDER, TOWN, REGION = "#9ba49a", "#727b70", "#4a5249", "#8a9388"
 DISPLAY = "IBM Plex Sans, IBM Plex Sans Condensed, Arial Narrow, sans-serif"
-SERIF = "Newsreader, Georgia, serif"
+SERIF = "Libertinus Serif, Georgia, serif"
 
 
 def _get(url: str) -> bytes:

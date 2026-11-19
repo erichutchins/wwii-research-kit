@@ -1,11 +1,12 @@
-"""Every face a book page uses is one the package ships: a family Typst can't find falls back silently to a system
-font, which then varies from machine to machine and can't be relied on in print."""
+"""Every face a book page uses is one the package ships, or Libertinus Serif, the body face, which Typst itself
+carries: a family Typst can't find falls back silently to a system font, which varies from machine to machine and
+can't be relied on in print."""
 import pymupdf
 import pytest
 import typst
 from wwiibook import paths
 
-BUNDLED = ("Newsreader", "IBMPlexSansCond", "CourierPrime", "TT2020StyleE", "ShipporiMincho", "NotoSerifJPSymbols")
+BUNDLED = ("LibertinusSerif", "IBMPlexSansCond", "CourierPrime", "TT2020StyleE", "ShipporiMincho", "NotoSerifJPSymbols")
 
 PAGE = r"""
 #import "@local/wwii-book:0.1.0": *
@@ -30,8 +31,9 @@ def test_a_page_uses_only_bundled_faces(tmp_path):
     used = {f[3].split("+")[-1] for page in pymupdf.open(str(pdf)) for f in page.get_fonts()}
     stray = {u for u in used if not u.startswith(BUNDLED)}
     assert not stray, f"faces not shipped with the package: {sorted(stray)}"
-    for face in ("Newsreader-Regular", "Newsreader-Italic", "Newsreader-Bold", "Newsreader-SemiBold"):
-        assert face in used, f"{face} not used: is the body face's weight cut missing?"
+    for face in ("LibertinusSerif-Regular", "LibertinusSerif-Italic", "LibertinusSerif-Bold"):
+        assert any(u.startswith(face) for u in used), f"{face} not used"
+    assert "IBMPlexSansCond-Bold" in used                 # the heads
 
 
 @pytest.mark.parametrize("name", ["IBMPlexSansCond-SemiBold", "CourierPrime-Regular", "ShipporiMincho-Regular",

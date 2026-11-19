@@ -11,7 +11,7 @@ from pathlib import Path
 PACKAGE = Path(__file__).resolve().parent
 KIT = PACKAGE.parents[2]          # <kit>/book/src/wwiibook -> <kit>
 TYPST = PACKAGE / "typst"
-FONTS = PACKAGE / "fonts"        # Newsreader, IBM Plex Sans Condensed, Courier Prime, TT2020 Style E, Shippori Mincho (SIL OFL)
+FONTS = PACKAGE / "fonts"        # IBM Plex Sans Condensed, Courier Prime, TT2020 Style E, Shippori Mincho (SIL OFL); Libertinus Serif is Typst's own
 
 
 def records() -> Path:

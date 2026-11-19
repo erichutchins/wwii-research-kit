@@ -16,11 +16,14 @@
 #let other-side(entries, heading: [The other side's record], intro: none) = {
   block(width: 100%, breakable: true, inset: (x: 8pt, y: 7pt), fill: tokens.other.lighten(40%),
         stroke: (left: 1.6pt + tokens.other-ink), {
-    text(font: tokens.display, weight: "semibold", size: 8.5pt, heading)
-    if intro != none { block(above: 3pt, below: 5pt, text(size: 7.6pt, fill: tokens.muted, intro)) }
+    // the heading and its introduction kept together, and with the first record
+    block(breakable: false, sticky: true, below: 0pt, {
+      text(font: tokens.display, weight: "bold", size: 8.5pt, heading)
+      if intro != none { block(above: 3pt, below: 5pt, text(size: 7.6pt, fill: tokens.muted, intro)) }
+    })
     for e in entries {
       // the record's number and time as written, the original, then our translation under it and its page
-      block(above: 8pt, below: 0pt, breakable: true, {
+      block(above: 8pt, below: 0pt, breakable: false, {   // an entry kept whole: a split one also trips Typst's PDF tagging
         text(font: tokens.display, weight: "semibold", size: 7.6pt)[#e.record#if e.local != none [ · #e.local]]
         if e.original != none {
           block(above: 3pt, below: 3pt, {
