@@ -498,7 +498,9 @@ def route_map(data: dict, width_in: float, panels: list[dict], labels: list[str]
     placed = [(s, where(s["lon"], s["lat"])) for s in stops]
     # the record's marks claim their ground first, so nothing is printed over a station or a division's box
     for _s, at in placed:
-        if at:
+        if at and data.get("symbol"):
+            placers[at[0]].occupy(*symbols.command_post_box(at[1], at[2], staff=9, scale=0.85))
+        elif at:
             placers[at[0]].occupy(at[1] - 2.5, at[2] - 2.5, 5, 5)
     for i, (f, x0, p) in enumerate(zip(frames, x0s, panels)):
         for un in _shown_units(p, f):
@@ -582,8 +584,11 @@ def route_map(data: dict, width_in: float, panels: list[dict], labels: list[str]
             marks.append(f'<path d="M{pa[1]:.1f},{pa[2]:.1f} L{ea:.1f},{pa[2]:.1f} M{eb:.1f},{pb[2]:.1f} L{pb[1]:.1f},{pb[2]:.1f}" '
                          f'stroke="{OWN}" stroke-width="1.2" stroke-dasharray="3 2.2" fill="none"/>')
             crossings.append((ea, eb, a, b))
+    flag = data.get("symbol")    # the stations as their unit's command post flag (FM 21-30), where the data says so
     for s, at in placed:
-        if at:
+        if at and flag:
+            marks.append(symbols.command_post(at[1], at[2], flag, staff=9, scale=0.85, dashed=bool(s["assumed"])))
+        elif at:
             fill = PAPER if s["assumed"] else OWN
             marks.append(f'<circle cx="{at[1]:.1f}" cy="{at[2]:.1f}" r="2" fill="{fill}" stroke="{OWN}" stroke-width="0.8"/>')
     for ea, eb, a, b in crossings:

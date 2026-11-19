@@ -8,6 +8,7 @@ fronts read them, records/fronts/README.md), a box with the arm's mark inside an
   antiaircraft       a triangle in the box (FM 21-30, 1943, chart 13); self-propelled: the box drawn with a tail
   artillery          a dot in the box (artillery other than antiaircraft)
   medical            the box quartered by a cross
+  command post       the box flown as a flag on a staff, the staff's foot at the post (command_post)
   elements           "(ELMS)" on the map: only parts of the division; drawn with a dashed box
 
 Our side is drawn open (white, ink lines); the enemy's filled (grey, white lines). The number stands beside the box,
@@ -121,6 +122,25 @@ def symbol(x: float, y: float, unit: dict, highlight: bool = False, scale: float
                    f'font-size="{6.8 * scale:.1f}" fill="{text}" font-weight="bold" text-anchor="end" stroke="#ffffff" '
                    f'stroke-width="1.8" stroke-linejoin="round" paint-order="stroke">{escape(unit["letter"])}</text>')
     return "".join(out)
+
+
+def command_post(x: float, y: float, unit: dict, staff: float = 11.0, colour: str = OWN, scale: float = 1.0,
+                 dashed: bool = False) -> str:
+    """A command post as FM 21-30 draws one: the unit's box flown as a flag, the staff on its left edge, the foot of
+    the staff at the post (x, y). `dashed` draws the staff dashed (the post's place assumed or approximate)."""
+    w, h = 13 * scale, 8.5 * scale
+    top = y - staff - h
+    dash = ' stroke-dasharray="1.6 1.2"' if dashed else ""
+    return (f'<line x1="{x:.1f}" y1="{y:.1f}" x2="{x:.1f}" y2="{top:.1f}" stroke="#ffffff" stroke-width="2"/>'
+            f'<line x1="{x:.1f}" y1="{y:.1f}" x2="{x:.1f}" y2="{top:.1f}" stroke="{colour}" stroke-width="0.9"{dash}/>'
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="1.1" fill="{colour}"/>'
+            + symbol(x + w / 2, top + h / 2, unit, scale=scale, colour=colour))
+
+
+def command_post_box(x: float, y: float, staff: float = 11.0, scale: float = 1.0) -> tuple[float, float, float, float]:
+    """The space a command_post takes (x, y, width, height), its number included, for a label placer."""
+    w, h = 13 * scale, 8.5 * scale
+    return x - 1, y - staff - h - 6 * scale, w * 1.28 + 22 * scale, staff + h + 7 * scale
 
 
 def legend(x: float, y: float, sides: set[str], arms: set[str], elements: bool, highlight: str | None,

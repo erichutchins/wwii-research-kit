@@ -233,8 +233,12 @@ def view(box: list[float], width_in: float, height_in: float | None, *, azimuth:
         stops = [s for s in route["stops"] if inside(s["lon"], s["lat"]) and
                  (not window or ((s["from"] or "") <= window[1] and (s["to"] or "9") >= window[0]))]
     sp = [at(s["lon"], s["lat"]) for s in stops]
+    flag = route.get("symbol") if route else None     # the stations as their unit's command post flag (FM 21-30)
     for x, y in sp:
-        placer.occupy(x - 3, y - 3, 6, 6)
+        if flag:
+            placer.occupy(*symbols.command_post_box(x, y, staff=13))
+        else:
+            placer.occupy(x - 3, y - 3, 6, 6)
     shown = []
     unit_svg = []
     if units:
@@ -264,8 +268,11 @@ def view(box: list[float], width_in: float, height_in: float | None, *, azimuth:
         dash = ' stroke-dasharray="3 2.2"' if gap or a["assumed"] or b["assumed"] else ""
         body.append(f'<line x1="{pa[0]:.1f}" y1="{pa[1]:.1f}" x2="{pb[0]:.1f}" y2="{pb[1]:.1f}" stroke="{OWN}" '
                     f'stroke-width="1.3" stroke-linecap="round"{dash}/>')
-    for x, y in sp:
-        body.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.1" fill="{OWN}" stroke="#ffffff" stroke-width="0.6"/>')
+    for s, (x, y) in zip(stops, sp):
+        if flag:
+            body.append(symbols.command_post(x, y, flag, staff=13, dashed=bool(s.get("assumed"))))
+        else:
+            body.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.1" fill="{OWN}" stroke="#ffffff" stroke-width="0.6"/>')
     labels_svg = []
     for s, (x, y) in zip(stops, sp):
         if any(s["name"].startswith(lb) for lb in labels):
