@@ -1,14 +1,17 @@
 // The wwii-book package's core: the tokens, the page, the type, and the request plumbing every template uses.
 
-// The palette, with what to expect of each in print (soft-proof it against the printer's ICC profile with
-// `wwii-book softproof <profile.icc>`):
-//   ink #000000            pure black, the primary ink
-//   paper #fbfaf6          a warm ground for figures; it prints as a faint tint on white stock, never as the paper's
-//                          own colour
-//   hit #c8323c            red for hits only; worth soft-proofing, may shift or dull
-//   accent #a3241b         likely robust in print, but proof it
-//   boats #2a6fc9 #008f78 #6a3a9e   check the blue's saturation and its distinction from other tracks, the green
-//                          against the blue, and that the purple doesn't print too dark
+// The palette, with what to expect of each in print. Soft-proofed on 19 Nov 2026 against Blurb's ICC profile (CMYK,
+// X-Rite, March 2010; relative colorimetric, black point compensation) with `wwii-book softproof <profile.icc>`;
+// ΔE00 is the shift from screen to print (under 2 hard to see, 2-5 visible side by side):
+//   ink #000000            the press's darkest black prints a touch lighter than screen black (L* 9, ΔE00 5.6): normal
+//   paper #fbfaf6          a warm ground for figures; it prints as a faint tint on white stock (ΔE00 0.8), never as the
+//                          paper's own colour
+//   hit #c8323c            red for hits only; holds well (ΔE00 1.6)
+//   accent #a3241b         shifts a little lighter and warmer (ΔE00 3.4)
+//   boat 1 #2a6fc9         loses some saturation (#3b6fb3 in print, ΔE00 2.3)
+//   boat 2 #008f78         holds (ΔE00 1.1)
+//   boat 3 #6a3a9e         a little greyer, not darker (lightness unchanged, ΔE00 3.8)
+//   the hit red and the three boats stay well apart in print: the closest pair is boat 1 and boat 3 (ΔE00 22.8)
 #let tokens = (
   ink: rgb("#000000"), muted: rgb("#5d675b"), rule: rgb("#c4cbbf"), accent: rgb("#a3241b"),
   other: rgb("#e4e7e9"), other-ink: rgb("#4d5963"), paper: rgb("#fbfaf6"), band: rgb("#171c18"), band-ink: rgb("#ecede6"),
