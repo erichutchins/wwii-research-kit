@@ -10,9 +10,10 @@
 // the outer column, numbered from 1 in each chapter. Use inside `#show: on-grid`:
 //
 //   #running-text(eyebrow: [July 1944 · the Cotentin], title: [Company B], standfirst: [...])[ ...text... ]
-#let running-text(title: none, eyebrow: none, standfirst: none, recto: true, body) = {
+#let running-text(title: none, eyebrow: none, standfirst: none, recto: true, restart-notes: true, body) = {
   pagebreak(weak: true, to: if recto { "odd" } else { none })
-  note-counter.update(0)
+  // a chapter restarts its notes at 1; a part continuing the same section (restart-notes: false) carries them on
+  if restart-notes { note-counter.update(0) }
   place(top, float: true, scope: "parent", clearance: 26pt, block(width: 100%)[
     #set par(justify: false, first-line-indent: 0pt)
     #if eyebrow != none { block(below: 10pt, _eyebrow(eyebrow)) }

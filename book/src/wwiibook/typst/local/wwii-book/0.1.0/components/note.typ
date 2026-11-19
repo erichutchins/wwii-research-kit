@@ -33,10 +33,19 @@
 
 #let _locus(title, sep, rest) = {
   let parts = rest.split("/")
-  let last = parts.last().replace(regex("^p(\d+)$"), m => "p. " + m.captures.at(0))
-    .replace(regex("^f(\d+)$"), m => "f. " + m.captures.at(0))
+  let last = parts.last().replace(regex("^p(\d+)$"), m => "p. " + str(int(m.captures.at(0))))
+    .replace(regex("^f(\d+)$"), m => "f. " + str(int(m.captures.at(0))))
   let middle = if sep == "/" { parts.slice(0, -1) } else { () }
   if middle.len() > 0 { [#title #middle.join(", "), #last] } else { [#title, #last] }
+}
+
+// A source whose items are cited "<key>-<item>/p<n>" (ok45th-17541/p23): its key is the part before the first hyphen,
+// and the item is kept as the identifier, as for a JACAR reference code
+#let _prefixed(cite, titles) = {
+  let m = cite.match(regex("^([A-Za-z0-9_]+)-([^/:]+)/(.+)$"))
+  if m == none or m.captures.at(0) not in titles { return none }
+  let (key, item, rest) = m.captures
+  (key: key, entry: titles.at(key), item: item, rest: rest)
 }
 
 // A citation's source line. Needs context (it reads the book's sources).
@@ -44,12 +53,16 @@
   let m = cite.match(_nara)
   let o = cite.match(_other)
   let titles = _note-sources.get()
+  let pre = if o != none and o.captures.at(0) in titles { none } else { _prefixed(cite, titles) }
   if m != none {
     let (group, naid, page) = m.captures
     let p = str(int(page))
     link("https://catalog.archives.gov/id/" + naid + "?objectPage=" + p)[National Archives, RG #group, NAID #naid, p. #p]
   } else if o != none and o.captures.at(0) in titles {
     _locus(_title(titles.at(o.captures.at(0)), o.captures.at(1), o.captures.at(2)), o.captures.at(1), o.captures.at(2))
+  } else if pre != none {
+    let title = if type(pre.entry) == dictionary { pre.entry.title } else { pre.entry }
+    _locus([#title #pre.item], ":", pre.rest)
   } else {
     raw(cite)
   }
@@ -136,8 +149,11 @@
     if c == none { continue }
     let nara = c.match(_nara)
     let other = c.match(_other)
+    let pm = c.match(regex("^([A-Za-z0-9_]+)-([^/:]+)/([pf]\\d+)$"))
     let (key, page) = if nara != none {
       ("rg" + nara.captures.at(0) + "-" + nara.captures.at(1), str(int(nara.captures.at(2))))
+    } else if pm != none and pm.captures.at(0) in _note-sources.get() and not (other != none and other.captures.at(0) in _note-sources.get()) {
+      (pm.captures.at(0) + "-" + pm.captures.at(1), pm.captures.at(2))
     } else if other != none {
       let parts = other.captures.at(2).split("/")
       (other.captures.at(0) + other.captures.at(1) + parts.slice(0, -1).join("/"), parts.last())
@@ -161,13 +177,17 @@
       }.]
     } else {
       let o = g.cite.match(_other)
+      let pre = if o != none and o.captures.at(0) in known { none } else { _prefixed(g.cite, known) }
       let title = if o != none and o.captures.at(0) in known {
         _title(known.at(o.captures.at(0)), o.captures.at(1), o.captures.at(2))
+      } else if pre != none {
+        let t = if type(pre.entry) == dictionary { pre.entry.title } else { pre.entry }
+        [#t #pre.item]
       } else { raw(key) }
       // a path's middle parts (a chapter) follow the title, as a note's source line sets them
-      let middle = if o != none and o.captures.at(1) == "/" { o.captures.at(2).split("/").slice(0, -1) } else { () }
+      let middle = if pre == none and o != none and o.captures.at(1) == "/" { o.captures.at(2).split("/").slice(0, -1) } else { () }
       let kind = if pages.len() > 0 and pages.all(p => p.starts-with("f")) { "f" } else { "p" }
-      let nums = pages.map(p => p.replace(regex("^[pf](\d+)$"), m => m.captures.at(0)))
+      let nums = pages.map(p => p.replace(regex("^[pf](\d+)$"), m => str(int(m.captures.at(0)))))
       // a page or folio gets "p." or "f."; any other locus (a year, a volume) is printed as it stands
       let paged = pages.len() > 0 and pages.all(p => p.match(regex("^[pf]\d+$")) != none)
       let lead = if not paged { "" } else if nums.len() > 1 { kind + kind + ". " } else { kind + ". " }
