@@ -244,7 +244,10 @@ def build(book: Path | str, output: Path | str | None = None, refresh: bool = Fa
             result.failed.append((key, f"{type(e).__name__}: {e}"))
     assets_path.write_text(json.dumps(assets, indent=1))
 
-    typst.compile(str(book), output=str(pdf), root=str(root), package_path=str(paths.TYPST), font_paths=[str(paths.FONTS)])                           # pass 2
+    # pass 2. PDF tagging (the structure tree for screen readers) is off: a print book has no use for it, and Typst
+    # 0.15's tagger fails with an internal error on some pages (a breakable block split beside a float)
+    typst.compile(str(book), output=str(pdf), root=str(root), package_path=str(paths.TYPST), font_paths=[str(paths.FONTS)],
+                  pdf_tags=False)
     result.warnings = _query(book, "<wwii-warning>", root)
     return result
 

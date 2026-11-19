@@ -14,17 +14,22 @@
 }
 
 #let other-side(entries, heading: [The other side's record], intro: none) = {
-  block(width: 100%, breakable: true, inset: (x: 8pt, y: 7pt), fill: tokens.other.lighten(40%),
-        stroke: (left: 1.6pt + tokens.other-ink), {
+  // each part (the heading, then every record) carries the box's shading and rule itself, so a column break between
+  // records never leaves an empty piece of box behind; the parts sit flush and read as one box
+  let part(top: 4pt, bottom: 4pt, breakable: true, sticky: false, body) = block(width: 100%, breakable: breakable,
+    sticky: sticky, above: 0pt, below: 0pt, inset: (x: 8pt, top: top, bottom: bottom), fill: tokens.other.lighten(40%),
+    stroke: (left: 1.6pt + tokens.other-ink), body)
+  block(above: 10pt, below: 10pt, {
     // the heading and its introduction kept together, and with the first record
-    block(breakable: false, sticky: true, below: 0pt, {
+    part(top: 7pt, breakable: false, sticky: true, {
       text(font: tokens.display, weight: "bold", size: 8.5pt, heading)
-      if intro != none { block(above: 3pt, below: 5pt, text(size: 7.6pt, fill: tokens.muted, intro)) }
+      if intro != none { block(above: 3pt, below: 1pt, text(size: 7.6pt, fill: tokens.muted, intro)) }
     })
-    for e in entries {
+    for (k, e) in entries.enumerate() {
       // the record's number and time as written, the original, then our translation under it and its page
-      block(above: 8pt, below: 0pt, breakable: false, {   // an entry kept whole: a split one also trips Typst's PDF tagging
-        text(font: tokens.display, weight: "semibold", size: 7.6pt)[#e.record#if e.local != none [ · #e.local]]
+      part(top: 4pt, bottom: if k == entries.len() - 1 { 7pt } else { 4pt }, {
+        // the record's header kept with the lines under it, never alone at the foot of a column
+        block(sticky: true, below: 0pt, text(font: tokens.display, weight: "semibold", size: 7.6pt)[#e.record#if e.local != none [ · #e.local]])
         if e.original != none {
           block(above: 3pt, below: 3pt, {
             set text(font: tokens.ja, size: 7.8pt, lang: "ja")
