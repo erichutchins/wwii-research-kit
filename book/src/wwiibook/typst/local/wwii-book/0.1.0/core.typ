@@ -11,10 +11,14 @@
 //   boat 1 #2a6fc9         loses some saturation (#3b6fb3 in print, ΔE00 2.3)
 //   boat 2 #008f78         holds (ΔE00 1.1)
 //   boat 3 #6a3a9e         a little greyer, not darker (lightness unchanged, ΔE00 3.8)
-//   the hit red and the three boats stay well apart in print: the closest pair is boat 1 and boat 3 (ΔE00 22.8)
+//   cta #c98a1b / cta-ink #8a5a0b   the call to action (where the book sends a reader to the kit's site): amber for
+//                          marks and rules (ΔE00 2.0), dark amber for words (prints a little lighter, ΔE00 5.6)
+//   the hit red, the three boats and the amber stay well apart in print: the closest pair is boat 1 and boat 3
+//   (ΔE00 22.8)
 #let tokens = (
   ink: rgb("#000000"), muted: rgb("#5d675b"), rule: rgb("#c4cbbf"), accent: rgb("#a3241b"),
   other: rgb("#e4e7e9"), other-ink: rgb("#4d5963"), paper: rgb("#fbfaf6"), band: rgb("#171c18"), band-ink: rgb("#ecede6"),
+  cta: rgb("#c98a1b"), cta-ink: rgb("#8a5a0b"),
   // Typst files IBM Plex Sans Condensed under the family "IBM Plex Sans", condensed
   display: ("IBM Plex Sans", "IBM Plex Sans Condensed", "Shippori Mincho", "Noto Serif JP Symbols", "Arial Narrow"),
   // every face falls back to Shippori Mincho for Japanese (a record's original quoted in a note or a key), then to

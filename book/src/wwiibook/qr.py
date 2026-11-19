@@ -12,6 +12,7 @@ def svg(url: str, dest: Path, dark: str = "#000000") -> Path:
 
 
 CARD, CARD_EDGE, CARD_INK = "#eadcb4", "#b9a77c", "#231f1a"
+CTA_INK = "#8a5a0b"       # the book's call-to-action ink (core.typ tokens.cta-ink): the card's caption sends a reader on
 HOLE = "#1d1a16"          # the dark backing seen through a hole
 LIP = "#c9b78c"           # the card's cut edge, lit from the top left, inside a hole's top and left
 MONO = "Courier Prime, Courier New, monospace"
@@ -57,7 +58,7 @@ def punch(url: str, dest: Path, fields: tuple[str, ...] = (), caption: str = "Sc
         if t:
             b.append(f'<text x="16" y="{22 + i * step:.1f}" font-family="{MONO}" font-size="{bold if is_bold else regular}" '
                      f'font-weight="{"bold" if is_bold else "normal"}" fill="{CARD_INK}">{_esc(t)}</text>')
-    b.append(f'<text x="16" y="{H - 9:.1f}" font-family="{COND}" font-size="6" fill="#7d5a3c" '
+    b.append(f'<text x="16" y="{H - 9:.1f}" font-family="{COND}" font-size="6" fill="{CTA_INK}" '
              f'font-style="italic">{_esc(caption)}</text>')
 
     def hole(x, y, w, h, rx=0.0):

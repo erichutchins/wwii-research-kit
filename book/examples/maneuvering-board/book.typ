@@ -56,10 +56,8 @@ nine miles from where BANG reckoned her own, a gap of the size two navigators' d
   parts: ("japanese",), japanese-intro: [The Japanese records of 19 September that the kit holds for convoy TAKA-909,
     as written, with our translations. J02 and J04 both rest on the escorts' reports, so they count once.])
 
-== See it move
-
-The kit's page for this engagement plays the same records on one clock: BANG's track, the attacks, the escorts'
-records and her depth through the four and a half hours of depth charges that followed.
+#see-it-move[The kit's page for this engagement plays the same records on one clock: BANG's track, the attacks, the
+escorts' records and her depth through the four and a half hours of depth charges that followed.]
 
 #(wwii.punch-card)("https://erichutchins.github.io/wwii-research-kit/engagement.html?e=taka-909-1944-09-19",
   fields: ("U.S.S. BANG\n(SS-385)", "CONVOY\nTAKA-909", "182315Z\nSEP 44"))
