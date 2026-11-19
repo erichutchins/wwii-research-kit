@@ -150,6 +150,13 @@ lacks. Every face is SIL OFL, bundled in `src/wwiibook/fonts/`. `tests/test_font
 face the package doesn't ship (Typst substitutes silently, and knows some families by other names: Plex Condensed as
 "IBM Plex Sans").
 
+**Notes.** On the grid a note is numbered in the text and set in the outer column beside its call. `on-grid.with(notes:
+"end")` (or `--input notes=end` to the build, which overrides it) gives the column up: the text's two columns run across
+the whole live area (252 pt each, gutter 18 pt; the margins, folios and running heads as before), the calls stay, and
+the notes are set at the section's end under "Notes", each chapter's under its title, before the sources
+(`section-sources`, or `endnotes()` where it stands). A figure that reached into the note column (moved out by
+`note-reach()` on a verso and widened by it) spans the same full measure.
+
 **Colour.** Each colour has one job:
 
 | Token | Hex | Job |
@@ -174,7 +181,9 @@ final PDF is built without accessibility tags, which a print book doesn't need.
 nautical miles at sea and for an air map over the sea; the maneuvering board gives nautical miles beside its rings'
 yards. A plan map's north is up (its frames are Mercator); a scanned sheet's comes from the sheet's own fit. A
 perspective view (the oblique views) has no single scale: its bar is the scale across the view at its middle distance
-and says so, and its north is north on the ground there as the camera sees it.
+and says so, and its north is north on the ground there as the camera sees it. A label's white halo is drawn under every label's
+lettering, never over a neighbour's (`halo.py`: the halos of a drawing's labels in one layer, then their letters;
+`solid.svg` runs it, so every prepared figure, and every figure a section makes solid for print, has it).
 
 **Period pieces** draw on their own inks, the objects they stand for: the punched card (`#eadcb4` stock, `#1d1a16`
 through its holes; its QR code's modules punched as an IBM card's holes, the finders die-cut windows), the maneuvering

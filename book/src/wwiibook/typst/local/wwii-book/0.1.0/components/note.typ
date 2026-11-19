@@ -13,6 +13,7 @@
 // short title a note gives): "History of the 313th Infantry (1947), p. 82".
 
 #let _notes-on = state("wwii-notes-on", false)
+#let _notes-mode = state("wwii-notes-mode", "side")    // on the grid: "side" (the outer column) or "end" (`endnotes`)
 #let _note-sources = state("wwii-note-sources", (:))
 #let note-counter = counter("wwii-note")
 
@@ -130,6 +131,40 @@
   for (i, it) in items.enumerate() { place(top + left, dx: x, dy: ys.at(i), it.words) }
 }
 
+// ---------------------------------------------------------------- end notes
+// With `on-grid.with(notes: "end")` the notes are set together where `endnotes()` stands: the ones called since the
+// last end notes, in the text's two columns, in the book's type at a smaller size, each with its number as the text
+// calls it and its source line as a side note gives it, each chapter's under the chapter's title (the numbers run on
+// across chapters, or begin again, as the text's do). `section-sources` sets them before its sources, and `on-grid` closes the
+// section with them, so a section sets nothing to have them; with the notes beside the text it sets nothing.
+#let endnotes(heading: [Notes]) = context {
+  if not _notes-mode.get() == "end" { return }
+  let earlier = query(selector(<wwii-endnotes>).before(here()))
+  let sel = selector(<wwii-note>).before(here())
+  if earlier.len() > 0 { sel = selector(<wwii-note>).after(earlier.last().location()).before(here()) }
+  let notes = query(sel)
+  if notes.len() == 0 { return }
+  block(above: 20pt, below: 8pt, sticky: true, text(font: tokens.display, weight: "semibold", size: 9pt,
+    tracking: 0.12em, upper(heading)))
+  set text(font: tokens.body, size: 7.6pt, fill: tokens.ink, hyphenate: true, number-type: "lining", top-edge: 6pt,
+           bottom-edge: -1.8pt)
+  set par(justify: false, leading: 2.4pt, spacing: 3.6pt, first-line-indent: 0pt, hanging-indent: 13pt)
+  let last = none
+  for (i, m) in notes.enumerate() {
+    let v = m.value
+    // each chapter's notes under its title, so a reader finds a note by the chapter as well as by its number
+    let opened = query(selector(std.heading.where(level: 1)).before(m.location()))
+    let chapter = if opened.len() > 0 { opened.last().location() } else { none }
+    if chapter != none and chapter != last {
+      block(above: if i == 0 { 2pt } else { 9pt }, below: 4pt, sticky: true,
+        text(font: tokens.display, size: 7.4pt, weight: "semibold", fill: tokens.muted, opened.last().body))
+    }
+    last = chapter
+    par[#box(width: 13pt, text(font: tokens.display, weight: "semibold", size: 7.2pt, str(v.n)))#_note-text(v.body, v.cite)]
+  }
+  [#metadata("endnotes") <wwii-endnotes>]
+}
+
 // ---------------------------------------------------------------- a section's sources, at its end
 // Every source the section's notes cite, gathered: one line a source, its pages in order, each page linked where the
 // archive has a viewer. A section is the run of notes since the numbering last began at 1 (`running-text` restarts it),
@@ -137,7 +172,7 @@
 // knows it ("74802831": "BANG, third war patrol report").
 #let _page-num(s) = { let m = s.match(regex("\d+")); if m == none { 0 } else { int(m.text) } }
 
-#let section-sources(heading: [Sources], titles: (:)) = context {
+#let _section-sources(heading, titles) = context {
   let before = query(selector(<wwii-note>).before(here()))
   if before.len() == 0 { return }
   let start = before.len() - 1
@@ -195,3 +230,6 @@
     }
   }
 }
+
+// With the notes at the end, the section's notes come first, then its sources
+#let section-sources(heading: [Sources], titles: (:)) = { endnotes(); _section-sources(heading, titles) }

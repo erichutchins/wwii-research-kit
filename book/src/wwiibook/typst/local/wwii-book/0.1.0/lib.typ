@@ -18,10 +18,10 @@
 #import "components/photo-caption.typ": *
 #import "templates/chapter-opener.typ": *
 #import "templates/covers.typ": *
-#import "components/note.typ": note, source-line, note-counter, section-sources
+#import "components/note.typ": note, source-line, note-counter, section-sources, endnotes
 #import "components/other-side.typ": other-side, other-side-source
 #import "components/call-to-action.typ": see-it-move, cta-mark
-#import "templates/grid.typ": on-grid, part-title, grids
+#import "templates/grid.typ": on-grid, part-title, grids, note-reach
 #import "templates/running-text.typ": running-text, across
 #import "requests/facsimile.typ": make-facsimile
 #import "requests/records.typ": make-records

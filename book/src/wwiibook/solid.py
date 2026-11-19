@@ -17,6 +17,8 @@ import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from . import halo
+
 GROUND = "#ffffff"   # the paper the book prints on: white stock (the `paper` token is a figure's tint on it)
 SVG_NS, XLINK_NS = "http://www.w3.org/2000/svg", "http://www.w3.org/1999/xlink"
 ET.register_namespace("", SVG_NS)
@@ -189,7 +191,9 @@ def _stops(root: ET.Element, ground: str) -> None:
 
 
 def svg(text: str, ground: str = GROUND) -> str:
-    """The drawing with every translucent colour made solid over the ground."""
+    """The drawing with every translucent colour made solid over the ground, and its labels' halos laid under all
+    their lettering (`halo.layer`): the one pass every figure takes before print."""
+    text = halo.layer(text)
     if not re.search(r"opacity|data:image/png", text):
         return text
     root = ET.fromstring(text)
