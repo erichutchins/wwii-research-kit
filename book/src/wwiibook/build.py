@@ -134,7 +134,9 @@ def _figure(req: dict, build: Path) -> dict:
                                   fronts=tuple(req.get("fronts") or ()), units=req.get("units"),
                                   highlight=req.get("highlight"), route=route, window=req.get("window"),
                                   labels=tuple(req.get("labels") or ()), places=tuple(tuple(x) for x in req.get("places") or ()),
-                                  rivers=req.get("rivers") or 0, legs=req.get("legs") or "full")
+                                  rivers=req.get("rivers") or 0, legs=req.get("legs") or "full",
+                                  waters=tuple(tuple(x) for x in req.get("waters") or ()),
+                                  moves=tuple(req.get("moves") or ()), key=req.get("keyed", True))
         name = f"{_slug(req['key'])}.svg"
         (build / name).write_text(svg)
         return {"kind": "figure", "path": f"build/{name}", **notes}

@@ -23,3 +23,12 @@ def test_dashed_staff_when_assumed():
 def test_box_covers_the_flag():
     x, y, w, h = symbols.command_post_box(100, 200, staff=11)
     assert x <= 100 and w > 13 and y + h >= 200 and y <= 200 - 11 - 8.5
+
+
+def test_oblique_key_names_units_by_side_and_dates_the_front():
+    from wwiibook.oblique import _key
+    shown = [{"of": "us", "echelon": "xx", "arm": "infantry", "label": "45", "highlight": True},
+             {"of": "de", "echelon": "xx", "arm": "unread", "label": "2 MTN", "highlight": False}]
+    svg, h = _key(400, 10, shown, None, None, ("1945-04-26",), ({"of": "de"},), (("Danube", 0, 0),))
+    assert "AMERICAN" in svg and "GERMAN" in svg and "45th Infantry Division" in svg and "2nd Mountain Division" in svg
+    assert "1200 26 April 1945" in svg and "German movement, approximate" in svg and "Danube" in svg and h > 40

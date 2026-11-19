@@ -12,6 +12,7 @@ import base64
 import io
 import math
 from datetime import date
+from html import escape
 
 import numpy as np
 from PIL import Image
@@ -24,6 +25,8 @@ SEA = np.array([196, 212, 219], dtype=np.float32)
 LOW = np.array([234, 236, 223], dtype=np.float32)
 HIGH = np.array([200, 190, 156], dtype=np.float32)
 OWN, INK, FRONT = "#a3241b", "#000000", "#2f3b31"
+MOVE_US, MOVE_DE = "#5f84ad", "#4d5963"   # movement arrows: the atlas's Allied blue; the German boxes' grey
+WATER_INK = "#3d6f87"  # a river's name: the water's colour, deep enough for type
 WATER = "#5f8fa6"     # a river draped on the ground: a shade deeper than the plan maps' so it reads over the relief
 SERIF = "Libertinus Serif, Georgia, serif"
 
@@ -122,7 +125,9 @@ class Camera:
 def view(box: list[float], width_in: float, height_in: float | None, *, azimuth: float = 180, tilt: float = 30,
          exaggeration: float = 4, zoom: int = 12, fronts: tuple = (), units: str | None = None,
          highlight: str | None = None, route: dict | None = None, window: list[str] | None = None,
-         labels: tuple = (), places: tuple = (), rivers: int = 0, legs: str = "full") -> tuple[str, dict]:
+         labels: tuple = (), places: tuple = (), rivers: int = 0, legs: str = "full", waters: tuple = (),
+         moves: tuple = (), key: bool = True) -> tuple[str, dict]:
+    from .atlas.air import arrow
     from .figures import _fronts, _units
     elev, (ew, es, ee, en) = terrain((box[0], box[1], box[2], box[3]), zoom)
     rows, cols = elev.shape
@@ -227,6 +232,16 @@ def view(box: list[float], width_in: float, height_in: float | None, *, azimuth:
                             f'stroke-opacity="0.7" stroke-linejoin="round"/>')
                 body.append(f'<path d="{d}" fill="none" stroke="{FRONT}" stroke-width="{1.7 if last else 0.8}" '
                             f'stroke-opacity="{1 if last else 0.6}" stroke-linejoin="round" stroke-linecap="round"/>')
+    # movement: wide, pale arrows, from the records' words, approximate in where they start and end (`moves`, each
+    # {from: [lon, lat], to: [lon, lat], of: "us" | "de", label, bend}); drawn under the marks, kept clear of labels
+    move_labels = []
+    for mv in moves:
+        p0, p1 = at(*mv["from"], 30), at(*mv["to"], 30)
+        colour = MOVE_DE if mv.get("of") == "de" else MOVE_US
+        body.append(arrow(p0, p1, 2.2, 7.5, colour, bend=mv.get("bend", 0.12), opacity=0.7))
+        placer.line([p0, ((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2), p1], pad=4)
+        if mv.get("label"):
+            move_labels.append(((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, mv["label"], colour))
     # marks first, then labels where they fit: stations (always), then towns (if room)
     stops = []
     if route:
@@ -283,16 +298,98 @@ def view(box: list[float], width_in: float, height_in: float | None, *, azimuth:
             lab = placer.place(x, y, [(name, 6.6, INK, "normal", SERIF)])
             if lab:
                 labels_svg.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="1.3" fill="#ffffff" stroke="{INK}" stroke-width="0.6"/>' + lab)
+    for name, lon, lat in waters:                    # a river's name, on the water, in the water's colour
+        if inside(lon, lat):
+            x, y = at(lon, lat, 2)
+            w = carto.Labels.width(name, 7.4, SERIF)
+            placer.occupy(x - w / 2, y - 10, w, 9)
+            labels_svg.append(f'<text x="{x:.1f}" y="{y - 2.6:.1f}" font-family="{SERIF}" font-size="7.4" '
+                              f'font-style="italic" fill="{WATER_INK}" text-anchor="middle" stroke="#ffffff" '
+                              f'stroke-width="2" stroke-opacity="0.8" paint-order="stroke">{escape(name)}</text>')
+    for x, y, words, colour in move_labels:
+        labels_svg.append(placer.place(x, y, [(words, 6.2, colour, "bold", carto.DISPLAY)], gap=6))
     body += unit_svg + labels_svg
     compass = {0: "north", 45: "north-east", 90: "east", 135: "south-east", 180: "south", 225: "south-west",
                270: "west", 315: "north-west"}.get(int(azimuth) % 360, f"{azimuth:.0f}°")
+    left = {0: "north", 90: "east", 180: "south", 270: "west"}.get(int(azimuth - 90) % 360)
+    side = f" · {left.upper()} ON THE LEFT" if left else ""
     body.append(f'<text x="6" y="{H - 6:.1f}" font-family="{carto.DISPLAY}" font-size="7" letter-spacing="1.2" '
-                f'fill="#4a5249" stroke="#ffffff" stroke-width="2" paint-order="stroke">LOOKING {compass.upper()} · '
+                f'fill="#4a5249" stroke="#ffffff" stroke-width="2" paint-order="stroke">LOOKING {compass.upper()}{side} · '
                 f'HEIGHTS × {exaggeration:g} · NOT TO SCALE</text>')
     notes = {"units": [{"number": symbols.parse_label(str(u.get("label") or ""))[0], "name": symbols.full_name(u),
                         "side": symbols.SIDE_WORDS.get(u.get("of", ""), ""), "highlight": u["highlight"]}
                        for u in sorted(shown, key=lambda u: (u.get("of") == "de", not u["highlight"], u.get("label") or ""))],
              "exaggeration": exaggeration, "azimuth": azimuth}
+    if key and (shown or flag or fronts or moves or waters):
+        strip, kh = _key(W, H + 8, shown, flag, (route or {}).get("symbol_words"), fronts, moves, waters)
+        body.append(f'<rect x="0" y="{H:.1f}" width="{W:.1f}" height="{kh + 12:.1f}" fill="#ffffff"/>' + strip)
+        H += kh + 12
+        notes["keyed"] = True
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W:.1f}pt" height="{H:.1f}pt" viewBox="0 0 {W:.1f} {H:.1f}">'
            + "".join(body) + "</svg>")
     return halo.split(svg), notes
+
+
+MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
+          "November", "December")
+
+
+def _key(W: float, y: float, shown: list[dict], flag: dict | None, flag_words: str | None, fronts: tuple,
+         moves: tuple, waters: tuple) -> tuple[str, float]:
+    """The key under the picture: each unit's symbol beside its proper name, by side (ours open, the enemy's filled
+    grey), the command post flag, then the lines: the front with its sheet's date and hour, the river, the arrows."""
+    from .atlas.air import arrow
+    size, row_h, label_w = 6.4, 17.0, 52.0
+    out: list[str] = []
+    yy = y
+
+    def row(title: str, items: list[tuple[float, object, str, str]]):
+        # items: (icon width, draw(x, cy) -> svg, words, colour)
+        nonlocal yy
+        if not items:
+            return
+        out.append(f'<text x="2" y="{yy + 2.4:.1f}" font-family="{carto.DISPLAY}" font-size="5.8" font-weight="bold" '
+                   f'letter-spacing="0.8" fill="#5d675b">{escape(title.upper())}</text>')
+        cx = label_w
+        for iw, draw, words, colour in items:
+            w = iw + 3 + carto.Labels.width(words, size) + 12
+            if cx + w > W - 2 and cx > label_w:
+                cx, yy = label_w, yy + row_h
+            out.append(draw(cx, yy))
+            out.append(f'<text x="{cx + iw + 3:.1f}" y="{yy + 2.3:.1f}" font-family="{carto.DISPLAY}" '
+                       f'font-size="{size}" fill="{colour}">{escape(words)}</text>')
+            cx += w
+        yy += row_h
+
+    def unit_item(u: dict):
+        number = symbols.parse_label(str(u.get("label") or ""))[0]
+        iw = 13 * (1.28 if u.get("mobility") == "sp" else 1) + 1.8 + len(number) * 6.8 * 0.6   # bold, often capitals
+        return (iw, lambda x, cy, u=u: symbols.symbol(x + 6.5, cy, u, highlight=u.get("highlight", False)),
+                symbols.full_name(u), OWN if u.get("highlight") else INK)
+
+    ours = [u for u in shown if u.get("of") != "de"]
+    theirs = [u for u in shown if u.get("of") == "de"]
+    items = [unit_item(u) for u in ours]
+    if flag:
+        iw = 13 * 1.28 + 1.8 + len(str(flag.get("label", ""))) * 6.8 * 0.6
+        items.append((iw, lambda x, cy: symbols.command_post(x + 0.5, cy + 6.5, flag, staff=3, dashed=True),
+                      flag_words or "command post", OWN))
+    row("American", items)
+    row("German", [unit_item(u) for u in theirs])
+    lines = []
+    if fronts:
+        d = date.fromisoformat(fronts[-1])
+        lines.append((18, lambda x, cy: (f'<path d="M{x},{cy} h18" stroke="#ffffff" stroke-width="3.2"/>'
+                                         f'<path d="M{x},{cy} h18" stroke="{FRONT}" stroke-width="1.7"/>'),
+                      f"front line, the 12th Army Group's situation map, 1200 {d.day} {MONTHS[d.month - 1]} {d.year}",
+                      INK))
+    if waters:
+        lines.append((18, lambda x, cy: f'<path d="M{x},{cy} h18" stroke="{WATER}" stroke-width="1.6"/>',
+                      ", ".join(w[0] for w in waters), WATER_INK))
+    for side, colour, words in (("us", MOVE_US, "American movement, approximate"),
+                                ("de", MOVE_DE, "German movement, approximate")):
+        if any((m.get("of") == "de") == (side == "de") for m in moves):
+            lines.append((22, lambda x, cy, c=colour: arrow((x, cy + 1.5), (x + 22, cy - 0.5), 1.4, 4.5, c, bend=0.1,
+                                                            opacity=0.7), words, INK))
+    row("Lines", lines)
+    return "".join(out), yy - y
