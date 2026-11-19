@@ -24,6 +24,7 @@ SEA = np.array([196, 212, 219], dtype=np.float32)
 LOW = np.array([234, 236, 223], dtype=np.float32)
 HIGH = np.array([200, 190, 156], dtype=np.float32)
 OWN, INK, FRONT = "#a3241b", "#000000", "#2f3b31"
+WATER = "#5f8fa6"     # a river draped on the ground: a shade deeper than the plan maps' so it reads over the relief
 SERIF = "Libertinus Serif, Georgia, serif"
 
 
@@ -121,7 +122,7 @@ class Camera:
 def view(box: list[float], width_in: float, height_in: float | None, *, azimuth: float = 180, tilt: float = 30,
          exaggeration: float = 4, zoom: int = 12, fronts: tuple = (), units: str | None = None,
          highlight: str | None = None, route: dict | None = None, window: list[str] | None = None,
-         labels: tuple = (), places: tuple = ()) -> tuple[str, dict]:
+         labels: tuple = (), places: tuple = (), rivers: int = 0, legs: str = "full") -> tuple[str, dict]:
     from .figures import _fronts, _units
     elev, (ew, es, ee, en) = terrain((box[0], box[1], box[2], box[3]), zoom)
     rows, cols = elev.shape
@@ -186,6 +187,35 @@ def view(box: list[float], width_in: float, height_in: float | None, *, azimuth:
         return ew <= lon <= ee and es <= lat <= en
 
     placer = carto.Labels((0, 0, W, H))
+    # rivers (Natural Earth 1:10m, as the plan maps draw them; `rivers` the largest scalerank drawn, 0 for none),
+    # draped on the ground: each line densified so it follows the terrain rather than cutting through it
+    if rivers:
+        for name in ("ne_10m_rivers_lake_centerlines", "ne_10m_rivers_europe", "ne_10m_rivers_north_america"):
+            try:
+                gj = carto.natural(name)
+            except Exception:  # noqa: BLE001 - a missing layer is a missing layer, not a broken figure
+                continue
+            for feat in gj["features"]:
+                rank = feat["properties"].get("scalerank", 99)
+                if rank > rivers or not feat["geometry"]:
+                    continue
+                for line in carto._lines(feat["geometry"]):
+                    pts = []
+                    for (lo1, la1), (lo2, la2) in zip(line, line[1:]):
+                        n = max(1, int(math.hypot(lo2 - lo1, la2 - la1) / 0.002))
+                        pts += [(lo1 + (lo2 - lo1) * k / n, la1 + (la2 - la1) * k / n) for k in range(n)]
+                    if line:
+                        pts.append(tuple(line[-1]))
+                    run: list[tuple[float, float]] = []
+                    for lo, la in pts + [(None, None)]:
+                        if lo is not None and inside(lo, la):
+                            run.append(at(lo, la, 2))
+                            continue
+                        if len(run) > 1:
+                            d = "M" + " L".join(f"{x:.1f},{y:.1f}" for x, y in run)
+                            body.append(f'<path d="{d}" fill="none" stroke="{WATER}" stroke-width="1.6" '
+                                        f'stroke-linejoin="round" stroke-linecap="round"/>')
+                        run = []
     for kf, day in enumerate(fronts):
         last = kf == len(fronts) - 1
         for line in _fronts(day):
@@ -227,7 +257,8 @@ def view(box: list[float], width_in: float, height_in: float | None, *, azimuth:
                             f'stroke-width="0.6"/><circle cx="{gx:.1f}" cy="{gy:.1f}" r="1" fill="{OWN if hl else INK}"/>')
             unit_svg.append(symbols.symbol(gx, cy, un, highlight=hl))
             shown.append({**un, "highlight": hl})
-    for (a, pa), (b, pb) in zip(zip(stops, sp), list(zip(stops, sp))[1:]):
+    # legs: "none" draws the stations alone (no line joins a unit's dated positions where the way isn't recorded)
+    for (a, pa), (b, pb) in ([] if legs == "none" else zip(zip(stops, sp), list(zip(stops, sp))[1:])):
         placer.line([pa, pb])
         gap = a.get("to") and b.get("from") and (date.fromisoformat(b["from"]) - date.fromisoformat(a["to"])).days > 1
         dash = ' stroke-dasharray="3 2.2"' if gap or a["assumed"] or b["assumed"] else ""

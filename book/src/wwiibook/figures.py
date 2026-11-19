@@ -567,7 +567,9 @@ def route_map(data: dict, width_in: float, panels: list[dict], labels: list[str]
                          f'stroke="{OWN}" stroke-opacity="0.4" stroke-width="0.4" stroke-dasharray="1 1.8"/>')
     crossings = []
     leg_w, leg_o = (0.8, 0.55) if legs == "light" else (1.2, 1.0)
-    for (a, pa), (b, pb) in zip(placed, placed[1:]):
+    # legs: "none" draws the stations alone (the book's rule: no line joins a unit's dated positions where the way
+    # between them isn't recorded)
+    for (a, pa), (b, pb) in ([] if legs == "none" else zip(placed, placed[1:])):
         if not pa or not pb:
             continue
         unrecorded = a.get("to") and b.get("from") and (date.fromisoformat(b["from"]) - date.fromisoformat(a["to"])).days > 1
