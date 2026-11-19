@@ -4,9 +4,8 @@
 # are pinned to a commit, with the tag it was beside.
 name: pages
 
+# Started by hand only (Actions > pages > Run workflow): a push to main publishes nothing until the workflow is run.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions: {}

@@ -84,4 +84,4 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-        stages: [pre-push]
+        stages: [manual]   # by hand: prek run smoke --hook-stage manual
