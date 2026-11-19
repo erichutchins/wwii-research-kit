@@ -48,7 +48,7 @@ def sheet_view(ex: Extent, width_in: float | None = None) -> tuple[str, dict]:
                     f'stroke="{m["colour"]}" stroke-width="1.6"/>')
         body.append(labels.place(x, y, [(record.name(m), 7, m["colour"], "bold", DISPLAY),
                                         (record.span(m), 6.2, m["colour"], "normal", DISPLAY)], force=True, gap=8))
-    body.append(f'<rect width="{W:.1f}" height="{H:.1f}" fill="none" stroke="#1c221d" stroke-width="0.6"/>')
+    body.append(f'<rect width="{W:.1f}" height="{H:.1f}" fill="none" stroke="#000000" stroke-width="0.6"/>')
     notes = {"sheets": [{"sheet": sh.ref(nm), "edition": yr} for _, nm, yr in sh.sheets],
              "placing": sh.placing, "kind": sh.kind,
              "units": list(dict.fromkeys(m["short"] for m in marks))}

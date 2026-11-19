@@ -23,7 +23,7 @@ SKY = np.array([247, 246, 240], dtype=np.float32)
 SEA = np.array([196, 212, 219], dtype=np.float32)
 LOW = np.array([234, 236, 223], dtype=np.float32)
 HIGH = np.array([200, 190, 156], dtype=np.float32)
-OWN, INK, FRONT = "#a3241b", "#1c221d", "#2f3b31"
+OWN, INK, FRONT = "#a3241b", "#000000", "#2f3b31"
 SERIF = "Libertinus Serif, Georgia, serif"
 
 

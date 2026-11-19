@@ -36,7 +36,7 @@ CONTOUR = np.array([168, 150, 116], np.float32)
 WATER = np.array([110, 148, 165], np.float32)
 ROAD, ROAD_MINOR = np.array([96, 80, 62], np.float32), np.array([132, 116, 94], np.float32)
 RAIL = np.array([52, 48, 42], np.float32)
-INK, FRONT, OWN = "#1c221d", "#a3241b", "#a3241b"
+INK, FRONT, OWN = "#000000", "#a3241b", "#a3241b"
 DISPLAY, SERIF = carto.DISPLAY, carto.SERIF
 
 

@@ -16,7 +16,7 @@ without the map's qualifiers, which the box's style and the key carry instead.
 import re
 from html import escape
 
-INK, ENEMY, PAPER, OWN = "#1c221d", "#4d5963", "#ffffff", "#a3241b"
+INK, ENEMY, PAPER, OWN = "#000000", "#4d5963", "#ffffff", "#a3241b"
 DISPLAY = "IBM Plex Sans, IBM Plex Sans Condensed, Arial Narrow, sans-serif"
 
 ARM_WORDS = {"infantry": "Infantry", "armored": "Armored", "armored-infantry": "Armored Infantry", "airborne": "Airborne"}

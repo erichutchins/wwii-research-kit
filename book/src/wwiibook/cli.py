@@ -5,6 +5,7 @@
   wwii-book preflight book.pdf [--preset blurb-magazine]          page size, page count, fonts, image resolution
   wwii-book fetch rg64-469722323/p0712
   wwii-book atlas la-haye-du-puits [--reconstruct] [--qgis]
+  wwii-book softproof blurb.icc [proof/page-01.png ...]           the palette (and pages) as the press will print them
 """
 import argparse
 import sys
@@ -33,7 +34,17 @@ def main(argv: list[str] | None = None) -> int:
     at.add_argument("extent", help="a name under book/atlas/, or a path to an extent.yml")
     at.add_argument("--reconstruct", action="store_true", help="rebuild the network even if it exists")
     at.add_argument("--qgis", action="store_true", help="also write the GeoPackage and DEM for QGIS")
+    sp = sub.add_parser("softproof", help="the palette, and any page PNGs, as a press's ICC profile will print them")
+    sp.add_argument("profile", help="the printer's ICC profile")
+    sp.add_argument("pages", nargs="*", help="page PNGs (from proof/) to render as they would print")
     a = ap.parse_args(argv)
+
+    if a.cmd == "softproof":
+        from pathlib import Path
+
+        from .softproof import report
+        print(report(a.profile, [Path(p) for p in a.pages]))
+        return 0
 
     if a.cmd == "atlas":
         return _atlas(a)

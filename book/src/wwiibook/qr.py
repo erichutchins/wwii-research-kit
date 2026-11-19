@@ -4,7 +4,7 @@ from pathlib import Path
 import segno
 
 
-def svg(url: str, dest: Path, dark: str = "#1c221d") -> Path:
+def svg(url: str, dest: Path, dark: str = "#000000") -> Path:
     dest.parent.mkdir(parents=True, exist_ok=True)
     segno.make(url, error="h").save(str(dest), kind="svg", dark=dark, light=None, border=0, scale=10, xmldecl=False,
                                      svgns=True, nl=False)

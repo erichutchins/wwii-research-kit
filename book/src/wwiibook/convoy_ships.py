@@ -25,7 +25,7 @@ import yaml
 
 from . import paths
 
-INK, MUTED, RULE, RED = "#1c221d", "#586257", "#c4cbbf", "#c8323c"
+INK, MUTED, RULE, RED = "#000000", "#586257", "#c4cbbf", "#c8323c"
 BOATS = ("#2a6fc9", "#008f78", "#6a3a9e")     # guides/ENGAGEMENTS.md, "Colour": the boats in participant order
 DISPLAY = "IBM Plex Sans, IBM Plex Sans Condensed, Arial Narrow, sans-serif"
 SERIF = "Libertinus Serif, Georgia, serif"

@@ -1,7 +1,16 @@
 // The wwii-book package's core: the tokens, the page, the type, and the request plumbing every template uses.
 
+// The palette, with what to expect of each in print (soft-proof it against the printer's ICC profile with
+// `wwii-book softproof <profile.icc>`):
+//   ink #000000            pure black, the primary ink
+//   paper #fbfaf6          a warm ground for figures; it prints as a faint tint on white stock, never as the paper's
+//                          own colour
+//   hit #c8323c            red for hits only; worth soft-proofing, may shift or dull
+//   accent #a3241b         likely robust in print, but proof it
+//   boats #2a6fc9 #008f78 #6a3a9e   check the blue's saturation and its distinction from other tracks, the green
+//                          against the blue, and that the purple doesn't print too dark
 #let tokens = (
-  ink: rgb("#1c221d"), muted: rgb("#5d675b"), rule: rgb("#c4cbbf"), accent: rgb("#a3241b"),
+  ink: rgb("#000000"), muted: rgb("#5d675b"), rule: rgb("#c4cbbf"), accent: rgb("#a3241b"),
   other: rgb("#e4e7e9"), other-ink: rgb("#4d5963"), paper: rgb("#fbfaf6"), band: rgb("#171c18"), band-ink: rgb("#ecede6"),
   // Typst files IBM Plex Sans Condensed under the family "IBM Plex Sans", condensed
   display: ("IBM Plex Sans", "IBM Plex Sans Condensed", "Shippori Mincho", "Noto Serif JP Symbols", "Arial Narrow"),

@@ -16,7 +16,7 @@ from . import sources
 from .extent import Extent
 from .panorama import CATHEDRAL, _cathedral, _load
 
-DISPLAY, INK, MUTED = carto.DISPLAY, "#1c221d", "#586257"
+DISPLAY, INK, MUTED = carto.DISPLAY, "#000000", "#586257"
 CHURCH_WORDS = ("église", "eglise", "basilique", "cathédrale", "chiesa", "basilica", "cattedrale", "duomo", "kirche",
                 "church", "cathedral")
 
