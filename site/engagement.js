@@ -482,7 +482,7 @@
   // a land frame (no followed ship or boat: the Army's) in statute miles, as its reports give them, and kilometres; a sea
   // frame in nautical miles
   const ON_LAND = !PARTS.some(p => p.track);
-  const ruler = scaleBar(document.querySelector(".map-box"), { units: ON_LAND ? ["mi", "km"] : ["nm"] });
+  const ruler = scaleBar(document.querySelector(".map-box"), { units: ON_LAND ? ["km", "mi"] : ["nm"] });
   const P = (lon, lat) => proj([lon, lat]);
   if (!D.box) document.querySelector(".map-box").hidden = true;
 

@@ -82,6 +82,7 @@ async function pacific() {
     else g.append("circle").attr("class", "hit-ring").attr("r", 5.5);
     g.append("title").text(`${e.title}: ${e.translation || e.words}`);
   }
+  mapMarks(svg, p => proj.invert(p), W, H, { units: ["nm"] });   // north and a scale (scalebar.js)
   d3.select("#fig-pacific").append("p").attr("class", "readout").html(`The three boats' tracks from their patrol reports, each in its own colour; a diamond, an attack. A red cross, a ship the convoy's record gives as sunk; a red ring, hit. Each boat's report kept its own zone and the convoy's record Tokyo time; the engagement page puts them on one clock.`);
 }
 
@@ -110,6 +111,7 @@ async function atlantic() {
   }
   const a = proj(leg[0].ll);
   svg.append("text").attr("class", "lab-2").attr("x", a[0] + 8).attr("y", a[1] + 18).text("UGS 72 sails, 2 February");
+  mapMarks(svg, p => proj.invert(p), W, H, { units: ["nm"] });   // north and a scale (scalebar.js)
   d3.select("#fig-atlantic").append("p").attr("class", "readout").text("Grey: every position in her war diaries, September 1944 to October 1945. Blue: convoy UGS 72, 2 to 17 February 1945.");
 }
 
@@ -136,6 +138,7 @@ async function mediterranean() {
     g.append("circle").attr("class", "mark").attr("r", 4.5);
     if (!labelled.some(([lx, ly]) => Math.hypot(lx - x, ly - y) < 14)) { labelled.push([x, y]); g.append("text").attr("class", "lab").attr("x", 8).attr("y", 4).text(e.short || e.title); }
   }
+  mapMarks(svg, p => proj.invert(p), W, H, { units: ["km", "mi"] });   // north and a scale (scalebar.js)
   d3.select("#fig-mediterranean").append("p").attr("class", "readout").text(`Hatched: the ${T.campaigns.length} operations' areas, drawn by hand (ours). A mark: an engagement, at the middle of its box.`);
 }
 

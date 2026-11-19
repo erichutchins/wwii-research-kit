@@ -69,6 +69,7 @@ const EngageOverview = (() => {
       }
       svg.append("g").attr("class", "overview-now");
       drawHere();
+      mapMarks(svg, p => proj.invert(p), w, h, { units: ["nm"], at: "bottom-left", max: w * 0.3 });   // north and nautical miles
     }
     function drawHere() {
       const g = svg.select("g.overview-now");

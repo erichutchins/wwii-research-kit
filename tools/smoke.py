@@ -31,6 +31,7 @@ import asyncio
 import functools
 import http.server
 import json
+import os
 import sys
 import threading
 from pathlib import Path
@@ -228,7 +229,8 @@ async def run_async(root, views, combos, jobs):
     sem = asyncio.Semaphore(jobs)
     remote = Remote(base)
     async with async_playwright() as p:
-        browser = await p.chromium.launch()
+        # SMOKE_CHROMIUM: a Chromium already on the machine, when the pinned Playwright's own isn't installed
+        browser = await p.chromium.launch(executable_path=os.environ.get("SMOKE_CHROMIUM") or None)
 
         async def one(view, size, scheme):
             async with sem:

@@ -25,7 +25,7 @@
   caption: [The same ground, extent, front and divisions, looking east from above the sea: the American divisions
   on the left (north), the German on the right (south), Mont Castre between them beyond La Haye-du-Puits; the
   tinted ground, under 6 m, is the low marsh ground. Heights are exaggerated five times, and
-  distances shrink with depth, so nothing here is to scale. A stalk drawn dotted stands on ground the hills hide.])
+  distances shrink with depth, so the scale bar holds only across the view's middle distance. A stalk drawn dotted stands on ground the hills hide.])
 
 #pagebreak()
 

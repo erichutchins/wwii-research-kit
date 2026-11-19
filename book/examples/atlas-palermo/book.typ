@@ -21,7 +21,7 @@
 #(wwii.atlas-view)("palermo", view: "oblique", width: 9.6in,
   caption: [The same ground, looking north-north-east from the mountains over the Conca d'Oro to the bay: Monreale
   on its slope at left, the port beyond the city. Heights are exaggerated twice, and distances shrink with depth,
-  so nothing here is to scale.])
+  so the scale bar holds only across the view's middle distance.])
 
 #pagebreak()
 

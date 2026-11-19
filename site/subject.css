@@ -97,6 +97,7 @@ a.spanel:hover { background: var(--wash); }
 .records .zoom-btns button { font: 21.5px/1 var(--serif); width: 30px; height: 30px; padding: 0; border-radius: 2px; cursor: pointer;
                              background: var(--surface); color: var(--ink-2); border: 1px solid var(--rule); }
 .records .zoom-btns button:hover { background: var(--wash); color: var(--ink); }
+.records { --scalebar-bottom: 34px; }   /* the ruler sits above the hint */
 .records .hint { position: absolute; left: 12px; bottom: 8px; color: var(--ink-3); font-size: 14.5px; pointer-events: none; }
 .records .legend { border-bottom: 0; padding-bottom: 6px; }
 .records .legend span { color: var(--ink-2); font-weight: 400; }
@@ -398,6 +399,7 @@ dialog.scan::backdrop { background: rgba(0,0,0,0.55); }
   .records .check { margin-left: 0; }
   .records .side-head { flex-wrap: wrap; }
   .records .hint { display: none; }
+  .records { --scalebar-bottom: 10px; }
   .records .map-wrap { height: 62vh; }
   .p-patrols .gauge { left: 8px; top: 8px; gap: 6px; padding: 4px 8px 4px 4px; max-width: calc(100% - 70px); }
   .p-patrols .compass { width: 46px; height: 46px; }

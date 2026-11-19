@@ -361,12 +361,8 @@
       g.append("text").attr("class", "lbl2").attr("x", x + 5).attr("y", y - 5).text(r.place);
     }
     (stage.nodes || []).filter(nd => nd.port).forEach(nd => { const [x, y] = proj([nd.lon, nd.lat]); g.append("text").attr("class", "lbl2").attr("x", x + 5).attr("y", y - 5).text(nd.name); });
-    // a scale bar at the panel's centre latitude: a round length (10, 100, 1000 km or nm)
-    const midLat = (nn + s) / 2, unit = S.kind === "unit" || S.kind === "battalion" ? "km" : "nm", perDeg = unit === "km" ? 111.32 : 60;
-    const kmPerPx = Math.abs(proj.invert([1, H / 2])[0] - proj.invert([0, H / 2])[0]) * perDeg * Math.cos(midLat * Math.PI / 180);
-    const len = [1, 10, 100, 1000, 5000].reverse().find(v => v / kmPerPx < W * 0.5) || 1;
-    svg.append("line").attr("x1", 10).attr("y1", H - 10).attr("x2", 10 + len / kmPerPx).attr("y2", H - 10).attr("stroke", "var(--ink-2)").attr("stroke-width", 1.5);
-    svg.append("text").attr("class", "lbl2").attr("x", 10).attr("y", H - 14).text(`${len} ${unit}`);
+    // north and a scale (scalebar.js): km and miles for a unit on land or a battalion's islands, nautical miles at sea
+    mapMarks(svg, p => proj.invert(p), W, H, { units: S.kind === "unit" || S.kind === "battalion" ? ["km", "mi"] : ["nm"], at: "bottom-left" });
     if (wide) svg.append("title").text("The track crosses the date line");
     return svg.node();
   }

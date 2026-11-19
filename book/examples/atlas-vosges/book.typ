@@ -20,7 +20,7 @@
 #(wwii.atlas-view)("northern-vosges", view: "oblique", width: 9.6in,
   caption: [The same ground, looking north from behind the American line toward the German: the forested Vosges
   to the left and ahead, the open country toward Haguenau to the right. Where a ridge hides the front, the line
-  breaks. Heights are exaggerated four times, and distances shrink with depth, so nothing here is to scale.])
+  breaks. Heights are exaggerated four times, and distances shrink with depth, so the scale bar holds only across the view's middle distance.])
 
 #pagebreak()
 

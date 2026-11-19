@@ -20,8 +20,7 @@
 
 #(wwii.atlas-view)("bizerte", view: "oblique", width: 9.6in,
   caption: [The same ground, looking north across Lake Bizerte to the town and the sea, Garaet el Ichkeul and
-  Jebel Ichkeul on the left. Heights are exaggerated three times, and distances shrink with depth, so nothing here
-  is to scale.])
+  Jebel Ichkeul on the left. Heights are exaggerated three times, and distances shrink with depth, so the scale bar holds only across the view's middle distance.])
 
 #pagebreak()
 

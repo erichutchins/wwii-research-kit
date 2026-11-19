@@ -64,6 +64,7 @@ window.ConvoyPanel = { async mount(host, S) {
       `<span>${EV.legendMark.sighted("var(--ink-2)")}Sighted</span>`, `<span>${EV.legendMark.sunk}Sunk</span>`, `<span>${EV.legendMark.hit}Hit</span>`,
       `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" class="route assumed"/></svg>Assumed route</span>`,
       `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" class="route straight"/></svg>Straight between ports</span>`].join("");
+    mapMarks(svg, p => proj.invert(p), W, H, { units: ["nm"] });   // north and nautical miles (scalebar.js)
     document.getElementById("v-mapnote").textContent = "The route is drawn through reference waypoints, none yet traced from the escorts' charts: an assumption, not a track. The marks are the records': where the boats saw and attacked the convoy, and where the Japanese record puts a ship hit.";
   }
 

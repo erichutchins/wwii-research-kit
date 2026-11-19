@@ -55,6 +55,7 @@
         : `<b>All months</b>: ${C.length} convoys on ${edges.length} lane segments. Drag across the voyages below to pick months.`;
     }
     render(null);
+    mapMarks(d3.select("#lanemap"), p => proj.invert(p), W, H, { units: ["nm"] });   // north and nautical miles, over the lanes
     const sw = (w, cls = "lane") => `<svg width="30" height="12"><line x1="2" y1="6" x2="28" y2="6" class="${cls}" stroke-width="${w}"/></svg>`;
     document.getElementById("legend").innerHTML = [`<span>${sw(width(1))}1 convoy</span>`, `<span>${sw(width(2))}2</span>`, `<span>${sw(width(3))}3 or more</span>`,
       `<span>${sw(1.4, "lane idle")}no convoy in the months picked</span>`, `<span>${EV.legendMark.sunk}sunk</span>`, `<span>${EV.legendMark.hit}hit</span>`, `<span>${EV.legendMark.miss}attacked, no damage</span>`].join("");
@@ -89,6 +90,7 @@
       edges.forEach(e => { const n = [...e.convoys].filter(on).length; svg.append("path").attr("class", "lane" + (n ? "" : " idle")).attr("d", seg(e)).attr("stroke-width", n ? 1.4 + n : 1); });
       act.forEach(c => c.marks.filter(h => { const t = tokyo(h.utc); return t >= m0 && t < m1; })
         .forEach(h => mark(svg.append("g").attr("transform", `translate(${proj([h.lon, h.lat])})`), h, 3.5)));
+      mapMarks(svg, p => proj.invert(p), W, Math.round(W * 0.85), { units: ["nm"], max: W * 0.3 });
     });
   }
 
