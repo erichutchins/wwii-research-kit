@@ -32,7 +32,6 @@ mission:                             # the mission map (atlas/mission.py)
     - [Munich, 11.5820, 48.1351]
     - [Nuremberg, 11.0767, 49.4521]
     - [Basel, 7.5886, 47.5596]
-    - [Zurich, 8.5417, 47.3769]
     - [Besançon, 6.0241, 47.2378]
   inset:
     bbox_lonlat: [10.92, 48.67, 11.32, 48.94]

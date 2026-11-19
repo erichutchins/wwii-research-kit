@@ -371,11 +371,38 @@ def _text(x, y, s, size=7.0, fill=INK, anchor="start", weight="normal", family=D
 def _defs() -> str:
     return ('<defs><pattern id="attached" width="4" height="4" patternUnits="userSpaceOnUse" '
             'patternTransform="rotate(45)"><rect width="4" height="4" fill="#f3efe4"/>'
-            '<line x1="0" y1="0" x2="0" y2="4" stroke="#b9ad92" stroke-width="1.4"/></pattern>'
-            '<linearGradient id="fadeL" x1="0" x2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="1"/>'
-            '<stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>'
-            '<linearGradient id="fadeR" x1="0" x2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0"/>'
-            '<stop offset="1" stop-color="#ffffff" stop-opacity="1"/></linearGradient></defs>')
+            '<line x1="0" y1="0" x2="0" y2="4" stroke="#b9ad92" stroke-width="1.4"/></pattern></defs>')
+
+
+ATTACHED_GROUND = "#f3efe4"   # the hatching's ground, where a fade starts on an attached bar
+
+
+def _fade(gid: str, x_from: float, x_to: float, y: float, h: float, fill: str, dash: str = "",
+          edges: bool = True) -> str:
+    """An open end, solid: the bar's fill and its outline running to white paper from `x_from` to `x_to`.
+
+    The press takes no transparency, so the fade is not white laid over the bar at a rising opacity but what that
+    looks like on white paper: an opaque gradient from the bar's colour to white, over the bar's end, and the
+    outline's top and bottom drawn again as strokes from ink to white. The hatching of an attached bar fades from
+    its ground colour."""
+    ground = ATTACHED_GROUND if fill.startswith("url(") else fill
+    lo, hi = min(x_from, x_to), max(x_from, x_to)
+    grad = (f'<linearGradient id="{gid}-f" gradientUnits="userSpaceOnUse" x1="{x_from:.1f}" y1="0" x2="{x_to:.1f}" '
+            f'y2="0"><stop offset="0" stop-color="{ground}"/><stop offset="1" stop-color="#ffffff"/></linearGradient>'
+            f'<linearGradient id="{gid}-s" gradientUnits="userSpaceOnUse" x1="{x_from:.1f}" y1="0" x2="{x_to:.1f}" '
+            f'y2="0"><stop offset="0" stop-color="{INK}"/><stop offset="1" stop-color="#ffffff"/></linearGradient>')
+    out = [f'<defs>{grad}</defs>',
+           f'<rect x="{lo:.1f}" y="{y - 0.5:.1f}" width="{hi - lo + (0.5 if x_to > x_from else 0):.1f}" '
+           f'height="{h + 1:.1f}" fill="url(#{gid}-f)"/>']
+    if x_to < x_from:                                # an open start: cover the outline's left end as well
+        out[-1] = (f'<rect x="{lo - 0.5:.1f}" y="{y - 0.5:.1f}" width="{hi - lo + 0.5:.1f}" height="{h + 1:.1f}" '
+                   f'fill="url(#{gid}-f)"/>')
+    if edges:
+        d = f' stroke-dasharray="{dash}"' if dash else ""
+        for ey in (y, y + h):
+            out.append(f'<line x1="{lo:.1f}" y1="{ey:.1f}" x2="{hi:.1f}" y2="{ey:.1f}" stroke="url(#{gid}-s)" '
+                       f'stroke-width="0.6"{d}/>')
+    return "".join(out)
 
 
 def timeline(base: str, start: str, end: str, width_in: float = 9.6, title: str = "",
@@ -408,6 +435,7 @@ def timeline(base: str, start: str, end: str, width_in: float = 9.6, title: str 
             lanes[lv] += mine
     bar_h, gap, top = 24.0, 7.0, 34.0 if title else 22.0
     body = [_defs()]
+    fades = 0
     if title:
         body.append(_text(0, 12, title.upper(), 8, INK, weight="bold"))
     y = top
@@ -430,12 +458,13 @@ def timeline(base: str, start: str, end: str, width_in: float = 9.6, title: str 
                     fill = "#f3f1ea" if s.relation != "attached_to" else "url(#attached)"
                 body.append(f'<rect x="{x0:.1f}" y="{by:.1f}" width="{max(x1 - x0, 1):.1f}" height="{bar_h:.1f}" '
                             f'rx="2" fill="{fill}" stroke="{INK}" stroke-width="0.6"{dash}/>')
+                dash_d = "2.5 1.8" if s.basis != "reported" else ""
                 if s.open_start:
-                    body.append(f'<rect x="{x0:.1f}" y="{by:.1f}" width="{min(14, x1 - x0):.1f}" height="{bar_h:.1f}" '
-                                f'fill="url(#fadeL)"/>')
+                    fades += 1
+                    body.append(_fade(f"fade{fades}", x0 + min(14, x1 - x0), x0, by, bar_h, fill, dash_d))
                 if s.open_end:
-                    body.append(f'<rect x="{max(x0, x1 - 14):.1f}" y="{by:.1f}" width="{min(14, x1 - x0):.1f}" '
-                                f'height="{bar_h:.1f}" fill="url(#fadeR)"/>')
+                    fades += 1
+                    body.append(_fade(f"fade{fades}", max(x0, x1 - 14), x1, by, bar_h, fill, dash_d))
                 if s.basis == "assumed":                      # a bridge: the formation is named on either side
                     continue
                 # the patch, then the name as printed, as far as the bar allows
@@ -504,13 +533,15 @@ def timeline(base: str, start: str, end: str, width_in: float = 9.6, title: str 
            ("#e9e5d9", "fade", "an end the record leaves open")]
     kx = left
     for fill, dash, words in key:
+        if kx > left and kx + 22 + len(words) * 6.6 * 0.47 > W - right:   # the key runs on to a second row
+            kx, ky = left, ky + 13
         dash_attr = f' stroke-dasharray="{dash}"' if dash and dash != "fade" else ""
         body.append(f'<rect x="{kx:.1f}" y="{ky - 6:.1f}" width="18" height="8" rx="1.5" fill="{fill}" stroke="{INK}" '
                     f'stroke-width="0.5"{dash_attr}/>')
         if dash == "fade":
-            body.append(f'<rect x="{kx + 9:.1f}" y="{ky - 6:.1f}" width="9" height="8" fill="url(#fadeR)"/>')
-        body.append(_text(kx + 22, ky + 0.5, words, 6.2, INK))
-        kx += 30 + len(words) * 6.2 * 0.47
+            body.append(_fade("fade-key", kx + 9, kx + 18, ky - 6, 8, fill))
+        body.append(_text(kx + 22, ky + 0.5, words, 6.6, INK))
+        kx += 30 + len(words) * 6.6 * 0.47
     H = ky + 8
     notes = {"base": base, "window": [start, end],
              "links": [{"unit": s.child, "relation": RELATION[s.relation], "parent": s.parent_name,

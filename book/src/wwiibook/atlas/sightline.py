@@ -168,8 +168,8 @@ def sightline(ex: Extent, width_in: float | None = None) -> tuple[str, dict]:
                     f'stroke-dasharray="3 2"/>')
     for k, h in enumerate(cfg.get("heights", [])):
         x0 = left + 6 + k * 120
-        body.append(_text(x0 + 1, bands[k][0] + 9, h["label"], 6.2, AXIS, weight="bold"))
-        body.append(_text(x0 + 1, bands[k][0] + 16.5, h["source"], 5.6, MUTED))
+        body.append(_text(x0 + 1, bands[k][0] + 9, h["label"], 6.8, AXIS, weight="bold"))
+        body.append(_text(x0 + 1, bands[k][0] + 17.5, h["source"], 6.5, MUTED))
     # the ground, and the hidden band above it
     gpts = " ".join(f"{X(a):.1f},{Y(b):.1f}" for a, b in zip(d, ground))
     lpts = " ".join(f"{X(a):.1f},{Y(b):.1f}" for a, b in zip(d, lowest))
@@ -183,46 +183,46 @@ def sightline(ex: Extent, width_in: float | None = None) -> tuple[str, dict]:
     # the guns' reach where it cuts the section
     for r, ring, d_arc in arcs:
         body.append(f'<path d="{d_arc}" fill="none" stroke="{OURS}" stroke-width="0.9" stroke-dasharray="3 2"/>')
-        body.append(_text(gx + r * kx * 0.72, gy - r * ky * 0.72 - 2, ring["weapon"], 6.0, OURS, weight="bold"))
+        body.append(_text(gx + r * kx * 0.72, gy - r * ky * 0.72 - 2, ring["weapon"], 6.8, OURS, weight="bold"))
     short = [r["weapon"] for r in s["rings"] if float(r["km"]) * 1000 <= s["gun_off"]]
     if short:
-        body.append(_text(gx, gy - 6, f"{', '.join(short)}: reach ends short of this line", 5.8, OURS, "middle"))
+        body.append(_text(gx, gy - 6, f"{', '.join(short)}: reach ends short of this line", 6.5, OURS, "middle"))
     body.append(f'<path d="M{gx:.1f},{gy:.1f} l-4,6 h8 z" fill="{OURS}" stroke="#ffffff" stroke-width="0.8"/>')
-    body.append(_text(gx, top + plot_h + 22, f"Battery D, round {s['gun']['label'].split(':')[0].split(' (')[0]}"
-                      f" (assumed), {s['gun_off'] / 1000:.1f} km off this line", 6.2, OURS, "middle", "bold"))
+    body.append(_text(gx, top + plot_h + 34, f"Battery D, round {s['gun']['label'].split(':')[0].split(' (')[0]}"
+                      f" (assumed), {s['gun_off'] / 1000:.1f} km off this line", 6.8, OURS, "middle", "bold"))
     # the marks: losses and the town, where they come nearest the course
     for k, m in enumerate(s["marks"]):
         x = X(m["d"])
-        row = 18.0 * k
+        row = 20.0 * k
         col = LOSS if m["kind"] == "loss" else INK
         body.append(f'<path d="M{x:.1f},{top:.1f} V{top + plot_h:.1f}" stroke="{col}" stroke-width="0.6" '
                     f'stroke-dasharray="1.5 1.5"/>')
         name = m["label"].split("'s last")[0].split(" down")[0].split(":")[0]
         words = f"{m['time']} " if m["time"] else ""
-        body.append(_text(x + 2, top + 8 + row, name, 6.2, col, weight="bold"))
+        body.append(_text(x + 2, top + 8 + row, name, 6.8, col, weight="bold"))
         where = ("on this line: its last known position" if m["off"] < 50
                  else f"{m['off'] / 1000:.1f} km off this line")
-        body.append(_text(x + 2, top + 15 + row, f"{words}{where}", 5.6, MUTED))
+        body.append(_text(x + 2, top + 16 + row, f"{words}{where}", 6.5, MUTED))
     # axes: heights in feet above the sea, on the left; distance along the course below
     ft = 0
     while ft * FT <= zmax:
         if ft * FT >= zmin:
             y = Y(ft * FT)
             body.append(f'<path d="M{left - 3:.1f},{y:.1f} h3" stroke="{INK}" stroke-width="0.5"/>')
-            body.append(_text(left - 5, y + 2, f"{ft:,}", 5.6, MUTED, "end"))
+            body.append(_text(left - 5, y + 2, f"{ft:,}", 6.5, MUTED, "end"))
         ft += 1000
-    body.append(_text(4, top - 6, "feet above the sea", 5.8, MUTED, italic=True))
+    body.append(_text(4, top - 6, "feet above the sea", 6.5, MUTED, italic=True))
     for km in range(0, int(d[-1] // 1000) + 1, 5):
         x = X(km * 1000)
         body.append(f'<path d="M{x:.1f},{top + plot_h:.1f} v3" stroke="{INK}" stroke-width="0.5"/>')
-        body.append(_text(x, top + plot_h + 11, f"{km} km", 5.6, MUTED, "middle"))
-    body.append(_text(left, top + plot_h + 22, "\u2190 " + cfg.get("from_words", "back along the course"), 6.0, INK))
-    body.append(_text(left + W, top + plot_h + 22, cfg.get("to_words", "on along the course") + " \u2192", 6.0, INK,
+        body.append(_text(x, top + plot_h + 11, f"{km} km", 6.5, MUTED, "middle"))
+    body.append(_text(left, top + plot_h + 22, "\u2190 " + cfg.get("from_words", "back along the course"), 6.6, INK))
+    body.append(_text(left + W, top + plot_h + 22, cfg.get("to_words", "on along the course") + " \u2192", 6.6, INK,
                       "end"))
     body.append(f'<rect x="{left:.1f}" y="{top:.1f}" width="{W:.1f}" height="{plot_h:.1f}" fill="none" '
                 f'stroke="{INK}" stroke-width="0.6"/>')
     exag = ky / kx
-    note_y = top + plot_h + 36
+    note_y = top + plot_h + 50              # below the axis words and the battery's line
     along = (f"Big Red's course as typed on its form, {cfg.get('course')}°, drawn through its last known position "
              f"and carried {cfg.get('back_km')} km back and {cfg.get('on_km')} km on (ours)"
              if cfg.get("back_km") is not None else s["route"]["label"])
@@ -233,18 +233,18 @@ def sightline(ex: Extent, width_in: float | None = None) -> tuple[str, dict]:
         "earth's curve and refraction. The model includes today's woods. The jets' heights are as typed; no record "
         "says above what, so they are drawn above the guns' ground (assumed).",
     ]
-    cols = int(total / (6.0 * 0.45))
+    cols = int((total - left - 6) / (6.6 * 0.5))   # the notes' measure, inside the figure's right edge
     for ln in lines:
         words, cur = ln.split(), ""
         for w in words:
             if len(cur) + len(w) + 1 > cols:
-                body.append(_text(left, note_y, cur, 6.0, MUTED))
-                note_y += 8
+                body.append(_text(left, note_y, cur, 6.6, MUTED))
+                note_y += 8.6
                 cur = w
             else:
                 cur = (cur + " " + w).strip()
-        body.append(_text(left, note_y, cur, 6.0, MUTED))
-        note_y += 11
+        body.append(_text(left, note_y, cur, 6.6, MUTED))
+        note_y += 11.5
     Htot = note_y
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{total:.1f}pt" height="{Htot:.1f}pt" '
            f'viewBox="0 0 {total:.1f} {Htot:.1f}">{"".join(body)}</svg>')

@@ -218,19 +218,19 @@ def mission_map(ex: Extent, width_in: float | None = None, part: str = "map") ->
         body.append(_field_mark(x, y, AXIS if axis else ALLIED, axis))
         labels.occupy(x - 6, y - 6, 12, 12)
     body.append(labels.place(*bxy, [(bf["name"], 7.6, ALLIED, "bold", DISPLAY),
-                                    (bom["name"] + ": the field the forms name", 6.2, INK, "normal", DISPLAY)],
+                                    (bom["name"] + ": the field the forms name", 6.6, INK, "normal", DISPLAY)],
                              force=True, gap=8))
     # the two labels by the jets' field and the target are set by hand, below and to the left of their marks,
     # where the Swabian plain is empty: the placer would take the first free place, too far off on this map
     jx, jy = jxy
     body.append(f'<path d="M{jx:.1f},{jy + 5:.1f} V{jy + 34:.1f}" stroke="{AXIS}" stroke-width="0.6"/>')
     body.append(_text(jx + 4, jy + 42, jf["name"], 7.6, AXIS, "end", "bold"))
-    body.append(_text(jx + 4, jy + 50, jet["name"] + ", took off 1130 (secondary)", 6.2, INK, "end"))
+    body.append(_text(jx + 4, jy + 50, jet["name"] + ", took off 1130 (secondary)", 6.6, INK, "end"))
     body.append(_text(tx - 9, ty + 12, tgt["label"].split(":")[0], 7.0, INK, "end", "bold"))
-    body.append(_text(tx - 9, ty + 20, "the bombers' briefed target, on all three forms;", 6.0, INK, "end"))
-    body.append(_text(tx - 9, ty + 27.5, "whether they bombed it is not in the records read", 6.0, MUTED, "end"))
+    body.append(_text(tx - 9, ty + 20, "the bombers' briefed target, on all three forms;", 6.5, INK, "end"))
+    body.append(_text(tx - 9, ty + 27.5, "whether they bombed it is not in the records read", 6.5, MUTED, "end"))
     body.append(labels.place(bx2, (ay + by2) / 2, [("The fight, 1145-1152", 7.0, LOSS, "bold", DISPLAY),
-                                                   ("over Neuburg an der Donau: the box", 6.0, INK, "normal", DISPLAY)],
+                                                   ("over Neuburg an der Donau: the box", 6.5, INK, "normal", DISPLAY)],
                              force=True, gap=6))
     if ex.fronts:
         # name the front once, at its most southerly point inside the map
@@ -241,7 +241,7 @@ def mission_map(ex: Extent, width_in: float | None = None, part: str = "map") ->
                 if 30 < x < W - 120 and 20 < y < H - 20 and (best is None or y > best[1]):
                     best = (x, y)
         if best:
-            body.append(labels.place(*best, [("front, noon 26 April", 6.2, INK, "bold", DISPLAY),
+            body.append(labels.place(*best, [("front, noon 26 April", 6.6, INK, "bold", DISPLAY),
                                              ("12th Army Group's situation map", 5.6, MUTED, "normal", DISPLAY)],
                                      gap=6))
     body += over
@@ -317,18 +317,18 @@ def mission_map(ex: Extent, width_in: float | None = None, part: str = "map") ->
                                             (f"{p['time']} · {'as typed' if p['basis'] == 'reported' else 'the place named'}",
                                              5.6, INK, "normal", DISPLAY)], force=True, gap=5))
     if ring0:
-        ib_body.append(ilabels.place(bx_, by_, [("Battery D's guns' reach", 6.4, OURS, "bold", DISPLAY),
+        ib_body.append(ilabels.place(bx_, by_, [("Battery D's guns' reach", 6.6, OURS, "bold", DISPLAY),
                                                 ("round Bergen (assumed): 37 mm, .50 cal", 5.6, INK, "normal",
                                                  DISPLAY)], force=True, gap=6))
     ax0, ay0 = apts[0]
-    ib_body.append(ilabels.place(ax0, ay0, [("the jets, notional:", 6.4, AXIS, "bold", DISPLAY),
-                                            ("head-on, over, and round", 5.8, INK, "normal", DISPLAY),
-                                            ("to attack from behind", 5.8, INK, "normal", DISPLAY)], force=True, gap=4))
+    ib_body.append(ilabels.place(ax0, ay0, [("the jets, notional:", 6.6, AXIS, "bold", DISPLAY),
+                                            ("head-on, over, and round", 6.5, INK, "normal", DISPLAY),
+                                            ("to attack from behind", 6.5, INK, "normal", DISPLAY)], force=True, gap=4))
     sa = fi.xy(*way_in[0])
-    ib_body.append(ilabels.place(*sa, [("the formation's course in", 6.4, OURS, "bold", DISPLAY),
+    ib_body.append(ilabels.place(*sa, [("the formation's course in", 6.6, OURS, "bold", DISPLAY),
                                        ("the 432nd Squadron's sketch", 5.6, INK, "normal", DISPLAY)], force=True, gap=4))
     hb = fi.xy(*way_home[-1])
-    ib_body.append(ilabels.place(*hb, [("its turn and the way home", 6.4, OURS, "bold", DISPLAY),
+    ib_body.append(ilabels.place(*hb, [("its turn and the way home", 6.6, OURS, "bold", DISPLAY),
                                        ("the same sketch (our reading)", 5.6, INK, "normal", DISPLAY)], force=True, gap=4))
     ib_body += io
     ib_body.append("</g>")
@@ -343,32 +343,32 @@ def mission_map(ex: Extent, width_in: float | None = None, part: str = "map") ->
     sx = W + 12
     cols = int((side - 4) / (6.0 * 0.45))
     y = 9.0
-    body.append(_text(sx, y, "NOTIONAL LEGS: THE ENDS ARE RECORDED,", 6.2, INK, weight="bold"))
-    body.append(_text(sx, y + 8, "THE ROUTE BETWEEN IS NOT", 6.2, INK, weight="bold"))
+    body.append(_text(sx, y, "NOTIONAL LEGS: THE ENDS ARE RECORDED,", 6.6, INK, weight="bold"))
+    body.append(_text(sx, y + 8, "THE ROUTE BETWEEN IS NOT", 6.6, INK, weight="bold"))
     y += 26
     body.append(arrow((sx + 2, y), (sx + 36, y - 3), 2, 6.5, ALLIED, bend=0.2, opacity=0.62))
-    body.append(_text(sx + 42, y + 1, "the bombers, out (and home, paler)", 6.2, INK))
+    body.append(_text(sx + 42, y + 1, "the bombers, out (and home, paler)", 6.6, INK))
     y += 16
     body.append(arrow((sx + 2, y), (sx + 36, y - 3), 1.8, 6, AXIS, bend=-0.2, opacity=0.72))
-    body.append(_text(sx + 42, y + 1, "the jets, up to meet them (and back)", 6.2, INK))
+    body.append(_text(sx + 42, y + 1, "the jets, up to meet them (and back)", 6.6, INK))
     y += 16
     body.append(_line([(sx + 2, y), (sx + 36, y - 2)], OURS, 1.4, dash="4 2"))
-    body.append(_text(sx + 42, y + 1, "a squadron's sketch, traced", 6.2, INK))
+    body.append(_text(sx + 42, y + 1, "a squadron's sketch, traced", 6.6, INK))
     y += 12
     body.append(_line([(sx + 2, y), (sx + 36, y - 2)], OURS, 1.6))
-    body.append(_text(sx + 42, y + 1, "a course as typed on the form", 6.2, INK))
+    body.append(_text(sx + 42, y + 1, "a course as typed on the form", 6.6, INK))
     y += 12
     body.append(_cross(sx + 19, y - 2))
-    body.append(_text(sx + 42, y + 1, "a B-26 lost: its last known position", 6.2, INK))
+    body.append(_text(sx + 42, y + 1, "a B-26 lost: its last known position", 6.6, INK))
     y += 12
     body.append(f'<path d="M{sx + 2:.1f},{y - 2:.1f} h34" stroke="{FRONT}" stroke-width="1.3" '
                 f'stroke-dasharray="5 1.6 1.2 1.6"/>')
-    body.append(_text(sx + 42, y + 1, "the front, noon 26 April", 6.2, INK))
+    body.append(_text(sx + 42, y + 1, "the front, noon 26 April", 6.6, INK))
     y += 12
     defs, fill = reach_fill(OURS)
     body.append(f'{defs}<circle cx="{sx + 19:.1f}" cy="{y - 2:.1f}" r="5" fill="{fill}" '
                 f'stroke="{OURS}" stroke-width="0.9" stroke-dasharray="3 2"/>')
-    body.append(_text(sx + 42, y + 1, "guns' reach (FM 4-155), place assumed", 6.2, INK))
+    body.append(_text(sx + 42, y + 1, "guns' reach (FM 4-155), place assumed", 6.6, INK))
     y += 18
     notes_lines = [
         "Escort: P-47s of the 50th Fighter Group flew top cover (published accounts); their field is not in the "
@@ -376,7 +376,7 @@ def mission_map(ex: Extent, width_in: float | None = None, part: str = "map") ->
     ]
     for s in notes_lines:
         for ln in _wrap(s, cols - 4):
-            body.append(_text(sx, y, ln, 5.8, MUTED, italic=True))
+            body.append(_text(sx, y, ln, 6.5, MUTED, italic=True))
             y += 7.5
     # the minutes, from the engagement's own entries
     map_body, body = body, fight_body
@@ -385,8 +385,8 @@ def mission_map(ex: Extent, width_in: float | None = None, part: str = "map") ->
     body.append(_text(sx, y, "THE FIGHT, FROM THE RECORDS", 6.8, INK, weight="bold"))
     y += 14
     body.append(_line([(sx + 2, y), (sx + 36, y - 2)], AXIS, 2.2, opacity=0.45))
-    body.append(_text(sx + 42, y + 1, "the jets' attack, notional: head-on, over", 6.0, INK))
-    body.append(_text(sx + 42, y + 8.5, "and round (Ethell and Price; the gunners)", 6.0, INK))
+    body.append(_text(sx + 42, y + 1, "the jets' attack, notional: head-on, over", 6.5, INK))
+    body.append(_text(sx + 42, y + 8.5, "and round (Ethell and Price; the gunners)", 6.5, INK))
     y += 18
     for sample, words in ((_line([(sx + 2, y), (sx + 36, y - 2)], OURS, 1.4, dash="4 2"),
                            "the 432nd Squadron's sketch, traced"),
@@ -395,11 +395,11 @@ def mission_map(ex: Extent, width_in: float | None = None, part: str = "map") ->
                           (f'<rect x="{sx + 14:.1f}" y="{y + 27:.1f}" width="10" height="7" fill="none" '
                            f'stroke="{LOSS}" stroke-width="0.7"/>', "a 1 km grid square a report gives")):
         body.append(sample)
-        body.append(_text(sx + 42, y + 1, words, 6.0, INK))
+        body.append(_text(sx + 42, y + 1, words, 6.5, INK))
         y += 11
     y += 12
     body.append(_text(sx, y, "THE MINUTES, AS THE RECORDS TYPE THEM", 6.8, INK, weight="bold"))
-    body.append(_text(sx, y + 8, "Army B time and the forms' times, both GMT+2", 5.8, MUTED, italic=True))
+    body.append(_text(sx, y + 8, "Army B time and the forms' times, both GMT+2", 6.5, MUTED, italic=True))
     y += 22
     for ev in eng["events"]:
         t = (ev.get("local") or ev.get("at") or "")[-4:]
@@ -408,8 +408,8 @@ def mission_map(ex: Extent, width_in: float | None = None, part: str = "map") ->
         who = ev.get("actor") or ev.get("of", "")
         words = (ev.get("words") or "").replace("\n", " ")
         colour = AXIS if ev.get("of") == "de" else OURS
-        body.append(_text(sx, y, t, 6.4, colour, weight="bold"))
-        body.append(_text(sx + 26, y, who, 6.2, INK, weight="bold"))
+        body.append(_text(sx, y, t, 6.6, colour, weight="bold"))
+        body.append(_text(sx + 26, y, who, 6.6, INK, weight="bold"))
         out = _wrap(words, cols - 10)
         for k, ln in enumerate(out[:3]):
             body.append(_text(sx + 26, y + 7.6 * (k + 1), ln + (" ..." if k == 2 and len(out) > 3 else ""),

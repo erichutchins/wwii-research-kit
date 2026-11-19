@@ -53,3 +53,29 @@ def test_leniently_the_same_army_is_carried_across_a_short_gap_but_a_detachment_
     assert any(s.parent == "seventh-army" and s.start == date(1944, 11, 11) and s.end == date(1944, 11, 22)
                for s in assumed)
     assert not [s for s in assumed if s.level == "division"]
+
+
+def test_an_open_end_fades_to_white_paper_in_solid_colours():
+    svg = chain._fade("f1", 10, 24, 5, 24, "#e9e5d9", "2.5 1.8")
+    assert "opacity" not in svg                                  # nothing for the press to flatten
+    assert 'stop-color="#e9e5d9"' in svg and 'stop-color="#ffffff"' in svg
+    assert svg.count("<line ") == 2 and 'stroke-dasharray="2.5 1.8"' in svg   # the outline fades as ink to white
+    hatched = chain._fade("f2", 24, 10, 5, 24, "url(#attached)")
+    assert f'stop-color="{chain.ATTACHED_GROUND}"' in hatched     # a hatched bar fades from its ground
+
+
+@pytest.mark.skipif(not (paths.records() / "army" / "relations.csv").exists(), reason="the kit's records")
+def test_a_timeline_with_open_ends_has_no_transparency_left():
+    from wwiibook import solid
+    svg, _ = chain.timeline("106aaa-d", "1944-08-01", "1945-05-08", width_in=6.0)
+    assert "fade1-f" in svg and solid.remaining(solid.svg(svg)) == 0
+
+
+@pytest.mark.skipif(not (paths.records() / "army" / "relations.csv").exists(), reason="the kit's records")
+def test_the_key_runs_on_to_a_second_row_rather_than_past_the_figure_s_edge():
+    import re
+    svg, _ = chain.timeline("106aaa-d", "1944-08-01", "1945-05-08", width_in=5.55)
+    assert "an end the record leaves open" in svg
+    key_rows = {m.group(1) for m in re.finditer(r'<text x="[0-9.]+" y="([0-9.]+)"[^>]*>(?:assigned|attached|part of|'
+                                                  r'inferred|an end)', svg)}
+    assert len(key_rows) == 2
