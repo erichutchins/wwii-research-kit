@@ -26,11 +26,15 @@
 // p. 74"). An identifier after a colon (`ddbzp:<id>/p1`) is the source's own and is left out: the title the book
 // gives the source says which issue.
 // A source the book gives as (title: [...], id: true) is one whose identifier names the item (a JACAR reference
-// code): the identifier is kept after the title.
-#let _title(entry, sep, rest) = {
-  if type(entry) == dictionary {
-    if entry.at("id", default: false) and sep == ":" [#entry.title #rest.split("/").first()] else { entry.title }
-  } else { entry }
+// code): the identifier is kept after the title. A source may give its own short title, (title: [...], short: [...]),
+// which a repeated citation on a part's notes pages uses (`short: true`).
+#let _entry-title(entry, short: false) = {
+  if type(entry) != dictionary { entry } else if short and "short" in entry { entry.short } else { entry.title }
+}
+
+#let _title(entry, sep, rest, short: false) = {
+  let t = _entry-title(entry, short: short)
+  if type(entry) == dictionary and entry.at("id", default: false) and sep == ":" [#t #rest.split("/").first()] else { t }
 }
 
 #let _locus(title, sep, rest) = {
@@ -50,23 +54,45 @@
   (key: key, entry: titles.at(key), item: item, rest: rest)
 }
 
-// A citation's source line, read against `titles` (the book's sources).
-#let _source-line(cite, titles) = {
+// A citation's source line, read against `titles` (the book's sources). `short`: the form a repeated citation takes
+// (an archive item by its NAID and page; another source by its own `short:` title where it gives one).
+#let _source-line(cite, titles, short: false) = {
   let m = cite.match(_nara)
   let o = cite.match(_other)
   let pre = if o != none and o.captures.at(0) in titles { none } else { _prefixed(cite, titles) }
   if m != none {
     let (group, naid, page) = m.captures
     let p = str(int(page))
-    link("https://catalog.archives.gov/id/" + naid + "?objectPage=" + p)[National Archives, RG #group, NAID #naid, p. #p]
+    link("https://catalog.archives.gov/id/" + naid + "?objectPage=" + p,
+      if short [NAID #naid, p. #p] else [National Archives, RG #group, NAID #naid, p. #p])
   } else if o != none and o.captures.at(0) in titles {
-    _locus(_title(titles.at(o.captures.at(0)), o.captures.at(1), o.captures.at(2)), o.captures.at(1), o.captures.at(2))
+    _locus(_title(titles.at(o.captures.at(0)), o.captures.at(1), o.captures.at(2), short: short), o.captures.at(1),
+      o.captures.at(2))
   } else if pre != none {
-    let title = if type(pre.entry) == dictionary { pre.entry.title } else { pre.entry }
-    _locus([#title #pre.item], ":", pre.rest)
+    _locus([#_entry-title(pre.entry, short: short) #pre.item], ":", pre.rest)
   } else {
     raw(cite)
   }
+}
+
+// What a citation names, for telling a repeated citation from a first: an archive item by its NAID, another source by
+// its key and its full title as the note gives it (an identifier kept after it, as a JACAR code is, included);
+// `declared`: whether the source gives its own short title. Needs no context.
+#let _cited(cite, titles) = {
+  let m = cite.match(_nara)
+  let o = cite.match(_other)
+  let pre = if o != none and o.captures.at(0) in titles { none } else { _prefixed(cite, titles) }
+  if m != none { return (key: "nara:" + m.captures.at(1), title: none, declared: true) }
+  if o != none and o.captures.at(0) in titles {
+    let e = titles.at(o.captures.at(0))
+    return (key: o.captures.at(0), title: _title(e, o.captures.at(1), o.captures.at(2)),
+            declared: type(e) == dictionary and "short" in e)
+  }
+  if pre != none {
+    return (key: pre.key + "-" + pre.item, title: [#_entry-title(pre.entry) #pre.item],
+            declared: type(pre.entry) == dictionary and "short" in pre.entry)
+  }
+  (key: "raw:" + cite, title: none, declared: true)
 }
 
 // A citation's source line. Needs context (it reads the book's sources). The citation is carried beside it, so a note
@@ -85,10 +111,10 @@
 
 // A note's whole text: its words (without a closing full stop), then its source line.
 // With `titles` the source line is resolved here (for a note written out, `part-notes`), not where it is set.
-#let _note-text(body, cite, titles: none) = {
+#let _note-text(body, cite, titles: none, short: false) = {
   if body != none { if titles == none { body } else { _resolve(body, titles) } }
   if body != none and cite != none { [. ] }
-  if cite != none { if titles == none { source-line(cite) } else { _source-line(cite, titles) } }
+  if cite != none { if titles == none { source-line(cite) } else { _source-line(cite, titles, short: short) } }
   if body != none or cite != none { [.] }
 }
 
@@ -106,9 +132,15 @@
     [#metadata((n: n, body: body, cite: cite)) <wwii-note>]
     if _notes-mode.get() == "part" {
       // written out for the part's notes pages: its number, its chapter's title, and its whole text resolved here
+      // a bare citation (no words of its own) carries its short form too, for `partnotes.abbreviate` to set where the
+      // part has cited the source before; a note with words is set in full wherever it falls
       let opened = query(selector(heading.where(level: 1)).before(here()))
       let chapter = if opened.len() > 0 { opened.last().body } else { none }
-      [#metadata((n: n, chapter: chapter, text: _note-text(body, cite, titles: _note-sources.get()))) <wwii-part-note>]
+      let titles = _note-sources.get()
+      let cited = if cite != none { _cited(cite, titles) } else { none }
+      [#metadata((n: n, chapter: chapter, text: _note-text(body, cite, titles: titles), cite: cite, cited: cited,
+                  short: if body == none and cite != none { _note-text(none, cite, titles: titles, short: true) })
+       ) <wwii-part-note>]
     }
   }
 }
@@ -195,16 +227,18 @@
 
 // The section's sources as entries: (key, head, naid, pages), `head` the line before its pages (a NARA item's
 // pages are linked when it is set). Needs context.
-// `whole`: every note before here, not only the run since the numbering last began at 1.
+// The notes are those since the last `section-sources` (or the book's start): a section that sets its sources at
+// each chapter's end lists each chapter's, and one that sets them once at its end lists every chapter's, however
+// often its numbering begins again. `whole`: every note before here.
 #let _source-entries(titles, whole: false) = {
-  let before = query(selector(<wwii-note>).before(here()))
+  let earlier = query(selector(<wwii-section-sources>).before(here()))
+  let sel = selector(<wwii-note>).before(here())
+  if earlier.len() > 0 and not whole { sel = selector(<wwii-note>).after(earlier.last().location()).before(here()) }
+  let before = query(sel)
   if before.len() == 0 { return () }
-  let start = before.len() - 1
-  while start > 0 and before.at(start).value.n != 1 and not whole { start -= 1 }
-  if whole { start = 0 }
   let groups = (:)          // a source's key -> (kind, label, pages)
   let order = ()
-  for m in before.slice(start) {
+  for m in before {
     let c = m.value.cite
     if c == none { continue }
     let nara = c.match(_nara)
@@ -277,12 +311,24 @@
 // Set here; with the notes written out for the part's pages (`part-notes`), nothing is set: the titles are kept, and
 // `on-grid` writes out the whole book's sources at its end (`_part-sources`)
 #let _part-titles = state("wwii-part-titles", (:))
-#let _section-sources(heading, titles) = context {
-  if _notes-mode.get() == "part" { _part-titles.update(t => t + titles) } else { _sources-list(heading, _source-entries(titles)) }
+#let _section-sources(heading, titles) = {
+  context {
+    if _notes-mode.get() == "part" { _part-titles.update(t => t + titles) } else { _sources-list(heading, _source-entries(titles)) }
+  }
+  [#metadata("section-sources") <wwii-section-sources>]
 }
 
+// With the notes on the part's pages: every source the book's notes cite, and the book's own sources' titles (each
+// key's title and short title, for `partnotes.abbreviate` to know a note that is a source's title alone)
 #let _part-sources() = context {
-  if _notes-mode.get() == "part" { [#metadata(_source-entries(_part-titles.final(), whole: true)) <wwii-part-sources>] }
+  if _notes-mode.get() == "part" {
+    [#metadata(_source-entries(_part-titles.final(), whole: true)) <wwii-part-sources>]
+    let known = _note-sources.get()
+    [#metadata(known.keys().map(k => {
+      let e = known.at(k)
+      (key: k, title: _entry-title(e), short: if type(e) == dictionary and "short" in e { e.short })
+    })) <wwii-part-titles>]
+  }
 }
 
 // With the notes at the end, the section's notes come first, then its sources

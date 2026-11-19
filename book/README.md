@@ -163,8 +163,18 @@ resolved against the book's own `sources`), and so are all the book's sources at
 `wwiibook.partnotes` reads them back (`collect`), groups several books' notes by section (a run numbered from 1) and
 chapter (`sections`), joins their sources into one list (`merge_sources`) and writes a Typst file (`write`) that sets
 them with `part-notes`: pages of their own headed "Notes" with a name, three columns at 7.6 pt, each section under its
-first chapter's title, its chapters under theirs, every note numbered as its text calls it, then the sources. A volume
-builder places that file after the books whose notes it holds.
+first chapter's title, its chapters under theirs, every note numbered as its text calls it, then the sources (or none,
+where the book lists its sources elsewhere). A volume builder places that file after the books whose notes it holds.
+
+`abbreviate` shortens a repeated citation: within the part's notes the first note citing a source gives it in full,
+and a later note that is the citation alone gives its short form: an archive item by its NAID and page ("NAID
+480601116, p. 31"); another source by the short title its entry declares (`hist: (title: [Smith, _A History_ (1947)],
+short: [Smith, history])`), or else its title with the parenthesised asides left out. A note with words of its own is
+never shortened; a note that is a source's title alone counts as a citation of that source.
+
+`section-sources()` lists the sources of every note since the last `section-sources` (or the book's start): set at each
+chapter's end it lists that chapter's, set once at the section's end every chapter's, however often the numbering
+begins again.
 
 **Colour.** Each colour has one job:
 
