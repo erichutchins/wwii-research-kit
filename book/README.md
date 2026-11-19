@@ -157,6 +157,15 @@ the notes are set at the section's end under "Notes", each chapter's under its t
 (`section-sources`, or `endnotes()` where it stands). A figure that reached into the note column (moved out by
 `note-reach()` on a verso and widened by it) spans the same full measure.
 
+`notes: "part"` (`--input notes=part`) gives the column up in the same way and sets no notes at all: each note is
+written out as metadata (`<wwii-part-note>`: its number, its chapter's title, its whole text with its source line
+resolved against the book's own `sources`), and so are all the book's sources at its end (`<wwii-part-sources>`).
+`wwiibook.partnotes` reads them back (`collect`), groups several books' notes by section (a run numbered from 1) and
+chapter (`sections`), joins their sources into one list (`merge_sources`) and writes a Typst file (`write`) that sets
+them with `part-notes`: pages of their own headed "Notes" with a name, three columns at 7.6 pt, each section under its
+first chapter's title, its chapters under theirs, every note numbered as its text calls it, then the sources. A volume
+builder places that file after the books whose notes it holds.
+
 **Colour.** Each colour has one job:
 
 | Token | Hex | Job |

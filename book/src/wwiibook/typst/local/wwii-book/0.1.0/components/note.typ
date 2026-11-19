@@ -13,7 +13,8 @@
 // short title a note gives): "History of the 313th Infantry (1947), p. 82".
 
 #let _notes-on = state("wwii-notes-on", false)
-#let _notes-mode = state("wwii-notes-mode", "side")    // on the grid: "side" (the outer column) or "end" (`endnotes`)
+#let _notes-mode = state("wwii-notes-mode", "side")    // on the grid: "side" (the outer column), "end" (`endnotes`)
+// or "part" (written out for a part's notes pages, `part-notes`)
 #let _note-sources = state("wwii-note-sources", (:))
 #let note-counter = counter("wwii-note")
 
@@ -49,11 +50,10 @@
   (key: key, entry: titles.at(key), item: item, rest: rest)
 }
 
-// A citation's source line. Needs context (it reads the book's sources).
-#let source-line(cite) = context {
+// A citation's source line, read against `titles` (the book's sources).
+#let _source-line(cite, titles) = {
   let m = cite.match(_nara)
   let o = cite.match(_other)
-  let titles = _note-sources.get()
   let pre = if o != none and o.captures.at(0) in titles { none } else { _prefixed(cite, titles) }
   if m != none {
     let (group, naid, page) = m.captures
@@ -69,11 +69,26 @@
   }
 }
 
+// A citation's source line. Needs context (it reads the book's sources). The citation is carried beside it, so a note
+// written out for the part's notes pages (`_resolve`) can set the line from the citation there.
+#let source-line(cite) = [#context _source-line(cite, _note-sources.get())#metadata(cite)<wwii-inline-cite>]
+
+// A note's body with every source line in it resolved now, against `titles`: a note written out keeps no context
+#let _resolve(c, titles) = {
+  if type(c) != content { return c }
+  if c.func() == metadata and c.has("label") and c.label == <wwii-inline-cite> { return _source-line(c.value, titles) }
+  if repr(c.func()) == "context" { return [] }
+  if c.has("children") { let r = c.children.map(x => _resolve(x, titles)).join(); return if r == none { [] } else { r } }
+  if c.func() in (emph, strong) { return (c.func())(_resolve(c.body, titles)) }
+  c
+}
+
 // A note's whole text: its words (without a closing full stop), then its source line.
-#let _note-text(body, cite) = {
-  if body != none { body }
+// With `titles` the source line is resolved here (for a note written out, `part-notes`), not where it is set.
+#let _note-text(body, cite, titles: none) = {
+  if body != none { if titles == none { body } else { _resolve(body, titles) } }
   if body != none and cite != none { [. ] }
-  if cite != none { source-line(cite) }
+  if cite != none { if titles == none { source-line(cite) } else { _source-line(cite, titles) } }
   if body != none or cite != none { [.] }
 }
 
@@ -89,6 +104,12 @@
     box(super(typographic: false, size: 0.62em, baseline: -0.42em, text(font: tokens.display, weight: "semibold",
         fill: tokens.ink, str(n))))
     [#metadata((n: n, body: body, cite: cite)) <wwii-note>]
+    if _notes-mode.get() == "part" {
+      // written out for the part's notes pages: its number, its chapter's title, and its whole text resolved here
+      let opened = query(selector(heading.where(level: 1)).before(here()))
+      let chapter = if opened.len() > 0 { opened.last().body } else { none }
+      [#metadata((n: n, chapter: chapter, text: _note-text(body, cite, titles: _note-sources.get()))) <wwii-part-note>]
+    }
   }
 }
 
@@ -172,11 +193,15 @@
 // knows it ("74802831": "BANG, third war patrol report").
 #let _page-num(s) = { let m = s.match(regex("\d+")); if m == none { 0 } else { int(m.text) } }
 
-#let _section-sources(heading, titles) = context {
+// The section's sources as entries: (key, head, naid, pages), `head` the line before its pages (a NARA item's
+// pages are linked when it is set). Needs context.
+// `whole`: every note before here, not only the run since the numbering last began at 1.
+#let _source-entries(titles, whole: false) = {
   let before = query(selector(<wwii-note>).before(here()))
-  if before.len() == 0 { return }
+  if before.len() == 0 { return () }
   let start = before.len() - 1
-  while start > 0 and before.at(start).value.n != 1 { start -= 1 }
+  while start > 0 and before.at(start).value.n != 1 and not whole { start -= 1 }
+  if whole { start = 0 }
   let groups = (:)          // a source's key -> (kind, label, pages)
   let order = ()
   for m in before.slice(start) {
@@ -197,9 +222,7 @@
     if page != none and page not in groups.at(key).pages { groups.at(key).pages.push(page) }
   }
   let known = _note-sources.get()
-  block(above: 18pt, below: 6pt, sticky: true, text(font: tokens.display, weight: "semibold", size: 9pt, heading))
-  set text(font: tokens.body, size: 7.6pt)
-  set par(justify: false, hanging-indent: 10pt, spacing: 4pt, first-line-indent: 0pt)
+  let entries = ()
   for key in order {
     let g = groups.at(key)
     let pages = g.pages.sorted(key: _page-num)
@@ -207,9 +230,8 @@
     if nara != none {
       let (group, naid, _) = nara.captures
       let item = titles.at(naid, default: none)
-      par[National Archives, RG #group, NAID #naid#if item != none [, #emph(item)], #if pages.len() > 1 [pp.] else [p.] #{
-        pages.map(p => link("https://catalog.archives.gov/id/" + naid + "?objectPage=" + p, p)).join(", ")
-      }.]
+      entries.push((key: key, naid: naid, pages: pages,
+                    head: [National Archives, RG #group, NAID #naid#if item != none [, #emph(item)]]))
     } else {
       let o = g.cite.match(_other)
       let pre = if o != none and o.captures.at(0) in known { none } else { _prefixed(g.cite, known) }
@@ -221,15 +243,92 @@
       } else { raw(key) }
       // a path's middle parts (a chapter) follow the title, as a note's source line sets them
       let middle = if pre == none and o != none and o.captures.at(1) == "/" { o.captures.at(2).split("/").slice(0, -1) } else { () }
-      let kind = if pages.len() > 0 and pages.all(p => p.starts-with("f")) { "f" } else { "p" }
-      let nums = pages.map(p => p.replace(regex("^[pf](\d+)$"), m => str(int(m.captures.at(0)))))
-      // a page or folio gets "p." or "f."; any other locus (a year, a volume) is printed as it stands
-      let paged = pages.len() > 0 and pages.all(p => p.match(regex("^[pf]\d+$")) != none)
-      let lead = if not paged { "" } else if nums.len() > 1 { kind + kind + ". " } else { kind + ". " }
-      par[#title#if middle.len() > 0 [ #middle.join(", ")]#if nums.len() > 0 [, #lead#nums.join(", ")].]
+      entries.push((key: key, naid: none, pages: pages, head: [#title#if middle.len() > 0 [ #middle.join(", ")]]))
     }
   }
+  entries
+}
+
+// One source's line: its head, then its pages (a NARA item's linked to the catalog's viewer)
+#let _source-par(e) = {
+  let pages = e.pages
+  if e.naid != none {
+    par[#e.head, #if pages.len() > 1 [pp.] else [p.] #{
+      pages.map(p => link("https://catalog.archives.gov/id/" + e.naid + "?objectPage=" + p, p)).join(", ")
+    }.]
+  } else {
+    let kind = if pages.len() > 0 and pages.all(p => p.starts-with("f")) { "f" } else { "p" }
+    let nums = pages.map(p => p.replace(regex("^[pf](\d+)$"), m => str(int(m.captures.at(0)))))
+    // a page or folio gets "p." or "f."; any other locus (a year, a volume) is printed as it stands
+    let paged = pages.len() > 0 and pages.all(p => p.match(regex("^[pf]\d+$")) != none)
+    let lead = if not paged { "" } else if nums.len() > 1 { kind + kind + ". " } else { kind + ". " }
+    par[#e.head#if nums.len() > 0 [, #lead#nums.join(", ")].]
+  }
+}
+
+#let _sources-list(heading, entries) = {
+  if entries.len() == 0 { return }
+  block(above: 18pt, below: 6pt, sticky: true, text(font: tokens.display, weight: "semibold", size: 9pt, heading))
+  set text(font: tokens.body, size: 7.6pt)
+  set par(justify: false, hanging-indent: 10pt, spacing: 4pt, first-line-indent: 0pt)
+  for e in entries { _source-par(e) }
+}
+
+// Set here; with the notes written out for the part's pages (`part-notes`), nothing is set: the titles are kept, and
+// `on-grid` writes out the whole book's sources at its end (`_part-sources`)
+#let _part-titles = state("wwii-part-titles", (:))
+#let _section-sources(heading, titles) = context {
+  if _notes-mode.get() == "part" { _part-titles.update(t => t + titles) } else { _sources-list(heading, _source-entries(titles)) }
+}
+
+#let _part-sources() = context {
+  if _notes-mode.get() == "part" { [#metadata(_source-entries(_part-titles.final(), whole: true)) <wwii-part-sources>] }
 }
 
 // With the notes at the end, the section's notes come first, then its sources
 #let section-sources(heading: [Sources], titles: (:)) = { endnotes(); _section-sources(heading, titles) }
+
+// ---------------------------------------------------------------- a part's notes, on pages of their own
+// With `on-grid.with(notes: "part")` (or `--input notes=part`) a section sets no notes and no sources: each note is
+// written out (`<wwii-part-note>`: its number, its chapter's title and its whole text) and so are the sources
+// (`<wwii-part-sources>`), and the build gathers them, section by section, into one file that sets them here, on pages
+// of their own at the end of the part. `sections` is in the part's order, each `(title: [...], chapters: ((title:
+// [...], notes: ((n, [text]), ...)), ...))`: a section's title (its first chapter's), then its chapters, each under its
+// own title where the section has more than one (the first left untitled when its title is the section's), every note
+// with its number as the text calls it. `sources` are the part's sources, one list (entries as `_source-entries` gives
+// them). Set in three columns (or `columns`) in the book's type at 7.6 pt, the source lines as a side note gives them.
+#let part-notes(name: none, heading: [Notes], sections: (), sources: (), columns: 3, gutter: 14pt) = {
+  set page(columns: columns)
+  set std.columns(gutter: gutter)
+  place(top, float: true, scope: "parent", clearance: 22pt, block(width: 100%)[
+    #set par(justify: false, first-line-indent: 0pt)
+    #if name != none {
+      block(below: 10pt, text(font: tokens.display, size: 8.5pt, weight: "semibold", tracking: 0.14em,
+        fill: tokens.muted, upper(name)))
+    }
+    #{
+      show std.heading: it => block(below: 12pt, text(font: tokens.display, size: 30pt, weight: "bold",
+        top-edge: "cap-height", bottom-edge: "baseline", upper(it.body)))
+      std.heading(level: 1, outlined: false, heading)
+    }
+    #line(length: 100%, stroke: 0.5pt + tokens.rule)
+  ])
+  set text(font: tokens.body, size: 7.6pt, fill: tokens.ink, hyphenate: true, number-type: "lining", top-edge: 6pt,
+           bottom-edge: -1.8pt)
+  set par(justify: false, leading: 2.4pt, spacing: 3.6pt, first-line-indent: 0pt, hanging-indent: 15pt)
+  for (i, s) in sections.enumerate() {
+    block(above: if i == 0 { 0pt } else { 14pt }, below: 5pt, sticky: true,
+      text(font: tokens.display, weight: "semibold", size: 8pt, tracking: 0.1em, hyphenate: false, upper(s.title)))
+    let several = s.chapters.len() > 1
+    for (j, c) in s.chapters.enumerate() {
+      if several and not (j == 0 and c.title == s.title) {
+        block(above: if j == 0 { 2pt } else { 8pt }, below: 4pt, sticky: true,
+          text(font: tokens.display, size: 7.4pt, weight: "semibold", fill: tokens.muted, hyphenate: false, c.title))
+      }
+      for (n, t) in c.notes {
+        par[#box(width: 15pt, text(font: tokens.display, weight: "semibold", size: 7.2pt, str(n)))#t]
+      }
+    }
+  }
+  _sources-list(text(size: 8pt, tracking: 0.1em, upper[Sources]), sources)
+}

@@ -1,6 +1,6 @@
 // Part of the wwii-book package (lib.typ imports it).
 #import "../core.typ": *
-#import "../components/note.typ": _notes-on, _notes-mode, _note-sources, _side-notes, endnotes, note-counter
+#import "../components/note.typ": _notes-on, _notes-mode, _note-sources, _side-notes, endnotes, note-counter, _part-sources
 
 // ---------------------------------------------------------------- the grid
 // The magazine page's grid, inside Blurb's safe area (core.typ's `blurb-magazine`: trim 612 x 792 pt, bleed 9 pt top,
@@ -18,7 +18,9 @@
 // a proof both ways) gives the note column up. The text's two columns then run across the whole live area, inside
 // 54 pt to outside 36 pt (two columns of 252 pt, gutter 18 pt), the calls stay in the text, and the notes are set
 // at the section's end (`endnotes`, which `section-sources` sets before its sources, and which closes the section
-// in any case), numbered as in the text. A figure written to reach into the note column the grid's way (moved
+// in any case), numbered as in the text. `notes: "part"` gives the column up in the same way and sets no notes at
+// all: each is written out, with its chapter's title, for the part's own notes pages (`part-notes`). A figure
+// written to reach into the note column the grid's way (moved
 // outward by the column and its gap on a verso, `-note-reach`, and widened by them, `100% + note-reach`: a
 // section's `outer`) is set at the full measure, which is the same span.
 #let grids = (
@@ -42,7 +44,7 @@
   let g = grids.at(preset)
   assert(g.inside >= p.safe.binding and g.outside >= p.safe.edge, message: "the grid's margins are inside the safe area")
   let mode = sys.inputs.at("notes", default: notes)
-  assert(mode in ("side", "end"), message: "notes: \"side\" or \"end\", not " + repr(mode))
+  assert(mode in ("side", "end", "part"), message: "notes: \"side\", \"end\" or \"part\", not " + repr(mode))
   let side = mode == "side"
   let reach = note-reach(preset: preset)
   let notes-w = if side { reach } else { 0pt }      // the note column and its gap, where there is one
@@ -90,4 +92,5 @@
     text(font: tokens.display, size: 9pt, weight: "semibold", tracking: 0.12em, .._edges(g.size), upper(it.body)))
   body
   endnotes()      // the end notes not set yet: none once `section-sources` has set them, none beside the text
+  _part-sources() // with the notes on the part's pages, every source the book's notes cite, written out for them
 }
