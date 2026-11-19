@@ -176,7 +176,7 @@ def board(engagement: str, attacks: list[str], width_in: float = 5.5, boat: str 
     W = width_in * 72
     R = W * 0.36
     cx, cy = W * 0.5, R * 1.17
-    H = cy + R * 1.17
+    H = cy + R * 1.17 + 14            # room under the rim for the legend, clear of the bearing figures
     yd = R / (rings * ring_yd)            # points a yard
     body = [f'<rect width="{W:.1f}" height="{H:.1f}" fill="{PAPER}"/>']
     # the range scale and own ship's label go on the bearings farthest from every target and torpedo
