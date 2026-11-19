@@ -47,7 +47,12 @@ def punch(url: str, dest: Path, fields: tuple[str, ...] = (), caption: str = "Sc
     left = 16 + widest + 2
     W, H = left + side + 2 * quiet, side + 2 * quiet + 4
     qx, qy = left + quiet, quiet + 2
-    b = [f'<path d="M12,0 H{W:.1f} V{H:.1f} H0 V12 Z" fill="{CARD}" stroke="{CARD_EDGE}" stroke-width="0.6"/>']
+    # a faint shadow under the card, down and to the right: three offset copies of its outline, each fainter, so it
+    # stays vector and soft without a blur filter (which a PDF would rasterise); it lies outside the quiet zone
+    card = f"M12,0 H{W:.1f} V{H:.1f} H0 V12 Z"
+    b = [f'<path d="{card}" transform="translate({d:.1f},{d * 1.3:.1f})" fill="#000" fill-opacity="{a}"/>'
+         for d, a in ((2.2, 0.035), (1.5, 0.05), (0.8, 0.07))]
+    b.append(f'<path d="{card}" fill="{CARD}" stroke="{CARD_EDGE}" stroke-width="0.6"/>')
     for i, (t, is_bold) in enumerate(lines):
         if t:
             b.append(f'<text x="16" y="{22 + i * step:.1f}" font-family="{MONO}" font-size="{bold if is_bold else regular}" '
@@ -76,6 +81,7 @@ def punch(url: str, dest: Path, fields: tuple[str, ...] = (), caption: str = "Sc
                 x, y = qx + c * m, qy + r * m
                 hole(x + m * 0.02, y + m * 0.24, m * 0.96, m * 0.52, m * 0.05)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(f'<svg xmlns="http://www.w3.org/2000/svg" width="{W:.1f}pt" height="{H:.1f}pt" '
-                    f'viewBox="0 0 {W:.1f} {H:.1f}">{"".join(b)}</svg>')
+    Ws, Hs = W + 3, H + 3.5             # room for the shadow
+    dest.write_text(f'<svg xmlns="http://www.w3.org/2000/svg" width="{Ws:.1f}pt" height="{Hs:.1f}pt" '
+                    f'viewBox="0 0 {Ws:.1f} {Hs:.1f}">{"".join(b)}</svg>')
     return dest
