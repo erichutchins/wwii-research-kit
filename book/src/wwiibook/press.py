@@ -52,10 +52,11 @@ def _media(page: pikepdf.Page) -> tuple[float, float, float, float]:
     return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
 
 
-def boxes(pdf: pikepdf.Pdf) -> None:
+def boxes(pdf: pikepdf.Pdf, first_page: int = 1) -> None:
+    """Every page's TrimBox and BleedBox; `first_page` is the volume's page the file starts on (odd: a recto)."""
     for i, page in enumerate(pdf.pages):
         media = _media(page)
-        page.obj.TrimBox = Array(trim_box(media, recto=i % 2 == 0))
+        page.obj.TrimBox = Array(trim_box(media, recto=(first_page + i) % 2 == 1))
         page.obj.BleedBox = Array(media)
 
 
@@ -261,11 +262,11 @@ def black_to_k(pdf: pikepdf.Pdf) -> int:
     return total
 
 
-def finish(path: Path | str) -> int:
+def finish(path: Path | str, first_page: int = 1) -> int:
     """The build's last step: page boxes and black ink, in place. Returns how many black colours were rewritten."""
     path = Path(path)
     with pikepdf.open(path, allow_overwriting_input=True) as pdf:
-        boxes(pdf)
+        boxes(pdf, first_page)
         n = black_to_k(pdf)
         pdf.save(path)
     return n

@@ -39,9 +39,8 @@
              top: g.top + p.bleed.top, bottom: g.bottom + p.bleed.bottom),
     columns: 2, header-ascent: g.head, footer-descent: g.foot,
     header: context {
-      let n = here().page()
-      if query(heading.where(level: 1)).any(h => h.location().page() == n) { return }
-      let recto = calc.odd(n)
+      if query(heading.where(level: 1)).any(h => h.location().page() == here().page()) { return }
+      let recto = recto-at(here().page())
       let before = query(heading.where(level: 1).before(here()))
       let chapter = if before.len() > 0 { before.last().body } else { [] }
       set text(font: tokens.display, size: 7.5pt, tracking: 0.14em, fill: tokens.muted, top-edge: "cap-height",
@@ -51,15 +50,14 @@
         stack(spacing: 4pt, align(if recto { right } else { left }, words), line(length: 100%, stroke: 0.4pt + tokens.rule))))
     },
     footer: context {
-      let n = here().page()
+      let n = folio(here().page())
       let recto = calc.odd(n)
       set text(font: tokens.display, size: 8.5pt, weight: "medium", fill: tokens.muted)
       move(dx: if recto { 0pt } else { -notes-w }, box(width: 100% + notes-w,
         align(if recto { right } else { left }, str(n))))
     },
     foreground: context {
-      let n = here().page()
-      let recto = calc.odd(n)
+      let recto = recto-at(here().page())
       // the trim's left edge is the binding on a recto and the bleed's inner edge on a verso
       let x = if recto { p.trim.width - g.outside - g.note } else { p.bleed.outside + g.outside }
       _side-notes(x: x, width: g.note, head: p.bleed.top + g.top,

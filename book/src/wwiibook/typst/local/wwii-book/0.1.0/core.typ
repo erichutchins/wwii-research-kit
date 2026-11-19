@@ -51,6 +51,16 @@
                    margin: (inside: 0.8in, outside: 0.65in, top: 0.8in, bottom: 0.85in)),
 )
 
+// A book set in parts, each compiled on its own and joined after (a volume of sections): `--input first-page=N`
+// (Typst's `sys.inputs`) makes this part's first page the volume's page N. Typst counts sides and parities by the
+// physical page, so the folio, the running heads, the outer column and a recto break all go through `folio` and
+// `parity`, and a part that starts on a verso (N even) binds on the right of its first page.
+#let first-page = int(sys.inputs.at("first-page", default: "1"))
+#let folio(physical) = physical + first-page - 1
+#let recto-at(physical) = calc.odd(folio(physical))
+// the physical parity for `pagebreak(to: ...)` that lands on the volume's "odd" (recto) or "even" (verso) page
+#let parity(side) = if calc.odd(first-page) { side } else if side == "odd" { "even" } else { "odd" }
+
 // The page in use, for templates that place things to the trim or the bleed (a full-bleed photograph, an endpaper).
 #let _book-page = state("wwii-book-page", presets.draft)
 
@@ -62,20 +72,20 @@
   _book-meta.update((name: name, title: title))
   _book-page.update(g)
   let m = g.margin
-  set page(width: g.trim.width + g.bleed.outside, height: g.trim.height + g.bleed.top + g.bleed.bottom, binding: left,
+  set page(width: g.trim.width + g.bleed.outside, height: g.trim.height + g.bleed.top + g.bleed.bottom, binding: if calc.odd(first-page) { left } else { right },
            margin: (inside: calc.max(m.inside, g.safe.binding), outside: calc.max(m.outside, g.safe.edge) + g.bleed.outside,
                     top: calc.max(m.top, g.safe.edge) + g.bleed.top, bottom: calc.max(m.bottom, g.safe.edge) + g.bleed.bottom),
     header: context {
-      let p = here().page()
-      let openers = query(heading.where(level: 1)).filter(h => h.location().page() == p)
+      let openers = query(heading.where(level: 1)).filter(h => h.location().page() == here().page())
       if openers.len() > 0 { return }
+      let p = folio(here().page())
       let before = query(heading.where(level: 1).before(here()))
       let chapter = if before.len() > 0 { before.last().body } else { [] }
       set text(font: tokens.display, size: 7.5pt, tracking: 0.14em, fill: tokens.muted)
       if calc.even(p) { upper(_book-meta.get().name) } else { align(right, upper(chapter)) }
     },
     footer: context {
-      let p = here().page()
+      let p = folio(here().page())
       set text(font: tokens.display, size: 8.5pt, fill: tokens.muted)
       align(if calc.even(p) { left } else { right }, str(p))
     })

@@ -1,6 +1,6 @@
 """wwii-book: build a book; fetch one archive page by its citation.
 
-  wwii-book build examples/morning-report/book.typ [-o out.pdf] [--refresh]
+  wwii-book build examples/morning-report/book.typ [-o out.pdf] [--refresh] [--input first-page=17]
   wwii-book proof examples/morning-report/book.typ [--ppi 110]     its pages as PNGs in proof/, for review
   wwii-book preflight book.pdf [--preset blurb-magazine]          size, count, fonts, images, boxes, ink, PDF/X
   wwii-book press book.pdf [-o book-press.pdf] [--profile x.icc]  a PDF/X-3:2002 copy for the printer
@@ -23,9 +23,12 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("book")
     b.add_argument("-o", "--output")
     b.add_argument("--refresh", action="store_true", help="prepare every request again")
+    b.add_argument("--input", action="append", default=[], metavar="KEY=VALUE",
+                   help="a Typst sys.inputs value (first-page=N: the part starts on the volume's page N)")
     pr = sub.add_parser("proof", help="build, then render every page to proof/page-NN.png for review")
     pr.add_argument("book")
     pr.add_argument("--ppi", type=int, default=110)
+    pr.add_argument("--input", action="append", default=[], metavar="KEY=VALUE", help="as for build")
     pf = sub.add_parser("preflight", help="check a finished PDF against its printer's specifications")
     pf.add_argument("pdf")
     pf.add_argument("--preset", default="blurb-magazine")
@@ -83,14 +86,15 @@ def main(argv: list[str] | None = None) -> int:
             print(nara.page_image(parse(c)))
         return 0
 
-    r = build(a.book, getattr(a, "output", None), refresh=getattr(a, "refresh", False))
+    inputs = dict(kv.split("=", 1) for kv in a.input)
+    r = build(a.book, getattr(a, "output", None), refresh=getattr(a, "refresh", False), inputs=inputs)
     print(f"{r.pdf}: {len(r.prepared)} prepared, {len(r.reused)} reused, {len(r.failed)} failed")
     for key, err in r.failed:
         print(f"  failed {key}: {err}", file=sys.stderr)
     for w in r.warnings:
         print(f"  warning: {w.get('message', w)}", file=sys.stderr)
     if a.cmd == "proof":
-        for p in proof(a.book, a.ppi):
+        for p in proof(a.book, a.ppi, inputs):
             print(p)
     return 1 if r.failed else 0
 

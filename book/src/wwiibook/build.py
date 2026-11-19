@@ -225,13 +225,15 @@ PREPARERS: dict[str, Callable[[dict, Path], dict]] = {"facsimile": _facsimile, "
                                                       "firecontrol": _fire_control, "convoy-route": _convoy_route, "convoyships": _convoy_ships}
 
 
-def _query(book: Path, selector: str, root: Path) -> list:
+def _query(book: Path, selector: str, root: Path, inputs: dict[str, str] | None = None) -> list:
     out = typst.query(str(book), selector, field="value", root=str(root), package_path=str(paths.TYPST),
-                      font_paths=[str(paths.FONTS)])
+                      font_paths=[str(paths.FONTS)], sys_inputs=inputs or {})
     return json.loads(out) if isinstance(out, (str, bytes)) else list(out)
 
 
-def build(book: Path | str, output: Path | str | None = None, refresh: bool = False) -> Result:
+def build(book: Path | str, output: Path | str | None = None, refresh: bool = False,
+          inputs: dict[str, str] | None = None) -> Result:
+    """`inputs` are Typst's `sys.inputs` (`first-page`: the volume's page this part starts on, core.typ)."""
     book = Path(book).resolve()
     root = book.parent
     build_dir = root / "build"
@@ -243,7 +245,7 @@ def build(book: Path | str, output: Path | str | None = None, refresh: bool = Fa
     pdf = Path(output).resolve() if output else book.with_suffix(".pdf")
     result = Result(pdf)
 
-    requests = {r["key"]: r for r in _query(book, "<wwii-request>", root)}    # pass 1 (also proves it compiles)
+    requests = {r["key"]: r for r in _query(book, "<wwii-request>", root, inputs)}    # pass 1 (also proves it compiles)
     for key, req in requests.items():
         have = assets.get(key)
         if have and (root / have["path"]).exists():
@@ -262,13 +264,14 @@ def build(book: Path | str, output: Path | str | None = None, refresh: bool = Fa
     # pass 2. PDF tagging (the structure tree for screen readers) is off: a print book has no use for it, and Typst
     # 0.15's tagger fails with an internal error on some pages (a breakable block split beside a float)
     typst.compile(str(book), output=str(pdf), root=str(root), package_path=str(paths.TYPST), font_paths=[str(paths.FONTS)],
-                  pdf_tags=False)
-    press.finish(pdf)                   # the trim and bleed boxes, and black as black ink alone (press.py)
-    result.warnings = _query(book, "<wwii-warning>", root)
+                  pdf_tags=False, sys_inputs=inputs or {})
+    # the trim and bleed boxes, and black as black ink alone (press.py)
+    press.finish(pdf, int((inputs or {}).get("first-page", 1)))
+    result.warnings = _query(book, "<wwii-warning>", root, inputs)
     return result
 
 
-def proof(book: Path | str, ppi: int = 110) -> list[Path]:
+def proof(book: Path | str, ppi: int = 110, inputs: dict[str, str] | None = None) -> list[Path]:
     """The book's pages as PNGs in its proof/ folder (git-ignored), for review: what an agent's report points at and
     what the main session looks at before merging. Compiles with the assets already prepared (run build first)."""
     book = Path(book).resolve()
@@ -278,6 +281,6 @@ def proof(book: Path | str, ppi: int = 110) -> list[Path]:
     for old in out.glob("page-*.png"):
         old.unlink()
     typst.compile(str(book), output=str(out / "page-{0p}.png"), format="png", ppi=ppi, root=str(root),
-                  package_path=str(paths.TYPST), font_paths=[str(paths.FONTS)])
+                  package_path=str(paths.TYPST), font_paths=[str(paths.FONTS)], sys_inputs=inputs or {})
     return sorted(out.glob("page-*.png"))
 

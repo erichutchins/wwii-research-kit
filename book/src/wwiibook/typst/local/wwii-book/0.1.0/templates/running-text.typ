@@ -11,7 +11,7 @@
 //
 //   #running-text(eyebrow: [July 1944 · the Cotentin], title: [Company B], standfirst: [...])[ ...text... ]
 #let running-text(title: none, eyebrow: none, standfirst: none, recto: true, restart-notes: true, body) = {
-  pagebreak(weak: true, to: if recto { "odd" } else { none })
+  pagebreak(weak: true, to: if recto { parity("odd") } else { none })
   // a chapter restarts its notes at 1; a part continuing the same section (restart-notes: false) carries them on
   if restart-notes { note-counter.update(0) }
   place(top, float: true, scope: "parent", clearance: 26pt, block(width: 100%)[
