@@ -1,12 +1,35 @@
 // The wwii-book package's core: the tokens, the page, the type, and the request plumbing every template uses.
 
+// The palette, with what to expect of each in print. Soft-proofed on 19 Nov 2026 against Blurb's ICC profile (CMYK,
+// X-Rite, March 2010; relative colorimetric, black point compensation) with `wwii-book softproof <profile.icc>`;
+// ΔE00 is the shift from screen to print (under 2 hard to see, 2-5 visible side by side):
+//   ink #000000            the press's darkest black prints a touch lighter than screen black (L* 9, ΔE00 5.6): normal
+//   paper #fbfaf6          a warm ground for figures; it prints as a faint tint on white stock (ΔE00 0.8), never as the
+//                          paper's own colour
+//   hit #c8323c            red for hits only; holds well (ΔE00 1.6)
+//   accent #a3241b         shifts a little lighter and warmer (ΔE00 3.4)
+//   boat 1 #2a6fc9         loses some saturation (#3b6fb3 in print, ΔE00 2.3)
+//   boat 2 #008f78         holds (ΔE00 1.1)
+//   boat 3 #6a3a9e         a little greyer, not darker (lightness unchanged, ΔE00 3.8)
+//   cta #c98a1b / cta-ink #8a5a0b   the call to action (where the book sends a reader to the kit's site): amber for
+//                          marks and rules (ΔE00 2.0), dark amber for words (prints a little lighter, ΔE00 5.6)
+//   the hit red, the three boats and the amber stay well apart in print: the closest pair is boat 1 and boat 3
+//   (ΔE00 22.8)
 #let tokens = (
-  ink: rgb("#1c221d"), muted: rgb("#5d675b"), rule: rgb("#c4cbbf"), accent: rgb("#a3241b"),
+  ink: rgb("#000000"), muted: rgb("#5d675b"), rule: rgb("#c4cbbf"), accent: rgb("#a3241b"),
   other: rgb("#e4e7e9"), other-ink: rgb("#4d5963"), paper: rgb("#fbfaf6"), band: rgb("#171c18"), band-ink: rgb("#ecede6"),
-  // Typst files Barlow Condensed under the family "Barlow", condensed
-  display: ("Barlow", "Barlow Condensed", "Arial Narrow"),
-  body: ("Source Serif 4", "Georgia"),
-  typed: ("Courier Prime", "Courier New"),
+  cta: rgb("#c98a1b"), cta-ink: rgb("#8a5a0b"),
+  // Typst files IBM Plex Sans Condensed under the family "IBM Plex Sans", condensed
+  display: ("IBM Plex Sans", "IBM Plex Sans Condensed", "Shippori Mincho", "Noto Serif JP Symbols", "Arial Narrow"),
+  // every face falls back to Shippori Mincho for Japanese (a record's original quoted in a note or a key), then to
+  // a subset of Noto Serif JP for the few marks the originals use that Shippori lacks (✓ ─ ｜ ∠, half-width kana)
+  // Libertinus Serif: built into Typst (SIL OFL), so present wherever Typst runs, with no font file to ship
+  body: ("Libertinus Serif", "Shippori Mincho", "Noto Serif JP Symbols", "Georgia"),
+  typed: ("Courier Prime", "Shippori Mincho", "Noto Serif JP Symbols", "Courier New"),
+  // the typewriter for effect, where a record's look matters more than its reading (no degree sign: Courier Prime
+  // stands in for it)
+  typed-effect: ("TT2020 Style E", "Courier Prime", "Shippori Mincho", "Noto Serif JP Symbols"),
+  ja: ("Shippori Mincho", "Noto Serif JP Symbols", "Noto Serif JP"),   // Japanese: the original beside the translation
 )
 
 // The man's name and the book's title, for the running heads; set by `book`.
@@ -56,9 +79,11 @@
     })
   set text(font: tokens.body, size: 10.2pt, fill: tokens.ink, lang: "en", region: "gb", hyphenate: true)
   set par(justify: true, leading: 0.68em, spacing: 0.68em, first-line-indent: (amount: 1.1em, all: false))
+  // raw text (a citation key shown as it stands) in the typewriter face, not Typst's default monospace
+  show raw: set text(font: tokens.typed)
   show heading: set text(font: tokens.display, weight: "bold")
   show heading.where(level: 2): it => block(above: 1.5em, below: 0.7em,
-    text(size: 10.5pt, weight: "semibold", tracking: 0.12em, upper(it.body)))
+    text(size: 10.5pt, weight: "bold", tracking: 0.12em, upper(it.body)))
   set footnote.entry(separator: line(length: 25%, stroke: 0.5pt + tokens.rule), gap: 0.4em)
   show footnote.entry: set text(size: 7.6pt)
   show figure.caption: set text(size: 8pt)

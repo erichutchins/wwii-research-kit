@@ -57,8 +57,11 @@ def main():
             missing = [x for x in s.get("sources", []) if x not in sources] or ([] if s.get("sources") else ["(none)"])
             if missing:
                 raise SystemExit(f"{group}.{k}: sources {missing} not in SOURCES.yml")
-    out = {"categories": y["categories"], "aircraft": y["aircraft"],
-           "ships": {k: {**s, "d": ship_path(s["parts"])} for k, s in y["ships"].items()}}
+    # `crop` (the traced section of the plate's scan) is for finding and retracing, not for the pages: left out
+    out = {"categories": y["categories"],
+           "aircraft": {k: {f: v for f, v in a.items() if f != "crop"} for k, a in y["aircraft"].items()},
+           "ships": {k: {**{f: v for f, v in s.items() if f != "crop"}, "d": ship_path(s["parts"])}
+                     for k, s in y["ships"].items()}}
     records.write_json(DIR / "silhouettes.json", out, separators=(",", ":"), ensure_ascii=False)
     print(f"wrote {rel(DIR / 'silhouettes.json')}: {len(out['categories']['shapes'])} categories, "
           f"{len(out['aircraft'])} aircraft, {len(out['ships'])} ships")

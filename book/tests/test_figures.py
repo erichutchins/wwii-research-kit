@@ -79,9 +79,13 @@ def test_svg_is_well_formed_and_marks_the_followed_boat(engagement):
     svg, _ = figures.engagement_map(engagement, follow="parche")
     root = ET.fromstring(svg)
     assert root.tag.endswith("svg")
-    reds = [e for e in root.iter() if e.get("stroke") == figures.OWN and e.tag.endswith("line")]
-    assert len(reds) == 1                         # PARCHE's one leg, not BANG's
-    assert reds[0].get("stroke-dasharray") == "3 2"   # and it is dashed: an end is assumed
+    legs = [e for e in root.iter() if e.tag.endswith("line") and e.get("stroke") in figures.BOATS]
+    # each boat in its own colour (BANG first, PARCHE second), never in the hits' red
+    assert {e.get("stroke") for e in legs} == {figures.BOATS[0], figures.BOATS[1]}
+    assert not any(e.get("stroke") == figures.OWN for e in root.iter() if e.tag.endswith("line"))
+    heavy = [e for e in legs if e.get("stroke-width") == "1.4"]
+    assert len(heavy) == 1 and heavy[0].get("stroke") == figures.BOATS[1]   # the followed boat, PARCHE, drawn heavier
+    assert heavy[0].get("stroke-dasharray") == "3 2"   # and its one leg dashed: an end is assumed
 
 
 def test_timeline_gives_the_minutes_between_clocks(engagement):
@@ -107,7 +111,7 @@ def test_labels_never_overlap():
     for i in range(30):                                 # thirty places crowded into a small map
         x, y = 20 + (i * 37) % 160, 15 + (i * 23) % 90
         lab.occupy(x - 2, y - 2, 4, 4)
-        lab.place(x, y, [(f"Place {i}", 7, "#000", "bold", "Barlow")], force=False)
+        lab.place(x, y, [(f"Place {i}", 7, "#000", "bold", "IBM Plex Sans")], force=False)
     r = lab.placed
     assert len(r) > 10
     for i in range(len(r)):

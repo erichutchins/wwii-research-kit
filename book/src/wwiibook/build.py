@@ -63,7 +63,10 @@ def _records(req: dict, build: Path) -> dict:
 
 def _qr(req: dict, build: Path) -> dict:
     name = f"{_slug(req['key'])}.svg"
-    qr.svg(req["url"], build / name)
+    if req.get("style") == "punch":
+        qr.punch(req["url"], build / name, tuple(req.get("fields") or ()), req.get("caption") or "Scan to see it move")
+    else:
+        qr.svg(req["url"], build / name)
     return {"kind": "qr", "path": f"build/{name}", "url": req["url"]}
 
 
@@ -178,10 +181,43 @@ def _chain(req: dict, build: Path) -> dict:
     return {"kind": "chain", "path": f"build/{name}", **notes}
 
 
+def _board(req: dict, build: Path) -> dict:
+    """Attacks on a maneuvering board, solved by the kit's site/engage.js (maneuvering.py)."""
+    from . import maneuvering
+    svg, notes = maneuvering.board(req["engagement"], req["attacks"], req.get("width") or 5.5, req.get("boat"),
+                                   sizes=req.get("sizes"))
+    name = f"{_slug(req['key'])}.svg"
+    (build / name).write_text(svg)
+    return {"kind": "board", "path": f"build/{name}", **notes}
+
+
+def _fire_control(req: dict, build: Path) -> dict:
+    """How a torpedo was aimed: the triangle, the angle on the bow, the TDC (fire_control.py, on site/engage.js)."""
+    from . import fire_control
+    return fire_control.prepare(req, build)
+
+
+def _convoy_route(req: dict, build: Path) -> dict:
+    """A convoy's whole route on the lanes of the time, joined to the engagement's map (convoy_route.py)."""
+    from . import convoy_route
+    svg, notes = convoy_route.route_figure(req["engagement"], req.get("width") or 7.0, req.get("height"), req.get("box"),
+                                           req.get("layout") or "auto")
+    name = f"{_slug(req['key'])}.svg"
+    (build / name).write_text(svg)
+    return {"kind": "convoy-route", "path": f"build/{name}", **notes}
+
+
+def _convoy_ships(req: dict, build: Path) -> dict:
+    """A convoy that several boats attacked: its ships at one scale, and the tally (convoy_ships.py)."""
+    from . import convoy_ships
+    return convoy_ships.prepare(req, build)
+
+
 PREPARERS: dict[str, Callable[[dict, Path], dict]] = {"facsimile": _facsimile, "records": _records, "qr": _qr,
                                                       "figure": _figure, "picture": _picture, "plate": _plate,
                                                       "atlas": _atlas, "chain": _chain,
-                                                      "aircraft": _aircraft}
+                                                      "aircraft": _aircraft, "board": _board,
+                                                      "firecontrol": _fire_control, "convoy-route": _convoy_route, "convoyships": _convoy_ships}
 
 
 def _query(book: Path, selector: str, root: Path) -> list:
@@ -215,7 +251,10 @@ def build(book: Path | str, output: Path | str | None = None, refresh: bool = Fa
             result.failed.append((key, f"{type(e).__name__}: {e}"))
     assets_path.write_text(json.dumps(assets, indent=1))
 
-    typst.compile(str(book), output=str(pdf), root=str(root), package_path=str(paths.TYPST), font_paths=[str(paths.FONTS)])                           # pass 2
+    # pass 2. PDF tagging (the structure tree for screen readers) is off: a print book has no use for it, and Typst
+    # 0.15's tagger fails with an internal error on some pages (a breakable block split beside a float)
+    typst.compile(str(book), output=str(pdf), root=str(root), package_path=str(paths.TYPST), font_paths=[str(paths.FONTS)],
+                  pdf_tags=False)
     result.warnings = _query(book, "<wwii-warning>", root)
     return result
 

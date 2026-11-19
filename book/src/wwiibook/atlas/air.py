@@ -19,7 +19,7 @@ from . import record
 from .extent import Extent
 from .panorama import reach_ring
 
-DISPLAY, INK, MUTED = carto.DISPLAY, "#1c221d", "#586257"
+DISPLAY, INK, MUTED = carto.DISPLAY, "#000000", "#586257"
 AXIS, ALLIED, TARGET = "#8a3324", "#5f84ad", "#a3241b"   # the Allied air arrows a lighter blue than our units'
 SIDE = {"de": AXIS, "it": AXIS, "uk": ALLIED, "us": ALLIED}
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"]

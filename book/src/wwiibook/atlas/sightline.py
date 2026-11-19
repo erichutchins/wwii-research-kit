@@ -24,7 +24,7 @@ from .. import paths
 from . import terrain
 from .extent import Extent
 
-DISPLAY, INK, MUTED = carto.DISPLAY, "#1c221d", "#586257"
+DISPLAY, INK, MUTED = carto.DISPLAY, "#000000", "#586257"
 GROUND, HIDDEN, OURS, AXIS, LOSS = "#c9c2ad", "#8a8f86", "#2f5f8a", "#8a3324", "#a3241b"
 FT = 0.3048
 R_EFF = 6371000 * 4 / 3

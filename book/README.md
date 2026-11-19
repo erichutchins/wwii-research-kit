@@ -100,6 +100,42 @@ credit the CC BY-SA ones. `examples/unit-chain/` shows all three.
 Not yet: JACAR and Library of Congress pages, Army engagements (fronts and stations rather than tracks), the
 templates beyond the ledger and the engagement figures, fonts.
 
+## The style
+
+The book's type and colours are set once, in `core.typ` (`tokens`), and every template and figure draws from them.
+
+**Type.** Libertinus Serif for the text (10 pt on a 13 pt baseline; notes 7.2 on 9.75), built into Typst, so there is
+no file to ship. IBM Plex Sans Condensed for heads (Bold), eyebrows, labels and credits. Courier Prime for the records'
+own typed words; TT2020 Style E (`tokens.typed-effect`) for effect, sparingly. Shippori Mincho for Japanese, the
+original beside the translation, and the fallback of every face; a subset of Noto Serif JP for the few marks Shippori
+lacks. Every face is SIL OFL, bundled in `src/wwiibook/fonts/`. `tests/test_fonts.py` fails a page that falls back to a
+face the package doesn't ship (Typst substitutes silently, and knows some families by other names: Plex Condensed as
+"IBM Plex Sans").
+
+**Colour.** Each colour has one job:
+
+| Token | Hex | Job |
+|---|---|---|
+| `ink` | `#000000` | text, rules, hulls |
+| `muted` | `#5d675b` | secondary text, labels |
+| `rule` | `#c4cbbf` | hairlines |
+| `paper` | `#fbfaf6` | figure grounds (prints as a faint tint on white stock) |
+| hit | `#c8323c` | a ship sunk or hit: red only for hits |
+| `accent` | `#a3241b` | the record-quote rule, "assumed" |
+| boats | `#2a6fc9` `#008f78` `#6a3a9e` | the first, second and third boat, in participant order |
+| `other-ink`, `other` | `#4d5963` `#e4e7e9` | the other side's records and their box |
+| `cta`, `cta-ink` | `#c98a1b` `#8a5a0b` | the call to action: where the book sends a reader to the site (`see-it-move`) |
+
+**Print.** `wwii-book softproof <profile.icc> [pages]` sends the palette (and any proof pages) through a printer's ICC
+profile and measures each colour's shift (CIEDE2000) and how far apart the signal colours stay. Against Blurb's profile
+(CMYK, X-Rite, 2010) every colour holds within ΔE00 4 except pure black, which prints at the press's darkest, and the
+amber words, which print a little lighter; the closest signal pair, the first and third boats, stays at 22.8. The
+final PDF is built without accessibility tags, which a print book doesn't need.
+
+**Period pieces** draw on their own inks, the objects they stand for: the punched card (`#eadcb4` stock, `#1d1a16`
+through its holes; its QR code's modules punched as an IBM card's holes, the finders die-cut windows), the maneuvering
+board (`#6f8a78` print, `#2b2f2c` pencil), the thermograph chart.
+
 ## Adding a template
 
 A template is one file, so several can be built at once without touching each other's work.

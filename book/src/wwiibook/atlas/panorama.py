@@ -27,7 +27,7 @@ from .. import figures, geo, halo, symbols
 from . import record, terrain
 from .extent import Extent, Page
 
-INK, MUTED, PAPER, FRONT = "#1c221d", "#586257", "#fbfaf6", "#a3241b"
+INK, MUTED, PAPER, FRONT = "#000000", "#586257", "#fbfaf6", "#a3241b"
 LAND, SEA, LOW = np.array([243, 241, 233]), np.array([214, 226, 230]), np.array([214, 226, 216])
 ROAD, ROAD_MINOR, RAIL = "#7a6b55", "#8d8270", "#38352f"
 WATER = "#7397a6"

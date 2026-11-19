@@ -26,10 +26,10 @@ from .air import arrow
 from .extent import Extent
 from .panorama import reach_ring
 
-DISPLAY, INK, MUTED = carto.DISPLAY, "#1c221d", "#586257"
+DISPLAY, INK, MUTED = carto.DISPLAY, "#000000", "#586257"
 AXIS, ALLIED, LOSS = "#8a3324", "#5f84ad", "#a3241b"
 OURS = "#2f5f8a"                      # the record's own lines: the bombers' colour, darker than the notional arrows
-FRONT = "#1c221d"
+FRONT = "#000000"
 
 
 def _engagement(eid: str) -> dict:

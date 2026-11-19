@@ -23,3 +23,19 @@
   }
   qr-tag
 }
+
+#let make-punch-card(get, load) = {
+  // The QR code as a punched card (1940s tabulating stock) that still scans: its typed fields down the left (a ship,
+  // a convoy, a date-time group; a field's lines split at "\n"), the code's modules punched through as holes, the
+  // finder squares die-cut windows. Links only to the kit's public pages. About 2.2 in wide puts the code at about
+  // 1 in square; it scans at that size (checked on the rendered page).
+  let punch-card(url, fields: (), caption: "Scan to see it move", width: 2.2in) = {
+    let key = "punch:" + url + ":" + fields.join("|") + ":" + caption
+    _request("qr", key, (url: url, style: "punch", fields: fields, caption: caption))
+    let a = get(key)
+    // centred in its column, with a little air above and below
+    block(width: 100%, above: 10pt, below: 10pt, align(center,
+      if a == none { _pending("punch card · " + url, height: width * 0.66) } else { image(load(a.path), width: width) }))
+  }
+  punch-card
+}
