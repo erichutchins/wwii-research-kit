@@ -193,7 +193,7 @@ def view(box: list[float], width_in: float, height_in: float | None, *, azimuth:
         for name in ("ne_10m_rivers_lake_centerlines", "ne_10m_rivers_europe", "ne_10m_rivers_north_america"):
             try:
                 gj = carto.natural(name)
-            except Exception:  # noqa: BLE001 - a missing layer is a missing layer, not a broken figure
+            except Exception:  # a missing layer is a missing layer, not a broken figure
                 continue
             for feat in gj["features"]:
                 rank = feat["properties"].get("scalerank", 99)
