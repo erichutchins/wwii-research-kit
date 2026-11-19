@@ -2,7 +2,8 @@
 
   wwii-book build examples/morning-report/book.typ [-o out.pdf] [--refresh]
   wwii-book proof examples/morning-report/book.typ [--ppi 110]     its pages as PNGs in proof/, for review
-  wwii-book preflight book.pdf [--preset blurb-magazine]          page size, page count, fonts, image resolution
+  wwii-book preflight book.pdf [--preset blurb-magazine]          size, count, fonts, images, boxes, ink, PDF/X
+  wwii-book press book.pdf [-o book-press.pdf] [--profile x.icc]  a PDF/X-3:2002 copy for the printer
   wwii-book fetch rg64-469722323/p0712
   wwii-book atlas la-haye-du-puits [--reconstruct] [--qgis]
   wwii-book softproof blurb.icc [proof/page-01.png ...]           the palette (and pages) as the press will print them
@@ -28,6 +29,11 @@ def main(argv: list[str] | None = None) -> int:
     pf = sub.add_parser("preflight", help="check a finished PDF against its printer's specifications")
     pf.add_argument("pdf")
     pf.add_argument("--preset", default="blurb-magazine")
+    ps = sub.add_parser("press", help="write a PDF/X-3:2002 copy of a built book for the printer")
+    ps.add_argument("pdf")
+    ps.add_argument("-o", "--output", help="default: <book>-press.pdf beside it")
+    ps.add_argument("--profile", help="the CMYK output profile (default: $WWII_OUTPUT_PROFILE, else Ghostscript's SWOP)")
+    ps.add_argument("--title", help="the document title (default: the PDF's own, else its file name)")
     f = sub.add_parser("fetch", help="download a page into the scan cache and print its path")
     f.add_argument("cite", nargs="+")
     at = sub.add_parser("atlas", help="reconstruct an atlas extent's period network and draw its pair of views")
@@ -53,11 +59,24 @@ def main(argv: list[str] | None = None) -> int:
         from .preflight import check
         rep = check(a.pdf, a.preset)
         print(f"{rep.pdf}: {rep.pages} pages, {len(rep.problems)} problems, {len(rep.warnings)} warnings")
+        for name, found in rep.checks:
+            print(f"  {name}: {found}")
         for p in rep.problems:
             print("  problem:", p)
         for w in rep.warnings:
             print("  warning:", w)
         return 0 if rep.ok else 1
+
+    if a.cmd == "press":
+        from pathlib import Path
+
+        from .press import pdfx
+        src = Path(a.pdf)
+        out = Path(a.output) if a.output else src.with_name(src.stem + "-press.pdf")
+        r = pdfx(src, out, a.profile, a.title)
+        print(f"{r['pdf']}: PDF/X-3:2002, output intent {r['condition']} ({r['profile']}); {r['black']} RGB blacks "
+              f"made black ink, {r['groups']} groups and {r['links']} links dropped")
+        return 0
 
     if a.cmd == "fetch":
         for c in a.cite:

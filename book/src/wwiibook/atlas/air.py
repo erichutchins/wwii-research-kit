@@ -17,7 +17,7 @@ from .. import cartography as carto
 from .. import geo, halo, mapmarks, paths, symbols
 from . import record
 from .extent import Extent
-from .panorama import reach_ring
+from .panorama import reach_fill, reach_ring
 
 DISPLAY, INK, MUTED = carto.DISPLAY, "#000000", "#586257"
 AXIS, ALLIED, TARGET = "#8a3324", "#5f84ad", "#a3241b"   # the Allied air arrows a lighter blue than our units'
@@ -246,7 +246,8 @@ def air_map(ex: Extent, width_in: float | None = None) -> tuple[str, dict]:
     rings = [m for m in ours if m.get("reach")]
     if rings:
         m = rings[0]
-        body.append(f'<circle cx="{sx + 19:.1f}" cy="57" r="6" fill="{m["colour"]}" fill-opacity="0.07" '
+        defs, fill = reach_fill(m["colour"])
+        body.append(f'{defs}<circle cx="{sx + 19:.1f}" cy="57" r="6" fill="{fill}" '
                     f'stroke="{m["colour"]}" stroke-width="0.9" stroke-dasharray="3 2"/>')
         body.append(_text(sx + 42, 56.5, f"{m['short']}'s guns' reach:", 6.2, INK))
         body.append(_text(sx + 42, 64.5, f"{m['reach']['weapon']} (inferred), {int(m['reach']['range_yd']):,} yd",

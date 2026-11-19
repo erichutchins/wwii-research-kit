@@ -45,6 +45,9 @@ scans are about 1,800 pixels wide, so about six inches is the most they can prin
 | `src/wwiibook/images.py` | Turn, crop, greyscale (Pillow) |
 | `src/wwiibook/qr.py` | QR codes as SVG |
 | `src/wwiibook/build.py` | The two-pass build |
+| `src/wwiibook/solid.py` | Solid colours in place of transparency in the prepared figures (an alpha mixed onto white paper) |
+| `src/wwiibook/press.py` | The print pass: page boxes, black ink, the PDF/X-3 copy, and what preflight reads back |
+| `src/wwiibook/preflight.py` | A finished PDF against the printer's specifications |
 | `src/wwiibook/geo.py` | Coastlines (world-atlas, cached in `<cache>/geo/`, TopoJSON decoded here) and a Mercator frame |
 | `src/wwiibook/atlas/` | An atlas extent's pair of views: the period network reconstructed from IGN's 1:50,000 (`reconstruct.py`), the panorama, the oblique view, the QGIS export (`atlas/README.md`) |
 | `src/wwiibook/chain.py` | A unit's chain of command over months, on one day, or as a row of patches, from `records/army/relations.csv` |
@@ -100,6 +103,41 @@ credit the CC BY-SA ones. `examples/unit-chain/` shows all three.
 Not yet: JACAR and Library of Congress pages, Army engagements (fronts and stations rather than tracks), the
 templates beyond the ledger and the engagement figures, fonts.
 
+## Printing with Blurb
+
+Blurb's PDF to Book takes the file its own export preset writes: PDF/X-3:2002, which is PDF 1.3 with no live
+transparency, an output intent (CGATS TR 001, U.S. Web Coated (SWOP) v2), a TrimBox and a BleedBox on every page, every
+font embedded, and black text in black ink alone. Typst writes none of that but the fonts, so the engine adds it in
+three places.
+
+- **At preparation** (`solid.py`): every prepared figure is made solid before Typst sees it. A translucent fill,
+  stroke, group or gradient becomes the colour it looks like on white paper, and an embedded PNG's alpha is flattened
+  onto white. Where a preparer knows the colour lies on something else, it mixes onto that itself: the relief is laid
+  on the land tint and clipped to the land, the punch card's lips on its backing, the sightline's bands and reach on
+  each other strip by strip, and a guns' reach over a map is a pale hatch of strokes instead of a tint. Nothing is
+  rasterised. A gradient that fades, a translucent paint server or a linked image is left as it was, for preflight to
+  find; so is a section's own figure, which the build does not prepare.
+- **After compiling** (`press.finish`, run by every build): each page's TrimBox (612 × 792 pt) and BleedBox (the whole
+  621 × 810 pt sheet). The bleed is at the top, the bottom and the outside edge, so the trim sits against the binding:
+  on the left of a recto (page 1 is a recto), on the right of a verso. Any pure black still in RGB or ICC-based sRGB (a
+  figure's lettering and lines: SVG has no CMYK) is rewritten as CMYK 0/0/0/100. Typst's own text and rules already are,
+  since `ink` is `cmyk(0%, 0%, 0%, 100%)`. Other colours stay sRGB, which Blurb accepts. A screen or a proof PNG shows
+  black ink alone as a very dark grey (about `#231f20`), as it prints.
+- **For upload** (`wwii-book press book.pdf`, writing `book-press.pdf`): the PDF/X-3:2002 copy. PDF 1.3 without object
+  streams; the output intent, with the output condition `CGATS TR 001` in the registry `http://www.color.org` and a CMYK
+  profile embedded; `GTS_PDFXVersion` and `Trapped` False in the document information; perceptual rendering; no links,
+  outline, tags or XMP; no transparency groups. It refuses a file that still has live transparency. The text, the
+  vectors and the colours are the compiled file's, copied unchanged. Adobe's U.S. Web Coated (SWOP) v2 profile is not
+  free to redistribute, so the kit does not ship it: `--profile` (or `WWII_OUTPUT_PROFILE`) names the file to embed,
+  and without one the press step embeds Ghostscript's SWOP profile (`default_cmyk.icc`, "Artifex CMYK SWOP Profile",
+  from `apt-get install ghostscript`), naming it as the output condition. The step writes the markers; it is not a
+  certified PDF/X validator.
+
+`wwii-book preflight` reports each of these with the size, count, fonts and resolution: the page boxes, transparency
+(soft masks, translucent graphics states, blend modes), black ink (text runs in black ink alone; any RGB or rich black),
+spot colours, and the PDF/X-3 markers and output intent. A file straight from the build fails only the last, until it
+has been through `press`.
+
 ## The style
 
 The book's type and colours are set once, in `core.typ` (`tokens`), and every template and figure draws from them.
@@ -116,7 +154,7 @@ face the package doesn't ship (Typst substitutes silently, and knows some famili
 
 | Token | Hex | Job |
 |---|---|---|
-| `ink` | `#000000` | text, rules, hulls |
+| `ink` | `#000000` | text, rules, hulls; written as CMYK 0/0/0/100 (black ink alone) |
 | `muted` | `#5d675b` | secondary text, labels |
 | `rule` | `#c4cbbf` | hairlines |
 | `paper` | `#fbfaf6` | figure grounds (prints as a faint tint on white stock) |

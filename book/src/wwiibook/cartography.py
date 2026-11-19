@@ -126,6 +126,19 @@ def _lonlat(x: float, y: float, z: int) -> tuple[float, float]:
     return x / n * 360 - 180, math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * y / n))))
 
 
+def _on_land(png: bytes, strength: float) -> bytes:
+    """The hillshade (grey light and shadow, alpha by strength) laid on the land tint at `strength`: an opaque RGB
+    image of what the translucent overlay looked like on the land."""
+    with Image.open(io.BytesIO(png)) as im:
+        shade = im.convert("LA")
+    mask = shade.getchannel("A").point(lambda v: round(v * strength))
+    land = Image.new("RGB", shade.size, LAND)
+    out = Image.composite(shade.getchannel("L").convert("RGB"), land, mask)
+    buf = io.BytesIO()
+    out.save(buf, "PNG", optimize=True)
+    return buf.getvalue()
+
+
 def relief(box: tuple[float, float, float, float], z: int) -> tuple[bytes, tuple[float, float, float, float]]:
     """A hillshade of the box as a PNG (black shadow, white light, alpha by strength; sea and flat ground clear), and
     the exact box its pixels cover."""
@@ -293,16 +306,21 @@ def base(f: geo.Frame, x0: float, H: float, *, relief_zoom: int | None = None, a
     wide = (f.lon0 - 0.5, f.lat0 - 0.5, f.lon1 + 0.5, f.lat1 + 0.5)
     under, over = [], []
     under.append(f'<rect x="{x0:.1f}" width="{f.width:.1f}" height="{H:.1f}" fill="{SEA}"/>')
-    for ring in geo.land_rings(wide):
-        d = _path(f, x0, ring, tol=0.3, close=True)
-        if d:
-            under.append(f'<path d="{d}" fill="{LAND}" stroke="{COAST}" stroke-width="0.5" stroke-linejoin="round"/>')
-    if relief_zoom:
+    land = [d for d in (_path(f, x0, ring, tol=0.3, close=True) for ring in geo.land_rings(wide)) if d]
+    for d in land:
+        under.append(f'<path d="{d}" fill="{LAND}" stroke="{COAST}" stroke-width="0.5" stroke-linejoin="round"/>')
+    if relief_zoom and land:
+        # the hillshade is composited onto the land tint here, at its 55 per cent, and clipped to the land, so the
+        # page carries an opaque image and no transparency; the coast is drawn again over its edge
         png, (rw, rs, re_, rn) = relief(box, relief_zoom)
         (ax, ay), (bx, by) = f.xy(rw, rn), f.xy(re_, rs)
-        href = "data:image/png;base64," + base64.b64encode(png).decode()
+        href = "data:image/png;base64," + base64.b64encode(_on_land(png, 0.55)).decode()
+        clip = "land-" + hashlib.sha1(json.dumps([round(v, 4) for v in box]).encode()).hexdigest()[:8]
+        under.append(f'<clipPath id="{clip}"><path d="{" ".join(land)}"/></clipPath>')
         under.append(f'<image x="{x0 + ax:.1f}" y="{ay:.1f}" width="{bx - ax:.1f}" height="{by - ay:.1f}" '
-                     f'preserveAspectRatio="none" opacity="0.55" href="{href}"/>')
+                     f'preserveAspectRatio="none" clip-path="url(#{clip})" href="{href}"/>')
+        under += [f'<path d="{d}" fill="none" stroke="{COAST}" stroke-width="0.5" stroke-linejoin="round"/>'
+                  for d in land]
     for name in ("ne_10m_lakes", "ne_10m_lakes_europe", "ne_10m_lakes_north_america"):
         for feat in natural(name)["features"]:
             for ring in _lines(feat["geometry"] or {"type": ""}):

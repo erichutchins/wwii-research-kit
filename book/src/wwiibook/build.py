@@ -4,7 +4,9 @@
      facsimile(), records() and qr-tag()). Each request carries a `kind`, the `key` Typst will look it up by, and its
      arguments. The book compiles at this stage too: an unprepared request draws a placeholder.
   2. Prepare each request not yet in `build/assets.json` (fetch and crop a scan, stage a records file as JSON, draw
-     a QR code) and compile again. Then ask Typst for its warnings (`<wwii-warning>`: an image placed below 300 dpi).
+     a QR code), make its colours solid (`solid.py`: the press takes no transparency) and compile again. Then give the
+     PDF its page boxes and black ink (`press.finish`) and ask Typst for its warnings (`<wwii-warning>`: an image
+     placed below 300 dpi).
 
 Everything prepared lands in the book's own `build/` folder, which Typst can read (a Typst project can't read files
 outside its root). The keys come from Typst, so the two sides never compute them twice.
@@ -21,7 +23,7 @@ from pathlib import Path
 import typst
 import yaml
 
-from . import figures, images, nara, paths, qr
+from . import figures, images, nara, paths, press, qr, solid
 from .cite import parse
 
 
@@ -252,12 +254,16 @@ def build(book: Path | str, output: Path | str | None = None, refresh: bool = Fa
             result.prepared.append(key)
         except Exception as e:          # one bad request leaves its placeholder; the rest of the book still builds
             result.failed.append((key, f"{type(e).__name__}: {e}"))
+    for a in assets.values():           # solid colours for the press: no figure carries live transparency
+        if a.get("path"):
+            solid.asset(root / a["path"])
     assets_path.write_text(json.dumps(assets, indent=1))
 
     # pass 2. PDF tagging (the structure tree for screen readers) is off: a print book has no use for it, and Typst
     # 0.15's tagger fails with an internal error on some pages (a breakable block split beside a float)
     typst.compile(str(book), output=str(pdf), root=str(root), package_path=str(paths.TYPST), font_paths=[str(paths.FONTS)],
                   pdf_tags=False)
+    press.finish(pdf)                   # the trim and bleed boxes, and black as black ink alone (press.py)
     result.warnings = _query(book, "<wwii-warning>", root)
     return result
 

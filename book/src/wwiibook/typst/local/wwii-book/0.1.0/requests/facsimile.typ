@@ -25,8 +25,9 @@
         let img = box(width: w, height: h, {
           image(load(a.path), width: w)
           for hl in highlight {
+            // outlined, not tinted: a translucent tint over the scan is live transparency, which the press flattens
             place(top + left, dx: hl.at(0) * w, dy: hl.at(1) * h, rect(width: hl.at(2) * w, height: hl.at(3) * h,
-              stroke: 1.1pt + tokens.accent, fill: tokens.accent.transparentize(88%)))
+              stroke: 1.1pt + tokens.accent))
           }
         })
         if bare { img } else { figure(img, caption: cap) }

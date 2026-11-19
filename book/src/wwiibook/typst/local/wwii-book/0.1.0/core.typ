@@ -4,6 +4,8 @@
 // X-Rite, March 2010; relative colorimetric, black point compensation) with `wwii-book softproof <profile.icc>`;
 // ΔE00 is the shift from screen to print (under 2 hard to see, 2-5 visible side by side):
 //   ink #000000            the press's darkest black prints a touch lighter than screen black (L* 9, ΔE00 5.6): normal
+//                          written as CMYK 0/0/0/100, so text and rules reach the press as black ink alone (Blurb:
+//                          "100% Black ink" for text), never as an RGB black the press would build from four inks
 //   paper #fbfaf6          a warm ground for figures; it prints as a faint tint on white stock (ΔE00 0.8), never as the
 //                          paper's own colour
 //   hit #c8323c            red for hits only; holds well (ΔE00 1.6)
@@ -16,7 +18,7 @@
 //   the hit red, the three boats and the amber stay well apart in print: the closest pair is boat 1 and boat 3
 //   (ΔE00 22.8)
 #let tokens = (
-  ink: rgb("#000000"), muted: rgb("#5d675b"), rule: rgb("#c4cbbf"), accent: rgb("#a3241b"),
+  ink: cmyk(0%, 0%, 0%, 100%), muted: rgb("#5d675b"), rule: rgb("#c4cbbf"), accent: rgb("#a3241b"),
   other: rgb("#e4e7e9"), other-ink: rgb("#4d5963"), paper: rgb("#fbfaf6"), band: rgb("#171c18"), band-ink: rgb("#ecede6"),
   cta: rgb("#c98a1b"), cta-ink: rgb("#8a5a0b"),
   // Typst files IBM Plex Sans Condensed under the family "IBM Plex Sans", condensed

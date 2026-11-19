@@ -20,6 +20,7 @@ dependencies = [
     "osmium>=3.7",
     "pyogrio>=0.7",
     "pyyaml>=6",
+    "pikepdf>=9",      # the print pass: page boxes, ink, PDF/X (press.py)
 ]
 
 [project.scripts]

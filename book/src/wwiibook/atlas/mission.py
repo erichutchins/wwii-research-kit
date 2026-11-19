@@ -24,7 +24,7 @@ from .. import cartography as carto
 from .. import figures, geo, halo, mapmarks, paths
 from .air import arrow
 from .extent import Extent
-from .panorama import reach_ring
+from .panorama import reach_fill, reach_ring
 
 DISPLAY, INK, MUTED = carto.DISPLAY, "#000000", "#586257"
 AXIS, ALLIED, LOSS = "#8a3324", "#5f84ad", "#a3241b"
@@ -365,7 +365,8 @@ def mission_map(ex: Extent, width_in: float | None = None, part: str = "map") ->
                 f'stroke-dasharray="5 1.6 1.2 1.6"/>')
     body.append(_text(sx + 42, y + 1, "the front, noon 26 April", 6.2, INK))
     y += 12
-    body.append(f'<circle cx="{sx + 19:.1f}" cy="{y - 2:.1f}" r="5" fill="{OURS}" fill-opacity="0.07" '
+    defs, fill = reach_fill(OURS)
+    body.append(f'{defs}<circle cx="{sx + 19:.1f}" cy="{y - 2:.1f}" r="5" fill="{fill}" '
                 f'stroke="{OURS}" stroke-width="0.9" stroke-dasharray="3 2"/>')
     body.append(_text(sx + 42, y + 1, "guns' reach (FM 4-155), place assumed", 6.2, INK))
     y += 18

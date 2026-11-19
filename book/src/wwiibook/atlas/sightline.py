@@ -21,11 +21,13 @@ import numpy as np
 
 from .. import cartography as carto
 from .. import paths
+from ..solid import mix
 from . import terrain
 from .extent import Extent
 
 DISPLAY, INK, MUTED = carto.DISPLAY, "#000000", "#586257"
 GROUND, HIDDEN, OURS, AXIS, LOSS = "#c9c2ad", "#8a8f86", "#2f5f8a", "#8a3324", "#a3241b"
+PLOT = "#fbfaf6"                   # the plot's ground (core.typ tokens.paper)
 FT = 0.3048
 R_EFF = 6371000 * 4 / 3
 
@@ -125,18 +127,49 @@ def sightline(ex: Extent, width_in: float | None = None) -> tuple[str, dict]:
     def Y(z):
         return top + (zmax - z) * ky
 
-    body = [f'<rect x="{left:.1f}" y="{top:.1f}" width="{W:.1f}" height="{plot_h:.1f}" fill="#fbfaf6"/>']
-    # the heights the records type, above the guns' ground (assumed)
+    body = [f'<rect x="{left:.1f}" y="{top:.1f}" width="{W:.1f}" height="{plot_h:.1f}" fill="{PLOT}"/>']
+    # Every tint is drawn solid, as the translucent tints looked one over another on the plot's ground (the press
+    # takes no transparency): the heights' bands cut into strips, each strip the colour of the bands over it, and the
+    # guns' reach drawn in each strip at the colour of its rings over that strip, then the ground over both.
+    bands = []
     for k, h in enumerate(cfg.get("heights", [])):
         y0, y1 = Y(s["gun_z"] + h["high_ft"] * FT), Y(s["gun_z"] + h["low_ft"] * FT)
-        x0 = left + 6 + k * 120
-        op = 0.16 if k == 0 else 0.07
-        body.append(f'<rect x="{left:.1f}" y="{y0:.1f}" width="{W:.1f}" height="{y1 - y0:.1f}" fill="{AXIS}" '
-                    f'fill-opacity="{op}"/>')
+        bands.append((y0, y1, 0.16 if k == 0 else 0.07))
+    edges = sorted({top, top + plot_h, *(min(max(v, top), top + plot_h) for b in bands for v in b[:2])})
+    strips = []
+    for a, b in zip(edges, edges[1:]):
+        colour = PLOT
+        for y0, y1, op in bands:
+            if y0 <= a and b <= y1:
+                colour = mix(AXIS, op, colour)
+        strips.append((a, b, colour))
+        if colour != PLOT:
+            body.append(f'<rect x="{left:.1f}" y="{a:.1f}" width="{W:.1f}" height="{b - a:.1f}" fill="{colour}"/>')
+    gx, gy = X(s["gun_d"]), Y(s["gun_z"])
+    arcs = []
+    for ring in s["rings"]:
+        R = float(ring["km"]) * 1000
+        if R <= s["gun_off"]:
+            continue
+        r = math.sqrt(R ** 2 - s["gun_off"] ** 2)
+        arcs.append((r, ring, f'M{gx - r * kx:.1f},{gy:.1f} A{r * kx:.1f},{r * ky:.1f} 0 0 1 {gx + r * kx:.1f},{gy:.1f}'))
+    arcs.sort(key=lambda t: -t[0])                 # widest first, so each narrower reach lies over the wider
+    for n, (a, b, colour) in enumerate(strips):
+        if not arcs or a >= gy:
+            continue
+        body.append(f'<clipPath id="sl-strip-{n}"><rect x="{left:.1f}" y="{a:.1f}" width="{W:.1f}" '
+                    f'height="{b - a:.1f}"/></clipPath>')
+        c = colour
+        for _, _, d_arc in arcs:
+            c = mix(OURS, 0.08, c)
+            body.append(f'<path d="{d_arc}" fill="{c}" clip-path="url(#sl-strip-{n})"/>')
+    for y0, _, _ in bands:
         body.append(f'<path d="M{left:.1f},{y0:.1f} h{W:.1f}" stroke="{AXIS}" stroke-width="0.6" '
                     f'stroke-dasharray="3 2"/>')
-        body.append(_text(x0 + 1, y0 + 9, h["label"], 6.2, AXIS, weight="bold"))
-        body.append(_text(x0 + 1, y0 + 16.5, h["source"], 5.6, MUTED))
+    for k, h in enumerate(cfg.get("heights", [])):
+        x0 = left + 6 + k * 120
+        body.append(_text(x0 + 1, bands[k][0] + 9, h["label"], 6.2, AXIS, weight="bold"))
+        body.append(_text(x0 + 1, bands[k][0] + 16.5, h["source"], 5.6, MUTED))
     # the ground, and the hidden band above it
     gpts = " ".join(f"{X(a):.1f},{Y(b):.1f}" for a, b in zip(d, ground))
     lpts = " ".join(f"{X(a):.1f},{Y(b):.1f}" for a, b in zip(d, lowest))
@@ -148,15 +181,8 @@ def sightline(ex: Extent, width_in: float | None = None) -> tuple[str, dict]:
     base = f"{X(d[-1]):.1f},{top + plot_h:.1f} {X(0):.1f},{top + plot_h:.1f}"
     body.append(f'<polygon points="{gpts} {base}" fill="{GROUND}" stroke="{INK}" stroke-width="0.7"/>')
     # the guns' reach where it cuts the section
-    gx, gy = X(s["gun_d"]), Y(s["gun_z"])
-    for ring in s["rings"]:
-        R = float(ring["km"]) * 1000
-        if R <= s["gun_off"]:
-            continue
-        r = math.sqrt(R ** 2 - s["gun_off"] ** 2)
-        body.append(f'<path d="M{gx - r * kx:.1f},{gy:.1f} A{r * kx:.1f},{r * ky:.1f} 0 0 1 {gx + r * kx:.1f},'
-                    f'{gy:.1f}" fill="{OURS}" fill-opacity="0.08" stroke="{OURS}" stroke-width="0.9" '
-                    f'stroke-dasharray="3 2"/>')
+    for r, ring, d_arc in arcs:
+        body.append(f'<path d="{d_arc}" fill="none" stroke="{OURS}" stroke-width="0.9" stroke-dasharray="3 2"/>')
         body.append(_text(gx + r * kx * 0.72, gy - r * ky * 0.72 - 2, ring["weapon"], 6.0, OURS, weight="bold"))
     short = [r["weapon"] for r in s["rings"] if float(r["km"]) * 1000 <= s["gun_off"]]
     if short:

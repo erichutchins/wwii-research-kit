@@ -24,6 +24,7 @@ from skimage import measure
 
 from .. import cartography as carto
 from .. import figures, geo, halo, mapmarks, symbols
+from ..solid import mix
 from . import record, terrain
 from .extent import Extent, Page
 
@@ -188,12 +189,21 @@ def _cathedral(x: float, y: float, colour: str = CATHEDRAL, k: float = 1.0) -> s
             f'H{x + 1.3 * k:.1f}" stroke="{colour}" stroke-width="0.8"/>')
 
 
+def reach_fill(colour: str) -> tuple[str, str]:
+    """The inside of a guns' reach: a sparse hatch of pale strokes in the unit's colour, which lets the map show
+    through without a translucent tint (the press takes no transparency). Returns (the pattern's definition, the fill)."""
+    pid = "reach-" + colour.lstrip("#")
+    return (f'<pattern id="{pid}" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
+            f'<path d="M0,0 v5" stroke="{mix(colour, 0.35)}" stroke-width="0.5"/></pattern>', f"url(#{pid})")
+
+
 def reach_ring(cx: float, cy: float, r: float, colour: str, reach: dict, words: bool = True) -> str:
-    """A unit's guns' reach as a ring of radius r (points): pale fill, a dashed edge where the gun is inferred, and
+    """A unit's guns' reach as a ring of radius r (points): a pale hatch, a dashed edge where the gun is inferred, and
     its weapon and range written along the top of the ring."""
     dash = ' stroke-dasharray="3 2"' if reach.get("basis") != "reported" else ""
-    out = (f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="{colour}" fill-opacity="0.07" stroke="{colour}" '
-           f'stroke-width="0.9" stroke-opacity="0.85"{dash}/>')
+    defs, fill = reach_fill(colour)
+    out = (f'{defs}<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="{fill}" stroke="{mix(colour, 0.85)}" '
+           f'stroke-width="0.9"{dash}/>')
     if words and r > 30:
         yd = int(reach["range_yd"])
         miles = yd / 1760
