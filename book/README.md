@@ -132,6 +132,12 @@ profile and measures each colour's shift (CIEDE2000) and how far apart the signa
 amber words, which print a little lighter; the closest signal pair, the first and third boats, stays at 22.8. The
 final PDF is built without accessibility tags, which a print book doesn't need.
 
+**Maps.** Every map carries a north arrow and a scale bar (`mapmarks.py`): kilometres over statute miles on land,
+nautical miles at sea and for an air map over the sea; the maneuvering board gives nautical miles beside its rings'
+yards. A plan map's north is up (its frames are Mercator); a scanned sheet's comes from the sheet's own fit. A
+perspective view (the oblique views) has no single scale: its bar is the scale across the view at its middle distance
+and says so, and its north is north on the ground there as the camera sees it.
+
 **Period pieces** draw on their own inks, the objects they stand for: the punched card (`#eadcb4` stock, `#1d1a16`
 through its holes; its QR code's modules punched as an IBM card's holes, the finders die-cut windows), the maneuvering
 board (`#6f8a78` print, `#2b2f2c` pencil), the thermograph chart.

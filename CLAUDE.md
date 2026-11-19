@@ -152,6 +152,9 @@ rules below are the ones a change most often breaks.
   limits; keep it true when either changes.
 - Every mark links to its source page (the scan viewer falls back to the archive's URL from
   `records/scans.json`).
+- Every map has a north arrow and a scale bar: kilometres over statute miles on land, nautical miles at sea (an air map
+  over the sea too). A perspective view says its scale holds across the view at one stated depth; its north is
+  north on the ground as the camera sees it. In the book, `book/src/wwiibook/mapmarks.py` draws both.
 - Silhouettes are data, not drawing code: shapes in `records/silhouettes/silhouettes.yml`; `site/silhouettes.js`
   only loads them (the `SILHOUETTES` promise) and draws hull symbols. Never draw one from memory: trace a plate
   or work to its printed dimensions, and cite it.

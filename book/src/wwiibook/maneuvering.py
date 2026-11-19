@@ -21,7 +21,7 @@ import subprocess
 from html import escape
 from typing import Any
 
-from . import figures, halo, paths
+from . import figures, halo, mapmarks, paths
 
 INK, MUTED, PAPER = figures.INK, figures.MUTED, figures.PAPER
 BOAT = "#2a6fc9"       # the first US boat's colour (guides/ENGAGEMENTS.md, "Colour"): her torpedoes and what she recorded
@@ -189,6 +189,11 @@ def board(engagement: str, attacks: list[str], width_in: float = 5.5, boat: str 
     scale_at = clear[0]
     label_at = next((b for b in clear[1:] if abs((b - scale_at + 180) % 360 - 180) > 60), (scale_at + 180) % 360)
     body += _sheet(cx, cy, R, rings, ring_yd, scale_at)
+    # the marks every map carries (mapmarks), in the corners clear of the rim: north (the board's 000, true), and
+    # nautical miles beside the rings' yards
+    body.append(mapmarks.north(16, 34, 0))
+    bar, _ = mapmarks.scale(W - 10, 22, yd * 1093.61, "sea", max_len=R * 0.55, anchor="end")
+    body.append(bar)
 
     def P0(x_yd, y_yd):                    # yards east and north of own ship at the first firing -> points
         return cx + x_yd * yd, cy - y_yd * yd

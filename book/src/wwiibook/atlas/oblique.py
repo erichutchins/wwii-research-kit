@@ -9,7 +9,7 @@ stand on stalks over their positions, as the army group's map placed them.
 
 The render is the voxel-space method: each column of the picture a ray over the ground, stepped from near to far,
 each step showing where nothing nearer covers it. Heights are exaggerated (the figure says by how much), and depth
-shortens distances, so it carries no scale bar.
+shortens distances, so its scale bar is the scale across the view at its middle distance, and says so.
 """
 import base64
 import io
@@ -22,7 +22,7 @@ from scipy import ndimage
 from skimage import measure
 
 from .. import cartography as carto
-from .. import figures, halo, symbols
+from .. import figures, halo, mapmarks, symbols
 from . import record, terrain
 from .extent import Extent
 from .panorama import CATHEDRAL, RAID, _burst, _cathedral
@@ -479,9 +479,19 @@ def oblique(ex: Extent, width_in: float | None = None, *, azimuth: float | None 
             labels_svg.append(placer.place(x, y, [(f"{int(day[8:])} {months[int(day[5:7])]}", 7, FRONT, "bold",
                                                    DISPLAY)], gap=3))
     body += unit_svg + labels_svg + [rose_svg]
+    # a scale across the view at its middle distance only (mapmarks); the rose gives north
+    w_, s_, e_, n_ = ex.bbox_lonlat
+    lon_m, lat_m = (w_ + e_) / 2, (s_ + n_) / 2
+    across = math.radians(azimuth + 90)
+    dlon = 0.5 * math.sin(across) / (111.32 * math.cos(math.radians(lat_m)))
+    dlat = 0.5 * math.cos(across) / 110.57
+    su, sv, _ = at(np.array([lon_m - dlon, lon_m + dlon]), np.array([lat_m - dlat, lat_m + dlat]))
+    bar, _ = mapmarks.scale(W - 10, H - 22, math.hypot(su[1] - su[0], sv[1] - sv[0]), "land", max_len=W / 7,
+                            anchor="end", note="across the view, at its middle distance")
+    body.append(bar)
     body.append(f'<text x="6" y="{H - 6:.1f}" font-family="{DISPLAY}" font-size="7" letter-spacing="1.2" '
-                f'fill="#4a5249" stroke="#ffffff" stroke-width="2" paint-order="stroke">HEIGHTS × {exaggeration:g} · '
-                f'NOT TO SCALE</text>')
+                f'fill="#4a5249" stroke="#ffffff" stroke-width="2" paint-order="stroke">HEIGHTS × {exaggeration:g}'
+                '</text>')
     notes = {"azimuth": azimuth, "tilt": tilt, "exaggeration": exaggeration, "dem_metres": res,
              "terrain": f"Copernicus DEM GLO-30 (doi:10.5270/ESA-c5d3d65), resampled to {ex.crs}",
              "units": [{"label": u.get("label"), "name": symbols.full_name(u), "cite": u.get("cite", "")} for u in shown]}

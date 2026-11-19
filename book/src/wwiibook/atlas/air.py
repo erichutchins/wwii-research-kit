@@ -14,7 +14,7 @@ from datetime import date
 from html import escape
 
 from .. import cartography as carto
-from .. import geo, halo, paths, symbols
+from .. import geo, halo, mapmarks, paths, symbols
 from . import record
 from .extent import Extent
 from .panorama import reach_ring
@@ -233,6 +233,9 @@ def air_map(ex: Extent, width_in: float | None = None) -> tuple[str, dict]:
         body.append(labels.place(fx, fy, lines, force=True, gap=8))
     body += over
     body.append("</g>")
+    # the map's marks: nautical miles (the sea between the airfields, and the airmen's own unit), north up (Mercator)
+    bar, _ = mapmarks.scale(10, H - 14, 1 / (f.nm_per_pt() * 1.852), "sea", max_len=W / 5)
+    body.append(bar + mapmarks.north(W - 14, H - 14, 0))
     # the column beside the map: what an arrow is, then the raids as the record gives them
     sx = W + 12
     body.append(_text(sx, 9, "ARROWS SHOW DIRECTION, NOT ROUTES", 6.2, INK, weight="bold"))

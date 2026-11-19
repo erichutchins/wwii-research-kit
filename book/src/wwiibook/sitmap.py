@@ -6,6 +6,7 @@ Each day's sheet is fitted to the kit's points for it (records/fronts/12ag-<day>
 crossings, pixel and position) with a second-order polynomial each way, as tools/trace_front.py does. The scans are
 the Library's JPEG 2000 originals, cached where the kit's tools cache them (<cache>/maps/loc/).
 """
+import base64
 import csv
 import math
 import urllib.request
@@ -14,7 +15,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
-from . import paths
+from . import mapmarks, paths
 
 Image.MAX_IMAGE_PIXELS = None
 TILE = "https://tile.loc.gov/storage-services/service/gmd/gmd5/g5701/g5701s/{item}.jp2"
@@ -74,8 +75,10 @@ def window(day: str, box, pad: int = 40) -> tuple[np.ndarray, int, int, Fit]:
     return a, x0, y0, fit
 
 
-def plate(day: str, box, unit: str | None, dest: Path, ring: str = "#c0261b") -> dict:
-    """A slice of the day's sheet over the box, as scanned, with the unit (its id in the day's units file) ringed."""
+def plate(day: str, box, unit: str | None, dest: Path, ring: str = "#c0261b", width_in: float | None = None) -> dict:
+    """A slice of the day's sheet over the box, as scanned, with the unit (its id in the day's units file) ringed.
+    With `width_in`, also an SVG beside the PNG (`svg` in the result): the slice at that width with the marks every
+    map carries, north where the sheet's fit puts it and km and miles at its middle (mapmarks)."""
     a, x0, y0, fit = window(day, box, pad=0)
     im = Image.fromarray(a.astype(np.uint8))
     found = None
@@ -91,8 +94,27 @@ def plate(day: str, box, unit: str | None, dest: Path, ring: str = "#c0261b") ->
                 draw.rounded_rectangle((cx - 58 - k, cy - 46 - k, cx + 70 + k, cy + 34 + k), radius=16, outline=ring)
     dest.parent.mkdir(parents=True, exist_ok=True)
     im.filter(ImageFilter.UnsharpMask(radius=1.2, percent=60, threshold=2)).save(dest)
-    return {"px": list(im.size), "item": item(day), "ringed": bool(found), "fit_px": round(fit.rms, 1),
-            "scale_m_per_px": round(_metres_per_px(fit, box), 1)}
+    out = {"px": list(im.size), "item": item(day), "ringed": bool(found), "fit_px": round(fit.rms, 1),
+           "scale_m_per_px": round(_metres_per_px(fit, box), 1)}
+    if width_in:
+        W = width_in * 72
+        k = W / im.size[0]                                   # points a scan pixel
+        H = im.size[1] * k
+
+        def at(lon, lat):
+            xs, ys = fit.px([lon], [lat])
+            return (float(xs[0]) - x0) * k, (float(ys[0]) - y0) * k
+        w, s_, e, n = box
+        bar, _ = mapmarks.scale(W - 10, H - 18, k * 1000 / _metres_per_px(fit, box), "land", max_len=W / 6,
+                                anchor="end")
+        marks = bar + mapmarks.north(16, H - 16, mapmarks.north_angle(at, (w + e) / 2, (s_ + n) / 2))
+        svg = dest.with_suffix(".svg")
+        svg.write_text(f'<svg xmlns="http://www.w3.org/2000/svg" width="{W:.1f}pt" height="{H:.1f}pt" '
+                       f'viewBox="0 0 {W:.1f} {H:.1f}"><image width="{W:.1f}" height="{H:.1f}" '
+                       f'preserveAspectRatio="none" href="data:image/png;base64,'
+                       f'{base64.b64encode(dest.read_bytes()).decode()}"/>{marks}</svg>')
+        out["svg"] = svg.name
+    return out
 
 
 def _metres_per_px(fit: Fit, box) -> float:

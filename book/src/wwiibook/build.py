@@ -85,8 +85,8 @@ def _plate(req: dict, build: Path) -> dict:
     """A slice of a day's 12th Army Group situation map, as scanned, with a unit ringed (sitmap.plate)."""
     from . import sitmap
     name = f"{_slug(req['key'])}.png"
-    meta = sitmap.plate(req["day"], req["box"], req.get("unit"), build / name)
-    return {"kind": "plate", "path": f"build/{name}", **meta}
+    meta = sitmap.plate(req["day"], req["box"], req.get("unit"), build / name, width_in=req.get("width"))
+    return {"kind": "plate", "path": f"build/{meta.get('svg') or name}", **meta}
 
 
 def _atlas(req: dict, build: Path) -> dict:

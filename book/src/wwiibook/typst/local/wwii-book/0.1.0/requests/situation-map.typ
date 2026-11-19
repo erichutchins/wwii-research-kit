@@ -8,8 +8,8 @@
   // A slice of a day's 12th Army Group situation map as scanned, with the book's unit ringed in red (ours): the army's
   // own picture of the day, beside our map of the man's path.
   let situation-map(day, box, unit: none, width: 5.45in, caption: none) = {
-    let key-id = "plate:" + day + ":" + repr(box) + ":" + repr(unit)
-    _request("plate", key-id, (day: day, box: box, unit: unit))
+    let key-id = "plate:" + day + ":" + repr(box) + ":" + repr(unit) + ":" + repr(width)
+    _request("plate", key-id, (day: day, box: box, unit: unit, width: width / 1in))
     let a = get(key-id)
     let img = if a == none { _pending("situation map · " + day, height: 4in) } else { image(load(a.path), width: width) }
     if caption == none { img } else { std.figure(img, caption: caption) }

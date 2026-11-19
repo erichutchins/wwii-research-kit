@@ -21,7 +21,7 @@ import math
 from html import escape
 
 from .. import cartography as carto
-from .. import figures, geo, halo, paths
+from .. import figures, geo, halo, mapmarks, paths
 from .air import arrow
 from .extent import Extent
 from .panorama import reach_ring
@@ -246,6 +246,9 @@ def mission_map(ex: Extent, width_in: float | None = None, part: str = "map") ->
                                      gap=6))
     body += over
     body.append("</g>")
+    # the map's marks, in a strip under its frame (the airfields' labels fill its corners): km and miles, north up
+    bar, bw = mapmarks.scale(W - 4, H + 12, 1 / (f.nm_per_pt() * 1.852), "land", max_len=W / 5, anchor="end")
+    body.append(bar + mapmarks.north(W - bw - 22, H + 27, 0))
     body.append(f'<rect width="{W:.1f}" height="{H:.1f}" fill="none" stroke="{INK}" stroke-width="0.6"/>')
 
     # ---------------------------------------------------------------- the inset: the fight from the records
@@ -255,6 +258,8 @@ def mission_map(ex: Extent, width_in: float | None = None, part: str = "map") ->
     IH = fi.height
     oy = 0.0
     ilabels = carto.Labels((0, 0, IW, IH))
+    ilabels.occupy(4, IH - 34, IW / 5 + 12, 32)                  # the inset's scale bar (mapmarks, below)
+    ilabels.occupy(IW - 26, 6, 24, 30)                          # and north's
     iu, io = carto.base(fi, 0, IH, relief_zoom=int(cfg["inset"].get("relief_zoom", 11)), rivers=10,
                         places=tuple(cfg["inset"].get("places", ())), labels=ilabels)
     ib_body = [f'<clipPath id="mission-in"><rect width="{IW:.1f}" height="{IH:.1f}"/></clipPath>'
@@ -327,10 +332,9 @@ def mission_map(ex: Extent, width_in: float | None = None, part: str = "map") ->
                                        ("the same sketch (our reading)", 5.6, INK, "normal", DISPLAY)], force=True, gap=4))
     ib_body += io
     ib_body.append("</g>")
-    # a scale bar: 5 km
-    km5 = 5000 * fi.k / (6371000 * math.cos(math.radians((ib[1] + ib[3]) / 2)))
-    ib_body.append(f'<path d="M10,{IH - 12:.1f} h{km5:.1f}" stroke="{INK}" stroke-width="1.6"/>'
-                   + _text(10, IH - 16, "5 km", 6.0, INK))
+    # the inset's marks: km and miles, north up
+    bar, _ = mapmarks.scale(10, IH - 18, 1 / (fi.nm_per_pt() * 1.852), "land", max_len=IW / 5)
+    ib_body.append(bar + mapmarks.north(IW - 14, 30, 0))
     ib_body.append(f'<rect width="{IW:.1f}" height="{IH:.1f}" fill="none" stroke="{INK}" stroke-width="0.7"/>')
     body.append(f'<g transform="translate(0,{oy:.1f})">{"".join(ib_body)}</g>')
 
@@ -413,7 +417,7 @@ def mission_map(ex: Extent, width_in: float | None = None, part: str = "map") ->
     if part == "fight":
         out, Htot = body, max(IH, y)
     else:
-        out, Htot = map_body, max(H, key_end)
+        out, Htot = map_body, max(H + 30, key_end)          # the strip under the frame for its marks
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{total:.1f}pt" height="{Htot:.1f}pt" viewBox="0 0 '
            f'{total:.1f} {Htot:.1f}">{"".join(out)}</svg>')
     notes = {

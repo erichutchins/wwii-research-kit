@@ -18,7 +18,7 @@ from datetime import UTC, date, datetime, timedelta
 from html import escape
 from typing import Any
 
-from . import geo, halo, paths, symbols
+from . import geo, halo, mapmarks, paths, symbols
 
 INK, MUTED, RULE, PAPER = "#000000", "#586257", "#c4cbbf", "#fbfaf6"
 OWN, JP, INTEL, LAND, SEA, NIGHT = "#a3241b", "#4d5963", "#8a6d1f", "#d4dbcc", "#f3f5f1", "#e6e9e3"
@@ -291,13 +291,10 @@ def engagement_map(engagement: str, width_in: float = 5.5, box: list[float] | No
     for x, y, label in _labels_for(pts):
         body.append(_text(x + 5, y - 4, label, 7, INK, weight="bold", halo=True))
     body.append("</g>")
-    # scale bar, 20 nautical miles
-    nm = 20
-    L = nm / f.nm_per_pt()
-    x0, y0 = W - L - 12, H - 12
-    body.append(f'<path d="M{x0:.1f},{y0:.1f} h{L:.1f} M{x0:.1f},{y0 - 3:.1f} v3 M{x0 + L:.1f},{y0 - 3:.1f} v3" '
-                f'stroke="{INK}" stroke-width="0.8" fill="none"/>')
-    body.append(_text(x0 + L / 2, y0 - 4, f"{nm} nautical miles", 6.5, INK, anchor="middle", halo=True))
+    # the map's marks: north, and a scale in nautical miles (the sea)
+    bar, _ = mapmarks.scale(W - 12, H - 12, 1 / (f.nm_per_pt() * 1.852), "sea", max_len=W / 5, anchor="end")
+    body.append(bar)
+    body.append(mapmarks.north(14, H - 14, 0))                 # a Mercator frame: north is up
     body.append(f'<rect width="{W:.1f}" height="{H:.1f}" fill="none" stroke="{INK}" stroke-width="0.6"/>')
     return _svg(W, H, body), s
 
@@ -550,14 +547,11 @@ def route_map(data: dict, width_in: float, panels: list[dict], labels: list[str]
         under.append(f'<rect x="{x0:.1f}" width="{f.width:.1f}" height="{H:.1f}" fill="none" stroke="{INK}" stroke-width="0.6"/>')
         if p.get("title"):
             over.append(_text(x0 + 6, 11, p["title"].upper(), 7, INK, weight="bold", halo=True))
-        km_per_pt = f.nm_per_pt() * 1.852
-        target = f.width / 5 * km_per_pt
-        km = next(v for v in (1, 2, 5, 10, 20, 50, 100, 200, 500, 1000) if v >= target / 1.6)
-        L = km / km_per_pt
-        bx, by = x0 + f.width - L - 8, H - 9
-        over.append(f'<path d="M{bx:.1f},{by:.1f} h{L:.1f} M{bx:.1f},{by - 3:.1f} v3 M{bx + L:.1f},{by - 3:.1f} v3" '
-                    f'stroke="{INK}" stroke-width="0.7" fill="none"/>')
-        over.append(_text(bx + L / 2, by - 4, f"{km} km", 6, INK, anchor="middle", halo=True))
+        # the panel's marks: a scale in km and miles (land), and north
+        bar, _ = mapmarks.scale(x0 + f.width - 8, H - 18, 1 / (f.nm_per_pt() * 1.852), "land",
+                                max_len=f.width / 4, anchor="end")
+        over.append(bar)
+        over.append(mapmarks.north(x0 + f.width - 12, 34, 0))
     # precision rings, legs, stations
     for s, at in placed:
         if not at:

@@ -4,12 +4,13 @@ ours; the sheet is as scanned. Where a front's own map exists (the 12th Army Gro
 """
 import base64
 import io
+import math
 
 import numpy as np
 from PIL import Image
 
 from .. import cartography as carto
-from .. import halo
+from .. import halo, mapmarks
 from . import record
 from .extent import Extent
 from .reconstruct import Sheet
@@ -48,6 +49,13 @@ def sheet_view(ex: Extent, width_in: float | None = None) -> tuple[str, dict]:
                     f'stroke="{m["colour"]}" stroke-width="1.6"/>')
         body.append(labels.place(x, y, [(record.name(m), 7, m["colour"], "bold", DISPLAY),
                                         (record.span(m), 6.2, m["colour"], "normal", DISPLAY)], force=True, gap=8))
+    # the marks every map carries (mapmarks): north where the sheet's own grid puts it, km and miles at its middle
+    mid = (s + n) / 2
+    lon_c = (w + e) / 2
+    pt_km = math.hypot(*(a - b for a, b in zip(at(lon_c + 0.05, mid), at(lon_c - 0.05, mid)))) / (
+        0.1 * 111.32 * math.cos(math.radians(mid)))
+    bar, _ = mapmarks.scale(W - 10, H - 18, pt_km, "land", max_len=W / 6, anchor="end")
+    body.append(bar + mapmarks.north(16, H - 16, mapmarks.north_angle(at, lon_c, mid)))
     body.append(f'<rect width="{W:.1f}" height="{H:.1f}" fill="none" stroke="#000000" stroke-width="0.6"/>')
     notes = {"sheets": [{"sheet": sh.ref(nm), "edition": yr} for _, nm, yr in sh.sheets],
              "placing": sh.placing, "kind": sh.kind,

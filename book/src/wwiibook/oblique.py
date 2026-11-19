@@ -18,7 +18,7 @@ import numpy as np
 from PIL import Image
 
 from . import cartography as carto
-from . import halo, symbols
+from . import halo, mapmarks, symbols
 
 SKY = np.array([247, 246, 240], dtype=np.float32)
 SEA = np.array([196, 212, 219], dtype=np.float32)
@@ -311,11 +311,22 @@ def view(box: list[float], width_in: float, height_in: float | None, *, azimuth:
     body += unit_svg + labels_svg
     compass = {0: "north", 45: "north-east", 90: "east", 135: "south-east", 180: "south", 225: "south-west",
                270: "west", 315: "north-west"}.get(int(azimuth) % 360, f"{azimuth:.0f}°")
+    # the marks every map carries (mapmarks): north as the camera sees it on the ground at the view's middle, and a
+    # scale across the view at that depth only (a perspective has no one scale; nearer is larger, farther smaller)
+    lon_m, lat_m = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
+    body.append(mapmarks.north(W - 16, H - 20, mapmarks.north_angle(lambda lo, la: at(lo, la, 0), lon_m, lat_m)))
+    across = math.radians(azimuth + 90)
+    dlon = 0.5 * math.sin(across) / (111.32 * math.cos(math.radians(lat_m)))
+    dlat = 0.5 * math.cos(across) / 110.57
+    (ax_, ay_), (bx_, by_) = at(lon_m - dlon, lat_m - dlat, 0), at(lon_m + dlon, lat_m + dlat, 0)
+    bar, _ = mapmarks.scale(W - 34, H - 22, math.hypot(bx_ - ax_, by_ - ay_), "land", max_len=W / 6, anchor="end",
+                            note="across the view, at its middle distance")
+    body.append(bar)
     left = {0: "north", 90: "east", 180: "south", 270: "west"}.get(int(azimuth - 90) % 360)
     side = f" · {left.upper()} ON THE LEFT" if left else ""
     body.append(f'<text x="6" y="{H - 6:.1f}" font-family="{carto.DISPLAY}" font-size="7" letter-spacing="1.2" '
                 f'fill="#4a5249" stroke="#ffffff" stroke-width="2" paint-order="stroke">LOOKING {compass.upper()}{side} · '
-                f'HEIGHTS × {exaggeration:g} · NOT TO SCALE</text>')
+                f'HEIGHTS × {exaggeration:g}</text>')
     notes = {"units": [{"number": symbols.parse_label(str(u.get("label") or ""))[0], "name": symbols.full_name(u),
                         "side": symbols.SIDE_WORDS.get(u.get("of", ""), ""), "highlight": u["highlight"]}
                        for u in sorted(shown, key=lambda u: (u.get("of") == "de", not u["highlight"], u.get("label") or ""))],

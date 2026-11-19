@@ -5,13 +5,14 @@ dates to before 1945 or doesn't date; the sheet shows the town as its edition dr
 """
 import base64
 import io
+import math
 from html import escape
 
 import numpy as np
 from PIL import Image
 
 from .. import cartography as carto
-from .. import halo
+from .. import halo, mapmarks
 from . import sources
 from .extent import Extent
 from .panorama import CATHEDRAL, _cathedral, _load
@@ -75,6 +76,11 @@ def inset(ex: Extent, width_in: float | None = None) -> tuple[str, dict]:
                 f'M{bx + L:.1f},{by - 3:.1f} v3" stroke="{INK}" stroke-width="0.7" fill="none"/>'
                 f'<text x="{bx + L / 2:.1f}" y="{by - 3.5:.1f}" font-family="{DISPLAY}" font-size="5.8" fill="{INK}" '
                 f'text-anchor="middle">500 m</text>')
+    # the inset's marks: km and miles at its middle (web Mercator tiles: north is up)
+    mid = (s + n) / 2
+    pt_km = abs(at(e, mid)[0] - at(w, mid)[0]) / ((e - w) * 111.32 * math.cos(math.radians(mid)))
+    bar, _ = mapmarks.scale(W - 8, H - 18, pt_km, "land", max_len=W / 4, anchor="end")
+    body.append(bar + mapmarks.north(14, H - 14, 0))
     body.append(f'<rect width="{W:.1f}" height="{H:.1f}" fill="none" stroke="{INK}" stroke-width="0.7"/>')
     # the key, in two columns under the map
     rows = (len(key) + 1) // 2

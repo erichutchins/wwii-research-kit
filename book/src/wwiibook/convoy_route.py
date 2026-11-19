@@ -27,7 +27,7 @@ from pathlib import Path
 
 import yaml
 
-from . import figures, geo, halo, paths
+from . import figures, geo, halo, mapmarks, paths
 
 INK, MUTED, RULE, PAPER, LAND, SEA = figures.INK, figures.MUTED, figures.RULE, figures.PAPER, figures.LAND, figures.SEA
 DISPLAY, SERIF = figures.DISPLAY, figures.SERIF
@@ -84,10 +84,6 @@ def _fill(lon0: float, lat0: float, lon1: float, lat1: float, w: float, h: float
 
 def _aspect(lon0, lat0, lon1, lat1) -> float:
     return 100.0 / geo.Frame(lon0, lat0, lon1, lat1, 100.0).height
-
-
-def _nice_nm(limit: float) -> int:
-    return next((nm for nm in (500, 250, 200, 100, 50, 25, 20, 10) if nm <= limit), 5)
 
 
 def _land(f: geo.Frame, ox: float, oy: float) -> list[str]:
@@ -232,17 +228,11 @@ def route_figure(engagement: str, width_in: float, height_in: float | None = Non
     body.append(_text(ox + 4, oy + 9, f"{name}: the lanes of the time,", 6, MUTED, italic=True))
     body.append(_text(ox + 4, oy + 16, "not traced from a chart; dotted where assumed", 6, MUTED, italic=True))
     body.append("</g>")
-    # scale bar and north
-    nm = _nice_nm(wo * 0.3 * f.nm_per_pt())
-    L = nm / f.nm_per_pt()
-    sx, sy = ox + wo - L - 8, oy + ho - 12
-    body.append(f'<path class="scale" d="M{sx:.1f},{sy:.1f} h{L:.1f} M{sx:.1f},{sy - 3:.1f} v3 M{sx + L:.1f},{sy - 3:.1f} v3" '
-                f'stroke="{INK}" stroke-width="0.8" fill="none"/>')
-    body.append(_text(sx + L / 2, sy - 4, f"{nm} nautical miles", 6, INK, "middle", family=DISPLAY))
-    nx, ny = ox + wo - 10, sy - 34
-    body.append(f'<path class="north" d="M{nx:.1f},{ny + 14:.1f} V{ny:.1f} l-2.5,4.5 M{nx:.1f},{ny:.1f} l2.5,4.5" '
-                f'stroke="{INK}" stroke-width="0.8" fill="none" stroke-linecap="round"/>')
-    body.append(_text(nx - 5, ny + 14, "N", 6.5, INK, "end", family=DISPLAY))
+    # scale bar (nautical miles: the sea) and north (a Mercator frame: up)
+    bar, _ = mapmarks.scale(ox + wo - 8, oy + ho - 12, 1 / (f.nm_per_pt() * 1.852), "sea", max_len=wo * 0.3,
+                            anchor="end")
+    body.append(bar)
+    body.append(mapmarks.north(ox + wo - 12, oy + ho - 50, 0))
     body.append(f'<rect x="{ox:.1f}" y="{oy:.1f}" width="{wo:.1f}" height="{ho:.1f}" fill="none" stroke="{INK}" '
                 'stroke-width="0.6"/>')
     # the zoomed map, and the two lines from the box to its frame

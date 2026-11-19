@@ -23,7 +23,7 @@ from PIL import Image
 from skimage import measure
 
 from .. import cartography as carto
-from .. import figures, geo, halo, symbols
+from .. import figures, geo, halo, mapmarks, symbols
 from . import record, terrain
 from .extent import Extent, Page
 
@@ -243,17 +243,8 @@ def _north(ex: Extent, page: Page, x: float, y: float) -> str:
 
 
 def _scale(page: Page, x: float, y: float) -> str:
-    km = 5
-    L = km * 1000 / page.metres_per_pt()
-    out = [f'<rect x="{x - 4:.1f}" y="{y - 12:.1f}" width="{L + 8:.1f}" height="17" fill="{PAPER}" fill-opacity="0.8"/>']
-    for i in range(km):
-        fill = INK if i % 2 == 0 else PAPER
-        out.append(f'<rect x="{x + i * L / km:.1f}" y="{y - 2:.1f}" width="{L / km:.1f}" height="2.2" fill="{fill}" '
-                   f'stroke="{INK}" stroke-width="0.4"/>')
-    for i in (0, km):
-        out.append(f'<text x="{x + i * L / km:.1f}" y="{y - 4:.1f}" font-family="{DISPLAY}" font-size="6" fill="{INK}" '
-                   f'text-anchor="middle">{i}{" km" if i == km else ""}</text>')
-    return "".join(out)
+    """Kilometres over miles (mapmarks): the page's own metres per point."""
+    return mapmarks.scale(x, y - 8, 1000 / page.metres_per_pt(), "land", max_len=70)[0]
 
 
 def _locator(ex: Extent, x: float, y: float, width: float) -> tuple[str, float]:
