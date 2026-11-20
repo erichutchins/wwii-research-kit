@@ -152,3 +152,38 @@ def test_a_halo_is_drawn_whole_under_its_lettering():
     assert 'fill="#fff"' in halo and 'stroke="#fff"' in halo and "paint-order" not in halo
     assert 'fill="#000"' in letters and "stroke" not in letters and letters.endswith("Lessay")
     assert plain.endswith('<text x="3" y="4" fill="#000">plain')
+
+
+def _river(name, rank, lon0, lon1, lat=40.0):
+    pts = [[lon0 + (lon1 - lon0) * i / 20, lat] for i in range(21)]
+    return {"properties": {"name": name, "scalerank": rank}, "geometry": {"type": "LineString", "coordinates": pts}}
+
+
+def test_a_wide_map_draws_only_its_longest_great_rivers():
+    from wwiibook.cartography import river_scale, select_rivers
+    f = geo.fit((-125.0, 29.0, -70.0, 49.5), 400, pad=0)          # the United States: a continent's span
+    assert river_scale(f)[1] is not None
+    great = [_river(f"Great {i}", 1 + i % 4, -120.0, -120.0 + 30 - i, lat=31 + i) for i in range(10)]
+    tributary = [_river("Creek", 7, -100.0, -95.0), _river("Short", 3, -90.0, -89.5)]
+    names = {ft["properties"]["name"] for ft, _ in select_rivers(great + tributary, f)}
+    assert "Creek" not in names and "Short" not in names        # a minor rank, and a great river's stub
+    assert names == {f"Great {i}" for i in range(river_scale(f)[1])}   # the longest few, longest first
+
+
+def test_a_regional_map_keeps_the_detail_and_a_number_overrides():
+    from wwiibook.cartography import select_rivers
+    close = geo.fit((10.78, 48.52, 11.5, 49.34), 400, pad=0)        # a battery's week on the Danube
+    feats = [_river("Donau", 2, 10.8, 11.4, lat=48.7), _river("Altmühl", 7, 10.9, 11.3, lat=49.0),
+             _river("Brook", 9, 11.0, 11.1, lat=48.9)]
+    assert {ft["properties"]["name"] for ft, _ in select_rivers(feats, close)} == {"Donau", "Altmühl"}
+    assert len(select_rivers(feats, close, 9)) == 3 and select_rivers(feats, close, 0) == []
+    wide = geo.fit((-125.0, 29.0, -70.0, 49.5), 400, pad=0)
+    many = [_river(f"R{i}", 6, -120.0, -119.0, lat=30 + i) for i in range(20)]
+    assert len(select_rivers(many, wide, 7)) == 20 and select_rivers(many, wide) == []
+
+
+def test_europe_keeps_the_rhine():
+    from wwiibook.cartography import select_rivers
+    f = geo.fit((-3.6, 48.6, 14.2, 52.6), 400, pad=0)               # northern Europe: a theater
+    feats = [_river("Rhine", 4, 6.0, 8.5, lat=50.5), _river("Ruhr", 7, 7.0, 7.8, lat=51.4)]
+    assert {ft["properties"]["name"] for ft, _ in select_rivers(feats, f)} == {"Rhine"}

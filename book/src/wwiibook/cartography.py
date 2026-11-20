@@ -287,6 +287,101 @@ class Labels:
         return "".join(out)
 
 
+# ---------------------------------------------------------------- rivers by the map's scale
+
+RIVER_LAYERS = ("ne_10m_rivers_lake_centerlines", "ne_10m_rivers_europe", "ne_10m_rivers_north_america")
+
+# A river is drawn by the map's span (its longer side, km): (at least this span, the largest scalerank, at most so many
+# rivers, each at least this share of the span inside the frame). A continent or an ocean shows only its great rivers
+# (the Mississippi, the Missouri, the Columbia, not their tributaries), a theater its major ones (the Rhine, the
+# Danube, the Seine are scalerank 2 to 4), a region the detail the old fixed rank of 7 gave.
+RIVER_SCALE = (
+    (2500.0, 5, 8, 0.10),     # the United States, an ocean
+    (1000.0, 5, 12, 0.04),    # a theater: northern Europe, North Africa
+    (400.0, 6, None, 0.0),    # a country's coast: the eastern seaboard
+    (0.0, 7, None, 0.0),      # a region: a battery's week, a town
+)
+
+
+def span_km(f: geo.Frame) -> float:
+    """A frame's longer side in kilometres (east-west at its middle latitude, or north-south)."""
+    mid = math.radians((f.lat0 + f.lat1) / 2)
+    return max((f.lon1 - f.lon0) * 111.32 * math.cos(mid), (f.lat1 - f.lat0) * 110.57)
+
+
+def river_scale(f: geo.Frame) -> tuple[int, int | None, float]:
+    """(largest scalerank, at most so many rivers, the least share of the span) for a frame, from RIVER_SCALE."""
+    km = span_km(f)
+    _, rank, most, share = next(t for t in RIVER_SCALE if km >= t[0])
+    return rank, most, share
+
+
+def _km_inside(geom: dict, box: tuple[float, float, float, float]) -> float:
+    """A line's length inside the box, km (each segment whose midpoint falls inside)."""
+    w, s, e, n = box
+    total = 0.0
+    for line in _lines(geom):
+        for (a, b), (c, d) in zip(line, line[1:]):
+            mx, my = (a + c) / 2, (b + d) / 2
+            if w <= mx <= e and s <= my <= n:
+                total += math.hypot((c - a) * math.cos(math.radians(my)), d - b) * 111.2
+    return total
+
+
+def select_rivers(features: list[dict], f: geo.Frame, rivers: int | str | None = "auto") -> list[tuple[dict, float]]:
+    """The river features a frame draws, with each one's rank. A number is the largest scalerank, every river up to it
+    (the figure's override); "auto" or None takes the rank from the map's span and, on a wide map, keeps only the
+    longest few: a river is its features of one name (or Natural Earth's river number), measured inside the frame."""
+    if rivers is not None and rivers != "auto":
+        top, most, share = int(rivers), None, 0.0
+    else:
+        top, most, share = river_scale(f)
+    if top <= 0:
+        return []
+    kept = []
+    for feat in features:
+        rank = feat["properties"].get("scalerank")
+        rank = 10 if rank is None else rank
+        if rank <= top and feat["geometry"]:
+            kept.append((feat, rank))
+    if most is None and not share:
+        return kept
+    box = (f.lon0, f.lat0, f.lon1, f.lat1)
+    groups: dict[str, list] = {}
+    for feat, rank in kept:
+        p = feat["properties"]
+        key = p.get("name") or f"#{p.get('rivernum')}"
+        g = groups.setdefault(key, [rank, 0.0, []])
+        g[0] = min(g[0], rank)
+        g[1] += _km_inside(feat["geometry"], box)
+        g[2].append((feat, rank))
+    least = share * span_km(f)
+    ranked = sorted((g for g in groups.values() if g[1] > 0 and g[1] >= least), key=lambda g: -g[1])
+    return [fr for g in ranked[:most] for fr in g[2]]
+
+
+LAKE_LAYERS = ("ne_10m_lakes", "ne_10m_lakes_europe", "ne_10m_lakes_north_america")
+WIDE_LAKES = (1000.0, 6)      # on a map this wide (km) or wider, only the world layer's lakes up to this scalerank
+
+
+def select_lakes(features: list[dict], f: geo.Frame) -> list[dict]:
+    """On a wide map, the larger lakes alone (the supplements' ponds print as specks); on a close one, every lake."""
+    if span_km(f) < WIDE_LAKES[0]:
+        return features
+    return [ft for ft in features if _rank(ft) <= WIDE_LAKES[1]]
+
+
+def lakes_drawn(f: geo.Frame) -> list[dict]:
+    """select_lakes over Natural Earth's lake layers: the supplements only on a map narrower than WIDE_LAKES."""
+    names = LAKE_LAYERS if span_km(f) < WIDE_LAKES[0] else LAKE_LAYERS[:1]
+    return select_lakes([ft for name in names for ft in natural(name)["features"]], f)
+
+
+def rivers_drawn(f: geo.Frame, rivers: int | str | None = "auto") -> list[tuple[dict, float]]:
+    """select_rivers over Natural Earth's three river layers."""
+    return select_rivers([ft for name in RIVER_LAYERS for ft in natural(name)["features"]], f, rivers)
+
+
 # ---------------------------------------------------------------- the base
 
 def _rank(ft: dict) -> float:
@@ -295,11 +390,12 @@ def _rank(ft: dict) -> float:
 
 
 def base(f: geo.Frame, x0: float, H: float, *, relief_zoom: int | None = None, admin: bool = False,
-         countries: tuple[str, ...] = (), rivers: int = 7, towns: int = 0, town_rank: int = 8,
+         countries: tuple[str, ...] = (), rivers: int | str | None = "auto", towns: int = 0, town_rank: int = 8,
          places: tuple = (), labels: Labels | None = None) -> tuple[list[str], list[str]]:
     """The base map for a frame placed at x0: (layers under the record's marks, labels over them).
 
-    rivers: the largest Natural Earth scalerank drawn (lower is more important); towns: how many towns to try to label
+    rivers: "auto" (or None) draws them by the map's scale (river_scale); a number overrides it, every river up to that
+    Natural Earth scalerank (lower is more important; 0 none, 10 to 12 the supplements' detail); towns: how many towns to try to label
     (most important first), down to town_rank; admin: state and province lines, and region names for `countries`
     (Natural Earth's admin names, e.g. "United States of America")."""
     box = (f.lon0, f.lat0, f.lon1, f.lat1)
@@ -321,26 +417,20 @@ def base(f: geo.Frame, x0: float, H: float, *, relief_zoom: int | None = None, a
                      f'preserveAspectRatio="none" clip-path="url(#{clip})" href="{href}"/>')
         under += [f'<path d="{d}" fill="none" stroke="{COAST}" stroke-width="0.5" stroke-linejoin="round"/>'
                   for d in land]
-    for name in ("ne_10m_lakes", "ne_10m_lakes_europe", "ne_10m_lakes_north_america"):
-        for feat in natural(name)["features"]:
-            for ring in _lines(feat["geometry"] or {"type": ""}):
-                if _touches(ring, wide):
-                    d = _path(f, x0, ring, tol=0.3, close=True)
-                    if d:
-                        under.append(f'<path d="{d}" fill="{SEA}" stroke="{COAST}" stroke-width="0.35"/>')
-    for name in ("ne_10m_rivers_lake_centerlines", "ne_10m_rivers_europe", "ne_10m_rivers_north_america"):
-        for feat in natural(name)["features"]:
-            rank = feat["properties"].get("scalerank")
-            rank = 10 if rank is None else rank
-            if rank > rivers or not feat["geometry"]:
-                continue
-            width = max(0.3, 1.05 - 0.065 * rank)
-            for line in _lines(feat["geometry"]):
-                if _touches(line, wide):
-                    d = _path(f, x0, line)
-                    if d:
-                        under.append(f'<path d="{d}" fill="none" stroke="{WATER}" stroke-width="{width:.2f}" '
-                                     f'stroke-linecap="round" stroke-linejoin="round"/>')
+    for feat in lakes_drawn(f):
+        for ring in _lines(feat["geometry"] or {"type": ""}):
+            if _touches(ring, wide):
+                d = _path(f, x0, ring, tol=0.3, close=True)
+                if d:
+                    under.append(f'<path d="{d}" fill="{SEA}" stroke="{COAST}" stroke-width="0.35"/>')
+    for feat, rank in rivers_drawn(f, rivers):
+        width = max(0.3, 1.05 - 0.065 * rank)
+        for line in _lines(feat["geometry"]):
+            if _touches(line, wide):
+                d = _path(f, x0, line)
+                if d:
+                    under.append(f'<path d="{d}" fill="none" stroke="{WATER}" stroke-width="{width:.2f}" '
+                                 f'stroke-linecap="round" stroke-linejoin="round"/>')
     if admin:
         for feat in natural("ne_10m_admin_1_states_provinces_lines")["features"]:
             if countries and feat["properties"].get("ADM0_NAME", feat["properties"].get("adm0_name")) not in countries:
