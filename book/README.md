@@ -168,6 +168,15 @@ lacks. Every face is SIL OFL, bundled in `src/wwiibook/fonts/`. `tests/test_font
 face the package doesn't ship (Typst substitutes silently, and knows some families by other names: Plex Condensed as
 "IBM Plex Sans").
 
+**Chapter heads.** `running-text` opens a chapter on a new page (a recto unless `recto: false`) with its head across
+both text columns: the eyebrow, the title at 30 pt, the standfirst at 12 pt italic, a rule. `opener: "column"` opens
+it where the chapter before ends instead, with no page break: the same head scaled to one text column (the eyebrow as
+before, the title at 17 pt, a short standfirst at 10.5 pt italic, the rule), three lines of space above it, the whole
+a whole number of the grid's lines so the text after it stays on the baseline in both columns. It keeps with the text
+after it, restarts the notes as the full opener does, and leaves the page its running head. It is for the shorter
+chapters of a section, which would otherwise each leave the page before them partly empty; `tests/test_column_opener.py`
+checks it.
+
 **Notes.** On the grid a note is numbered in the text and set in the outer column beside its call. `on-grid.with(notes:
 "end")` (or `--input notes=end` to the build, which overrides it) gives the column up: the text's two columns run across
 the whole live area (252 pt each, gutter 18 pt; the margins, folios and running heads as before), the calls stay, and

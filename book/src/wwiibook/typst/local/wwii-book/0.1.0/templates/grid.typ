@@ -57,7 +57,9 @@
              top: g.top + p.bleed.top, bottom: g.bottom + p.bleed.bottom),
     columns: 2, header-ascent: g.head, footer-descent: g.foot,
     header: context {
-      if query(heading.where(level: 1)).any(h => h.location().page() == here().page()) { return }
+      // none on a page a chapter opens at its top; a chapter opened in a column (`opener: "column"`) leaves it
+      let opens = h => h.location().page() == here().page() and not (h.has("label") and h.label == <wwii-column-head>)
+      if query(heading.where(level: 1)).any(opens) { return }
       let recto = recto-at(here().page())
       let before = query(heading.where(level: 1).before(here()))
       let chapter = if before.len() > 0 { before.last().body } else { [] }
