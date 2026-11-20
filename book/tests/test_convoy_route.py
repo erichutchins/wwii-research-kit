@@ -106,3 +106,41 @@ def test_no_routed_convoy_is_an_error(engagement):
     (convoy_route.paths.records() / "engagements" / engagement / "engagement.json").write_text(json.dumps(changed))
     with pytest.raises(ValueError):
         convoy_route.route_figure(engagement, 5.5)
+
+
+def test_the_route_alone_fits_a_column_and_marks_the_attack(engagement):
+    svg, notes = convoy_route.route_figure(engagement, 3.3, zoom=False)
+    root = ET.fromstring(svg)
+    w, h = float((root.get("width") or "")[:-2]), float((root.get("height") or "")[:-2])
+    assert w <= 3.3 * 72 + 0.1 and h <= convoy_route.MAX_H + 0.1
+    assert notes["layout"] == "alone" and abs(notes["width"] * 72 - w) < 0.5
+    assert not [e for e in root.iter(f"{NS}svg") if e.get("class") == "zoom"]      # no engagement map, no numbers
+    assert notes["marks"] == []
+    attacks = [e for e in root.iter(f"{NS}path") if e.get("class") == "attack"]
+    assert len(attacks) == 1 and attacks[0].get("fill") == "#2a6fc9"
+    assert notes["attacks"][0]["cite"] == "rg38-1/p12" and notes["attacks"][0]["gmt"] == "22 Nov 1532Z"
+    ends = [e.text for e in root.iter(f"{NS}text") if e.get("class") == "end"]
+    assert list(dict.fromkeys(ends)) == ["Keelung, origin", "Naha, destination"]     # (the halo layer repeats them)
+    assert notes["origin"] == "Keelung" and notes["destination"] == "Naha"
+    assert "north" in svg.lower() or "N</text>" in svg                                # the north arrow
+    assert "nautical mile" in svg                                                    # the scale at sea
+
+
+def test_the_route_alone_never_runs_taller_than_asked(engagement):
+    changed = json.loads(json.dumps(ENGAGEMENT))
+    changed["convoys"]["taka-206"]["route"] = ["keelung", "w-etw", "naha", "moji"]
+    (convoy_route.paths.records() / "engagements" / engagement / "engagement.json").write_text(json.dumps(changed))
+    for width, height in ((7.0, 3.0), (3.3, None), (7.0, None)):
+        svg, _ = convoy_route.route_figure(engagement, width, height, zoom=False)
+        root = ET.fromstring(svg)
+        h = float((root.get("height") or "")[:-2])
+        assert h <= (height * 72 if height else convoy_route.MAX_H) + 0.1
+        assert float((root.get("width") or "")[:-2]) <= width * 72 + 0.1
+
+
+def test_the_map_and_overview_are_held_to_the_page(engagement):
+    changed = json.loads(json.dumps(ENGAGEMENT))
+    changed["convoys"]["taka-206"]["route"] = ["keelung", "w-etw", "naha", "moji"]
+    (convoy_route.paths.records() / "engagements" / engagement / "engagement.json").write_text(json.dumps(changed))
+    svg, _ = convoy_route.route_figure(engagement, 7.0, layout="above")
+    assert float((ET.fromstring(svg).get("height") or "")[:-2]) <= convoy_route.MAX_H + 0.5

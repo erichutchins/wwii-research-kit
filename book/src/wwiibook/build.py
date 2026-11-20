@@ -206,7 +206,8 @@ def _convoy_route(req: dict, build: Path) -> dict:
     """A convoy's whole route on the lanes of the time, joined to the engagement's map (convoy_route.py)."""
     from . import convoy_route
     svg, notes = convoy_route.route_figure(req["engagement"], req.get("width") or 7.0, req.get("height"), req.get("box"),
-                                           req.get("layout") or "auto")
+                                           req.get("layout") or "auto", zoom=req.get("zoom", True),
+                                           follow=req.get("follow"))
     name = f"{_slug(req['key'])}.svg"
     (build / name).write_text(svg)
     return {"kind": "convoy-route", "path": f"build/{name}", **notes}
@@ -218,11 +219,18 @@ def _convoy_ships(req: dict, build: Path) -> dict:
     return convoy_ships.prepare(req, build)
 
 
+def _torpedoes(req: dict, build: Path) -> dict:
+    """Each torpedo of an attack as a silhouette, forward and after tubes, hits in red (torpedoes.py)."""
+    from . import torpedoes
+    return torpedoes.prepare(req, build)
+
+
 PREPARERS: dict[str, Callable[[dict, Path], dict]] = {"facsimile": _facsimile, "records": _records, "qr": _qr,
                                                       "figure": _figure, "picture": _picture, "plate": _plate,
                                                       "atlas": _atlas, "chain": _chain,
                                                       "aircraft": _aircraft, "board": _board,
-                                                      "firecontrol": _fire_control, "convoy-route": _convoy_route, "convoyships": _convoy_ships}
+                                                      "firecontrol": _fire_control, "convoy-route": _convoy_route, "convoyships": _convoy_ships,
+                                                      "torpedoes": _torpedoes}
 
 
 def _query(book: Path, selector: str, root: Path, inputs: dict[str, str] | None = None) -> list:

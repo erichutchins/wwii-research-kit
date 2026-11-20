@@ -55,6 +55,8 @@ scans are about 1,800 pixels wide, so about six inches is the most they can prin
 | `aircraft/photos.yml` | The cards' photographs: Commons file, caption, credit, licence, whether a face shows and whether the editor approved it |
 | `insignia/insignia.yml` | Shoulder sleeve insignia by unit id: the Commons file, its licence and credit, what is checked of its period |
 | `src/wwiibook/figures.py` | An engagement's map and timeline as SVG, from `records/engagements/<id>/engagement.json` |
+| `src/wwiibook/convoy_route.py` | A convoy's route on the lanes of the time beside its engagement's map, or alone (`zoom: false`): origin and destination named, the attack on it, held to the page |
+| `src/wwiibook/torpedoes.py` | Each torpedo of an attack as a silhouette, forward and after tubes, red where the sheet records a hit (`torpedo-salvos`) |
 | `src/wwiibook/typst/local/wwii-book/0.1.0/` | The Typst package: `core.typ` (tokens, page, type, the request plumbing), `components/`, `templates/`, `requests/` (one file each), and `lib.typ`, which imports them and assembles `init` |
 | `examples/` | Books built from the public records alone, naming no one's relative |
 
@@ -68,6 +70,22 @@ kit's note on the record (what the position is, a doubt, an assumed zone), and t
 (contacts, log entries, depth charges) are cited in groups, and the clocks the records kept are named. The timeline
 shades night (sunrise and sunset at the engagement's centre) and joins each attack to the other side's record of it
 with the minutes between the two.
+
+## A convoy's route, and an attack's torpedoes
+
+`convoy-route(engagement, width:, height:, zoom: false, follow:)` draws the convoy's route alone, for a column or the
+page's width: its lane through `reference/lanes/lanes.yml` (dashed between two ports, dotted through an assumed
+waypoint: approximate, never traced from a chart), its origin and destination named, its ports and dated stops, and the
+followed boat's attacks on it (diamonds in her colour, at her attack sheets' positions, dated by her own clock). North
+and a scale in nautical miles sit in the strip above the map, clear of the ports. It is drawn to the width and fitted
+under the height (8.4 in at most, the combined figure too), so a float can't run off the page. With `zoom: true` (the
+default) the overview stands beside the numbered engagement map, as before.
+
+`torpedo-salvos(path, attacks:)` draws each torpedo of the named attacks of a boat's `attacks.csv` as a small
+silhouette: one row an attack, the after tubes (7-10) pointing aft and the forward tubes (1-6) forward, in the order
+fired, each tube's number beside it; red where the sheet types "Hit", outlined for a miss or no result. A sheet that
+types its hits once for the salvo (`hits` in `attack_sheets.yml`, "2 Hits") colours no torpedo: the count is written
+beside the salvo, a red dot a hit. It fits a 194 pt column. `examples/torpedo-salvos/` shows it.
 
 ## A unit's chain of command
 
