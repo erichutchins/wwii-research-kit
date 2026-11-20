@@ -18,7 +18,7 @@ import numpy as np
 from PIL import Image
 
 from . import cartography as carto
-from . import halo, mapmarks, symbols
+from . import geo, halo, mapmarks, symbols
 
 SKY = np.array([247, 246, 240], dtype=np.float32)
 SEA = np.array([196, 212, 219], dtype=np.float32)
@@ -192,17 +192,18 @@ def view(box: list[float], width_in: float, height_in: float | None, *, azimuth:
         return ew <= lon <= ee and es <= lat <= en
 
     placer = carto.Labels((0, 0, W, H))
-    # rivers (Natural Earth 1:10m, as the plan maps draw them; `rivers` the largest scalerank drawn, 0 for none),
+    # rivers (Natural Earth 1:10m, as the plan maps draw them; `rivers` as select_rivers takes it: 0 for none, a list of
+    # names, or the largest scalerank drawn),
     # draped on the ground: each line densified so it follows the terrain rather than cutting through it
     if rivers:
+        f_rivers = geo.fit((ew, es, ee, en), 400, pad=0)
         for name in ("ne_10m_rivers_lake_centerlines", "ne_10m_rivers_europe", "ne_10m_rivers_north_america"):
             try:
                 gj = carto.natural(name)
             except Exception:  # a missing layer is a missing layer, not a broken figure
                 continue
             for feat in gj["features"]:
-                rank = feat["properties"].get("scalerank", 99)
-                if rank > rivers or not feat["geometry"]:
+                if not feat["geometry"] or not carto.select_rivers([feat], f_rivers, rivers):
                     continue
                 for line in carto._lines(feat["geometry"]):
                     pts = []

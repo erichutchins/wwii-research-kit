@@ -295,6 +295,8 @@ RIVER_LAYERS = ("ne_10m_rivers_lake_centerlines", "ne_10m_rivers_europe", "ne_10
 # rivers, each at least this share of the span inside the frame). A continent or an ocean shows only its great rivers
 # (the Mississippi, the Missouri, the Columbia, not their tributaries), a theater its major ones (the Rhine, the
 # Danube, the Seine are scalerank 2 to 4), a region the detail the old fixed rank of 7 gave.
+NAMED_RANK = 4          # a river named by the figure is drawn at least as wide as this rank's (the Rhine's)
+
 RIVER_SCALE = (
     (2500.0, 5, 8, 0.10),     # the United States, an ocean
     (1000.0, 5, 12, 0.04),    # a theater: northern Europe, North Africa
@@ -328,11 +330,25 @@ def _km_inside(geom: dict, box: tuple[float, float, float, float]) -> float:
     return total
 
 
-def select_rivers(features: list[dict], f: geo.Frame, rivers: int | str | None = "auto") -> list[tuple[dict, float]]:
-    """The river features a frame draws, with each one's rank. A number is the largest scalerank, every river up to it
-    (the figure's override); "auto" or None takes the rank from the map's span and, on a wide map, keeps only the
-    longest few: a river is its features of one name (or Natural Earth's river number), measured inside the frame."""
-    if rivers is not None and rivers != "auto":
+def select_rivers(features: list[dict], f: geo.Frame, rivers=None) -> list[tuple[dict, float]]:
+    """The river features a frame draws, with each one's rank. None or 0 (the default) draws none: a river is drawn
+    only where a figure asks for it, because it means something there (a crossing, a front, a harbor). A list of names
+    draws those rivers alone, matched to Natural Earth's `name` or `name_en` without regard to case (list each spelling
+    the layers use: ("Rhine", "Rhein", "Rhin")); a number draws every river up to that scalerank; "auto" takes the rank
+    from the map's span and, on a wide map, keeps only the longest few: a river is its features of one name (or Natural
+    Earth's river number), measured inside the frame."""
+    if not rivers:
+        return []
+    if isinstance(rivers, (list, tuple)):          # a river asked for by name prints at least a major river's width
+        names = {str(n).casefold() for n in rivers}
+        out = []
+        for feat in features:
+            p = feat["properties"]
+            if feat["geometry"] and {str(p.get("name") or "").casefold(), str(p.get("name_en") or "").casefold()} & names:
+                rank = p.get("scalerank")
+                out.append((feat, min(NAMED_RANK, 10 if rank is None else rank)))
+        return out
+    if rivers != "auto":
         top, most, share = int(rivers), None, 0.0
     else:
         top, most, share = river_scale(f)
@@ -377,7 +393,7 @@ def lakes_drawn(f: geo.Frame) -> list[dict]:
     return select_lakes([ft for name in names for ft in natural(name)["features"]], f)
 
 
-def rivers_drawn(f: geo.Frame, rivers: int | str | None = "auto") -> list[tuple[dict, float]]:
+def rivers_drawn(f: geo.Frame, rivers=None) -> list[tuple[dict, float]]:
     """select_rivers over Natural Earth's three river layers."""
     return select_rivers([ft for name in RIVER_LAYERS for ft in natural(name)["features"]], f, rivers)
 
@@ -390,12 +406,12 @@ def _rank(ft: dict) -> float:
 
 
 def base(f: geo.Frame, x0: float, H: float, *, relief_zoom: int | None = None, admin: bool = False,
-         countries: tuple[str, ...] = (), rivers: int | str | None = "auto", towns: int = 0, town_rank: int = 8,
+         countries: tuple[str, ...] = (), rivers=None, towns: int = 0, town_rank: int = 8,
          places: tuple = (), labels: Labels | None = None) -> tuple[list[str], list[str]]:
     """The base map for a frame placed at x0: (layers under the record's marks, labels over them).
 
-    rivers: "auto" (or None) draws them by the map's scale (river_scale); a number overrides it, every river up to that
-    Natural Earth scalerank (lower is more important; 0 none, 10 to 12 the supplements' detail); towns: how many towns to try to label
+    rivers: none unless asked (select_rivers): a list of names draws those rivers; a number every river up to that
+    Natural Earth scalerank (lower is more important; 10 to 12 the supplements' detail); "auto" by the map's scale; towns: how many towns to try to label
     (most important first), down to town_rank; admin: state and province lines, and region names for `countries`
     (Natural Earth's admin names, e.g. "United States of America")."""
     box = (f.lon0, f.lat0, f.lon1, f.lat1)

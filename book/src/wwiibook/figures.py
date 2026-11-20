@@ -464,8 +464,9 @@ def route_map(data: dict, width_in: float, panels: list[dict], labels: list[str]
     working tolerance (a 1 km grid square; a town, about 6 km).
 
     Each panel is a dict: box (west, south, east, north); title; and the base's options: relief (a terrain-tile zoom),
-    admin (state and province lines), countries (whose region names to print), rivers (by the map's scale unless a
-    number is given: then every river up to that Natural Earth rank), towns (how many to try to label), units (a date: the 12th Army Group's division boxes that day).
+    admin (state and province lines), countries (whose region names to print), rivers (none unless asked: a list of the
+    rivers to draw by name, where a river means something on the map; a number for every river up to that Natural
+    Earth rank; "auto" by the map's scale), towns (how many to try to label), units (a date: the 12th Army Group's division boxes that day).
     Fronts are the 12th Army Group's traced lines for the days given, the last one strongest."""
     from . import cartography as carto
     stops = [s for s in data["stops"] if not window or (s["from"] or "") <= window[1] and (s["to"] or "9") >= window[0]]
@@ -526,7 +527,7 @@ def route_map(data: dict, width_in: float, panels: list[dict], labels: list[str]
     for i, (f, x0, p) in enumerate(zip(frames, x0s, panels)):
         cid = f"p{i}"
         u, o = carto.base(f, x0, H, relief_zoom=p.get("relief"), admin=p.get("admin", False),
-                          countries=tuple(p.get("countries", ())), rivers=p.get("rivers", "auto"), towns=p.get("towns", 0),
+                          countries=tuple(p.get("countries", ())), rivers=p.get("rivers"), towns=p.get("towns", 0),
                           town_rank=p.get("town_rank", 8), places=tuple(tuple(x) for x in p.get("places", ())),
                           labels=placers[i])
         under.append(f'<defs><clipPath id="{cid}"><rect x="{x0:.1f}" width="{f.width:.1f}" height="{H:.1f}"/></clipPath></defs>')
