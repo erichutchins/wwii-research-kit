@@ -19,6 +19,9 @@
 #   seafloor.csv, weather.csv, army/seafloor.csv, seabees/weather.csv (NOAA, ERA5, ISD downloads),
 #   relief/ (terrain tiles) and roads/oss967-primary.geojson (traced from a scan in sources/).
 set -e
+# A git hook runs with GIT_DIR (and, in a worktree, GIT_INDEX_FILE) set to the kit's, which would make every
+# `git -C records` below read the kit's repository and call each generated file untracked.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
 tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT
 stale=0
