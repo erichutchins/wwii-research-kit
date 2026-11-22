@@ -3,13 +3,14 @@
 // tools/build_silhouettes.py. This file loads them and draws the plan-view hull used for map symbols.
 //
 // SILHOUETTES is a promise; when it resolves, AIRCRAFT (traced aircraft: plan, front and profile views, span
-// 100 units), SHIPS (ship profiles in feet, stern at x = 0, waterline at y = 0, with `d` ready to draw) and
+// 100 units), SHIPS (ship profiles in feet, stern at x = 0, waterline at y = 0, with `d` ready to draw), VEHICLES
+// (side views in feet, rear at x = 0, the ground at y = 0, likewise) and
 // SIL_CATEGORIES (one generic shape per kind of ship, viewBox 0 0 120 24) are set on window. The JSON is found
 // relative to this script, so a page anywhere can load it from wherever the kit is.
 
 const SILHOUETTES_URL = new URL("../records/silhouettes/silhouettes.json", document.currentScript.src).href;
 const SILHOUETTES = fetch(SILHOUETTES_URL).then(r => r.json()).then(s => {
-  Object.assign(window, { AIRCRAFT: s.aircraft, SHIPS: s.ships, SIL_CATEGORIES: s.categories });
+  Object.assign(window, { AIRCRAFT: s.aircraft, SHIPS: s.ships, VEHICLES: s.vehicles || {}, SIL_CATEGORIES: s.categories });
   return s;
 });
 

@@ -158,7 +158,7 @@ def main():
     sil = RECORDS / "silhouettes" / "silhouettes.yml"
     if sil.exists():
         y = records.load_yaml(sil)
-        cited += [(sil, c) for group in ("aircraft", "ships") for c in y.get(group, {}).values()]
+        cited += [(sil, c) for group in ("aircraft", "ships", "vehicles") for c in y.get(group, {}).values()]
     for path, c in cited:
         if not c.get("sources"):
             bad.append(f"{rel(path)}: {c.get('name', c.get('event', '?'))} cites no source")

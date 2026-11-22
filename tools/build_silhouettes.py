@@ -52,7 +52,7 @@ def ship_path(parts):
 def main():
     y = records.load_yaml(DIR / "silhouettes.yml")
     sources = records.load_yaml(RECORDS / "SOURCES.yml")
-    for group in ("aircraft", "ships"):
+    for group in ("aircraft", "ships", "vehicles"):
         for k, s in y[group].items():
             missing = [x for x in s.get("sources", []) if x not in sources] or ([] if s.get("sources") else ["(none)"])
             if missing:
@@ -61,10 +61,13 @@ def main():
     out = {"categories": y["categories"],
            "aircraft": {k: {f: v for f, v in a.items() if f != "crop"} for k, a in y["aircraft"].items()},
            "ships": {k: {**{f: v for f, v in s.items() if f != "crop"}, "d": ship_path(s["parts"])}
-                     for k, s in y["ships"].items()}}
+                     for k, s in y["ships"].items()},
+           # vehicles: side views in feet, rear at x = 0, the ground at y = 0, drawn as ships are
+           "vehicles": {k: {**{f: v for f, v in s.items() if f != "crop"}, "d": ship_path(s["parts"])}
+                        for k, s in y.get("vehicles", {}).items()}}
     records.write_json(DIR / "silhouettes.json", out, separators=(",", ":"), ensure_ascii=False)
     print(f"wrote {rel(DIR / 'silhouettes.json')}: {len(out['categories']['shapes'])} categories, "
-          f"{len(out['aircraft'])} aircraft, {len(out['ships'])} ships")
+          f"{len(out['aircraft'])} aircraft, {len(out['ships'])} ships, {len(out['vehicles'])} vehicles")
 
 
 if __name__ == "__main__":

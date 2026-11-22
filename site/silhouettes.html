@@ -42,6 +42,11 @@
     about 4 feet are left out.</p>
   <div class="plates" id="ships"></div>
 
+  <h2>Vehicles</h2>
+  <p>Side views, front to the right, all at one scale, traced from the dimensioned side elevations of TM 9-2800 and
+    scaled to the printed length.</p>
+  <div class="plates" id="vehicles"></div>
+
   <h2>Kinds of ship, for the engagement pages</h2>
   <p id="cat-note"></p>
   <div class="plates small" id="categories"></div>
@@ -92,6 +97,15 @@ Promise.all([SILHOUETTES, fetch(RECORDS + "ships.json").then(r => r.json()),
     const used = usedBy(key);
     plate(document.getElementById("ships"), d, x.name, `${x.length} ft long.`, `Drawn to: ${x.plate}.`,
           used.length && `Draws: ${used.join(", ")}.`);
+  }
+  // vehicles: one scale, the longest fills the width; the ground drawn
+  const vs = Object.values(s.vehicles || {});
+  if (vs.length) {
+    const maxV = Math.max(...vs.map(x => x.length)), VW = 300, kv = (VW - 10) / maxV, vtop = 12 * kv;
+    for (const x of vs) {
+      const d = svg(`0 ${-vtop - 4} ${VW} ${vtop + 8}`, x.name, [[x.d, `translate(5,0) scale(${kv})`], [`M0,0L${VW},0`, null, "wl"]]);
+      plate(document.getElementById("vehicles"), d, x.name, `${x.length} ft long.`, `Traced from: ${x.plate}.`);
+    }
   }
   // generic shapes
   document.getElementById("cat-note").textContent = s.categories.note + " Drawn by hand.";
