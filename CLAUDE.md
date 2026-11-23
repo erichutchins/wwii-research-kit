@@ -115,7 +115,8 @@ PRV001 and runs the kit's `smoke.py` over its own pages (`views()` and `run()`).
   the files by header, has uv build each group's environment (`uv sync --script`, which honours `requires-python`) and
   runs ty once per group at the header's oldest Python. Nothing is allowed unresolved: an import a header doesn't
   declare fails. A file with no header fails. Findings in the older tools are in `ty-baseline.json` (`--update-baseline`
-  rewrites it), and new code adds none.
+  rewrites it), and new code adds none. The book package is checked as one environment (`book/.venv`) at the same
+  pin, its older findings in `book/ty-baseline.json`.
 - The private list (`sources/private-terms.txt`, never committed) is written by the family repository that holds this
   kit; without it PRV001 checks nothing and says so.
 

@@ -197,6 +197,8 @@
   if earlier.len() > 0 { sel = selector(<wwii-note>).after(earlier.last().location()).before(here()) }
   let notes = query(sel)
   if notes.len() == 0 { return }
+  // the chapter's figures still waiting to float go first, so the notes close the section after them
+  place.flush()
   block(above: 20pt, below: 8pt, sticky: true, text(font: tokens.display, weight: "semibold", size: 9pt,
     tracking: 0.12em, upper(heading)))
   set text(font: tokens.body, size: 7.6pt, fill: tokens.ink, hyphenate: true, number-type: "lining", top-edge: 6pt,
@@ -332,7 +334,23 @@
 }
 
 // With the notes at the end, the section's notes come first, then its sources
-#let section-sources(heading: [Sources], titles: (:)) = { endnotes(); _section-sources(heading, titles) }
+// The end mark: a small solid square at the end of a part's text, set against the measure's right edge, so a part
+// closes on purpose before its notes. The volume's build asks for it on a part's last section (`--input end-mark=true`):
+// the section's last `section-sources` sets it before the notes, or `on-grid` at the section's end when it has none.
+// `section-sources(end-mark: true)` sets it where a part ends inside a section (one of several men's parts).
+#let _end-mark() = block(above: 9pt, below: 0pt, width: 100%, align(right, box(width: 5.5pt, height: 5.5pt, fill: tokens.ink)))
+#let end-mark = _end-mark
+#let _end-mark-due() = sys.inputs.at("end-mark", default: "") == "true"
+
+#let section-sources(heading: [Sources], titles: (:), end-mark: auto) = {
+  [#metadata(none) <wwii-section-end>]
+  if end-mark == true { _end-mark() } else if end-mark == auto and _end-mark-due() {
+    // the section's last: none after it
+    context if query(selector(<wwii-section-end>).after(here(), inclusive: false)).len() == 0 { _end-mark() }
+  }
+  endnotes()
+  _section-sources(heading, titles)
+}
 
 // ---------------------------------------------------------------- a part's notes, on pages of their own
 // With `on-grid.with(notes: "part")` (or `--input notes=part`) a section sets no notes and no sources: each note is

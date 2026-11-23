@@ -11,7 +11,14 @@
     _request("picture", "picture:" + path, (path: path))
     let a = get("picture:" + path)
     if a == none { _pending(path, height: if height == auto { 2in } else { height }) }
-    else { image(load(a.path), width: width, height: height, fit: fit) }
+    else {
+      // one photo treatment across the book: a photograph or a scan (JPEG) in a hairline frame, so a pale sky or a
+      // page's margin keeps its edge on white paper; a drawing or a badge (PNG, SVG) unframed
+      let img = image(load(a.path), width: width, height: height, fit: fit)
+      if lower(a.path).ends-with(".jpg") or lower(a.path).ends-with(".jpeg") {
+        box(stroke: 0.3pt + tokens.ink, img)
+      } else { img }
+    }
   }
   picture
 }

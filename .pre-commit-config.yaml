@@ -46,7 +46,7 @@ repos:
         files: ^(tools|reference)/
       - id: test-book
         name: "the book package: its tests (offline) and ty"
-        entry: bash -c 'cd book && uv run --quiet pytest -q && uvx ty check --python .venv src tests'
+        entry: bash -c 'cd book && uv run --quiet pytest -q && uvx ty@0.0.95 check --python .venv --baseline ty-baseline.json src tests'
         language: system
         pass_filenames: false
         files: ^book/

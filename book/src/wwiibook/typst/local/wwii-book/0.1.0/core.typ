@@ -21,6 +21,9 @@
   ink: cmyk(0%, 0%, 0%, 100%), muted: rgb("#5d675b"), rule: rgb("#c4cbbf"), accent: rgb("#a3241b"),
   other: rgb("#e4e7e9"), other-ink: rgb("#4d5963"), paper: rgb("#fbfaf6"), band: rgb("#171c18"), band-ink: rgb("#ecede6"),
   cta: rgb("#c98a1b"), cta-ink: rgb("#8a5a0b"),
+  // a man's service, on his part's openers and chapter heads: the Army's olive drab and the Navy's blue (the Seabees
+  // are the Navy's); dark enough to carry 8 pt capitals on white, and far apart in lightness as well as hue
+  army: rgb("#5b5f2a"), navy: rgb("#1f3d6b"),
   // Typst files IBM Plex Sans Condensed under the family "IBM Plex Sans", condensed
   display: ("IBM Plex Sans", "IBM Plex Sans Condensed", "Shippori Mincho", "Noto Serif JP Symbols", "Arial Narrow"),
   // every face falls back to Shippori Mincho for Japanese (a record's original quoted in a note or a key), then to
@@ -104,7 +107,12 @@
   body
 }
 
-#let eyebrow(body) = text(font: tokens.display, size: 8pt, weight: "semibold", tracking: 0.12em, fill: tokens.muted, upper(body))
+// The service a section belongs to (`--input branch=army|navy`: the volume's build sets it from men.yml) and its colour,
+// for the eyebrows and the rules under a chapter's title; none outside a man's part.
+#let branch-colour(b) = if b == "army" { tokens.army } else if b in ("navy", "ship", "seabees") { tokens.navy } else { none }
+#let section-colour = branch-colour(sys.inputs.at("branch", default: none))
+#let eyebrow(body) = text(font: tokens.display, size: 8pt, weight: "semibold", tracking: 0.12em,
+  fill: if section-colour != none { section-colour } else { tokens.muted }, upper(body))
 
 #let typed(body) = text(font: tokens.typed, size: 0.92em, body)
 

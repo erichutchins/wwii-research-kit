@@ -1,6 +1,7 @@
 // Part of the wwii-book package (lib.typ imports it).
 #import "../core.typ": *
-#import "../components/note.typ": _notes-on, _notes-mode, _note-sources, _side-notes, endnotes, note-counter, _part-sources
+#import "../components/photo-caption.typ": _photo-caption-grid
+#import "../components/note.typ": _notes-on, _notes-mode, _note-sources, _side-notes, endnotes, note-counter, _part-sources, end-mark, _end-mark-due
 
 // ---------------------------------------------------------------- the grid
 // The magazine page's grid, inside Blurb's safe area (core.typ's `blurb-magazine`: trim 612 x 792 pt, bleed 9 pt top,
@@ -90,9 +91,20 @@
   set text(font: tokens.body, size: g.size, .._edges(g.size), number-type: "old-style")
   set par(justify: true, leading: lead, spacing: lead, first-line-indent: (amount: 1.2em, all: false),
           linebreaks: "optimized")
+  // a photograph placed by its path (a section's own `image("build/stories/...jpg")`) in the same hairline frame
+  // the picture request gives one (requests/picture.typ)
+  show image: it => if type(it.source) == str and lower(it.source).match(regex("\\.jpe?g$")) != none {
+    box(stroke: 0.3pt + tokens.ink, it)
+  } else { it }
+  // a figure's caption on the grid as a photograph's is (photo-caption): the notes' type, at the same gap
+  set figure(gap: 0pt)
+  show figure.caption: it => _photo-caption-grid(none, it.body, none, none)
   show heading.where(level: 2): it => block(above: g.baseline + lead, below: lead, sticky: true,
     text(font: tokens.display, size: 9pt, weight: "semibold", tracking: 0.12em, .._edges(g.size), upper(it.body)))
   body
+  // the last section of a man's part closes on the end mark (`--input end-mark=true`: the volume's build sets it), here
+  // when no `section-sources` has set it before its notes
+  if _end-mark-due() { context if query(<wwii-section-end>).len() == 0 { end-mark() } }
   endnotes()      // the end notes not set yet: none once `section-sources` has set them, none beside the text
   _part-sources() // with the notes on the part's pages, every source the book's notes cite, written out for them
 }

@@ -77,10 +77,44 @@ def _picture(req: dict, build: Path) -> dict:
     from PIL import Image
     src = paths.cache() / req["path"]
     name = f"{_slug(req['key'])}{src.suffix.lower()}"
-    shutil.copyfile(src, build / name)
-    with Image.open(src) as im:
-        px = im.size
+    if src.suffix.lower() == ".svg":            # a drawing (a badge, a patch): placed as it is
+        shutil.copyfile(src, build / name)
+        return {"kind": "picture", "path": f"build/{name}", "px": None, "source": req["path"]}
+    from PIL import ImageOps
+    with Image.open(src) as raw:
+        im = ImageOps.exif_transpose(raw)       # a camera's or phone's turn, kept when the file is cropped and saved
+        box = _scan_edges(im) if src.suffix.lower() in (".jpg", ".jpeg") else None
+        if box and box != (0, 0, *im.size):
+            im.crop(box).save(build / name, quality=95, dpi=im.info.get("dpi", (300, 300)))
+            px = (box[2] - box[0], box[3] - box[1])
+        else:
+            shutil.copyfile(src, build / name)
+            px = im.size
     return {"kind": "picture", "path": f"build/{name}", "px": list(px), "source": req["path"]}
+
+
+def _scan_edges(im, most: float = 0.05) -> tuple[int, int, int, int]:
+    """A scan's box without its edges: the even dark or white strips a scanner or a copy stand leaves along a
+    photograph's sides (a line of pixels almost all one tone, near black or near white). No more than `most` of
+    the picture is taken from any side, so a photograph's own dark ground or sky stays."""
+    from PIL import ImageStat
+    g = im.convert("L")
+    w, h = g.size
+
+    def edge(line) -> bool:
+        st = ImageStat.Stat(g.crop(line))
+        return st.stddev[0] < 7 and (st.mean[0] < 45 or st.mean[0] > 238)
+
+    left, top, right, bottom = 0, 0, w, h
+    while left < w * most and edge((left, 0, left + 1, h)):
+        left += 1
+    while right > w * (1 - most) and edge((right - 1, 0, right, h)):
+        right -= 1
+    while top < h * most and edge((0, top, w, top + 1)):
+        top += 1
+    while bottom > h * (1 - most) and edge((0, bottom - 1, w, bottom)):
+        bottom -= 1
+    return (left, top, right, bottom)
 
 
 def _plate(req: dict, build: Path) -> dict:
@@ -225,12 +259,28 @@ def _torpedoes(req: dict, build: Path) -> dict:
     return torpedoes.prepare(req, build)
 
 
+def _silhouette(req: dict, build: Path) -> dict:
+    """A ship's recognition silhouette from the library (records/silhouettes/silhouettes.json: feet, waterline at 0, up
+    negative), as a solid SVG cut to its outline: for a chapter's dateline, a figure's key."""
+    ships = json.loads((paths.records() / "silhouettes" / "silhouettes.json").read_text())["ships"]
+    s = ships[req["ship"]]
+    nums = [float(v) for v in re.findall(r"-?\d+(?:\.\d+)?", s["d"])]
+    xs, ys = nums[0::2], nums[1::2]
+    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+    name = f"{_slug(req['key'])}.svg"
+    (build / name).write_text(
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x0:.1f} {y0:.1f} {x1 - x0:.1f} {y1 - y0:.1f}" '
+        f'width="{x1 - x0:.1f}pt" height="{y1 - y0:.1f}pt"><path d="{s["d"]}" fill="{req.get("fill", "#000000")}"/></svg>')
+    return {"kind": "silhouette", "path": f"build/{name}", "name": s["name"], "plate": s.get("plate", ""),
+            "length": s.get("length"), "ratio": (x1 - x0) / (y1 - y0)}
+
+
 PREPARERS: dict[str, Callable[[dict, Path], dict]] = {"facsimile": _facsimile, "records": _records, "qr": _qr,
                                                       "figure": _figure, "picture": _picture, "plate": _plate,
                                                       "atlas": _atlas, "chain": _chain,
                                                       "aircraft": _aircraft, "board": _board,
                                                       "firecontrol": _fire_control, "convoy-route": _convoy_route, "convoyships": _convoy_ships,
-                                                      "torpedoes": _torpedoes}
+                                                      "torpedoes": _torpedoes, "silhouette": _silhouette}
 
 
 def _query(book: Path, selector: str, root: Path, inputs: dict[str, str] | None = None) -> list:
