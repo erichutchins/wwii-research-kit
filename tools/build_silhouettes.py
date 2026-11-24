@@ -25,6 +25,11 @@ def f(n):
 
 
 def poly(pts):
+    """One part as a subpath, always wound the same way as a box (clockwise on the page), so a nonzero fill draws
+    overlapping parts (a mast over the hull) as one shape and never punches a hole."""
+    area = sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in zip(pts, list(pts[1:]) + list(pts[:1])))
+    if area > 0:
+        pts = list(pts)[::-1]
     return "M" + "L".join(f"{f(x)},{f(-y)}" for x, y in pts) + "Z"
 
 
