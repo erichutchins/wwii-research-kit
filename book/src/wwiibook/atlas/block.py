@@ -20,7 +20,7 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-from .. import figures, halo, mapmarks, symbols
+from .. import figures, halo, mapmarks, paths, symbols
 from . import record, sources, terrain
 from .extent import Extent
 from .panorama import _locator
@@ -72,18 +72,42 @@ class _Camera:
             np.asarray(z) * self.ex * self.s * self.ct
 
 
-def _ground(ex: Extent, cam: _Camera, g: terrain.Grid) -> tuple[Image.Image, float]:
-    """The block as an RGB image on the paper's tone, and the image row of the screen's y = 0."""
+def _sampler(ex: Extent):
+    """The period sheet under the block, as a function from longitude and latitude to RGB. By default IGN's SCAN 50
+    (France); where it doesn't reach, `block: sheet:` names a mosaic already fitted to a plain longitude-latitude grid
+    in the cache (`image`, relative to the cache; `box`, its west, south, east and north edges), such as the Karte des
+    Deutschen Reiches sheets fitted by their neatline corners."""
+    sheet = ex.block.get("sheet")
+    if sheet:
+        im = Image.open(paths.cache() / sheet["image"]).convert("RGB")
+        mos = np.asarray(im, np.float32)
+        bw, bs, be, bn = (float(v) for v in sheet["box"])
+        h, w_ = mos.shape[:2]
+
+        def scan(lon, lat):
+            c = (lon - bw) / (be - bw) * w_ - 0.5
+            r = (bn - lat) / (bn - bs) * h - 0.5
+            return np.stack([ndimage.map_coordinates(mos[..., k], [r, c], order=1, mode="nearest", cval=255)
+                             for k in range(3)], -1)
+        return scan
     w, s, e, n = ex.bbox_lonlat
     mos, (tx0, ty0, zoom) = sources.scan50((w - 0.02, s - 0.02, e + 0.02, n + 0.02),
                                             int(ex.sources.get("scan50_zoom", 14)))
     mos = mos.astype(np.float32)
     n2 = 2 ** zoom
 
-    def scan(lon, lat):
+    def scan50(lon, lat):
         c = ((lon + 180) / 360 * n2 - tx0) * 256 - 0.5
         r = ((1 - np.arcsinh(np.tan(np.radians(lat))) / np.pi) / 2 * n2 - ty0) * 256 - 0.5
         return np.stack([ndimage.map_coordinates(mos[..., k], [r, c], order=1, mode="nearest") for k in range(3)], -1)
+    return scan50
+
+
+def _ground(ex: Extent, cam: _Camera, g: terrain.Grid) -> tuple[Image.Image, float]:
+    """The block as an RGB image on the paper's tone, and the image row of the screen's y = 0."""
+    scan = _sampler(ex)
+    mute = float(ex.block.get("mute", 0.55))                     # how far the sheet is held back toward the paper
+    low = float(ex.block.get("wash_below", 6))                   # metres: the marsh wash (none inland)
 
     W = int(round((cam.u1 - cam.u0) * cam.s))
     us = cam.u0 + (np.arange(W) + 0.5) / cam.s
@@ -116,7 +140,7 @@ def _ground(ex: Extent, cam: _Camera, g: terrain.Grid) -> tuple[Image.Image, flo
         lon, lat = ex.to_lonlat.transform(x, y)
         c = scan(np.asarray(lon), np.asarray(lat))
         gr = c.mean(-1, keepdims=True)
-        c = 255 - (255 - (c * 0.55 + gr * 0.45)) * 0.55          # the sheet, part desaturated and held back
+        c = 255 - (255 - (c * 0.55 + gr * 0.45)) * mute          # the sheet, part desaturated and held back
         c = c * np.array([1.0, 0.985, 0.94])
         # light from the upper left of the picture
         xa, ya = cam.xy(us + 30, np.full(W, v))
@@ -125,7 +149,7 @@ def _ground(ex: Extent, cam: _Camera, g: terrain.Grid) -> tuple[Image.Image, flo
         zy = (g.at(xb, yb2) - z) / 30 * cam.ex
         sh = (zx * 0.55 - zy * 0.55 + 0.63) / np.sqrt(zx * zx + zy * zy + 1)
         c = c * np.clip(0.52 + 0.70 * sh, 0.47, 1.10)[:, None]
-        marsh = ((z < 6) & (z > 0.6))[:, None]
+        marsh = ((z < low) & (z > 0.6))[:, None]
         c = np.where(marsh, c * 0.72 + np.array([150, 190, 196]) * 0.28, c)
         c = np.where((z <= 0.6)[:, None], c * 0.35 + np.array([196, 214, 222]) * 0.65, c)
         span = int((top - row)[need].max())
@@ -188,6 +212,29 @@ def block(ex: Extent, width_in: float | None = None, highlight: str | None = Non
     body = [f'<image x="0" y="{TOP:.2f}" width="{W:.2f}" height="{blockH:.2f}" preserveAspectRatio="none" '
             f'href="data:image/jpeg;base64,{base64.b64encode(buf.getvalue()).decode()}"/>']
 
+    # rivers the extent names, traced on the elevation model: along a guide line drawn by hand, the lowest ground
+    # within `band` degrees north and south of it at each step east, smoothed (the valley floor, not a surveyed bank)
+    for rv in cfg.get("rivers", []):
+        guide = np.array(rv["guide"], float)
+        band = float(rv.get("band", 0.006))
+        lons = np.arange(guide[0, 0], guide[-1, 0], 0.0012)
+        glat = np.interp(lons, guide[:, 0], guide[:, 1])
+        offs = np.linspace(-band, band, 61)
+        LA = glat[:, None] + offs[None, :]
+        LO = np.repeat(lons[:, None], len(offs), 1)
+        X, Y = ex.to_crs.transform(LO.ravel(), LA.ravel())
+        Z = g.at(np.asarray(X), np.asarray(Y)).reshape(LA.shape)
+        lat_r = ndimage.median_filter(LA[np.arange(len(lons)), Z.argmin(1)], size=9, mode="nearest")
+        lat_r = ndimage.gaussian_filter1d(lat_r, 2.0, mode="nearest")
+        for r in runs(list(zip(lons, lat_r))):
+            pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in (P(*q) for q in r))
+            body.append(f'<polyline points="{pts}" fill="none" stroke="#ffffff" stroke-width="4.4" stroke-linejoin="round" '
+                        f'stroke-linecap="round"/><polyline points="{pts}" fill="none" stroke="#2f6fd0" stroke-width="2.4" '
+                        f'stroke-linejoin="round" stroke-linecap="round"/>')
+        if rv.get("label_at"):
+            lx, ly = P(*rv["label_at"])
+            body.append(_txt(lx, ly, rv["name"], 9.0, "#1f58b0", "middle", italic=True))
+
     # fronts: the earlier dashed grey, the day's heavy black with a white casing, ticked on the side its sheet ticks
     tick_side = cfg.get("front_ticks", "")
     for j, day in enumerate(ex.fronts):
@@ -216,8 +263,10 @@ def block(ex: Extent, width_in: float | None = None, highlight: str | None = Non
                                     f'stroke-width="1.2"/>')
 
     # towns named in the extent's block list
-    places = {f["properties"]["name"]: f["geometry"]["coordinates"]
-              for f in __import__("json").loads((ex.infrastructure / "places.geojson").read_text())["features"]}
+    pg = ex.infrastructure / "places.geojson"
+    places = ({f["properties"]["name"]: f["geometry"]["coordinates"]
+               for f in __import__("json").loads(pg.read_text())["features"]} if pg.exists() else {})
+    places.update({p[0]: (float(p[1]), float(p[2])) for p in cfg.get("places", [])})   # name, lon, lat by hand
     for name in cfg.get("towns", ex.towns):
         if name not in places or not inside(*places[name][:2]):
             continue
@@ -253,6 +302,24 @@ def block(ex: Extent, width_in: float | None = None, highlight: str | None = Non
                         f'<circle cx="{xt:.1f}" cy="{yt:.1f}" r="{r}" fill="{BLUE_OWN}" stroke="#ffffff" stroke-width="1.1"/>')
             body.append(_txt(xt + r + 2.5, yt - 1.2, m["place"], 8.6, BLUE_OWN, weight="bold"))
             body.append(_txt(xt + r + 2.5, yt + 7.5, record.span(m), 7.0, BLUE_OWN))
+
+    # points the extent gives by hand: a position the book assumes (open ring) or one a record gives (solid)
+    for pt in cfg.get("points", []):
+        lon, lat = (float(v) for v in pt["at"])
+        if not inside(lon, lat):
+            continue
+        (x, y), (xt, yt) = P(lon, lat), P(lon, lat, lift=60)
+        fill = "#ffffff" if pt.get("assumed") else BLUE_OWN
+        dash = ' stroke-dasharray="2 1.4"' if pt.get("assumed") else ""
+        body.append(f'<line x1="{x:.1f}" y1="{y:.1f}" x2="{xt:.1f}" y2="{yt:.1f}" stroke="#ffffff" stroke-width="2.2"/>'
+                    f'<line x1="{x:.1f}" y1="{y:.1f}" x2="{xt:.1f}" y2="{yt:.1f}" stroke="{BLUE_OWN}" stroke-width="1"'
+                    f'{dash}/>'
+                    f'<circle cx="{xt:.1f}" cy="{yt:.1f}" r="3.6" fill="{fill}" stroke="{BLUE_OWN}" stroke-width="1.6"/>')
+        anchor = pt.get("anchor", "start")
+        dx = 7 if anchor == "start" else -7
+        body.append(_txt(xt + dx, yt - 1.2, pt["words"], 8.6, BLUE_OWN, anchor, weight="bold"))
+        if pt.get("sub"):
+            body.append(_txt(xt + dx, yt + 7.5, pt["sub"], 7.0, BLUE_OWN, anchor))
 
     # arrows: a record's direction, flat and thick at one height so it runs straight over the ground
     notes_arrows = []
@@ -343,7 +410,7 @@ def block(ex: Extent, width_in: float | None = None, highlight: str | None = Non
                      7.4, GREY, italic=True, halo_w=0))
     body.append(_txt(bw + 16, yb + 10.5, f"{depth} depth is shortened to {cam.st:.2g} of it; heights are drawn "
                      f"{cam.ex:g} times.", 7.4, GREY, italic=True, halo_w=0))
-    ky = yb + 40
+    ky = yb + 40 + (11 if cfg.get("points_words") else 0)
     key = [f'<line x1="6" y1="{ky:.1f}" x2="28" y2="{ky:.1f}" stroke="{INK}" stroke-width="2.4"/>'
            + "".join(f'<line x1="{x}" y1="{ky:.1f}" x2="{x}" y2="{ky + (3.5 if (tick_side == "north") == (abs(float(cfg.get("azimuth", 180)) % 360 - 180) < 90) else -3.5):.1f}" '
                      f'stroke="{INK}" stroke-width="1.2"/>' for x in (10, 17, 24))
@@ -354,13 +421,16 @@ def block(ex: Extent, width_in: float | None = None, highlight: str | None = Non
     if cfg.get("stations"):
         key.append(f'<circle cx="9" cy="{ky - 11:.1f}" r="3" fill="{BLUE_OWN}"/>'
                    + _txt(15, ky - 8.6, cfg.get("stations_words", "the unit's stations, from its reports"), 7.8, halo_w=0))
+    if cfg.get("points_words"):
+        key.append(f'<circle cx="9" cy="{ky - 22:.1f}" r="3" fill="#ffffff" stroke="{BLUE_OWN}" stroke-width="1.4"/>'
+                   + _txt(15, ky - 19.6, cfg["points_words"], 7.8, halo_w=0))
     body += key
     body.append(_txt(6, ky + 13, "Divisions on pins, where the day's sheet draws each box (its area, not a headquarters):",
                      7.4, GREY, italic=True, halo_w=0))
     body.append(_txt(6, ky + 23, "blue, American; red, German (pale, elements of a division)"
                      + (f"; {highlight_words}, heavier" if highlight_words else "") + ".", 7.4, GREY, italic=True, halo_w=0))
-    body.append(_txt(6, ky + 33, "Ground: IGN's 1:50,000 (1950 series) on Copernicus GLO-30; blue wash, ground under 6 m.",
-                     7.4, GREY, italic=True, halo_w=0))
+    body.append(_txt(6, ky + 33, cfg.get("ground_words", "Ground: IGN's 1:50,000 (1950 series) on Copernicus GLO-30; "
+                                         "blue wash, ground under 6 m."), 7.4, GREY, italic=True, halo_w=0))
     loc_w = float(cfg.get("locator_width", 96))
     lx0 = W - loc_w - 2
     loc_svg, loc_h = _locator(ex, lx0, yb - 4, loc_w)
@@ -383,7 +453,8 @@ def block(ex: Extent, width_in: float | None = None, highlight: str | None = Non
     total = max(ky + 36, yb - 4 + loc_h + 4)
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W:.1f}pt" height="{total:.1f}pt" '
            f'viewBox="0 0 {W:.1f} {total:.1f}">{"".join(body)}</svg>')
-    notes = {"terrain": "Copernicus DEM GLO-30 (doi:10.5270/ESA-c5d3d65)", "ground": "IGN SCAN 50, 1950 series",
+    notes = {"terrain": "Copernicus DEM GLO-30 (doi:10.5270/ESA-c5d3d65)",
+             "ground": (cfg.get("sheet") or {}).get("source", "IGN SCAN 50, 1950 series"),
              "fronts": [f"12ag-{d}" for d in ex.fronts], "arrows": notes_arrows,
              "camera": {"azimuth": cfg.get("azimuth", 180), "tilt": cfg.get("tilt", 30),
                         "exaggeration": cfg.get("exaggeration", 6)}}

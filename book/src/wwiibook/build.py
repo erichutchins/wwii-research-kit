@@ -132,7 +132,10 @@ def _atlas(req: dict, build: Path) -> dict:
     from .atlas.extent import Extent
     ex = Extent.load(req["extent"])
     # the mission, the fight and the section draw no period network: an extent without one (no sheets) still has them
-    if req["view"] not in ("mission", "fight", "sightline") and not (ex.infrastructure / "manifest.json").exists():
+    # nor does a block view laid on a fitted period sheet of its own (`block: sheet:`), where IGN's series doesn't reach
+    own_sheet = req["view"] == "block" and bool(ex.block.get("sheet"))
+    if (req["view"] not in ("mission", "fight", "sightline") and not own_sheet
+            and not (ex.infrastructure / "manifest.json").exists()):
         reconstruct.build(ex)
     if req["view"] in ("mission", "fight"):
         from .atlas import mission

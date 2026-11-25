@@ -405,15 +405,45 @@ def _rank(ft: dict) -> float:
     return 10 if r is None else r          # 0 is Natural Earth's most important rank, not a missing one
 
 
+def _sheet_image(f: geo.Frame, x0: float, H: float, sheet: dict, ppi: float = 300.0) -> str:
+    """The sheet resampled onto the frame's Mercator pixels at print resolution, muted, as an opaque JPEG."""
+    import numpy as np
+    from scipy import ndimage
+    Image.MAX_IMAGE_PIXELS = None
+    im = np.asarray(Image.open(paths.cache() / sheet["image"]).convert("RGB"), np.float32)
+    bw, bs, be, bn = (float(v) for v in sheet["box"])
+    w_px, h_px = int(f.width * ppi / 72), int(H * ppi / 72)
+    xs = (np.arange(w_px) + 0.5) * 72 / ppi
+    ys = (np.arange(h_px) + 0.5) * 72 / ppi
+    X, Y = np.meshgrid(xs, ys)
+    lon, lat = f.lonlat(X, Y)
+    c = (lon - bw) / (be - bw) * im.shape[1] - 0.5
+    r = (bn - lat) / (bn - bs) * im.shape[0] - 0.5
+    out = np.stack([ndimage.map_coordinates(im[..., k], [r, c], order=1, mode="constant", cval=255)
+                    for k in range(3)], -1)
+    grey = out.mean(-1, keepdims=True)
+    mute = float(sheet.get("mute", 0.5))
+    out = 255 - (255 - (out * 0.5 + grey * 0.5)) * mute
+    off = ((lon < bw) | (lon > be) | (lat < bs) | (lat > bn))[..., None]   # beyond the sheets: the plain land tint
+    out = np.where(off, np.array([int(LAND[i:i + 2], 16) for i in (1, 3, 5)], np.float32), out)
+    buf = io.BytesIO()
+    Image.fromarray(np.clip(out, 0, 255).astype(np.uint8)).save(buf, "JPEG", quality=88, optimize=True)
+    href = "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+    return (f'<image x="{x0:.1f}" y="0" width="{f.width:.1f}" height="{H:.1f}" preserveAspectRatio="none" '
+            f'href="{href}"/>')
+
+
 def base(f: geo.Frame, x0: float, H: float, *, relief_zoom: int | None = None, admin: bool = False,
          countries: tuple[str, ...] = (), rivers=None, towns: int = 0, town_rank: int = 8,
-         places: tuple = (), labels: Labels | None = None) -> tuple[list[str], list[str]]:
+         places: tuple = (), labels: Labels | None = None, sheet: dict | None = None) -> tuple[list[str], list[str]]:
     """The base map for a frame placed at x0: (layers under the record's marks, labels over them).
 
     rivers: none unless asked (select_rivers): a list of names draws those rivers; a number every river up to that
     Natural Earth scalerank (lower is more important; 10 to 12 the supplements' detail); "auto" by the map's scale; towns: how many towns to try to label
     (most important first), down to town_rank; admin: state and province lines, and region names for `countries`
-    (Natural Earth's admin names, e.g. "United States of America")."""
+    (Natural Earth's admin names, e.g. "United States of America"); sheet: a period sheet fitted to a plain
+    longitude-latitude grid in the cache (`image`, `box`; atlas/sheetfit.py), laid under the marks muted (`mute`, how
+    far toward the paper) in place of the relief."""
     box = (f.lon0, f.lat0, f.lon1, f.lat1)
     wide = (f.lon0 - 0.5, f.lat0 - 0.5, f.lon1 + 0.5, f.lat1 + 0.5)
     under, over = [], []
@@ -433,6 +463,8 @@ def base(f: geo.Frame, x0: float, H: float, *, relief_zoom: int | None = None, a
                      f'preserveAspectRatio="none" clip-path="url(#{clip})" href="{href}"/>')
         under += [f'<path d="{d}" fill="none" stroke="{COAST}" stroke-width="0.5" stroke-linejoin="round"/>'
                   for d in land]
+    if sheet and land:
+        under.append(_sheet_image(f, x0, H, sheet))
     for feat in lakes_drawn(f):
         for ring in _lines(feat["geometry"] or {"type": ""}):
             if _touches(ring, wide):

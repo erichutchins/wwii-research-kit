@@ -526,10 +526,10 @@ def route_map(data: dict, width_in: float, panels: list[dict], labels: list[str]
         route_labels.append(svg)
     for i, (f, x0, p) in enumerate(zip(frames, x0s, panels)):
         cid = f"p{i}"
-        u, o = carto.base(f, x0, H, relief_zoom=p.get("relief"), admin=p.get("admin", False),
+        u, o = carto.base(f, x0, H, relief_zoom=None if p.get("sheet") else p.get("relief"), admin=p.get("admin", False),
                           countries=tuple(p.get("countries", ())), rivers=p.get("rivers"), towns=p.get("towns", 0),
                           town_rank=p.get("town_rank", 8), places=tuple(tuple(x) for x in p.get("places", ())),
-                          labels=placers[i])
+                          labels=placers[i], sheet=p.get("sheet"))
         under.append(f'<defs><clipPath id="{cid}"><rect x="{x0:.1f}" width="{f.width:.1f}" height="{H:.1f}"/></clipPath></defs>')
         under.append(f'<g clip-path="url(#{cid})">' + "".join(u))
         for k, day in enumerate(fronts):

@@ -61,3 +61,82 @@ sightline:                           # the section (atlas/sightline.py)
     - {label: "six Me 262s, 500 to 5,000 feet", low_ft: 500, high_ft: 5000, source: "106th AAA AW Bn, April 1945 history, p. 6", ref: ok45th-17560/p06}
     - {label: "six Me 262s, 10,000 to 500 feet", low_ft: 500, high_ft: 10000, source: "45th Inf Div G-2 Periodic Report No. 219, p. 2", ref: ok45th-5343/p06}
   width_in: 9.4
+units: 1945-04-26                    # records/fronts/12ag-<day>.geojson: the divisions as the army group drew them
+locator:
+  bbox_lonlat: [9.6, 47.9, 12.6, 49.7]      # Bavaria from Ulm to the Isar, Nuremberg to Munich
+  places:                                   # name, lon, lat
+    - [Nuremberg, 11.0767, 49.4521]
+    - [Ingolstadt, 11.4250, 48.7665]
+    - [Augsburg, 10.8978, 48.3705]
+    - [Munich, 11.5820, 48.1351]
+    - [Ulm, 9.9876, 48.4011]
+block:                               # the block view (atlas/block.py): the crossing's ground, looking south over the Danube
+  azimuth: 180                       # looking south, the way the 45th Division crossed
+  tilt: 40
+  exaggeration: 5
+  width_in: 5.55
+  bbox_lonlat: [10.84, 48.665, 11.30, 48.875]   # Monheim's edge to Neuburg's east, Wellheim to Rohrenfels: about 34 by 23 km
+  wash_below: 0                      # inland: no marsh wash
+  sheet:                             # the period sheet under the ground (atlas/sheetfit.py writes it)
+    image: maps/neuburg-1945/gsgs4416-neuburg.png
+    box: [10.70, 48.45, 11.3333, 49.25]  # Monheim to Neuburg's east, Schrobenhausen to Roth (the sheets end at 49° 15′ N)
+    px_per_deg: 12000                # about 6 m a pixel east-west, 9 m north-south
+    mute: 0.5
+    source: "GSGS 4416 / AMS M641, Germany 1:100,000, sheets V-5 and W-5 (Army Map Service, 1943; McMaster University copies)"
+    # each sheet's neatline corners (north-west, north-east, south-east, south-west), read on the scan in its pixels;
+    # the sheet is 1° of longitude by 30′ of latitude on the Nord de Guerre Lambert grid it prints (origin 49° 30′ N
+    # 7° 44′ 13.95″ E, 600 km E, 300 km N, k 0.999509081, the Plessis ellipsoid)
+    sheets:
+      - file: maps/neuburg-1945/dl/AMS_M641_GSGS_4416_GERMANY_100K_V.5_NOERDLINGEN_Ed1-AMS3_(1943)-3-1944_600dpi_McM19016.jpg
+        extent: [10.3333, 48.75, 11.3333, 49.25]
+        corners: [[757, 640], [17883, 662], [17952, 13760], [632, 13715]]
+        projection: &ndg "+proj=lcc +lat_1=49.5 +lat_0=49.5 +lon_0=7.7372083 +k_0=0.999509081 +x_0=600000 +y_0=300000 +a=6376523 +b=6355863 +units=m +no_defs"
+      - file: maps/neuburg-1945/dl/AMS_M641_GSGS_4416_GERMANY_100K_W.5_AUGSBURG_Ed1-AMS2_1943_600dpi_McM19030.jpg
+        extent: [10.3333, 48.25, 11.3333, 48.75]
+        corners: [[812, 1376], [18173, 1374], [18243, 14551], [722, 14511]]
+        projection: *ndg
+  ground_words: "Ground: the Army Map Service's 1:100,000 of 1943 (GSGS 4416) on Copernicus GLO-30."
+  front_ticks: north                 # the American side, toward the reader
+  places:                            # name, lon, lat: the engagement's positions (records/engagements/neuburg-1945-04-26)
+    - [Neuburg, 11.1790, 48.7370]    # the old town, where the 1943 sheet prints it (the engagement's OSM point is 1 km north-east)
+    - [Rennertshofen, 11.0490, 48.7564]
+    - [Marxheim, 10.9456, 48.7356]
+    - [Rohrenfels, 11.1565, 48.6862]
+  towns: [Neuburg, Rennertshofen, Rohrenfels]
+  stations:                          # the 106th AAA AW Battalion's command post, from its journal (Battery D's place assumed)
+    - unit: 106aaa-d
+      from: 1945-04-26
+      to: 1945-04-27
+  stations_words: the 106th AAA AW Battalion's command post, from its journal
+  points_words: a place the book assumes
+  points:
+    - at: [11.1436, 48.7837]         # the engagement's `bergen`: the 189th FA Bn from 1015
+      words: Battery D (assumed)
+      sub: with the 189th Field Artillery at Bergen
+      assumed: true
+  arrows:
+    - from: [11.19, 48.805]          # the 179th Infantry: by Ried, across into the south of Neuburg
+      to: [11.19, 48.722]
+      height: 150
+      words: "179th Infantry, 7:50 P.M.:"
+      quote: 1st Bn is engaged in S part of NEUBERG
+      source: the 45th Division's G-2 journal, p. 4
+      cite: ok45th-10366/p25
+      label: false
+    - from: [10.945, 48.80]          # the 157th Infantry: across at Marxheim's blown bridge
+      to: [10.945, 48.715]
+      height: 150
+      words: "157th Infantry, 5:25 P.M.:"
+      quote: On this crossing, we have been receiving heavy 20mm fire
+      source: the 45th Division's G-2 journal, p. 3
+      cite: ok45th-10366/p24
+      label: false
+  rivers:                            # traced on the elevation model along this guide (block.py)
+    - name: Danube (Donau)
+      guide: [[10.84, 48.722], [10.90, 48.722], [10.945, 48.736], [11.00, 48.742], [11.05, 48.745], [11.10, 48.741], [11.15, 48.738], [11.19, 48.738], [11.24, 48.745], [11.30, 48.752]]
+      band: 0.008
+      label_at: [11.11, 48.728]
+  near_words: the American side
+  near_v: 0.08
+  far_words: the German side
+  compass: [11.27, 48.86]
