@@ -67,21 +67,27 @@ def full_name(unit: dict) -> str:
 
 
 def symbol(x: float, y: float, unit: dict, highlight: bool = False, scale: float = 1.0,
-           colour: str | None = None) -> str:
+           colour: str | None = None, halo: float = 0.0, enemy: str | None = None,
+           text_colour: str | None = None) -> str:
     """The box at (x, y) with its mark, echelon, and number (a battery's letter, `letter`, on the left). `colour`
-    draws one of our units in its own colour (an atlas's units' own records)."""
+    draws one of our units in its own colour (an atlas's units' own records). `halo` sets a white casing that wide
+    round the box, which lifts it off a busy ground; `enemy` fills the other side's boxes in another tone."""
     number, elements, _ = parse_label(unit.get("label") or "")
     ours = unit.get("of") != "de"
     w, h = 13 * scale, 8.5 * scale
     x0, y0 = x - w / 2, y - h / 2
-    fill, line = (PAPER, INK) if ours else (ENEMY, PAPER)
-    stroke = OWN if highlight else (INK if ours else ENEMY)
+    other = enemy or ENEMY
+    fill, line = (PAPER, INK) if ours else (other, PAPER)
+    stroke = OWN if highlight else (INK if ours else other)
     if colour:
         stroke = line = colour
-    sw = 1.3 if highlight or colour else 0.7
+    sw = 1.3 if highlight or colour else (1.0 if halo else 0.7)
     dash = ' stroke-dasharray="1.6 1.1"' if elements else ""
     opacity = ' fill-opacity="0.45"' if elements and not ours else ""   # a part of the division: the box half-filled
     out = []
+    if halo:
+        out.append(f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{w:.1f}" height="{h:.1f}" fill="#ffffff" stroke="#ffffff" '
+                   f'stroke-width="{halo * 2:.1f}" stroke-linejoin="round"/>')
     if unit.get("mobility") == "sp":   # self-propelled: the box with a tail (chart 26)
         out.append(f'<path d="M{x0 + w:.1f},{y0 + h * 0.15:.1f} L{x0 + w * 1.28:.1f},{y0 + h * 0.38:.1f} '
                    f'L{x0 + w * 1.28:.1f},{y0 + h * 0.62:.1f} L{x0 + w:.1f},{y0 + h * 0.85:.1f}" fill="{fill}" '
@@ -113,7 +119,7 @@ def symbol(x: float, y: float, unit: dict, highlight: bool = False, scale: float
         out.append(f'<text x="{x:.1f}" y="{y0 - 1.2:.1f}" font-family="{DISPLAY}" font-size="{4.2 * scale:.1f}" '
                    f'fill="{stroke}" text-anchor="middle" font-weight="bold">{ech}</text>')
     right = x0 + w * (1.28 if unit.get("mobility") == "sp" else 1) + 1.8
-    text = colour or (OWN if highlight else INK)
+    text = text_colour or colour or (OWN if highlight else INK)
     out.append(f'<text x="{right:.1f}" y="{y + 2.4 * scale:.1f}" font-family="{DISPLAY}" font-size="{6.8 * scale:.1f}" '
                f'fill="{text}" font-weight="bold" stroke="#ffffff" stroke-width="1.8" '
                f'stroke-linejoin="round" paint-order="stroke">{escape(number)}</text>')
@@ -144,7 +150,7 @@ def command_post_box(x: float, y: float, staff: float = 11.0, scale: float = 1.0
 
 
 def legend(x: float, y: float, sides: set[str], arms: set[str], elements: bool, highlight: str | None,
-           max_width: float = 400, highlight_arm: str = "infantry") -> tuple[str, float]:
+           max_width: float = 400, highlight_arm: str = "infantry", enemy: str | None = None) -> tuple[str, float]:
     """The symbols on the map, explained, starting at (x, y) and wrapping onto a new row before `max_width`.
     Returns (svg, the height it takes)."""
     items: list[tuple[dict, str, bool]] = []
@@ -165,7 +171,7 @@ def legend(x: float, y: float, sides: set[str], arms: set[str], elements: bool, 
         w = 20 + len(words) * 3.0 + 10
         if cx + w > x + max_width and cx > start:
             cx, cy = start, cy + row_h
-        out.append(symbol(cx + 6, cy, unit, highlight=hl))
+        out.append(symbol(cx + 6, cy, unit, highlight=hl, enemy=enemy))
         out.append(f'<text x="{cx + 15:.1f}" y="{cy + 2.3:.1f}" font-family="{DISPLAY}" font-size="6.2" '
                    f'fill="{OWN if hl else INK}">{escape(words)}</text>')
         cx += w

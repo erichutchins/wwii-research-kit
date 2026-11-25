@@ -39,6 +39,7 @@ class Extent:
     sources: dict = field(default_factory=dict)
     panorama: dict = field(default_factory=dict)
     oblique: dict = field(default_factory=dict)
+    block: dict = field(default_factory=dict)    # the block view (block.py): camera, arrows, compass
 
     @classmethod
     def load(cls, where: str | Path) -> "Extent":

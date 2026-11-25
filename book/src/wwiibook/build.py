@@ -143,6 +143,10 @@ def _atlas(req: dict, build: Path) -> dict:
     elif req["view"] == "panorama":
         svg, notes = panorama.panorama(ex, req.get("width"), highlight=req.get("highlight"),
                                        highlight_words=req.get("highlight_words"))
+    elif req["view"] == "block":
+        from .atlas import block
+        svg, notes = block.block(ex, req.get("width"), highlight=req.get("highlight"),
+                                 highlight_words=req.get("highlight_words"))
     elif req["view"] == "inset":
         from .atlas import inset
         svg, notes = inset.inset(ex, req.get("width"))

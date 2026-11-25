@@ -28,15 +28,17 @@ from ..solid import mix
 from . import record, terrain
 from .extent import Extent, Page
 
-INK, MUTED, PAPER, FRONT = "#000000", "#586257", "#fbfaf6", "#a3241b"
+INK, MUTED, PAPER, FRONT = "#000000", "#7c837a", "#fbfaf6", "#b3170d"
+TOWN = "#2f342f"                     # the larger towns: dark, but quieter than the marks
 LAND, SEA, LOW = np.array([243, 241, 233]), np.array([214, 226, 230]), np.array([214, 226, 216])
-ROAD, ROAD_MINOR, RAIL = "#7a6b55", "#8d8270", "#38352f"
-WATER = "#7397a6"
-OWN = "#a3241b"
-WOOD = "#dbe5cf"
+ROAD, ROAD_MINOR, RAIL = "#a59a85", "#bbb3a3", "#7a766d"   # the base held back: the marks carry the page
+WATER = "#8aaab7"
+OWN = "#b3170d"
+WOOD = "#e4ebdb"
 CATHEDRAL = "#4b2c6f"
 RAID = "#4d5963"
-CONTOUR = "#b9ab8f"
+CONTOUR = "#cbc0aa"
+ENEMY_STARK = "#1c242b"               # the German divisions: near-black, filled
 LOW_CSS = "rgb({},{},{})".format(*LOW.tolist())
 DISPLAY, SERIF = figures.DISPLAY, figures.SERIF
 
@@ -88,7 +90,7 @@ def _ground(ex: Extent, page: Page, res: float = 15.0) -> tuple[str, str, dict]:
     g = terrain.dem(ex, res=res)
     shade = terrain.hillshade(g, exaggeration=3.0)
     flat = math.sin(math.radians(45))                       # level ground's shade: no change there
-    k = np.clip((shade - flat) * 0.9, -0.45, 0.25)[..., None]
+    k = np.clip((shade - flat) * 0.5, -0.22, 0.12)[..., None]   # a soft relief, under the marks
     rgb = LAND * (1 + k)
     low = terrain.low_ground(g)[..., None]
     rgb = np.where(low, LOW * (1 + k * 0.5), rgb)
@@ -154,7 +156,7 @@ def _network(ex: Extent, d: _Draw) -> tuple[list[str], list[list[tuple[float, fl
                 path = d.path(c)
                 if not path or at_sea(c):
                     continue
-                w, col = (0.55, ROAD_MINOR) if minor else (1.0, ROAD)
+                w, col = (0.5, ROAD_MINOR) if minor else (0.85, ROAD)
                 out.append(f'<path d="{path}" fill="none" stroke="{col}" stroke-width="{w}" '
                            f'stroke-linecap="round" stroke-linejoin="round"/>')
                 lines.append(d.pts(c))
@@ -319,11 +321,10 @@ def _legend(x: float, y: float, width: float, shown: list[dict], fronts: list[st
                    f'fill="{INK}">{escape(words)}</text>')
         cx += step
     if fronts:
-        item(f'<path d="M{{x}},{{y}} h{{w}}" stroke="{FRONT}" stroke-width="1.8"/>', f"front, {_day(fronts[-1])}")
+        item(f'<path d="M{{x}},{{y}} h{{w}}" stroke="{FRONT}" stroke-width="2.6"/>', f"front, {_day(fronts[-1])}")
     if len(fronts) > 1:
-        item(f'<path d="M{{x}},{{y}} h{{w}}" stroke="{FRONT}" stroke-width="0.8" stroke-dasharray="3 1.6" '
-             f'stroke-opacity="0.7"/>', f"front, {_day(fronts[0])}")
-    item(f'<path d="M{{x}},{{y}} h{{w}}" stroke="{ROAD}" stroke-width="0.9"/>', "main road")
+        item(f'<path d="M{{x}},{{y}} h{{w}}" stroke="{FRONT}" stroke-width="1.1" stroke-dasharray="3.4 1.8"/>', f"front, {_day(fronts[0])}")
+    item(f'<path d="M{{x}},{{y}} h{{w}}" stroke="{ROAD}" stroke-width="0.85"/>', "main road")
     item(f'<path d="M{{x}},{{y}} h{{w}}" stroke="{ROAD_MINOR}" stroke-width="0.45"/>', "lesser road")
     item(f'<path d="M{{x}},{{y}} h{{w}} M{{x}},{{y}} m2.2,-1.4 v2.8 m4.5,-2.8 v2.8 m4.5,-2.8 v2.8 m4.5,-2.8 v2.8" '
          f'stroke="{RAIL}" stroke-width="0.6"/>', "railway")
@@ -359,7 +360,7 @@ def _legend(x: float, y: float, width: float, shown: list[dict], fronts: list[st
     if shown:
         strip, sh = symbols.legend(x, cy + 15, {u.get("of", "") for u in shown}, {u.get("arm", "") for u in shown},
                                    any(symbols.parse_label(u.get("label") or "")[1] for u in shown), highlight,
-                                   max_width=width, highlight_arm=highlight_arm or "infantry")
+                                   max_width=width, highlight_arm=highlight_arm or "infantry", enemy=ENEMY_STARK)
         out.append(strip)
         h = cy - y + 15 + sh
     return "".join(out), h
@@ -396,8 +397,11 @@ def panorama(ex: Extent, width_in: float | None = None, highlight: str | None = 
                 continue
             labels.line(pts, pad=2)
             path = d.path(line, 0.3)
-            style = ('stroke-width="1.8"' if last else
-                     'stroke-width="0.8" stroke-dasharray="3 1.6" stroke-opacity="0.7"')
+            style = ('stroke-width="2.6"' if last else
+                     'stroke-width="1.1" stroke-dasharray="3.4 1.8"')
+            if last:   # a white casing, so the day's line stands off the ground under it
+                fronts.append(f'<path d="{path}" fill="none" stroke="#ffffff" stroke-width="4.4" '
+                              f'stroke-linejoin="round" stroke-linecap="round"/>')
             fronts.append(f'<path d="{path}" fill="none" stroke="{FRONT}" {style} stroke-linejoin="round" '
                           f'stroke-linecap="round"/>')
     shown = ex.divisions(figures._units(ex.units))
@@ -405,9 +409,9 @@ def panorama(ex: Extent, width_in: float | None = None, highlight: str | None = 
     for u in shown:
         ux, uy = d.pt(u["lon"], u["lat"])
         hl = bool(highlight) and u.get("unit") == highlight
-        units.append(symbols.symbol(ux, uy, u, highlight=hl, scale=1.25))
-        tw = carto.Labels.width(symbols.parse_label(u.get("label") or "")[0], 6.8 * 1.25)
-        labels.occupy(ux - 9, uy - 12, 18 + 3 + tw, 18)
+        units.append(symbols.symbol(ux, uy, u, highlight=hl, scale=1.35, halo=2.2, enemy=ENEMY_STARK))
+        tw = carto.Labels.width(symbols.parse_label(u.get("label") or "")[0], 6.8 * 1.35)
+        labels.occupy(ux - 10, uy - 13, 20 + 3 + tw, 19)
     # the unit's own record: its positions (with how precisely each is placed) and the aircraft it engaged
     # the Catholic cathedral, named, for an extent that asks for its churches (the rest are the inset's)
     cathedral_svg: list[str] = []
@@ -502,13 +506,13 @@ def panorama(ex: Extent, width_in: float | None = None, highlight: str | None = 
         major = p["name"] in ex.towns or ex.label(p["name"])[0] in ex.towns
         size = 7.6 if major else 6.2
         name, today = ex.label(p["name"])
-        lines = [(name, size, INK if major else MUTED, "bold" if major else "normal", DISPLAY)]
+        lines = [(name, size, TOWN if major else MUTED, "bold" if major else "normal", DISPLAY)]
         if today:
             lines.append((f"today {today}", 5.4, MUTED, "normal", DISPLAY))
         svg = labels.place(px, py, lines, gap=2.5, force=p["name"] in forced)
         if svg:
             r = 1.8 if major else 1.1
-            town_svg.append(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="{r}" fill="{INK if major else MUTED}"/>' + svg)
+            town_svg.append(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="{r}" fill="{TOWN if major else MUTED}"/>' + svg)
             labels.occupy(px - r, py - r, 2 * r, 2 * r)
         if len(town_svg) >= 34:
             break
