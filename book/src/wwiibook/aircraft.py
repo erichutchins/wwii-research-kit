@@ -53,10 +53,21 @@ def _wrap(s: str, chars: int) -> list[str]:
     return out + ([line] if line else [])
 
 
-def _shape(view: dict, x: float, y: float, w: float) -> str:
+def _shape(view: dict, x: float, y: float, w: float, level6: str | None = None) -> str:
+    """A view of the type at width w: its level-6 drawing where the records hold one (records/silhouettes/level6/
+    <kind>-<view>.svg, drawn in the same frame as the solid outline), its body in ink and its panel lines and glass
+    knocked out in the paper colour, as the strip size wants; else the solid outline."""
     k = w / float(view["w"])
-    return (f'<path transform="translate({x:.1f},{y:.1f}) scale({k:.4f})" d="{view["d"]}" fill="{INK}" '
-            f'fill-rule="evenodd"/>')
+    g = f'transform="translate({x:.1f},{y:.1f}) scale({k:.4f})"'
+    f = paths.records() / "silhouettes" / "level6" / f"{level6}.svg" if level6 else None
+    if f is not None and f.exists():
+        s = f.read_text()
+        inner = s[s.index("</desc>") + 7: s.rindex("</svg>")] if "</desc>" in s else s[s.index(">") + 1: s.rindex("</svg>")]
+        inner = inner.replace('fill="#1b1b1b"', f'fill="{INK}"').replace('stroke="#1b1b1b"', f'stroke="{INK}"')
+        inner = inner.replace('fill="#9a9a9a"', f'fill="{PAPER}"').replace('fill="#ffffff"', f'fill="{PAPER}"')
+        return f"<g {g}>{inner}</g>"
+    return f'<path {g} d="{view["d"]}" fill="{INK}" fill-rule="evenodd"/>'
+
 
 
 def _photo(p: dict, w: float) -> tuple[str, float]:
@@ -109,10 +120,10 @@ def card(kind: str, width_in: float = 4.4, photo: int = 0, faces_ok: bool = Fals
     y += 6
     sw = W * 0.32
     if sil.get("plan"):
-        body.append(_shape(sil["plan"], 0, y, sw))
+        body.append(_shape(sil["plan"], 0, y, sw, f"{kind}-plan"))
     if sil.get("profile"):
         pw = sw * float(sil.get("length", 1)) / float(sil.get("span", 1)) if sil.get("span") else sw
-        body.append(_shape(sil["profile"], sw + 10, y + 4, min(pw, W * 0.28)))
+        body.append(_shape(sil["profile"], sw + 10, y + 4, min(pw, W * 0.28), f"{kind}-profile"))
     sh = sw * float(sil["plan"]["h"]) / float(sil["plan"]["w"]) if sil.get("plan") else 0
     # the figures, as printed, in a box beside the silhouettes: the top speed large
     fx = W * 0.66
@@ -124,7 +135,7 @@ def card(kind: str, width_in: float = 4.4, photo: int = 0, faces_ok: bool = Fals
         figs.append(_t(fx + 7, fy, "TOP SPEED", 5.6, MUTED, weight="bold"))
         top = speeds[0].split(" at ")
         figs.append(_t(fx + 7, fy + 13, top[0].replace(" (turbo-jet units)", ""), 12, INK, weight="bold"))
-        rest = ("at " + top[1] if len(top) > 1 else "") + ("; " + "; ".join(speeds[1:]) if speeds[1:] else "")
+        rest = "; ".join(([("at " + top[1])] if len(top) > 1 else []) + speeds[1:])
         if "(turbo-jet units)" in speeds[0]:
             rest = "turbo-jet units" + ("; " + rest if rest else "")
         line = 0
