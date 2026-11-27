@@ -23,7 +23,7 @@ from pathlib import Path
 import typst
 import yaml
 
-from . import figures, images, nara, paths, press, qr, solid
+from . import figures, halo, images, nara, paths, press, qr, solid
 from .cite import parse
 
 
@@ -34,6 +34,7 @@ class Result:
     reused: list[str] = field(default_factory=list)
     failed: list[tuple[str, str]] = field(default_factory=list)
     warnings: list[dict] = field(default_factory=list)
+    layered: list[str] = field(default_factory=list)     # the section's own SVGs whose halos were laid under (layer_halos)
 
 
 def _slug(key: str) -> str:
@@ -309,6 +310,23 @@ def _query(book: Path, selector: str, root: Path, inputs: dict[str, str] | None 
     return json.loads(out) if isinstance(out, (str, bytes)) else list(out)
 
 
+def layer_halos(root: Path) -> list[str]:
+    """Every SVG under the book's folder with its labels' halos laid under all their lettering (`halo.layer`), in place.
+    The figures the engine prepares are layered with their colours (`solid.asset`); this takes in the section's own
+    drawings too (a map a section's script writes, a figure committed beside its book), which Typst would otherwise
+    paint glyph by glyph, each letter's halo over the letter before it. Idempotent. Returns the files changed."""
+    done = []
+    for path in sorted(root.rglob("*.svg")):
+        old = path.read_text(errors="replace")
+        if "<text" not in old:
+            continue
+        new = halo.layer(old)
+        if new != old:
+            path.write_text(new)
+            done.append(str(path.relative_to(root)))
+    return done
+
+
 def build(book: Path | str, output: Path | str | None = None, refresh: bool = False,
           inputs: dict[str, str] | None = None) -> Result:
     """`inputs` are Typst's `sys.inputs` (`first-page`: the volume's page this part starts on, core.typ)."""
@@ -338,6 +356,7 @@ def build(book: Path | str, output: Path | str | None = None, refresh: bool = Fa
         if a.get("path"):
             solid.asset(root / a["path"])
     assets_path.write_text(json.dumps(assets, indent=1))
+    result.layered = layer_halos(root)
 
     # pass 2. PDF tagging (the structure tree for screen readers) is off: a print book has no use for it, and Typst
     # 0.15's tagger fails with an internal error on some pages (a breakable block split beside a float)

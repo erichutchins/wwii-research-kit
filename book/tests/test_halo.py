@@ -74,3 +74,17 @@ def test_solid_runs_the_layering():
     svg = _svg(LABEL.format(x=5, s="Roth"), LABEL.format(x=30, s="Monheim"))
     out = solid.svg(svg)
     assert [k for k, _ in _texts(out)] == ["halo", "halo", "fill", "fill"]
+
+
+def test_build_lays_the_halos_of_a_sections_own_drawings(tmp_path):
+    """A section's own SVG (one its script wrote, or one committed beside its book) is layered in place by the build,
+    which Typst would otherwise paint glyph by glyph; a second pass changes nothing."""
+    from wwiibook.build import layer_halos
+    (tmp_path / "figures").mkdir()
+    own = tmp_path / "figures" / "map.svg"
+    own.write_text(_svg(LABEL.format(x=5, s="Roth"), LABEL.format(x=30, s="Monheim")))
+    plain = tmp_path / "plain.svg"
+    plain.write_text(_svg('<rect width="5" height="5"/>'))
+    assert layer_halos(tmp_path) == ["figures/map.svg"]
+    assert _texts(own.read_text()) == [("halo", "Roth"), ("halo", "Monheim"), ("fill", "Roth"), ("fill", "Monheim")]
+    assert layer_halos(tmp_path) == []
