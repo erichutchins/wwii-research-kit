@@ -43,6 +43,7 @@ import nara
 import naval_grid
 import neighbours
 import records
+import silhouette_detail
 
 
 def quietly(fn, *a):
@@ -1132,6 +1133,58 @@ class Neighbours(unittest.TestCase):
         self.assertTrue(d["own"] and d["own"][0]["unit"] == "9ad" and d["own"][0]["km"] > 25)
         # on the record that day: the battalion under CC A, and CC A attached to the 4th Armored (etoob-9AD/p501)
         self.assertTrue(any(r["unit"] == "9ad-cca" and r["other"] == "4ad" for r in d["record"]))
+
+
+class SilhouetteDetail(unittest.TestCase):
+    """The detail writer's text edits: a ship's `detail` goes before its `crop`, an aircraft view's inside its one-line
+    mapping; a rerun replaces what was there, and `none` carries its note."""
+
+    YML = (
+        "aircraft:\n"
+        "  kate:\n"
+        "    name: \"KATE\"\n"
+        '    plan: { w: 100, h: 60.0, d: "M0,0L100,0L50,60Z" }\n'
+        '    front: { w: 100, h: 10.0, cx: 50, cy: 5, d: "M0,0L100,0L50,10Z" }\n'
+        "    crop:\n"
+        "      plan: {scan: \"ia:Fm30-30/10\", box: [1, 2, 3, 4], mirrored: false, px_per_ft: 2}\n"
+        "ships:\n"
+        "  # a comment that belongs to the next entry\n"
+        "  hull:\n"
+        "    length: 100\n"
+        "    parts:\n"
+        "      - [\"poly\", [[0, 0], [100, 0], [90, 10], [0, 10]]]\n"
+        "    crop: {scan: \"ia:x/1\", box: [0, 0, 100, 10], mirrored: false, px_per_ft: 1}\n"
+        "  other:\n"
+        "    length: 5\n")
+
+    def test_ship(self):
+        d = {"lines": "M1,-2L3,-2", "fills": ""}
+        t = silhouette_detail.write_detail(self.YML, "ships", "hull", None, d)
+        self.assertIn('    detail: { lines: "M1,-2L3,-2", fills: "" }\n    crop:', t)
+        t = silhouette_detail.write_detail(t, "ships", "hull", None, None, "the plate draws nothing inside")
+        self.assertEqual(t.count("detail:"), 1)
+        self.assertIn('    detail: none\n    detail_note: "the plate draws nothing inside"\n    crop:', t)
+        self.assertIn("  other:\n", t)
+
+    def test_view(self):
+        d = {"lines": "M1,1L2,2", "fills": "M5,5L6,5L6,6Z"}
+        t = silhouette_detail.write_detail(self.YML, "aircraft", "kate", "plan", d)
+        t = silhouette_detail.write_detail(t, "aircraft", "kate", "plan", d)  # a rerun replaces, never appends
+        line = [ln for ln in t.splitlines() if ln.startswith("    plan:")][0]
+        self.assertEqual(line, '    plan: { w: 100, h: 60.0, d: "M0,0L100,0L50,60Z", '
+                               'detail: { lines: "M1,1L2,2", fills: "M5,5L6,5L6,6Z" } }')
+        t = silhouette_detail.write_detail(t, "aircraft", "kate", "front", None, "solid on the plate")
+        self.assertIn('d: "M0,0L100,0L50,10Z", detail: none, detail_note: "solid on the plate" }', t)
+        y = records.load_yaml_text(t)
+        self.assertEqual(y["aircraft"]["kate"]["plan"]["detail"]["fills"], "M5,5L6,5L6,6Z")
+        self.assertEqual(y["aircraft"]["kate"]["front"]["detail"], "none")
+
+    def test_paths(self):
+        self.assertEqual(silhouette_detail.bbox("M0,-1L4,-1L4,-3ZM10,0L12,-5Z"), (0, -5, 12, 0))
+        self.assertEqual(silhouette_detail.polyline_d([(1.0, -2.004), (3.5, 0.0)]), "M1,-2L3.5,0")
+        p = silhouette_detail.params_for({"x": {"dark": 80, "views": {"plan": {"method": "none"}}}}, "x", "plan",
+                                         "ia:Fm30-30/3")
+        self.assertEqual((p["method"], p["dark"]), ("none", 80))
 
 
 if __name__ == "__main__":

@@ -16,6 +16,18 @@
   .plate .nm { font-weight: 600; }
   .plate .kd { color: var(--ink-2); font-size: 15.5px; line-height: 1.45; margin-top: 2px; }
   .plates.small { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  /* the detailed version: the plate's own key lines and small white areas knocked out in the paper colour */
+  .plate .dl { fill: none; stroke: var(--surface); stroke-width: 0.8px; vector-effect: non-scaling-stroke;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .plate .df { fill: var(--surface); fill-rule: evenodd; }
+  .plate .dl, .plate .df { display: none; }
+  body.detailed .plate .dl, body.detailed .plate .df { display: inline; }
+  .style-toggle { display: inline-flex; border: 1px solid var(--rule); margin: 4px 0 12px; }
+  .style-toggle label { padding: 4px 12px; cursor: pointer; color: var(--ink-2); }
+  .style-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+  .style-toggle input:checked + span { color: var(--ink); font-weight: 600; }
+  .style-toggle label:has(input:checked) { background: var(--surface); }
+  .style-toggle label:has(input:focus-visible) { outline: 2px solid var(--ink-2); outline-offset: -2px; }
 </style>
 </head>
 <body class="viz-root">
@@ -26,20 +38,24 @@
     <nav class="crumb" id="crumb" aria-label="Where this is in the kit"><div class="trail"><a href="index.html#reference">Reading the records</a> / <span aria-current="page">Recognition silhouettes</span></div></nav>
     <div>
       <h1>Recognition silhouettes</h1>
-      <p class="lede">The aircraft and ships the pages draw, in the manner of the wartime recognition plates. Aircraft are
-        traced from the plates themselves; ships are drawn to the heights and length printed on their ONI 54 plates. Each
-        names its plate. The shapes are data, in <span class="mono">records/silhouettes/silhouettes.yml</span>.</p>
+      <p class="lede">The aircraft and ships the pages draw, in the manner of the wartime recognition plates. Each is
+        traced from its wartime recognition plate and names it. The shapes are data, in <span class="mono">records/silhouettes/silhouettes.yml</span>.</p>
+      <p>Each comes solid, or detailed: the same shape with the plate's own key lines and small white areas (glazing,
+        windows) knocked out, traced from the plate's pixels inside the outline, never drawn by hand.</p>
+      <div class="style-toggle" role="radiogroup" aria-label="Silhouette style">
+        <label><input type="radio" name="silstyle" id="style-solid" value="solid" checked><span>Solid</span></label>
+        <label><input type="radio" name="silstyle" id="style-detailed" value="detailed"><span>Detailed</span></label>
+      </div>
     </div>
   </header>
 
   <h2>Aircraft</h2>
   <p>Plan view, profile and head-on, each traced by pixel from the plate's solid black silhouette and shown at one scale
-    (span to span). No Hellcat: none of the recognition material read had an F6F plate, and it isn't drawn from memory.</p>
+    (span to span).</p>
   <div class="plates" id="aircraft"></div>
 
   <h2>Ships</h2>
-  <p>Profiles, bow to the right, all at one scale, from the lengths and heights printed on the plates. Details smaller than
-    about 4 feet are left out.</p>
+  <p>Profiles, bow to the right, all at one scale, each traced from its plate and scaled to the length printed there.</p>
   <div class="plates" id="ships"></div>
 
   <h2>Vehicles</h2>
@@ -66,6 +82,20 @@ function svg(viewBox, label, paths) {
   }
   return s;
 }
+// a shape's detail (`{lines, fills}`, in the shape's own frame) as two more paths with the same transform
+function detail(obj, transform) {
+  const dt = obj && obj.detail;
+  if (!dt || typeof dt !== "object") return [];
+  return [dt.fills && [dt.fills, transform, "df"], dt.lines && [dt.lines, transform, "dl"]].filter(Boolean);
+}
+function setStyle(v) {
+  document.body.classList.toggle("detailed", v === "detailed");
+  try { localStorage.setItem("silstyle", v); } catch (e) { /* storage blocked: the choice lasts for this view */ }
+}
+for (const r of document.querySelectorAll("input[name=silstyle]")) r.addEventListener("change", () => setStyle(r.value));
+try {
+  if (localStorage.getItem("silstyle") === "detailed") { document.getElementById("style-detailed").checked = true; setStyle("detailed"); }
+} catch (e) { /* storage blocked */ }
 function plate(host, drawing, name, ...lines) {
   const p = el("div", "plate");
   p.append(drawing, el("div", "nm", name), ...lines.filter(Boolean).map(t => el("div", "kd", t)));
@@ -84,16 +114,17 @@ Promise.all([SILHOUETTES, fetch(RECORDS + "ships.json").then(r => r.json()),
   const maxSpan = Math.max(...Object.values(s.aircraft).map(a => a.span));
   for (const a of Object.values(s.aircraft)) {
     // plan and head-on views are 100 units to the span, the profile 100 units to the length
-    const k = 0.85 * a.span / maxSpan, paths = [[a.plan.d, `translate(${45 - 50 * k},4) scale(${k})`]];
-    if (a.profile) paths.push([a.profile.d, `translate(105,18) scale(${k * a.length / a.span})`]);
-    if (a.front) paths.push([a.front.d, `translate(105,62) scale(${k})`]);
+    const k = 0.85 * a.span / maxSpan, tp = `translate(${45 - 50 * k},4) scale(${k})`, paths = [[a.plan.d, tp], ...detail(a.plan, tp)];
+    if (a.profile) { const t = `translate(105,18) scale(${k * a.length / a.span})`; paths.push([a.profile.d, t], ...detail(a.profile, t)); }
+    if (a.front) { const t = `translate(105,62) scale(${k})`; paths.push([a.front.d, t], ...detail(a.front, t)); }
     plate(document.getElementById("aircraft"), svg("0 0 200 95", a.name, paths), `${a.name} · ${a.type}`,
           `${a.dims}, as printed on the plate.`, `Traced from: ${a.source}.`);
   }
   // ships: one scale, the longest fills the width; waterline drawn
   const maxL = Math.max(...Object.values(s.ships).map(x => x.length)), W = 300, k = (W - 10) / maxL, top = 150 * k;
   for (const [key, x] of Object.entries(s.ships)) {
-    const d = svg(`0 ${-top - 4} ${W} ${top + 8}`, x.name, [[x.d, `translate(5,0) scale(${k})`], [`M0,0L${W},0`, null, "wl"]]);
+    const t = `translate(5,0) scale(${k})`;
+    const d = svg(`0 ${-top - 4} ${W} ${top + 8}`, x.name, [[x.d, t], ...detail(x, t), [`M0,0L${W},0`, null, "wl"]]);
     const used = usedBy(key);
     plate(document.getElementById("ships"), d, x.name, `${x.length} ft long.`, `Drawn to: ${x.plate}.`,
           used.length && `Draws: ${used.join(", ")}.`);
@@ -103,7 +134,8 @@ Promise.all([SILHOUETTES, fetch(RECORDS + "ships.json").then(r => r.json()),
   if (vs.length) {
     const maxV = Math.max(...vs.map(x => x.length)), VW = 300, kv = (VW - 10) / maxV, vtop = 12 * kv;
     for (const x of vs) {
-      const d = svg(`0 ${-vtop - 4} ${VW} ${vtop + 8}`, x.name, [[x.d, `translate(5,0) scale(${kv})`], [`M0,0L${VW},0`, null, "wl"]]);
+      const t = `translate(5,0) scale(${kv})`;
+      const d = svg(`0 ${-vtop - 4} ${VW} ${vtop + 8}`, x.name, [[x.d, t], ...detail(x, t), [`M0,0L${VW},0`, null, "wl"]]);
       plate(document.getElementById("vehicles"), d, x.name, `${x.length} ft long.`, `Traced from: ${x.plate}.`);
     }
   }
